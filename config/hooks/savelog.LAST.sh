@@ -1,0 +1,1 @@
+/srv/fai/config/hooks/savelog.LAST.sh

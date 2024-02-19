@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+create_tarball() {
+  # shellcheck disable=SC2154
+  local release=$1 tarball debtmp
+  tarball="$PKGROOT/cache/$release.tar"
+  [[ ! -e "$tarball" ]] || return 0
+  debtmp=$(mktemp -d)
+  # shellcheck disable=SC2064
+  trap "rm -rf \"$debtmp\"" EXIT
+  mkdir -p "$PKGROOT/cache"
+  debootstrap --make-tarball "$tarball" "$release" "$debtmp" http://deb.debian.org/debian
+  trap "" EXIT
+  rm -rf "$debtmp"
+}
+
+create_tarball "$release"

@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+# assign classes to hosts based on their hostname
+
+# do not use this if a menu will be presented
+[ "$flag_menu" ] && exit 0
+
+echo "BASE DEBIAN DHCPC"
+
+case $HOSTNAME in
+  k8s-nas)
+    echo "KVM AMD64" ;;
+esac

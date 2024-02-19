@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+# if package locales will be installed, then install it early, before
+#  other packages
+[[ $FAI_ACTION == "install" || $FAI_ACTION == "dirinstall" ]] || exit 0
+
+# fcopy -Bi /etc/kernel/cmdline
+fcopy -Bi /etc/apt/apt.conf.d/force_confdef
+fcopy -Bi /etc/apt/apt.conf.d/20autoremove-suggests
+fcopy -Bi /etc/apt/apt.conf.d/20gzip-indexes
+fcopy -Bi /etc/dpkg/dpkg.cfg.d/10exclude-docs
+fcopy -Bi /etc/dpkg/dpkg.cfg.d/10filter-locales
+fcopy -Bi /etc/dpkg/dpkg.cfg.d/10filter-manpages
+ainsl -a  /etc/ucf.conf "^conf_force_conffold=YES"
+
+# if we want to install locales, install them now
+if install_packages -l 2>/dev/null | grep -E -q ' locales|locales '; then
+  if [[ $verbose = 1 ]]; then
+    $ROOTCMD apt-get -y install locales
+  else
+    $ROOTCMD apt-get -y install locales > /dev/null
+  fi
+fi
+
+# shellcheck source=/var/log/fai/k8s-nas/last/disk_var.sh
+source "$LOGDIR/disk_var.sh"
+printf "root=%s\n" "$$ROOT_PARTITION" >"$target/etc/kernel/cmdline"

@@ -1,0 +1,2 @@
+path-exclude=/usr/share/man/*
+path-include=/usr/share/man/man[1-9]

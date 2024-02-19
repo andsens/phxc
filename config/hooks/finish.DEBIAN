@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+unmount_apt_dirs() {
+  umount "$target/var/lib/apt/lists"
+  umount "$target/var/cache/apt"
+}
+
+unmount_apt_dirs

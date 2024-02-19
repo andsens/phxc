@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+if [ -n "$APTPROXY" ]; then
+    echo "Acquire::http::Proxy \"$APTPROXY\";" > $target/etc/apt/apt.conf.d/02proxy
+else
+    rm -f $target/etc/apt/apt.conf.d/02proxy
+fi
+
+echo force-unsafe-io > $target/etc/dpkg/dpkg.cfg.d/unsafe-io
+
+mount_apt_dirs() {
+  mkdir -p "$PKGROOT/cache/$release/apt/lists" "$PKGROOT/cache/$release/apt/cache"
+  mount --bind "$PKGROOT/cache/$release/apt/lists" "$target/var/lib/apt/lists"
+  mount --bind "$PKGROOT/cache/$release/apt/cache" "$target/var/cache/apt"
+}
+
+mount_apt_dirs
