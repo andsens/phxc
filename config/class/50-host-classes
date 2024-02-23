@@ -9,5 +9,5 @@ echo "BASE DEBIAN DHCPC"
 
 case $HOSTNAME in
   k8s-nas)
-    echo "KVM AMD64" ;;
+    echo "KVM AMD64 K8S" ;;
 esac

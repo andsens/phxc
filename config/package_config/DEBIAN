@@ -2,4 +2,6 @@ PACKAGES install-norec
 zstd
 openssh-client openssh-server
 systemd-boot
+wget
+ca-certificates
 ${kernelname}
