@@ -1,1 +1,1 @@
-/srv/fai/config/hooks/setup.DEFAULT.sh
+/usr/share/doc/fai-doc/examples/simple/hooks/setup.DEFAULT.sh

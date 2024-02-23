@@ -1,1 +1,1 @@
-/srv/fai/config/hooks/savelog.LAST.sh
+/usr/share/doc/fai-doc/examples/simple/hooks/savelog.LAST.sh
