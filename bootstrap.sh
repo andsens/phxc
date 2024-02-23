@@ -69,10 +69,10 @@ create_image() {
 
 mount_image() {
   local hostname=$1 mountpath image devpath
-  mountpath=$PKGROOT/mount/$hostname
+  mountpath=$PKGROOT/mnt/$hostname
   mkdir -p "$mountpath"
   image=$(get_image_name "$hostname")
-  devpath=$(losetup --show --find --partscan images/k8s-nas.raw)
+  devpath=$(losetup --show --find --partscan "$image")
   # shellcheck disable=SC2064
   trap "umount \"$mountpath/boot/efi\"; umount \"$mountpath\"; losetup --detach \"$devpath\"; exit 1" EXIT SIGINT SIGTERM
   mount "${devpath}p2" "$mountpath"
