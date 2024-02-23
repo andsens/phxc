@@ -6,10 +6,6 @@
     {
       "name": "fai-config",
       "path": "/usr/share/doc/fai-doc/examples/simple"
-    },
-    {
-      "name": "fai-log",
-      "path": "/var/log/fai"
     }
   ],
   "settings": {}

@@ -60,6 +60,8 @@ get_image_name() {
 create_image() {
   local hostname=$1 image
   image=$(get_image_name "$hostname")
+  mkdir -p "$PKGROOT/logs"
+  ln -s "/var/log/fai/$hostname/last" "$PKGROOT/logs/$hostname"
   env - \
     "PATH=$PATH" \
     "PKGROOT=$PKGROOT" \
