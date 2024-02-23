@@ -8,9 +8,7 @@ KEYMAP=us-latin1
 MODULESLIST=""
 FAI_RAMDISKS="$target/var/lib/dpkg $target/var/cache $target/var/lib/apt/lists"
 # The linux-image package has different names for Debian and Ubuntu
-if ifclass I386; then
-   kernelname=linux-image-686-pae
-elif ifclass AMD64; then
+if ifclass AMD64; then
    kernelname=linux-image-amd64
 fi
 FAI_DEBOOTSTRAP="$release http://deb.debian.org/debian $PKGROOT/assets/bootstrap-script.sh"
