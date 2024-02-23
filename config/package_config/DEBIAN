@@ -6,4 +6,5 @@ sudo
 wget
 ca-certificates
 bash
+console-setup
 ${kernelname}

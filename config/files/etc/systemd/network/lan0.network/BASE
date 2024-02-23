@@ -1,0 +1,5 @@
+[Match]
+Name={%NIC1%}
+
+[Network]
+DHCP=yes

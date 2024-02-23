@@ -1,31 +1,11 @@
-#! /bin/bash
-
-# (c) Thomas Lange, 2001-2016, lange@debian.org
-# (c) Michael Goetze, 2010-2011, mgoetze@mgoetze.net
+#!/usr/bin/env bash
 
 error=0; trap 'error=$(($?>$error?$?:$error))' ERR # save maximum error code
 
-# a list of modules which are loaded at boot time
-for module in $MODULESLIST; do
-    ainsl -a /etc/modules "^$module$"
-done
-
 fcopy -Mv /etc/hostname || echo $HOSTNAME > $target/etc/hostname
-ainsl -a /etc/mailname ${HOSTNAME}
 
-# make sure a machine-id exists
-if [ ! -f $target/etc/machine-id ]; then
-    > $target/etc/machine-id
-fi
-# recreate machine-id if the file is empty
-if [ X"$(stat -c '%s' $target/etc/machine-id 2>/dev/null)"  = X0 -a -f $target/bin/systemd-machine-id-setup ]; then
-    $ROOTCMD systemd-machine-id-setup
-fi
+$ROOTCMD systemd-machine-id-setup
 
 fai-link /etc/mtab ../proc/self/mounts
-
-rm -f $target/etc/dpkg/dpkg.cfg.d/unsafe-io
-
-fcopy -iv /etc/rc.local
 
 exit $error

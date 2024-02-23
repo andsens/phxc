@@ -3,11 +3,7 @@ apt_cdn=http://deb.debian.org
 security_cdn=http://security.debian.org
 secsuite=$release-security
 APTPROXY=http://localhost:3142
-CONSOLEFONT=
-KEYMAP=us-latin1
-MODULESLIST=""
 FAI_RAMDISKS="$target/var/lib/dpkg $target/var/cache $target/var/lib/apt/lists"
-# The linux-image package has different names for Debian and Ubuntu
 if ifclass AMD64; then
    kernelname=linux-image-amd64
 fi
