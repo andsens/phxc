@@ -15,9 +15,7 @@ extract_dpkg_deb_data () {
 /usr/share/man/man6
 /usr/share/man/man7
 /usr/share/man/man8
-/usr/share/man/man9
-/var/lib/apt/lists
-/var/cache/apt' >"$exclude_files" || true
+/usr/share/man/man9' >"$exclude_files" || true
   # List all files in $pkg and run them through the filter
   dpkg-deb --fsys-tarfile "$pkg" | tar --exclude-from "$exclude_files" -xf -
   rm "$exclude_files"

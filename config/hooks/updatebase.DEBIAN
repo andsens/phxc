@@ -7,11 +7,3 @@ else
 fi
 
 echo force-unsafe-io > $target/etc/dpkg/dpkg.cfg.d/unsafe-io
-
-mount_apt_dirs() {
-  mkdir -p "$PKGROOT/cache/debian/$release/apt/lists" "$PKGROOT/cache/debian/$release/apt/cache"
-  mount --bind "$PKGROOT/cache/debian/$release/apt/lists" "$target/var/lib/apt/lists"
-  mount --bind "$PKGROOT/cache/debian/$release/apt/cache" "$target/var/cache/debian/apt"
-}
-
-mount_apt_dirs
