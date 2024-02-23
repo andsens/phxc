@@ -1,3 +1,1 @@
 TIMEZONE=Europe/Copenhagen
-FAI_DEBOOTSTRAP="bookworm http://deb.debian.org/debian $PKGROOT/assets/bootstrap-script.sh"
-FAI_DEBOOTSTRAP_OPTS="--exclude=info --unpack-tarball=$PKGROOT/cache/bookworm.tar"
