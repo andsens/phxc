@@ -1,16 +1,16 @@
 {
-	"folders": [
-		{
-			"path": "."
-		},
-		{
-			"name": "fai-config",
-			"path": "/srv/fai/config"
-		},
-		{
-			"name": "fai-log",
-			"path": "/var/log/fai"
-		}
-	],
-	"settings": {}
+  "folders": [
+    {
+      "path": "."
+    },
+    {
+      "name": "fai-config",
+      "path": "/usr/share/doc/fai-doc/examples/simple"
+    },
+    {
+      "name": "fai-log",
+      "path": "/var/log/fai"
+    }
+  ],
+  "settings": {}
 }
