@@ -5,7 +5,7 @@
 # do not use this if a menu will be presented
 [ "$flag_menu" ] && exit 0
 
-echo "BASE DEBIAN DHCPC"
+echo "BASE DEBIAN CREDENTIALS DHCPC"
 
 case $HOSTNAME in
   k8s-nas)
