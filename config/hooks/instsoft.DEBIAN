@@ -24,4 +24,4 @@ fi
 
 # shellcheck source=/var/log/fai/k8s-nas/last/disk_var.sh
 source "$LOGDIR/disk_var.sh"
-printf "root=%s\n" "$$ROOT_PARTITION" >"$target/etc/kernel/cmdline"
+printf "root=%s\n" "$ROOT_PARTITION" >"$target/etc/kernel/cmdline"
