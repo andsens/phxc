@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 
 error=0; trap 'error=$(($?>$error?$?:$error))' ERR # save maximum error code
-$ROOTCMD wget -SO /dev/null https://update.k3s.io/v1-release/channels/stable
-export INSTALL_K3S_SKIP_START=true
-curl -sfL https://get.k3s.io | $ROOTCMD sh -
+
+(
+  export INSTALL_K3S_SKIP_START=true
+  # export INSTALL_K3S_EXEC='--flannel-backend=none --disable-network-policy --disable-kube-proxy'
+  curl -sfL https://get.k3s.io | $ROOTCMD sh -
+)
 
 exit $error

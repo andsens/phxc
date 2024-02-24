@@ -1,0 +1,3 @@
+# Allow clients to forward the tmux variable to avoid tmux-in-tmux
+Match group users
+  AcceptEnv TMUX

@@ -1,6 +1,6 @@
 /.upkg
 /cache
-/config/class/CREDENTIALS.var
+/config/class/AUTHN.var
 /images
 /logs
 /mnt

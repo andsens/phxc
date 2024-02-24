@@ -4,14 +4,13 @@
 #  other packages
 [[ $FAI_ACTION == "install" || $FAI_ACTION == "dirinstall" ]] || exit 0
 
-# fcopy -Bi /etc/kernel/cmdline
-fcopy -Bi /etc/apt/apt.conf.d/force_confdef
-fcopy -Bi /etc/apt/apt.conf.d/20autoremove-suggests
-fcopy -Bi /etc/apt/apt.conf.d/20gzip-indexes
-fcopy -Bi /etc/dpkg/dpkg.cfg.d/10exclude-docs
-fcopy -Bi /etc/dpkg/dpkg.cfg.d/10filter-locales
-fcopy -Bi /etc/dpkg/dpkg.cfg.d/10filter-manpages
-ainsl -a  /etc/ucf.conf "^conf_force_conffold=YES"
+fcopy -M /etc/apt/apt.conf.d/force_confdef
+fcopy -M /etc/apt/apt.conf.d/20autoremove-suggests
+fcopy -M /etc/apt/apt.conf.d/20gzip-indexes
+fcopy -M /etc/dpkg/dpkg.cfg.d/10exclude-docs
+fcopy -M /etc/dpkg/dpkg.cfg.d/10filter-locales
+fcopy -M /etc/dpkg/dpkg.cfg.d/10filter-manpages
+ainsl -a /etc/ucf.conf "^conf_force_conffold=YES"
 
 # if we want to install locales, install them now
 if install_packages -l 2>/dev/null | grep -E -q ' locales|locales '; then

@@ -1,0 +1,8 @@
+#! /bin/bash
+
+error=0; trap 'error=$(($?>$error?$?:$error))' ERR # save maximum error code
+
+fcopy -M /etc/ssh/sshd_config.d/10-no-root-login.conf
+fcopy -M /etc/ssh/sshd_config.d/20-no-pw-auth.conf
+
+exit $error

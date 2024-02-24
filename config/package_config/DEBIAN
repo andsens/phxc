@@ -3,8 +3,7 @@ zstd
 openssh-client openssh-server
 systemd-boot
 sudo
-wget
-ca-certificates
+wget ca-certificates
 bash
-console-setup
+avahi-daemon
 ${kernelname}

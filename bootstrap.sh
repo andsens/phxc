@@ -66,7 +66,14 @@ create_image() {
     "PATH=$PATH" \
     "PKGROOT=$PKGROOT" \
     fai-diskimage --verbose --cspace "$PKGROOT/config" --new --size 2G --hostname "$hostname" "$image"
-  sudo chown "$SUDO_UID:$SUDO_UID" "$image"
+  devpath=$(losetup --show --find --partscan "$image")
+  # shellcheck disable=SC2064
+  trap "losetup --detach \"$devpath\"; exit 1" EXIT SIGINT SIGTERM
+  zerofree "${devpath}p2"
+  losetup --detach "$devpath"
+  trap "" EXIT
+  qemu-img resize -f raw "$image" 10G
+  chown "$SUDO_UID:$SUDO_UID" "$image"
 }
 
 mount_image() {

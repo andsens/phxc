@@ -2,7 +2,7 @@
 
 error=0; trap 'error=$(($?>$error?$?:$error))' ERR # save maximum error code
 
-fcopy -Mv /etc/hostname || echo $HOSTNAME > $target/etc/hostname
+fcopy -M /etc/hostname || echo $HOSTNAME > $target/etc/hostname
 
 $ROOTCMD systemd-machine-id-setup
 
