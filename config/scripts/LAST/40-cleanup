@@ -9,7 +9,7 @@ if ifclass DEBIAN ; then
   # Make sure everything is configured properly
   $ROOTCMD apt-get -f install -y
   # copy sources.list
-  fcopy -iSM /etc/apt/sources.list
+  fcopy -iBSM /etc/apt/sources.list
 fi
 
 exit $error
