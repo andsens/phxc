@@ -4,8 +4,8 @@ error=0; trap 'error=$(($?>$error?$?:$error))' ERR # save maximum error code
 
 if ifclass DEBIAN ; then
   rm -f \
-    "$target/etc/apt/apt.conf.d/02proxy" \
-    "$target/etc/dpkg/dpkg.cfg.d/unsafe-io"
+    "${target:?}/etc/apt/apt.conf.d/02proxy" \
+    "${target:?}/etc/dpkg/dpkg.cfg.d/unsafe-io"
   # Make sure everything is configured properly
   $ROOTCMD apt-get -f install -y
   # copy sources.list

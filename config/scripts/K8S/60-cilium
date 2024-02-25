@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+error=0; trap 'error=$(($?>$error?$?:$error))' ERR # save maximum error code
+
+CILIUM_CLI_VERSION=$(curl -s https://raw.githubusercontent.com/cilium/cilium-cli/main/stable.txt)
+CLI_ARCH=amd64
+[[ "$(uname -m)" != "aarch64" ]] || CLI_ARCH=arm64
+(
+  set -e
+  cd "${target:?}/tmp"
+  curl -sL --fail --remote-name-all "https://github.com/cilium/cilium-cli/releases/download/${CILIUM_CLI_VERSION}/cilium-linux-${CLI_ARCH}.tar.gz"{,.sha256sum}
+  sha256sum --check cilium-linux-${CLI_ARCH}.tar.gz.sha256sum
+  tar xzvfC cilium-linux-${CLI_ARCH}.tar.gz "${target:?}/usr/local/bin"
+  rm cilium-linux-${CLI_ARCH}.tar.gz{,.sha256sum}
+)
+fcopy -m root,root,0755 /usr/local/bin/install-cilium
+fcopy -M /etc/systemd/system/install-cilium.service
+$ROOTCMD systemctl enable install-cilium.service
+
+exit $error

@@ -10,17 +10,7 @@ fcopy -M /etc/apt/apt.conf.d/20gzip-indexes
 fcopy -M /etc/dpkg/dpkg.cfg.d/10exclude-docs
 fcopy -M /etc/dpkg/dpkg.cfg.d/10filter-locales
 fcopy -M /etc/dpkg/dpkg.cfg.d/10filter-manpages
-ainsl -a /etc/ucf.conf "^conf_force_conffold=YES"
 
-# if we want to install locales, install them now
-if install_packages -l 2>/dev/null | grep -E -q ' locales|locales '; then
-  if [[ $verbose = 1 ]]; then
-    $ROOTCMD apt-get -y install locales
-  else
-    $ROOTCMD apt-get -y install locales > /dev/null
-  fi
-fi
-
-# shellcheck source=/var/log/fai/k8s-nas/last/disk_var.sh
+# shellcheck source=../../lib/disk_var.sh
 source "$LOGDIR/disk_var.sh"
-printf "root=%s\n" "$ROOT_PARTITION" >"$target/etc/kernel/cmdline"
+printf "root=%s\n" "$ROOT_PARTITION" >"${target:?}/etc/kernel/cmdline"

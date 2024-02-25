@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+# shellcheck disable=2209,2034
 ADMIN_USERNAME=admin
 # Generate with mkpasswd (from the `whois` package) and make sure to single quote
 ADMIN_PASSWORD=''

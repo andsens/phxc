@@ -52,41 +52,34 @@ declare -p "${prefix}HOSTNAME" "${prefix}create" "${prefix}mount" \
   fi
 }
 
-get_image_name() {
+get_image_path() {
   local hostname=$1
   printf "%s/images/%s.raw" "$PKGROOT" "$hostname"
 }
 
 create_image() {
-  local hostname=$1 image
-  image=$(get_image_name "$hostname")
+  local hostname=$1 image_path
+  image_path=$(get_image_path "$hostname")
   mkdir -p "$PKGROOT/logs"
   ln -s "/var/log/fai/$hostname/last" "$PKGROOT/logs/$hostname"
   env - \
     "PATH=$PATH" \
     "PKGROOT=$PKGROOT" \
-    fai-diskimage --verbose --cspace "$PKGROOT/config" --new --size 2G --hostname "$hostname" "$image"
-  devpath=$(losetup --show --find --partscan "$image")
-  # shellcheck disable=SC2064
-  trap "losetup --detach \"$devpath\"; exit 1" EXIT SIGINT SIGTERM
-  zerofree "${devpath}p2"
-  losetup --detach "$devpath"
-  trap "" EXIT
-  qemu-img resize -f raw "$image" 10G
-  chown "$SUDO_UID:$SUDO_UID" "$image"
+    fai-diskimage --verbose --cspace "$PKGROOT/config" --new --size 10G --hostname "$hostname" "$image_path"
+  chown "$SUDO_UID:$SUDO_UID" "$image_path"
 }
 
 mount_image() {
-  local hostname=$1 mountpath image devpath
+  local hostname=$1 mountpath image_path devpath
   mountpath=$PKGROOT/mnt/$hostname
   mkdir -p "$mountpath"
-  image=$(get_image_name "$hostname")
-  devpath=$(losetup --show --find --partscan "$image")
+  image_path=$(get_image_path "$hostname")
+  devpath=$(losetup --show --find --partscan "$image_path")
   # shellcheck disable=SC2064
   trap "umount \"$mountpath/boot/efi\"; umount \"$mountpath\"; losetup --detach \"$devpath\"; exit 1" EXIT SIGINT SIGTERM
   mount "${devpath}p2" "$mountpath"
   mount "${devpath}p1" "$mountpath/boot/efi"
-  info "image %s mounted at %s, press <ENTER> to unmount" "${image#"$PKGROOT/"}" "${mountpath#"$PKGROOT/"}"
+  info "image %s mounted at %s, press <ENTER> to unmount" "${image_path#"$PKGROOT/"}" "${mountpath#"$PKGROOT/"}"
   local _read
   read -r _read
   umount "$mountpath/boot/efi" "$mountpath"
@@ -95,12 +88,12 @@ mount_image() {
 }
 
 boot_image() {
-  local hostname=$1 image
-  image=$(get_image_name "$hostname")
+  local hostname=$1 image_path
+  image_path=$(get_image_path "$hostname")
   kvm -bios /usr/share/ovmf/OVMF.fd \
     -k en-us -smp 2 -cpu host -m 2000 -name "$hostname" \
     -boot order=c -device virtio-net-pci,netdev=net0 -netdev user,id=net0 \
-    -drive "file=$image,if=none,format=raw,id=nvme1" -device nvme,serial=SN123450001,drive=nvme1
+    -drive "file=$image_path,if=none,format=raw,id=nvme1" -device nvme,serial=SN123450001,drive=nvme1
 }
 
 main "$@"

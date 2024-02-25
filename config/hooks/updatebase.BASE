@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+[[ -z "$APTPROXY" ]] || echo "Acquire::http::Proxy \"$APTPROXY\";" > "${target:?}/etc/apt/apt.conf.d/02proxy"
+echo force-unsafe-io > "${target:?}/etc/dpkg/dpkg.cfg.d/unsafe-io"

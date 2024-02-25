@@ -1,0 +1,13 @@
+[Unit]
+Description=Install Cilium in K3S
+Documentation=https://docs.cilium.io/en/stable/installation/k3s/
+Wants=k3s.service
+After=k3s.service
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=oneshot
+Environment=HOME=/root KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+ExecStart=/usr/local/bin/install-cilium

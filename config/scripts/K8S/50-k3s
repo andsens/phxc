@@ -2,10 +2,24 @@
 
 error=0; trap 'error=$(($?>$error?$?:$error))' ERR # save maximum error code
 
-(
-  export INSTALL_K3S_SKIP_START=true
-  # export INSTALL_K3S_EXEC='--flannel-backend=none --disable-network-policy --disable-kube-proxy'
-  curl -sfL https://get.k3s.io | $ROOTCMD sh -
+k3s_exec_flags=(
+  --flannel-backend=none
+  --egress-selector-mode=disabled
+  --disable=traefik
+  --disable=metrics-server
+  --disable=servicelb
+  --disable-network-policy
+  --disable-kube-proxy
+  --disable-helm-controller
 )
+
+curl -sfL https://get.k3s.io | \
+  INSTALL_K3S_SKIP_START=true \
+  INSTALL_K3S_EXEC="${k3s_exec_flags[*]}" \
+  $ROOTCMD sh -
+
+if fcopy -SM /etc/systemd/system/adjust-kubeconf-perms.service; then
+  $ROOTCMD systemctl enable adjust-kubeconf-perms.service
+fi
 
 exit $error

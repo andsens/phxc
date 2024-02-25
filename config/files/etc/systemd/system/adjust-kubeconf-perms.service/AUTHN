@@ -1,0 +1,11 @@
+[Unit]
+Description=Adjust permissions of the k3s kubeconfig
+PartOf=k3s.service
+After=k3s.service
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=bash -c 'chgrp {%ADMIN_USERNAME%} /etc/rancher/k3s/k3s.yaml && chmod g+r /etc/rancher/k3s/k3s.yaml'
