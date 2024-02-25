@@ -1,6 +1,6 @@
 /.upkg
-/cache
-/config/class/AUTHN.var
-/images
-/logs
-/mnt
+bootstrap/cache
+bootstrap/config/class/AUTHN.var
+bootstrap/images
+bootstrap/logs
+bootstrap/mnt

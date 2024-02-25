@@ -12,9 +12,9 @@ create_tarball() {
   fi
   optshash=$(shasum -a 256 <<<"$FAI_DEBOOTSTRAP $debootstrap_opts" | cut -d' ' -f1)
   optshash=$release-${optshash:0:16}
-  tarball="$PKGROOT/cache/debootstrap/$optshash.tar"
+  tarball="$PKGROOT/bootstrap/cache/debootstrap/$optshash.tar"
   if [[ ! -e "$tarball" ]]; then
-    mkdir -p "$PKGROOT/cache/debootstrap"
+    mkdir -p "$PKGROOT/bootstrap/cache/debootstrap"
     debtmp=$(mktemp -d)
     # shellcheck disable=SC2086
     debootstrap --make-tarball "$tarball" $debootstrap_opts "$release" "$debtmp" http://deb.debian.org/debian

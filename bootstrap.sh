@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -eo pipefail; shopt -s inherit_errexit
-PKGROOT=$(dirname "$(realpath "${BASH_SOURCE[0]}")")
+PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
 PATH=$("$PKGROOT/.upkg/.bin/path_prepend" "$PKGROOT/.upkg/.bin")
 
 main() {
@@ -41,7 +41,7 @@ declare -p "${prefix}HOSTNAME" "${prefix}create" "${prefix}mount" \
   fi
   : "${SUDO_UID:?"\$SUDO_UID is not set, run with sudo"}"
 
-  sudo -u "#$SUDO_UID" mkdir -p "$PKGROOT/images"
+  sudo -u "#$SUDO_UID" mkdir -p "$PKGROOT/bootstrap/images"
   # shellcheck disable=SC2154
   if $create; then
     create_image "$HOSTNAME"
@@ -54,24 +54,25 @@ declare -p "${prefix}HOSTNAME" "${prefix}create" "${prefix}mount" \
 
 get_image_path() {
   local hostname=$1
-  printf "%s/images/%s.raw" "$PKGROOT" "$hostname"
+  printf "%s/bootstrap/images/%s.raw" "$PKGROOT" "$hostname"
 }
 
 create_image() {
   local hostname=$1 image_path
   image_path=$(get_image_path "$hostname")
-  mkdir -p "$PKGROOT/logs"
-  ln -s "/var/log/fai/$hostname/last" "$PKGROOT/logs/$hostname"
+  mkdir -p "$PKGROOT/bootstrap/logs"
+  ln -s "/var/log/fai/$hostname/last" "$PKGROOT/bootstrap/logs/$hostname"
   env - \
     "PATH=$PATH" \
     "PKGROOT=$PKGROOT" \
-    fai-diskimage --verbose --cspace "$PKGROOT/config" --new --size 10G --hostname "$hostname" "$image_path"
+    fai-diskimage --verbose --cspace "$PKGROOT/bootstrap/config" --new --size 10G --hostname "$hostname" "$image_path"
   chown "$SUDO_UID:$SUDO_UID" "$image_path"
+  chown -R "$SUDO_UID:$SUDO_UID" "$PKGROOT/bootstrap/cache"
 }
 
 mount_image() {
   local hostname=$1 mountpath image_path devpath
-  mountpath=$PKGROOT/mnt/$hostname
+  mountpath=$PKGROOT/bootstrap/mnt/$hostname
   mkdir -p "$mountpath"
   image_path=$(get_image_path "$hostname")
   devpath=$(losetup --show --find --partscan "$image_path")
