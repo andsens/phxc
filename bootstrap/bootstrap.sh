@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck source-path=..
 
 set -eo pipefail; shopt -s inherit_errexit
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
@@ -57,6 +58,15 @@ get_image_path() {
   printf "%s/bootstrap/images/%s.raw" "$PKGROOT" "$hostname"
 }
 
+get_image_size() {
+  local hostname=$1
+  case "$hostname" in
+    k8s-nas) printf "10G" ;;
+    dc) printf "3G" ;;
+    *) fatal "Unknown hostname: '%s'" "$hostname" ;;
+  esac
+}
+
 create_image() {
   local hostname=$1 image_path
   image_path=$(get_image_path "$hostname")
@@ -65,7 +75,7 @@ create_image() {
   env - \
     "PATH=$PATH" \
     "PKGROOT=$PKGROOT" \
-    fai-diskimage --verbose --cspace "$PKGROOT/bootstrap/config" --new --size 10G --hostname "$hostname" "$image_path"
+    fai-diskimage --cspace "$PKGROOT/bootstrap/config" --new --size "$(get_image_size "$hostname")" --hostname "$hostname" "$image_path"
   chown "$SUDO_UID:$SUDO_UID" "$image_path"
   chown -R "$SUDO_UID:$SUDO_UID" "$PKGROOT/bootstrap/cache"
 }

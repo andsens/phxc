@@ -1,9 +1,9 @@
 {
-	"dependencies": {
-		"orbit-online/checkdeps": "v1.0.2",
-		"andsens/docopt.sh": "v1.0.0-upkg",
-		"orbit-online/path-tools": "v0.2.1",
-		"orbit-online/records.sh": "v0.9.5",
-		"orbit-online/collections.sh": "v0.0.1"
-	}
+  "dependencies": {
+    "orbit-online/checkdeps": "v1.0.2",
+    "andsens/docopt.sh": "v1.0.0-upkg",
+    "orbit-online/path-tools": "v0.2.1",
+    "orbit-online/records.sh": "v0.9.5",
+    "orbit-online/collections.sh": "v0.0.1"
+  }
 }

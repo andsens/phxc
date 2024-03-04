@@ -1,0 +1,10 @@
+--realm={%REALM%}
+--domain={%DOMAIN%}
+--hostname=ipa.{%DOMAIN%}
+--unattended
+--no-ntp
+--no-host-dns
+--no-ssh
+--no-sshd
+--no-dns-sshfp
+--skip-mem-check

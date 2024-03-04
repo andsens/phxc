@@ -9,5 +9,11 @@ echo "BASE DEBIAN AUTHN"
 
 case $HOSTNAME in
   k8s-nas)
-    echo "KVM AMD64 K8S" ;;
+    echo "KVM AMD64 K8S DOMAIN_CLIENT" ;;
+  dc)
+    echo "KVM AMD64 DC DOMAIN_CLIENT" ;;
+  *)
+    printf "ERROR: Unknown hostname '%s'" "$HOSTNAME" >&2
+    exit 1
+    ;;
 esac

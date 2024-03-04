@@ -1,0 +1,12 @@
+[Unit]
+Description=FreeIPA
+Documentation=https://www.freeipa.org/
+Wants=network-online.target
+After=network-online.target
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/freeipa

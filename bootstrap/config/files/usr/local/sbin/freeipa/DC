@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+if ! IPA_SERVER_IP=$(ip route get 8.8.8.8 | awk '{gsub(".*src",""); print $1; exit}') || [[ -z $IPA_SERVER_IP ]]; then
+  printf "freeipa: Unable to determine host IP\n" >&2
+  exit 1
+fi
+
+exec podman run --rm -ti --read-only --network=host --name=freeipa --hostname=ipa.{%DOMAIN%} \
+  -e IPA_SERVER_IP \
+  -v /etc/freeipa/ipa-server-install-options:/data/ipa-server-install-options \
+  -v /var/lib/freeipa:/data:Z \
+  -v /dev/shm:/dev/shm:Z \
+  quay.io/freeipa/freeipa-server:rocky-9 "$@"
