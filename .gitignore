@@ -1,6 +1,7 @@
 /.upkg
 bootstrap/cache
 bootstrap/config/class/AUTHN.var
+bootstrap/config/class/k8s-nas.var
 bootstrap/images
 bootstrap/logs
 bootstrap/mnt

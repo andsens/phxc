@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# shellcheck disable=2034
+# Fixed IP addresses for the link between the host and the VM
+# Guid for setting up the bridge interface on TrueNAS:
+# https://www.truenas.com/community/threads/is-there-any-way-to-enable-create-an-virtual-switch.95269/page-2#post-674816
+# For a random IPv4 subnet use random.org 1-255 for the two groups after the "10."
+# For a random IPv6 subnet use https://unique-local-ipv6.com/
+NIC_HOST_ADDRESSES='Address=10.15.180.2/24
+Address=fd25:9998:d0e7:e351:1a01:be9:4d9a:157e/48'

@@ -1,0 +1,5 @@
+[Match]
+Name={%NIC_HOST%}
+
+[Network]
+{%NIC_HOST_ADDRESSES%}
