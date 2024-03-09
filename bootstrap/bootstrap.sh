@@ -62,7 +62,6 @@ get_image_size() {
   local hostname=$1
   case "$hostname" in
     k8s-nas) printf "10G" ;;
-    dc) printf "3G" ;;
     *) fatal "Unknown hostname: '%s'" "$hostname" ;;
   esac
 }

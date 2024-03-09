@@ -1,7 +1,6 @@
 /.upkg
 bootstrap/cache
 bootstrap/config/class/AUTHN.var
-bootstrap/config/class/DOMAIN_CLIENT.var
 bootstrap/images
 bootstrap/logs
 bootstrap/mnt
