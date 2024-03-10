@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# shellcheck source-path=..
+# shellcheck source-path=.. disable=2064
 
 set -eo pipefail; shopt -s inherit_errexit
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
@@ -8,6 +8,7 @@ PATH=$("$PKGROOT/.upkg/.bin/path_prepend" "$PKGROOT/.upkg/.bin")
 main() {
   source "$PKGROOT/.upkg/orbit-online/records.sh/records.sh"
   source "$PKGROOT/.upkg/orbit-online/collections.sh/collections.sh"
+  source "$PKGROOT/bootstrap/lib/mount.sh"
 
   DOC="bootstrap.sh - Bootstrap k3s cluster images
 Usage:
@@ -80,21 +81,16 @@ create_image() {
 }
 
 mount_image() {
-  local hostname=$1 mountpath image_path devpath
-  mountpath=$PKGROOT/bootstrap/mnt/$hostname
-  mkdir -p "$mountpath"
+  local hostname=$1 image_path mount_path mount_pid
   image_path=$(get_image_path "$hostname")
-  devpath=$(losetup --show --find --partscan "$image_path")
-  # shellcheck disable=SC2064
-  trap "umount \"$mountpath/boot/efi\"; umount \"$mountpath\"; losetup --detach \"$devpath\"; exit 1" EXIT SIGINT SIGTERM
-  mount "${devpath}p2" "$mountpath"
-  mount "${devpath}p1" "$mountpath/boot/efi"
-  info "image %s mounted at %s, press <ENTER> to unmount" "${image_path#"$PKGROOT/"}" "${mountpath#"$PKGROOT/"}"
+  mount_path=$PKGROOT/bootstrap/mnt/$hostname
+  mkdir -p "$mount_path"
+  image_mounted "$image_path" "$mount_path" & mount_pid=$!
+  trap "kill -TERM $mount_pid; rmdir \"$mount_path\"" EXIT ERR SIGINT SIGTERM
+  info "image %s mounted at %s, press <ENTER> to unmount" "${image_path#"$PKGROOT/"}" "${mount_path#"$PKGROOT/"}"
   local _read
   read -r _read
-  umount "$mountpath/boot/efi" "$mountpath"
-  losetup --detach "$devpath"
-  trap "" EXIT
+  umount "$mount_path/boot/efi" "$mount_path"
 }
 
 boot_image() {
