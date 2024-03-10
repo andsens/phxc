@@ -14,6 +14,6 @@ $ROOTCMD mkdir "$userdir/.ssh"
 [[ -z $ADMIN_AUTH_KEYS ]] || ainsl -a "$userdir/.ssh/authorized_keys" "$ADMIN_AUTH_KEYS"
 $ROOTCMD chown -R "$ADMIN_USERNAME:$ADMIN_USERNAME" "$userdir/.ssh"
 $ROOTCMD chmod -R u=rwX,go=rX "$userdir/.ssh"
-[[ -z $ADMIN_NFS_HOME_SHARE ]] || ainsl -a "/etc/fstab" "${NFS_NODE_SERVER_IP}:${ADMIN_NFS_HOME_SHARE}    /home/${ADMIN_USERNAME}/    nfs    defaults    0 0"
+[[ -z $ADMIN_NFS_HOME_SHARE ]] || ainsl -a /etc/fstab "${NFS_NODE_SERVER_IP}:${ADMIN_NFS_HOME_SHARE}    /home/${ADMIN_USERNAME}/    nfs    defaults    0 0"
 
 exit $error
