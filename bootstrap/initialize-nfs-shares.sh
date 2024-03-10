@@ -40,21 +40,28 @@ declare -p "${prefix}__list_path" "${prefix}IMAGEPATH" "${prefix}SHAREPATH"
 done; }
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/andsens/docopt.sh/docopt-lib.sh"' initialize-nfs-shares.sh`
   eval "$(docopt "$@")"
-  local mount_path mount_pid
-  mount_path=$(mktemp -d)
-  trap "rmdir \"$mount_path\"" EXIT ERR
-  image_mounted "$IMAGEPATH" "$mount_path" & mount_pid=$!
-  trap "kill -TERM $mount_pid; rmdir \"$mount_path\"" EXIT ERR
-  local mount
-  # shellcheck disable=2154
+
+  if [[ $UID != 0 ]]; then
+    fatal "Run with sudo"
+  fi
+  : "${SUDO_UID:?"\$SUDO_UID is not set, run with sudo"}"
+
+  mount_image "$IMAGEPATH"
+  local mount src dest
+  # shellcheck disable=2031,2154
   while read -r -d $'\n' mount; do
-    if [[ -d "${SHAREPATH}${mount}" ]]; then
+    src=${MOUNT_PATH}${mount}
+    dest=${SHAREPATH}${mount}
+    if [[ -d "$dest" ]]; then
       verbose "Skipped '%s', already exists" "$mount"
+    elif [[ ! -d "$src" ]]; then
+      warning "'%s' does not exist on the image"
     else
       info "Copying '%s'" "$mount"
-      cp -ra "${mount_path}${mount}" "${SHAREPATH}${mount}"
+      mkdir -p "$(dirname "$dest")"
+      cp -ra "$src" "$dest"
     fi
-  done < <("${mount_path}${__list_path}")
+  done <"${MOUNT_PATH}${__list_path}"
 }
 
 main "$@"
