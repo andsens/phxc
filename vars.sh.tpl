@@ -22,6 +22,9 @@ APTPROXY=http://localhost:3142
 # Admin user setup for bootstrapped machines
 ADMIN_UID=3000
 ADMIN_USERNAME=admin
+ADMIN_USER_SHELL=/usr/bin/zsh
 # Generate with mkpasswd (from the `whois` package) and make sure to single quote
-ADMIN_PASSWORD='$y$j9T$Jc5SWLVAnPlpRXzw.B/4v0$aM2VvaRoLTjD9VVe1Gic.OFHkwLHrPReZCHw8h4xsk4'
+ADMIN_PASSWORD='$y$j9T$3vODFlaqbGjodgu9KgDcE0$qa4856yiPK5.vw/iX0FZbbrYdmwR0HzcVvuRkbopBRC'
+ADMIN_AUTH_KEYS='ssh-rsa ...
+ssh-rsa ...'
 ADMIN_NFS_HOME_SHARE=/mnt/cluster/home/...

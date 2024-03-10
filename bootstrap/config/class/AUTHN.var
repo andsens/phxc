@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# shellcheck disable=2016
+
+ADMIN_UID=${ADMIN_UID:-3000}
+ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
+ADMIN_USER_SHELL=${ADMIN_USER_SHELL:-/bin/bash}

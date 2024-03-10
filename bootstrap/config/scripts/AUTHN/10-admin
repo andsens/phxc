@@ -7,15 +7,13 @@ $ROOTCMD usermod -L root
 # enable sudo for admin
 ainsl /etc/sudoers "${ADMIN_USERNAME:?}   ALL = ALL"
 [ -f "${target:?}/usr/bin/sudo" ] || echo "WARNING. Package sudo is not installed"
-$ROOTCMD useradd -m -s /bin/bash -u "$ADMIN_UID" "$ADMIN_USERNAME"
+$ROOTCMD useradd -m -s ${ADMIN_USER_SHELL:?} -u "${ADMIN_UID:?}" "$ADMIN_USERNAME"
 $ROOTCMD usermod -p "${ADMIN_PASSWORD:?}" "$ADMIN_USERNAME"
 userdir=$($ROOTCMD getent passwd "$ADMIN_USERNAME" | cut -d: -f6 )
 $ROOTCMD mkdir "$userdir/.ssh"
-ainsl -a "$userdir/.ssh/authorized_keys" "$ADMIN_AUTH_KEYS"
+[[ -z $ADMIN_AUTH_KEYS ]] || ainsl -a "$userdir/.ssh/authorized_keys" "$ADMIN_AUTH_KEYS"
 $ROOTCMD chown -R "$ADMIN_USERNAME:$ADMIN_USERNAME" "$userdir/.ssh"
 $ROOTCMD chmod -R u=rwX,go=rX "$userdir/.ssh"
-if [[ -n $ADMIN_NFS_HOME_SHARE ]]; then
-  ainsl -a "/etc/fstab" ""${NFS_NODE_SERVER_IP}:${ADMIN_NFS_HOME_SHARE}    /home/${ADMIN_USERNAME}/    nfs    defaults    0 0""
-fi
+[[ -z $ADMIN_NFS_HOME_SHARE ]] || ainsl -a "/etc/fstab" "${NFS_NODE_SERVER_IP}:${ADMIN_NFS_HOME_SHARE}    /home/${ADMIN_USERNAME}/    nfs    defaults    0 0"
 
 exit $error
