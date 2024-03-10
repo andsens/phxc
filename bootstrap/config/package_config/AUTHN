@@ -1,4 +1,4 @@
 PACKAGES install-norec
 avahi-daemon
 openssh-client openssh-server
-sudo git jq
+sudo git jq zsh
