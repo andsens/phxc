@@ -1,0 +1,6 @@
+apiVersion: kpt.dev/v1alpha1
+kind: ResourceGroup
+metadata:
+  name: inventory-docker-registry
+  labels:
+    cli-utils.sigs.k8s.io/inventory-id: 43f0beda3cf0d87205cdde9e92e38973bf14e38c-1710021982572569593

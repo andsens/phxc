@@ -1,0 +1,23 @@
+server:
+  addr: ":5001"
+token:
+  issuer: Docker registry auth server
+  expiration: 900
+  certificate: /config/certs/tls.crt
+  key: /config/certs/tls.key
+# Create passwords with:
+# PASSWORD=$(randpass -l 32); HASH=$(htpasswd -nbB "" "$PASSWORD"); printf "%s\n%s\n" "${HASH/#:/}" "$PASSWORD"; unset HASH PASSWORD
+users:
+  # "": {} # anonymous access
+  kubernetes-ops-orbit-dev:
+    password: "$2y$05$C85q867oAtdRZ7LgY/6nFuOEz6UmTiYkBrKUVhRWK5/zoG9PrRqL."
+acl:
+- match:
+    account: /^anders$/
+  actions:
+  - "*"
+  comment: Anders can do everything
+- match:
+    account: /.*/
+  actions: [pull]
+  comment: Everybody can pull

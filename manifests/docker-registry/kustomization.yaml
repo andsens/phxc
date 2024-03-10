@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: docker-registry
+resources:
+- auth.yaml
+- distribution.yaml
+- namespace.yaml
+- Kptfile
+- resourcegroup.yaml
+configMapGenerator:
+- files:
+  - auth_config.yml=config/auth.yaml
+  name: auth-config
+- files:
+  - config.yml=config/distribution.yaml
+  name: distribution

@@ -1,0 +1,12 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: nas-nfs
+provisioner: nfs.csi.k8s.io
+parameters:
+  server: NFS_SERVER_IP
+  share: NFS_SHARE
+  subDir: NFS_SUBDIR
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+mountOptions: [nfsvers=4.1]

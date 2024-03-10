@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: kubernetes-secret-generator
+images:
+- name: quay.io/mittwald/kubernetes-secret-generator
+  newTag: v3.3.4
+resources:
+- https://github.com/mittwald/kubernetes-secret-generator/raw/v3.4.0/deploy/crds/secretgenerator.mittwald.de_basicauths_crd.yaml
+- https://github.com/mittwald/kubernetes-secret-generator/raw/v3.4.0/deploy/crds/secretgenerator.mittwald.de_sshkeypairs_crd.yaml
+- https://github.com/mittwald/kubernetes-secret-generator/raw/v3.4.0/deploy/crds/secretgenerator.mittwald.de_stringsecrets_crd.yaml
+- https://github.com/mittwald/kubernetes-secret-generator/raw/v3.4.0/deploy/operator.yaml
+- https://github.com/mittwald/kubernetes-secret-generator/raw/v3.4.0/deploy/role.yaml
+- https://github.com/mittwald/kubernetes-secret-generator/raw/v3.4.0/deploy/role_binding.yaml
+- https://github.com/mittwald/kubernetes-secret-generator/raw/v3.4.0/deploy/service_account.yaml
+- namespace.yaml
+- Kptfile
+- resourcegroup.yaml
+patches:
+- path: operator.yaml

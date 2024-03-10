@@ -1,0 +1,23 @@
+---
+apiVersion: cilium.io/v2
+kind: CiliumClusterwideNetworkPolicy
+metadata:
+  name: dns-egress
+spec:
+  endpointSelector:
+    matchLabels: {}
+  egress:
+  - toPorts:
+    - ports:
+      - port: dns-local
+        protocol: UDP
+      - port: dns-tcp-local
+        protocol: TCP
+      - port: dns
+        protocol: UDP
+      - port: dns-tcp
+        protocol: TCP
+    toServices:
+    - k8sService:
+        namespace: kube-system
+        serviceName: kube-dns

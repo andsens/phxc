@@ -1,0 +1,104 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: docker-auth
+  labels:
+    app.kubernetes.io/name: docker-registry
+    app.kubernetes.io/component: auth
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: docker-registry
+      app.kubernetes.io/component: auth
+  policyTypes: [Egress]
+  egress:
+  - ports:
+    - port: 6379
+    to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: docker-registry
+          app.kubernetes.io/component: redis
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: docker-auth
+  labels:
+    app.kubernetes.io/name: docker-registry
+    app.kubernetes.io/component: auth
+spec:
+  ports:
+  - name: web
+    port: 5001
+  selector:
+    app.kubernetes.io/name: docker-registry
+    app.kubernetes.io/component: auth
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: docker-auth
+  labels:
+    app.kubernetes.io/name: docker-registry
+    app.kubernetes.io/component: auth
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: docker-registry
+      app.kubernetes.io/component: auth
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: docker-registry
+        app.kubernetes.io/component: auth
+    spec:
+      containers:
+      - name: docker-auth
+        image: cesanta/docker_auth:1.12.0
+        args: ['-alsologtostderr', '/config/auth_config.yml']
+        securityContext:
+          readOnlyRootFilesystem: true
+        ports:
+        - name: web
+          containerPort: 5001
+        livenessProbe:
+          httpGet:
+            path: /
+            port: web
+          failureThreshold: 20
+          periodSeconds: 30
+          successThreshold: 1
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /
+            port: web
+          failureThreshold: 20
+          periodSeconds: 30
+          successThreshold: 1
+          timeoutSeconds: 5
+        resources:
+          requests:
+            cpu: 50m
+            memory: 32Mi
+          limits:
+            memory: 256Mi
+        volumeMounts:
+        - name: config
+          mountPath: /config/auth_config.yml
+          subPath: auth_config.yml
+        - name: jwt-cert
+          mountPath: /config/certs
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: config
+        configMap:
+          name: auth-config
+      - name: jwt-cert
+        secret:
+          secretName: distribution-jwt-cert
+      - name: tmp
+        emptyDir: {}
