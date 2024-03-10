@@ -8,6 +8,7 @@ PATH=$("$PKGROOT/.upkg/.bin/path_prepend" "$PKGROOT/.upkg/.bin")
 main() {
   source "$PKGROOT/.upkg/orbit-online/records.sh/records.sh"
   source "$PKGROOT/.upkg/orbit-online/collections.sh/collections.sh"
+  source "$PKGROOT/bootstrap/lib/mount.sh"
 
   DOC="initialize-nfs-shares.sh - Copy paths from a raw image based on a mount list
 Existing paths will not be overwritten
