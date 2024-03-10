@@ -48,7 +48,7 @@ declare -p "${prefix}HOSTNAME" "${prefix}create" "${prefix}mount" \
   if $create; then
     create_image "$HOSTNAME"
   elif $mount; then
-    mount_image "$HOSTNAME"
+    interactive_mount_image "$HOSTNAME"
   elif $boot; then
     boot_image "$HOSTNAME"
   fi
@@ -80,17 +80,15 @@ create_image() {
   chown -R "$SUDO_UID:$SUDO_UID" "$PKGROOT/bootstrap/cache"
 }
 
-mount_image() {
-  local hostname=$1 image_path mount_path mount_pid
+interactive_mount_image() {
+  local hostname=$1 image_path mount_path
   image_path=$(get_image_path "$hostname")
   mount_path=$PKGROOT/bootstrap/mnt/$hostname
   mkdir -p "$mount_path"
-  image_mounted "$image_path" "$mount_path" & mount_pid=$!
-  trap "kill -TERM $mount_pid; rmdir \"$mount_path\"" EXIT ERR SIGINT SIGTERM
+  mount_image "$image_path" "$mount_path"
   info "image %s mounted at %s, press <ENTER> to unmount" "${image_path#"$PKGROOT/"}" "${mount_path#"$PKGROOT/"}"
   local _read
-  read -r _read
-  umount "$mount_path/boot/efi" "$mount_path"
+  read -rs _read
 }
 
 boot_image() {
