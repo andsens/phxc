@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# shellcheck disable=2016,2034,2209
+
+# Fixed IP addresses for the link between the host and the K8S VM
+# Guide for setting up the bridge interface on TrueNAS:
+# https://www.truenas.com/community/threads/is-there-any-way-to-enable-create-an-virtual-switch.95269/page-2#post-674816
+# For a random IPv4 subnet use random.org 1-255 for the two groups after the "10."
+# For a random IPv6 subnet use https://unique-local-ipv6.com/
+TRUENAS_HOST_BRIDGE_CLIENT_IPs=(
+  "10.15.180.2/24"
+  "fd25:9998:d0e7:e351:1a01:be9:4d9a:157e/48"
+)
+NFS_NODE_SERVER_IP="fd25:9998:d0e7:e351:1a01:be9:4d9a:157d"
+NFS_NODE_SHARE=/mnt/cluster/storage/nodes
+NFS_CLUSTER_SERVER_IP="10.15.180.1"
+NFS_CLUSTER_SHARE=/mnt/cluster/storage/workloads
+NFS_CLUSTER_SUBDIR='${pvc.metadata.namespace}/${pvc.metadata.name}'
+
+TIMEZONE=Europe/Copenhagen
+APTPROXY=http://localhost:3142
+
+# Admin user setup for bootstrapped machines
+ADMIN_UID=3000
+ADMIN_USERNAME=admin
+# Generate with mkpasswd (from the `whois` package) and make sure to single quote
+ADMIN_PASSWORD='$y$j9T$Jc5SWLVAnPlpRXzw.B/4v0$aM2VvaRoLTjD9VVe1Gic.OFHkwLHrPReZCHw8h4xsk4'
+ADMIN_NFS_HOME_SHARE=/mnt/cluster/home/...

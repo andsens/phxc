@@ -2,6 +2,5 @@ PACKAGES install-norec
 zstd
 systemd-boot
 ${kernelname}
-avahi-daemon
-openssh-client openssh-server
-wget ca-certificates sudo bash jq git
+wget ca-certificates bash
+nfs-common

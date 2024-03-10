@@ -1,5 +1,3 @@
 #!/usr/bin/env bash
 # shellcheck disable=2034
-TIMEZONE=Europe/Copenhagen
-APTPROXY=http://localhost:3142
 FAI_RAMDISKS="${target:?}/var/lib/dpkg ${target:?}/var/cache ${target:?}/var/lib/apt/lists"
