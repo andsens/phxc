@@ -1,0 +1,19 @@
+---
+apiVersion: cilium.io/v2
+kind: CiliumClusterwideNetworkPolicy
+metadata:
+  name: cert-manager-solver
+spec:
+  endpointSelector:
+    matchLabels:
+      acme.cert-manager.io/http01-solver: "true"
+  ingress:
+  - toPorts:
+    - ports:
+      - port: "8089"
+        protocol: TCP
+    fromEndpoints:
+    - matchLabels:
+        # "k8s:io.kubernetes.pod.namespace": traefik
+        # app.kubernetes.io/name: traefik
+        # app.kubernetes.io/component: traefik

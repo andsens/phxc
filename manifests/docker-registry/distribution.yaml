@@ -1,0 +1,187 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: distribution
+  labels:
+    app.kubernetes.io/name: docker-registry
+    app.kubernetes.io/component: distribution
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: docker-registry
+      app.kubernetes.io/component: distribution
+  policyTypes:
+  - Ingress
+  - Egress
+  egress:
+  - ports:
+    - port: 6379
+    to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: redis
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: redis
+          app.kubernetes.io/component: redis
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: distribution
+  labels:
+    app.kubernetes.io/name: docker-registry
+    app.kubernetes.io/component: distribution
+spec:
+  selector:
+    app.kubernetes.io/name: docker-registry
+    app.kubernetes.io/component: distribution
+  ports:
+  - name: web
+    port: 5000
+  - name: metrics
+    port: 5001
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: distribution-jwt
+spec:
+  secretName: distribution-jwt-cert
+  commonName: distribution.local
+  issuerRef:
+    kind: ClusterIssuer
+    name: selfsigned
+  usages: [any]
+---
+apiVersion: secretgenerator.mittwald.de/v1alpha1
+kind: StringSecret
+metadata:
+  name: distribution-http-secret
+spec:
+  fields:
+  - fieldName: http-secret
+    encoding: hex
+    length: "16"
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: distribution
+  labels:
+    app.kubernetes.io/name: docker-registry
+    app.kubernetes.io/component: distribution
+spec:
+  replicas: 1
+  serviceName: distribution
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: docker-registry
+      app.kubernetes.io/component: distribution
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: docker-registry
+        app.kubernetes.io/component: distribution
+    spec:
+      containers:
+      - name: distribution
+        image: distribution/distribution:2.8.3
+        securityContext:
+          readOnlyRootFilesystem: true
+        env:
+        - name: REGISTRY_HTTP_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: distribution-http-secret
+              key: http-secret
+        ports:
+        - name: web
+          containerPort: 5000
+        - name: metrics
+          containerPort: 5001
+        livenessProbe:
+          httpGet:
+            path: /
+            port: web
+          failureThreshold: 20
+          periodSeconds: 30
+          successThreshold: 1
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /
+            port: web
+          failureThreshold: 20
+          periodSeconds: 30
+          successThreshold: 1
+          timeoutSeconds: 5
+        resources:
+          requests:
+            cpu: 100m
+            memory: 368Mi
+          limits:
+            memory: 768Mi
+        volumeMounts:
+        - name: config
+          mountPath: /etc/docker/registry
+        - name: jwt-cert
+          mountPath: /etc/docker/auth/jwt.crt
+          subPath: tls.crt
+        - name: data
+          mountPath: /var/lib/registry
+      securityContext:
+        fsGroup: 1000
+        runAsUser: 1000
+      volumes:
+      - name: config
+        configMap:
+          name: distribution
+      - name: jwt-cert
+        secret:
+          secretName: distribution-jwt-cert
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      storageClassName: nas-nfs
+      accessModes: [ReadWriteOnce]
+      resources:
+        requests:
+          storage: 5Gi
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: garbage-collection
+  labels:
+    app.kubernetes.io/name: docker-registry
+    app.kubernetes.io/component: distribution
+spec:
+  schedule: "30 4 * * *"
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: docker-registry
+            app.kubernetes.io/component: distribution
+        spec:
+          restartPolicy: Never
+          serviceAccountName: distribution
+          containers:
+          - name: distribution
+            image: distribution/distribution:2.8.3
+            args: [garbage-collect, /etc/docker/registry/config.yml]
+            securityContext:
+              readOnlyRootFilesystem: true
+            volumeMounts:
+            - name: config
+              mountPath: /etc/docker/registry
+          securityContext:
+            fsGroup: 1000
+            runAsUser: 1000
+          volumes:
+          - name: config
+            configMap:
+              name: distribution

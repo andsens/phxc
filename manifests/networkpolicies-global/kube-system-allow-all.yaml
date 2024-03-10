@@ -1,0 +1,14 @@
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  namespace: kube-system
+  name: allow-all
+spec:
+  endpointSelector: {}
+  ingress:
+  - fromEntities:
+    - all
+  egress:
+  - toEntities:
+    - all

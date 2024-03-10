@@ -1,0 +1,6 @@
+apiVersion: kpt.dev/v1alpha1
+kind: ResourceGroup
+metadata:
+  name: inventory-kubernetes-secret-generator
+  labels:
+    cli-utils.sigs.k8s.io/inventory-id: f8015fb85f4bc6fd946d252cfa85ff4b845270b4-1710059624886145383
