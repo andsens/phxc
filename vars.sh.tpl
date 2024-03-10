@@ -28,3 +28,7 @@ ADMIN_PASSWORD='$y$j9T$3vODFlaqbGjodgu9KgDcE0$qa4856yiPK5.vw/iX0FZbbrYdmwR0HzcVv
 ADMIN_AUTH_KEYS='ssh-rsa ...
 ssh-rsa ...'
 ADMIN_NFS_HOME_SHARE=/mnt/cluster/home/...
+
+declare -A MACHINE_IDS
+# Generate with dbus-uuidgen
+MACHINE_IDS['k8s-nas']='2a178ed534ac2a67dbc8049d65eddc45'
