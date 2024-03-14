@@ -1,0 +1,10 @@
+[Unit]
+Description=Expand the mounted var volume
+Before=var.mount
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=resize2fs /dev/vdb

@@ -1,8 +1,0 @@
-#!/usr/bin/env bash
-
-error=0; trap 'error=$(($?>$error?$?:$error))' ERR # save maximum error code
-
-ainsl -a /etc/fstab "${NFS_NODE_SERVER_IP:?}:${NFS_NODE_SHARE:?}/${HOSTNAME}/var    /var    nfs    defaults    0 0"
-ainsl -a /var/lib/fai/nfs-mounts "/var"
-
-exit $error

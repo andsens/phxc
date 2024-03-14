@@ -4,3 +4,4 @@ systemd-boot
 ${kernelname}
 wget ca-certificates bash
 nfs-common
+libnss-mdns
