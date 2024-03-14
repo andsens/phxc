@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-
-error=0; trap 'error=$(($?>$error?$?:$error))' ERR # save maximum error code
-
-ainsl -a /etc/fstab ""
-ainsl -a /etc/fstab "# /tmp relies on rw root, mount memory-backed tmpfs instead"
-ainsl -a /etc/fstab "tmpfs   /tmp         tmpfs   rw,nodev,nosuid          0  0"
-
-exit $error

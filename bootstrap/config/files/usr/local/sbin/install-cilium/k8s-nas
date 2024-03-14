@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-if ! kubectl get -n kube-system deployment cilium-operator -o name 2>dev/null; then
+if ! kubectl get -n kube-system deployment cilium-operator -o name 2>/dev/null; then
   /usr/local/bin/cilium install --version=1.15.1 \
     --set=ipam.operator.clusterPoolIPv4PodCIDRList="10.42.0.0/16" \
     --set=envoy.enabled=false \

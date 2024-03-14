@@ -1,7 +1,0 @@
-#!/usr/bin/env bash
-
-error=0; trap 'error=$(($?>$error?$?:$error))' ERR # save maximum error code
-
-sed -i 's/rw,discard,/ro,discard,/g' "${target:?}/etc/fstab"
-
-exit $error

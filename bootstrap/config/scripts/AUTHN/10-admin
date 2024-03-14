@@ -14,6 +14,22 @@ $ROOTCMD mkdir "$userdir/.ssh"
 [[ -z $ADMIN_AUTH_KEYS ]] || ainsl -a "$userdir/.ssh/authorized_keys" "$ADMIN_AUTH_KEYS"
 $ROOTCMD chown -R "$ADMIN_USERNAME:$ADMIN_USERNAME" "$userdir/.ssh"
 $ROOTCMD chmod -R u=rwX,go=rX "$userdir/.ssh"
-[[ -z $ADMIN_NFS_HOME_SHARE ]] || ainsl -a /etc/fstab "${NFS_NODE_SERVER_IP}:${ADMIN_NFS_HOME_SHARE}    /home/${ADMIN_USERNAME}/    nfs    defaults    0 0"
+if [[ -n $ADMIN_NFS_HOME_SHARE ]]; then
+  systemd_unitname=$(systemd-escape -p --suffix=mount "/home/${ADMIN_USERNAME}")
+  cat >"${target:?}/etc/systemd/system/${systemd_unitname}" <<EOF
+[Unit]
+Description=Mount /home/${ADMIN_USERNAME}
+After=network-online.target
+
+[Install]
+WantedBy=multi-user.target
+
+[Mount]
+What=${NFS_NODE_SERVER_IP}:${ADMIN_NFS_HOME_SHARE}
+Where=/home/${ADMIN_USERNAME}
+Type=nfs
+EOF
+  $ROOTCMD systemctl enable "${systemd_unitname}"
+fi
 
 exit $error
