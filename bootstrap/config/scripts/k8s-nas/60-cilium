@@ -13,8 +13,8 @@ CLI_ARCH=amd64
   tar xzvfC cilium-linux-${CLI_ARCH}.tar.gz "${target:?}/usr/local/bin"
   rm cilium-linux-${CLI_ARCH}.tar.gz{,.sha256sum}
 )
-fcopy -m root,root,0755 /usr/local/sbin/install-cilium
-fcopy -M /etc/systemd/system/install-cilium.service
+fcopy -Sm root,root,0755 /usr/local/sbin/install-cilium
+fcopy -SM /etc/systemd/system/install-cilium.service
 $ROOTCMD systemctl enable install-cilium.service
 
 exit $error

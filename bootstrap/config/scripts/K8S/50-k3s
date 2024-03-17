@@ -2,6 +2,7 @@
 
 error=0; trap 'error=$(($?>$error?$?:$error))' ERR # save maximum error code
 
+# shellcheck disable=2054
 k3s_exec_flags=(
   --flannel-backend=none
   --egress-selector-mode=disabled
@@ -11,6 +12,10 @@ k3s_exec_flags=(
   --disable-network-policy
   --disable-kube-proxy
   --disable-helm-controller
+  "--kube-controller-manager-arg=node-cidr-mask-size-ipv4=${CLUSTER_IP4_CIDR##*/}"
+  "--kube-controller-manager-arg=node-cidr-mask-size-ipv6=${CLUSTER_IP6_CIDR##*/}"
+  "--cluster-cidr=${CLUSTER_IP4_CIDR},${CLUSTER_IP6_CIDR}"
+  "--service-cidr=${CLUSTER_IP4_SERVICE_CIDR},${CLUSTER_IP6_SERVICE_CIDR}"
 )
 
 curl -sfL https://get.k3s.io | \
