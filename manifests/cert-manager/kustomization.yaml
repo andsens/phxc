@@ -6,3 +6,5 @@ resources:
 - selfsigned.yaml
 - Kptfile
 - resourcegroup.yaml
+patches:
+- path: overrides.yaml

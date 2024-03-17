@@ -1,0 +1,33 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: cert-manager
+  name: cert-manager
+spec:
+  template:
+    metadata:
+      labels:
+        cluster.local/allow-apiserver-egress: "true"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: cert-manager
+  name: cert-manager-cainjector
+spec:
+  template:
+    metadata:
+      labels:
+        cluster.local/allow-apiserver-egress: "true"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: cert-manager
+  name: cert-manager-webhook
+spec:
+  template:
+    metadata:
+      labels:
+        cluster.local/allow-apiserver-egress: "true"
