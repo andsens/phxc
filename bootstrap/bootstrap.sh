@@ -113,7 +113,6 @@ create_var_image() {
   mkdir -p "$MOUNT_PATH/lib-rancher"
   mkdir -p "$MOUNT_PATH/lib-kubelet"
   mkdir -p "$MOUNT_PATH/etc-rancher"
-  mkdir -p "$MOUNT_PATH/log-pods"
 }
 
 interactive_mount_image() {
