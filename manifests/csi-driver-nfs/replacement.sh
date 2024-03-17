@@ -4,8 +4,11 @@ set -eo pipefail; shopt -s inherit_errexit
 until [[ -e $PKGROOT/upkg.json || $PKGROOT = '/' ]]; do PKGROOT=$(dirname "${PKGROOT:-$(realpath "${BASH_SOURCE[0]}")}"); done
 source "$PKGROOT/.upkg/orbit-online/records.sh/records.sh"
 source "$PKGROOT/manifests/lib/common.sh"
+source "$PKGROOT/manifests/lib/generate-replacement.sh"
+source "$PKGROOT/vars.sh"
 
-MANIFEST_ROOT=$(dirname "${BASH_SOURCE[0]}")
-"$MANIFEST_ROOT/replacement.sh" >"$MANIFEST_ROOT/replacement.yaml"
-# shellcheck disable=2031
-kustomize build "$MANIFEST_ROOT" | kpt live apply --context "$CLUSTER_CONTEXT" - "$@"
+generate_replacement nas-replacement \
+  NFS_CLUSTER_SERVER_IP \
+  NFS_CLUSTER_SERVER_IP_CIDR \
+  NFS_CLUSTER_SHARE \
+  NFS_CLUSTER_SUBDIR

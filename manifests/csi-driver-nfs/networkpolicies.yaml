@@ -1,0 +1,34 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: csi-nfs
+spec:
+  podSelector:
+    matchExpressions:
+    - {key: app, operator: In, values: [csi-nfs-node, csi-nfs-controller]}
+  policyTypes: [Ingress, Egress]
+  ingress:
+  - from:
+    - ipBlock:
+        cidr: NFS_CLUSTER_SERVER_IP_CIDR
+    ports:
+    - port: 1110
+      protocol: UDP
+  egress:
+  - to:
+    - ipBlock:
+        cidr: NFS_CLUSTER_SERVER_IP_CIDR
+    ports:
+    - port: 111
+      protocol: TCP
+    - port: 111
+      protocol: UDP
+    - port: 2049
+      protocol: TCP
+    - port: 2049
+      protocol: UDP
+    - port: 4045
+      protocol: TCP
+    - port: 4045
+      protocol: UDP
