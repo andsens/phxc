@@ -1,16 +1,31 @@
 #!/usr/bin/env bash
 
-if ! kubectl get -n kube-system deployment cilium-operator -o name 2>/dev/null; then
-  /usr/local/bin/cilium install --version=1.15.1 \
-    --set=ipam.operator.clusterPoolIPv4PodCIDRList="10.42.0.0/16" \
+notified=false
+max_wait=300
+wait_left=$max_wait
+while ! kubectl get -n kube-system deployment coredns -o name >/dev/null 2>&1; do
+  $notified || printf "install-cilium: k3s is not ready yet...\n" >&2
+  notified=true
+  sleep 1
+  if ((--wait_left <= 0)); then
+    printf "install-cilium: Timed out after %d seconds for cilium to become ready.\n" "$((max_wait / 60))" >&2
+    exit 1
+  fi
+done
+if ! kubectl get -n kube-system deployment cilium-operator -o name >/dev/null 2>&1; then
+  printf "install-cilium: Cilium is not installed, installing now.\n" >&2
+  exec /usr/local/bin/cilium install --version=1.15.1 \
+    --set=ipam.operator.clusterPoolIPv4PodCIDRList="{%CLUSTER_IP4_CIDR%}" \
+    --set=ipam.operator.clusterPoolIPv6PodCIDRList="{%CLUSTER_IP6_CIDR%}" \
+    --set=ipv6.enabled=true \
     --set=envoy.enabled=false \
     --set=hubble.enabled=false \
     --set=hubble.relay.gops.enabled=false \
     --set=kubeProxyReplacement=true \
     --set=encryption.enabled=true \
     --set=encryption.type=wireguard \
-    --set=ipv6.enabled=true \
     --set=socketLB.enabled=true \
-    --set=k8sServiceHost=127.0.0.1 \
-    --set=k8sServicePort=6443
+    --set=kubeConfigPath=/etc/rancher/k3s/k3s.yaml
+else
+  printf "install-cilium: Cilium already installed, nothing to do.\n" >&2
 fi

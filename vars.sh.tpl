@@ -32,3 +32,11 @@ ADMIN_NFS_HOME_SHARE=/mnt/cluster/home/...
 declare -A MACHINE_IDS
 # Generate with dbus-uuidgen
 MACHINE_IDS['k8s-nas']='2a178ed534ac2a67dbc8049d65eddc45'
+
+# The name of the context for the cluster
+CLUSTER_CONTEXT=k3s
+# For a random IPv6 subnet use https://unique-local-ipv6.com/
+CLUSTER_IP4_CIDR="10.42.0.0/16"
+CLUSTER_IP6_CIDR="fd73:9867:6b4d:42::/56"
+CLUSTER_IP4_SERVICE_CIDR="10.43.0.0/16"
+CLUSTER_IP6_SERVICE_CIDR="fd73:9867:6b4d:43::/112"
