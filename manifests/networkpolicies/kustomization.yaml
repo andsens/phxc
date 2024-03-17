@@ -1,0 +1,10 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- apiserver.yaml
+- cert-manager-solver.yaml
+- database-jump-host.yaml
+- dns.yaml
+- internet-egress.yaml
+- Kptfile
+- resourcegroup.yaml
