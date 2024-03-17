@@ -9,6 +9,7 @@ ainsl /etc/sudoers "${ADMIN_USERNAME:?}   ALL = ALL"
 [ -f "${target:?}/usr/bin/sudo" ] || echo "WARNING. Package sudo is not installed"
 $ROOTCMD useradd -m -s ${ADMIN_USER_SHELL:?} -u "${ADMIN_UID:?}" "$ADMIN_USERNAME"
 $ROOTCMD usermod -p "${ADMIN_PASSWORD:?}" "$ADMIN_USERNAME"
+$ROOTCMD adduser admin adm
 userdir=$($ROOTCMD getent passwd "$ADMIN_USERNAME" | cut -d: -f6 )
 $ROOTCMD mkdir "$userdir/.ssh"
 [[ -z $ADMIN_AUTH_KEYS ]] || ainsl -a "$userdir/.ssh/authorized_keys" "$ADMIN_AUTH_KEYS"
