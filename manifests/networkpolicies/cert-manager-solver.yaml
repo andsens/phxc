@@ -14,6 +14,6 @@ spec:
         protocol: TCP
     fromEndpoints:
     - matchLabels:
-        # "k8s:io.kubernetes.pod.namespace": traefik
-        # app.kubernetes.io/name: traefik
-        # app.kubernetes.io/component: traefik
+        "k8s:io.kubernetes.pod.namespace": traefik
+        app.kubernetes.io/name: traefik
+        app.kubernetes.io/component: traefik
