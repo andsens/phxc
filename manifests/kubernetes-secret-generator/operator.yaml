@@ -5,6 +5,9 @@ metadata:
   name: kubernetes-secret-generator
 spec:
   template:
+    metadata:
+      labels:
+        cluster.local/allow-apiserver-egress: "true"
     spec:
       containers:
       - name: kubernetes-secret-generator
