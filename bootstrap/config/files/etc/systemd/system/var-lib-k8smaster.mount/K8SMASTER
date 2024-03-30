@@ -1,5 +1,5 @@
 [Unit]
-Description=Mount /var/lib/k8s-nas
+Description=Mount /var/lib/k8s-master
 Before=k3s.service
 
 [Install]
@@ -7,6 +7,6 @@ WantedBy=multi-user.target
 
 [Mount]
 What=/dev/vdb
-Where=/var/lib/k8s-nas
+Where=/var/lib/k8s-master
 Type=ext4
 Options=defaults

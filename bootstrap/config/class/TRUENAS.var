@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# shellcheck source-path=../../../
+# shellcheck disable=2034,2154
+readarray -t -d, addresses <<<"${TRUENAS_HOST_BRIDGE_CLIENT_IPs["$hostname"]}"
+NIC_HOST_ADDRESSES="$(printf "Address=%s\n" "${addresses[@]}")"

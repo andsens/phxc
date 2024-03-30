@@ -8,8 +8,10 @@
 echo "BASE DEBIAN AUTHN"
 
 case $HOSTNAME in
+  bootstrapper)
+    echo "TRUENAS KVM AMD64 BOOTSTRAPPER" ;;
   k8s-nas)
-    echo "KVM AMD64 K8S" ;;
+    echo "TRUENAS KVM AMD64 K8S K8SMASTER" ;;
   *)
     printf "ERROR: Unknown hostname '%s'" "$HOSTNAME" >&2
     exit 1
