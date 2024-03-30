@@ -30,7 +30,9 @@ configMapGenerator:
   options:
     labels:
       app.kubernetes.io/name: step-ca
-- files: []
+- files:
+  - config/root_ca.tpl
+  - config/intermediate_ca.tpl
   name: step-ca-templates
   options:
     labels:
