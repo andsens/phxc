@@ -1,4 +1,0 @@
-#!/usr/bin/env bash
-# shellcheck source-path=../../../
-# shellcheck disable=2034,2154
-NIC_HOST_ADDRESSES="$(printf "Address=%s\n" "${TRUENAS_HOST_BRIDGE_CLIENT_IPs[@]}")"
