@@ -61,8 +61,7 @@ metadata:
 spec:
   fields:
   - fieldName: http-secret
-    encoding: hex
-    length: "16"
+    length: "32"
 ---
 apiVersion: apps/v1
 kind: StatefulSet
