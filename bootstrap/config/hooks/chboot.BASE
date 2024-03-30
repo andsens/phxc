@@ -7,8 +7,9 @@ skiptask chboot
 # shellcheck source=../../lib/disk_var.sh
 source "$LOGDIR/disk_var.sh"
 # Running here to run *after* "finish" task
-devpath=$(losetup --show --find --partscan "${IMAGE_PATH:?}")
-zerofree "${BOOT_PARTITION}"
-losetup --detach "$devpath"
+if devpath=$(losetup --show --find --partscan "${IMAGE_PATH:?}"); then
+  zerofree "${BOOT_PARTITION}"
+  losetup --detach "$devpath"
+fi
 
 exit $error
