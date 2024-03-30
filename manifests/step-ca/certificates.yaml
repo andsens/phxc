@@ -104,10 +104,16 @@ spec:
           initialDelaySeconds: 5
         volumeMounts:
         - name: root-cert
-          mountPath: /home/step/certs/root
+          mountPath: /home/step/certs/root_ca.crt
+          subPath: tls.crt
           readOnly: true
         - name: intermediate-cert
-          mountPath: /home/step/certs/intermediate
+          mountPath: /home/step/certs/intermediate_ca.crt
+          subPath: tls.crt
+          readOnly: true
+        - name: intermediate-cert
+          mountPath: /home/step/certs/intermediate_ca_key
+          subPath: tls.key
           readOnly: true
         - name: config-rw
           mountPath: /home/step/config
