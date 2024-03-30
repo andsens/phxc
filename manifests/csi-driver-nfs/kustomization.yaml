@@ -8,13 +8,13 @@ resources:
 - https://github.com/kubernetes-csi/csi-driver-nfs/raw/master/deploy/v4.6.0/crd-csi-snapshot.yaml
 - nas.yaml
 - networkpolicies.yaml
-- replacement.yaml
+- cluster-vars.yaml
 - Kptfile
 - resourcegroup.yaml
 replacements:
 - source:
     kind: ConfigMap
-    name: nas-replacement
+    name: cluster-vars
     fieldPath: data.NFS_CLUSTER_SERVER_IP
   targets:
   - select:
@@ -25,7 +25,7 @@ replacements:
     - parameters.server
 - source:
     kind: ConfigMap
-    name: nas-replacement
+    name: cluster-vars
     fieldPath: data.NFS_CLUSTER_SHARE
   targets:
   - select:
@@ -36,7 +36,7 @@ replacements:
     - parameters.share
 - source:
     kind: ConfigMap
-    name: nas-replacement
+    name: cluster-vars
     fieldPath: data.NFS_CLUSTER_SUBDIR
   targets:
   - select:
@@ -47,7 +47,7 @@ replacements:
     - parameters.subDir
 - source:
     kind: ConfigMap
-    name: nas-replacement
+    name: cluster-vars
     fieldPath: data.NFS_CLUSTER_SERVER_IP_CIDR
   targets:
   - select:
