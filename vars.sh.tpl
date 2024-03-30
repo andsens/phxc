@@ -33,6 +33,10 @@ declare -A MACHINE_IDS
 # Generate with dbus-uuidgen
 MACHINE_IDS['k8s-nas']='2a178ed534ac2a67dbc8049d65eddc45'
 
+# Name of the cluster, used in various contexts to identify it outwardly
+# Examples:
+# "$CLUSTER_NAME Root" and "$CLUSTER_NAME Intermediate" for step-ca certificate CN
+CLUSTER_NAME=Home
 # The name of the context for the cluster
 CLUSTER_CONTEXT=k3s
 # For a random IPv6 subnet use https://unique-local-ipv6.com/

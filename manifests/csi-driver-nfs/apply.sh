@@ -6,6 +6,5 @@ source "$PKGROOT/.upkg/orbit-online/records.sh/records.sh"
 source "$PKGROOT/manifests/lib/common.sh"
 
 MANIFEST_ROOT=$(dirname "${BASH_SOURCE[0]}")
-"$MANIFEST_ROOT/replacement.sh" >"$MANIFEST_ROOT/replacement.yaml"
-# shellcheck disable=2031
+"$PKGROOT/manifests/lib/generate-cluster-vars-cm.sh" >"$MANIFEST_ROOT/cluster-vars.yaml"
 kustomize build "$MANIFEST_ROOT" | kpt live apply --context "$CLUSTER_CONTEXT" - "$@"
