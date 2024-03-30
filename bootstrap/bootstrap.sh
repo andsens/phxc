@@ -12,126 +12,90 @@ main() {
 
   DOC="bootstrap.sh - Bootstrap k3s cluster images
 Usage:
-  bootstrap create [-d=DISK] HOSTNAME
-  bootstrap mount [-d=DISK] HOSTNAME
-  bootstrap boot HOSTNAME
-
-Options:
-  -d --disk=DISK  Disk type to create (root or var) [default: root]
+  bootstrap create HOSTNAME [IMAGESIZE]
+  bootstrap create-var HOSTNAME
+  bootstrap mount IMAGEPATH
+  bootstrap boot IMAGEPATH
 "
 # docopt parser below, refresh this parser with `docopt.sh bootstrap.sh`
 # shellcheck disable=2016,1090,1091,2034
 docopt() { source "$PKGROOT/.upkg/andsens/docopt.sh/docopt-lib.sh" '1.0.0' || {
 ret=$?; printf -- "exit %d\n" "$ret"; exit "$ret"; }; set -e
-trimmed_doc=${DOC:0:229}; usage=${DOC:44:107}; digest=f174b; shorts=(-d)
-longs=(--disk); argcounts=(1); node_0(){ value __disk 0; }; node_1(){
-value HOSTNAME a; }; node_2(){ _command create; }; node_3(){ _command mount; }
-node_4(){ _command boot; }; node_5(){ optional 0; }; node_6(){ required 2 5 1; }
-node_7(){ required 3 5 1; }; node_8(){ required 4 1; }; node_9(){ either 6 7 8
-}; node_10(){ required 9; }; cat <<<' docopt_exit() {
-[[ -n $1 ]] && printf "%s\n" "$1" >&2; printf "%s\n" "${DOC:44:107}" >&2; exit 1
-}'; unset var___disk var_HOSTNAME var_create var_mount var_boot; parse 10 "$@"
-local prefix=${DOCOPT_PREFIX:-''}; unset "${prefix}__disk" "${prefix}HOSTNAME" \
-"${prefix}create" "${prefix}mount" "${prefix}boot"
-eval "${prefix}"'__disk=${var___disk:-root}'
+trimmed_doc=${DOC:0:177}; usage=${DOC:44:133}; digest=9f0ce; shorts=(); longs=()
+argcounts=(); node_0(){ value HOSTNAME a; }; node_1(){ value IMAGESIZE a; }
+node_2(){ value IMAGEPATH a; }; node_3(){ _command create; }; node_4(){
+_command create_var create-var; }; node_5(){ _command mount; }; node_6(){
+_command boot; }; node_7(){ optional 1; }; node_8(){ required 3 0 7; }
+node_9(){ required 4 0; }; node_10(){ required 5 2; }; node_11(){ required 6 2
+}; node_12(){ either 8 9 10 11; }; node_13(){ required 12; }
+cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2
+printf "%s\n" "${DOC:44:133}" >&2; exit 1; }'; unset var_HOSTNAME \
+var_IMAGESIZE var_IMAGEPATH var_create var_create_var var_mount var_boot
+parse 13 "$@"; local prefix=${DOCOPT_PREFIX:-''}; unset "${prefix}HOSTNAME" \
+"${prefix}IMAGESIZE" "${prefix}IMAGEPATH" "${prefix}create" \
+"${prefix}create_var" "${prefix}mount" "${prefix}boot"
 eval "${prefix}"'HOSTNAME=${var_HOSTNAME:-}'
+eval "${prefix}"'IMAGESIZE=${var_IMAGESIZE:-}'
+eval "${prefix}"'IMAGEPATH=${var_IMAGEPATH:-}'
 eval "${prefix}"'create=${var_create:-false}'
+eval "${prefix}"'create_var=${var_create_var:-false}'
 eval "${prefix}"'mount=${var_mount:-false}'
 eval "${prefix}"'boot=${var_boot:-false}'; local docopt_i=1
 [[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2; for ((;docopt_i>0;docopt_i--)); do
-declare -p "${prefix}__disk" "${prefix}HOSTNAME" "${prefix}create" \
-"${prefix}mount" "${prefix}boot"; done; }
+declare -p "${prefix}HOSTNAME" "${prefix}IMAGESIZE" "${prefix}IMAGEPATH" \
+"${prefix}create" "${prefix}create_var" "${prefix}mount" "${prefix}boot"; done
+}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/andsens/docopt.sh/docopt-lib.sh"' bootstrap.sh`
   eval "$(docopt "$@")"
 
-  if [[ $UID != 0 ]]; then
-    fatal "Run with sudo"
-  fi
-  : "${SUDO_UID:?"\$SUDO_UID is not set, run with sudo"}"
-
-  sudo -u "#$SUDO_UID" mkdir -p "$PKGROOT/bootstrap/images"
   # shellcheck disable=SC2154
   if $create; then
-    create_image "$HOSTNAME" "$__disk"
+    local run_env=env image_path="$PKGROOT/bootstrap/images/$HOSTNAME.raw"
+    [[ $UID = 0 ]] || run_env="sudo env"
+    mkdir -p "$PKGROOT/bootstrap/images" "$PKGROOT/bootstrap/logs"
+    rm -f "$PKGROOT/bootstrap/logs/$HOSTNAME"
+    ln -s "/var/log/fai/$HOSTNAME/last" "$PKGROOT/bootstrap/logs/$HOSTNAME"
+    # shellcheck disable=SC2086
+    $run_env - \
+      "PATH=$PATH" \
+      "PKGROOT=$PKGROOT" \
+      fai-diskimage --cspace "$PKGROOT/bootstrap/config" --new --size "${IMAGESIZE:-1.5G}" --hostname "$HOSTNAME" "$image_path"
+    if [[ $UID != 0 ]]; then
+      sudo chown "$UID:$UID" "$image_path"
+      sudo chown -R "$UID:$UID" "$PKGROOT/bootstrap/cache" "$image_path"
+    fi
+  elif $create_var; then
+    local mkdir=mkdir image_path="$PKGROOT/bootstrap/images/$HOSTNAME.var.raw"
+    if [[ $UID != 0 ]]; then
+      mkdir="sudo mkdir"
+    fi
+    rm -f "$image_path"
+    truncate --size=5M "$image_path"
+    mkfs "$image_path"
+    mount_image "$image_path"
+    case $HOSTNAME in
+      k8s-nas)
+        $mkdir -p "$MOUNT_PATH/lib-rancher"
+        $mkdir -p "$MOUNT_PATH/lib-kubelet"
+        ;;
+      bootstrapper)
+        $mkdir -p "$MOUNT_PATH/cache"
+        ;;
+    esac
   elif $mount; then
-    interactive_mount_image "$HOSTNAME" "$__disk"
+    local mount_path
+    mount_path=$PKGROOT/bootstrap/mnt/$(basename "$IMAGEPATH" .raw)
+    mkdir -p "$mount_path"
+    mount_image "$IMAGEPATH" "$mount_path"
+    info "image %s mounted at %s, press <ENTER> to unmount" "${IMAGEPATH#"$PKGROOT/"}" "${mount_path#"$PKGROOT/"}"
+    local _read
+    read -rs _read
   elif $boot; then
-    boot_image "$HOSTNAME"
+    kvm -bios /usr/share/ovmf/OVMF.fd \
+      -k en-us -smp 2 -cpu host -m 2000 -name "$(basename "$IMAGEPATH" .raw)" \
+      -boot order=c -device virtio-net-pci,netdev=net0 -netdev user,id=net0 \
+      -drive "file=$IMAGEPATH,if=none,format=raw,id=nvme1" -device nvme,serial=SN123450001,drive=nvme1
   fi
-}
-
-get_image_path() {
-  local hostname=$1 disk=$2
-  if [[ $disk = root ]]; then
-    printf "%s/bootstrap/images/%s.raw" "$PKGROOT" "$hostname"
-  else
-    printf "%s/bootstrap/images/%s.%s.raw" "$PKGROOT" "$hostname" "$disk"
-  fi
-}
-
-get_image_size() {
-  local hostname=$1 disk=$2
-  case "$hostname" in
-    k8s-nas)
-      case "$disk" in
-        root) printf "1.5G" ;;
-        var) printf "5M" ;;
-      esac
-      ;;
-    *) fatal "Unknown hostname: '%s'" "$hostname" ;;
-  esac
-}
-
-create_image() {
-  local hostname=$1 disk=$2
-  case "$disk" in
-    root) bootstrap_os "$hostname" ;;
-    var) create_var_image "$hostname" ;;
-  esac
-}
-
-bootstrap_os() {
-  local hostname=$1 image_path
-  image_path=$(get_image_path "$hostname" root)
-  mkdir -p "$PKGROOT/bootstrap/logs"
-  ln -s "/var/log/fai/$hostname/last" "$PKGROOT/bootstrap/logs/$hostname"
-  env - \
-    "PATH=$PATH" \
-    "PKGROOT=$PKGROOT" \
-    fai-diskimage --cspace "$PKGROOT/bootstrap/config" --new --size "$(get_image_size "$hostname" root)" --hostname "$hostname" "$image_path"
-  chown "$SUDO_UID:$SUDO_UID" "$image_path"
-  chown -R "$SUDO_UID:$SUDO_UID" "$PKGROOT/bootstrap/cache" "$image_path"
-}
-
-create_var_image() {
-  local hostname=$1 image_path
-  image_path="$(get_image_path "$hostname" "var")"
-  truncate --size="$(get_image_size "$hostname" var)" "$image_path"
-  chown "$SUDO_UID:$SUDO_UID" "$image_path"
-  mkfs.ext4 "$image_path"
-  mount_image "$image_path" var
-  mkdir -p "$MOUNT_PATH/lib-rancher"
-  mkdir -p "$MOUNT_PATH/lib-kubelet"
-}
-
-interactive_mount_image() {
-  local hostname=$1 disk=$2 image_path mount_path
-  image_path=$(get_image_path "$hostname" "$disk")
-  mount_path=$PKGROOT/bootstrap/mnt/$hostname
-  mkdir -p "$mount_path"
-  mount_image "$image_path" "$disk" "$mount_path"
-  info "image %s mounted at %s, press <ENTER> to unmount" "${image_path#"$PKGROOT/"}" "${mount_path#"$PKGROOT/"}"
-  local _read
-  read -rs _read
-}
-
-boot_image() {
-  local hostname=$1 image_path
-  image_path=$(get_image_path "$hostname" root)
-  kvm -bios /usr/share/ovmf/OVMF.fd \
-    -k en-us -smp 2 -cpu host -m 2000 -name "$hostname" \
-    -boot order=c -device virtio-net-pci,netdev=net0 -netdev user,id=net0 \
-    -drive "file=$image_path,if=none,format=raw,id=nvme1" -device nvme,serial=SN123450001,drive=nvme1
 }
 
 main "$@"
