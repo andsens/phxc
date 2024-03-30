@@ -9,6 +9,7 @@ spec:
     metadata:
       labels:
         cluster.local/allow-apiserver-egress: "true"
+        cluster.local/allow-internet-egress: "true"
 ---
 apiVersion: apps/v1
 kind: Deployment

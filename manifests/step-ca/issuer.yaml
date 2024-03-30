@@ -26,34 +26,13 @@ spec:
         app.kubernetes.io/name: step-ca
         app.kubernetes.io/component: certificates
 ---
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
+apiVersion: v1
+kind: ServiceAccount
 metadata:
-  name: step-issuer-approver-rolebinding
+  name: step-issuer
   labels:
     app.kubernetes.io/name: step-ca
     app.kubernetes.io/component: issuer
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: step-issuer-approver-role
-subjects:
-- kind: ServiceAccount
-  namespace: kube-system
-  name: cert-manager
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: step-issuer-approver-role
-  labels:
-    app.kubernetes.io/name: step-ca
-    app.kubernetes.io/component: issuer
-rules:
-- apiGroups: [cert-manager.io]
-  resourceNames: [stepissuers.certmanager.step.sm/*, stepclusterissuers.certmanager.step.sm/*]
-  resources: [signers]
-  verbs: [approve]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -68,7 +47,7 @@ roleRef:
   name: step-issuer-leader-election-role
 subjects:
 - kind: ServiceAccount
-  name: default
+  name: step-issuer
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -104,7 +83,24 @@ roleRef:
   name: step-issuer-manager-role
 subjects:
 - kind: ServiceAccount
-  name: default
+  name: step-issuer
+  namespace: step-ca
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: step-issuer-proxy-rolebinding
+  labels:
+    app.kubernetes.io/name: step-ca
+    app.kubernetes.io/component: issuer
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: step-issuer-proxy-role
+subjects:
+- kind: ServiceAccount
+  name: step-issuer
+  namespace: step-ca
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -142,9 +138,24 @@ rules:
   resourceNames: [stepissuers.certmanager.step.sm/*, stepclusterissuers.certmanager.step.sm/*]
   resources: [signers]
   verbs: [approve]
-- apiGroups: [coordination.k8s.io]
-  resources: [leases]
-  verbs: [create, get, list, update]
+- apiGroups: [ coordination.k8s.io ]
+  resources: [ leases ]
+  verbs: [ create, get, list, update ]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: step-issuer-proxy-role
+  labels:
+    app.kubernetes.io/name: step-ca
+    app.kubernetes.io/component: issuer
+rules:
+- apiGroups: [authentication.k8s.io]
+  resources: [tokenreviews]
+  verbs: [create]
+- apiGroups: [authorization.k8s.io]
+  resources: [subjectaccessreviews]
+  verbs: [create]
 ---
 apiVersion: v1
 kind: Service
@@ -199,6 +210,7 @@ spec:
         app.kubernetes.io/component: issuer
         cluster.local/allow-apiserver-egress: "true"
     spec:
+      serviceAccountName: step-issuer
       containers:
       - name: step-issuer
         image: cr.step.sm/smallstep/step-issuer:0.9.1
