@@ -17,13 +17,6 @@ spec:
       - port: "9000"
     fromEntities:
     - all
-  - toPorts:
-    - ports:
-      - port: "9000"
-    fromEndpoints:
-    - matchLabels:
-        app.kubernetes.io/name: step-ca
-        app.kubernetes.io/component: issuer
 ---
 apiVersion: v1
 kind: Service
