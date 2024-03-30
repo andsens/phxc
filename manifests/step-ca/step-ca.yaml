@@ -1,0 +1,83 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: step-ca
+spec:
+  type: ClusterIP
+  ports:
+  - name: web
+    port: 443
+    targetPort: 9000
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: step-ca
+spec:
+  replicas: 1
+  serviceName: step-ca
+  template:
+    spec:
+      securityContext:
+        fsGroup: 1000
+      containers:
+      - name: step-certificates
+        image: cr.step.sm/smallstep/step-ca:0.25.2
+        command: [/usr/local/bin/step-ca]
+        args: [/home/step/config/ca.json]
+        securityContext:
+          readOnlyRootFilesystem: true
+        env:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        ports:
+        - name: web
+          containerPort: 9000
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 9000
+            scheme: HTTPS
+          initialDelaySeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 9000
+            scheme: HTTPS
+          initialDelaySeconds: 5
+        volumeMounts:
+        - name: certs
+          mountPath: /home/step/certs
+          readOnly: true
+        - name: config
+          mountPath: /home/step/config
+          readOnly: true
+        - name: database
+          mountPath: /home/step/db
+          readOnly: false
+        - name: templates
+          mountPath: /home/step/templates
+          readOnly: true
+      volumes:
+      - name: certs
+        secret:
+          secretName: step-ca-certificates
+      - name: config
+        configMap:
+          name: step-ca-config
+      - name: templates
+        configMap:
+          name: step-ca-templates
+  volumeClaimTemplates:
+  - metadata:
+      name: database
+    spec:
+      storageClassName: nas-nfs
+      accessModes: [ReadWriteOnce]
+      resources:
+        requests:
+          storage: 1Gi
