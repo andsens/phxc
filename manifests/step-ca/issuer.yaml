@@ -14,17 +14,17 @@ spec:
   ingress:
   - toPorts:
     - ports:
-      - port: api
+      - port: "443"
     fromEntities:
     - kube-apiserver
   egress:
   - toPorts:
     - ports:
-      - port: api
+      - port: "9000"
     toEndpoints:
     - matchLabels:
         app.kubernetes.io/name: step-ca
-        app.kubernetes.io/component: step-ca
+        app.kubernetes.io/component: certificates
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding

@@ -14,12 +14,12 @@ spec:
   ingress:
   - toPorts:
     - ports:
-      - port: api
+      - port: "9000"
     fromEntities:
     - all
   - toPorts:
     - ports:
-      - port: api
+      - port: "9000"
     fromEndpoints:
     - matchLabels:
         app.kubernetes.io/name: step-ca
@@ -30,12 +30,16 @@ kind: Service
 metadata:
   name: step-ca
   labels:
+    app.kubernetes.io/name: step-ca
     app.kubernetes.io/component: certificates
 spec:
   type: ClusterIP
+  selector:
+    app.kubernetes.io/name: step-ca
+    app.kubernetes.io/component: certificates
   ports:
   - name: api
-    port: 443
+    port: 9000
     targetPort: api
 ---
 apiVersion: apps/v1
@@ -97,11 +101,13 @@ spec:
           httpGet:
             path: /health
             port: api
+            scheme: HTTPS
           initialDelaySeconds: 5
         readinessProbe:
           httpGet:
             path: /health
             port: api
+            scheme: HTTPS
           initialDelaySeconds: 5
         volumeMounts:
         - name: root-cert
