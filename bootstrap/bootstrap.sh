@@ -112,7 +112,6 @@ create_var_image() {
   mount_image "$image_path" var
   mkdir -p "$MOUNT_PATH/lib-rancher"
   mkdir -p "$MOUNT_PATH/lib-kubelet"
-  mkdir -p "$MOUNT_PATH/etc-rancher"
 }
 
 interactive_mount_image() {
