@@ -50,8 +50,9 @@ spec:
   secretName: distribution-jwt-cert
   commonName: distribution.local
   issuerRef:
-    kind: ClusterIssuer
-    name: selfsigned
+    group: certmanager.step.sm
+    kind: StepClusterIssuer
+    name: step-issuer
   usages: [any]
 ---
 apiVersion: secretgenerator.mittwald.de/v1alpha1
