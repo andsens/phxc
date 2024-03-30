@@ -5,7 +5,6 @@ error=0; trap 'error=$(($?>$error?$?:$error))' ERR # save maximum error code
 mkdir "${target:?}/var/lib/k8s-nas"
 ln -s /var/lib/k8s-nas/lib-rancher "${target:?}/var/lib/rancher"
 ln -s /var/lib/k8s-nas/lib-kubelet "${target:?}/var/lib/kubelet"
-ln -s /var/lib/k8s-nas/etc-rancher "${target:?}/etc/rancher"
 
 fcopy -SM /etc/systemd/system/expand-var.service
 fcopy -SM "/etc/systemd/system/var-lib-k8s\x2dnas.mount"
