@@ -1,0 +1,84 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: step-ca-bootstrap
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: step-ca-bootstrap
+rules:
+- apiGroups: [""]
+  resources: [secrets]
+  verbs: [create]
+- apiGroups: [""]
+  resources: [secrets]
+  resourceNames: [step-ca-certificates]
+  verbs: [get, delete]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: step-ca-bootstrap
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: step-ca-bootstrap
+subjects:
+- kind: ServiceAccount
+  name: step-ca-bootstrap
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: step-ca-bootstrap
+spec:
+  template:
+    metadata:
+      labels:
+        cluster.local/allow-apiserver-egress: "true"
+    spec:
+      restartPolicy: Never
+      serviceAccountName: step-ca-bootstrap
+      securityContext:
+        fsGroup: 1000
+      containers:
+      - name: step-ca-bootstrap
+        image: cr.step.sm/smallstep/step-ca-bootstrap:latest
+        command: [/bin/bash, /home/step/bootstrap/bootstrap.sh]
+        securityContext:
+          readOnlyRootFilesystem: true
+        env:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: CLUSTER_NAME
+          value: CLUSTER_NAME
+        volumeMounts:
+        - name: bootstrap
+          mountPath: /home/step/bootstrap
+          readOnly: true
+        - name: certs
+          mountPath: /home/step/certs
+          readOnly: false
+        - name: config
+          mountPath: /home/step/config
+          readOnly: true
+        - name: templates
+          mountPath: /home/step/templates
+          readOnly: true
+      volumes:
+      - name: bootstrap
+        configMap:
+          name: step-ca-bootstrap
+      - name: certs
+        emptyDir:
+          medium: Memory
+      - name: config
+        configMap:
+          name: step-ca-config
+      - name: templates
+        configMap:
+          name: step-ca-templates
