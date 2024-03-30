@@ -4,7 +4,7 @@ release=bookworm
 apt_cdn=http://deb.debian.org
 security_cdn=http://security.debian.org
 secsuite=$release-security
-FAI_DEBOOTSTRAP="$release http://deb.debian.org/debian $PKGROOT/bootstrap/assets/bootstrap-script.sh"
+FAI_DEBOOTSTRAP="$release http://deb.debian.org/debian $PKGROOT/bootstrap/lib/debootstrap-script.sh"
 FAI_DEBOOTSTRAP_OPTS="--exclude=info --include=locales --unpack-tarball=$PKGROOT/bootstrap/cache/debootstrap/$release.tar"
 if ifclass AMD64; then
    kernelname=linux-image-amd64
