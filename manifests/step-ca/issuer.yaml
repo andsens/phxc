@@ -1,0 +1,208 @@
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: step-issuer
+  labels:
+    app.kubernetes.io/name: step-ca
+    app.kubernetes.io/component: issuer
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: step-ca
+      app.kubernetes.io/component: issuer
+  ingress:
+  - toPorts:
+    - ports:
+      - port: api
+    fromEntities:
+    - kube-apiserver
+  egress:
+  - toPorts:
+    - ports:
+      - port: api
+    toEndpoints:
+    - matchLabels:
+        app.kubernetes.io/name: step-ca
+        app.kubernetes.io/component: step-ca
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: step-issuer-approver-rolebinding
+  labels:
+    app.kubernetes.io/name: step-ca
+    app.kubernetes.io/component: issuer
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: step-issuer-approver-role
+subjects:
+- kind: ServiceAccount
+  namespace: kube-system
+  name: cert-manager
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: step-issuer-approver-role
+  labels:
+    app.kubernetes.io/name: step-ca
+    app.kubernetes.io/component: issuer
+rules:
+- apiGroups: [cert-manager.io]
+  resourceNames: [stepissuers.certmanager.step.sm/*, stepclusterissuers.certmanager.step.sm/*]
+  resources: [signers]
+  verbs: [approve]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: step-issuer-leader-election-rolebinding
+  labels:
+    app.kubernetes.io/name: step-ca
+    app.kubernetes.io/component: issuer
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: step-issuer-leader-election-role
+subjects:
+- kind: ServiceAccount
+  name: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: step-issuer-leader-election-role
+  labels:
+    app.kubernetes.io/name: step-ca
+    app.kubernetes.io/component: issuer
+rules:
+- apiGroups: [""]
+  resources: [configmaps]
+  verbs: [get, list, watch, create, update, patch, delete]
+- apiGroups: [""]
+  resources: [configmaps/status]
+  verbs: [get, update, patch]
+- apiGroups: [""]
+  resources: [events]
+  verbs: [create]
+- apiGroups: [coordination.k8s.io]
+  resources: [leases]
+  verbs: [get, create, update]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: step-issuer-manager-rolebinding
+  labels:
+    app.kubernetes.io/name: step-ca
+    app.kubernetes.io/component: issuer
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: step-issuer-manager-role
+subjects:
+- kind: ServiceAccount
+  name: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: step-issuer-manager-role
+  labels:
+    app.kubernetes.io/name: step-ca
+    app.kubernetes.io/component: issuer
+rules:
+- apiGroups: [""]
+  resources: [events]
+  verbs: [create, patch]
+- apiGroups: [""]
+  resources: [secrets]
+  verbs: [get, list, watch]
+- apiGroups: [cert-manager.io]
+  resources: [certificaterequests]
+  verbs: [get, list, update, watch]
+- apiGroups: [cert-manager.io]
+  resources: [certificaterequests/status]
+  verbs: [get, patch, update]
+- apiGroups: [certmanager.step.sm]
+  resources: [stepissuers]
+  verbs: [create, delete, get, list, patch, update, watch]
+- apiGroups: [certmanager.step.sm]
+  resources: [stepclusterissuers]
+  verbs: [create, delete, get, list, patch, update, watch]
+- apiGroups: [certmanager.step.sm]
+  resources: [stepissuers/status]
+  verbs: [get, patch, update]
+- apiGroups: [certmanager.step.sm]
+  resources: [stepclusterissuers/status]
+  verbs: [get, patch, update]
+- apiGroups: [cert-manager.io]
+  resourceNames: [stepissuers.certmanager.step.sm/*, stepclusterissuers.certmanager.step.sm/*]
+  resources: [signers]
+  verbs: [approve]
+- apiGroups: [coordination.k8s.io]
+  resources: [leases]
+  verbs: [create, get, list, update]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: step-issuer
+  labels:
+    app.kubernetes.io/name: step-ca
+    app.kubernetes.io/component: issuer
+spec:
+  selector:
+    app.kubernetes.io/name: step-ca
+    app.kubernetes.io/component: issuer
+  ports:
+  - name: api
+    port: 443
+    targetPort: api
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: smallstep-webhook-serving-cert
+  labels:
+    app.kubernetes.io/name: step-ca
+    app.kubernetes.io/component: issuer
+spec:
+  commonName: step-issuer.step-ca.svc
+  dnsNames:
+  - step-issuer.step-ca.svc.cluster.local
+  issuerRef:
+    group: cert-manager.io
+    kind: ClusterIssuer
+    name: selfsigned
+  secretName: smallstep-webhook-tls
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: step-issuer
+  labels:
+    app.kubernetes.io/name: step-ca
+    app.kubernetes.io/component: issuer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: step-ca
+      app.kubernetes.io/component: issuer
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: step-ca
+        app.kubernetes.io/component: issuer
+        cluster.local/allow-apiserver-egress: "true"
+    spec:
+      containers:
+      - name: step-issuer
+        image: cr.step.sm/smallstep/step-issuer:0.9.1
+        ports:
+        - name: api
+          containerPort: 443
+      terminationGracePeriodSeconds: 10

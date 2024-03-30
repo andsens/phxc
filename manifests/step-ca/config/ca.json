@@ -8,12 +8,12 @@
     "type": "badgerv2",
     "dataSource": "/home/step/db"
   },
-  "root": "/home/step/certs/root_ca.crt",
-  "crt": "/home/step/certs/intermediate_ca.crt",
-  "key": "/home/step/certs/intermediate_ca.key",
+  "root": "/home/step/certs/root/tls.crt",
+  "crt": "/home/step/certs/intermediate/tls.crt",
+  "key": "/home/step/certs/intermediate/tls.key",
   "ssh": {
-    "hostKey": "/home/step/certs/intermediate_ca.key",
-    "userKey": "/home/step/certs/intermediate_ca.key"
+    "hostKey": "/home/step/certs/intermediate/tls.key",
+    "userKey": "/home/step/certs/intermediate/tls.key"
   },
   "authority": {
     "policy": {
@@ -39,11 +39,6 @@
           "defaultHostSSHCertDuration": "672h",
           "maxHostSSHCertDuration": "672h",
           "enableSSHCA": true
-        },
-        "options": {
-          "ssh": {
-            "templateFile": "templates/ssh-hosts.tpl"
-          }
         }
       }
     ]
