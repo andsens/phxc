@@ -16,7 +16,7 @@ setup_certificates() {
     printf "bootstrap.sh: Root certificate does not exist, creating now\n" >&2
     rm -f "$STEPPATH/certs/root/tls.crt"
     root_ca_is_new=true
-    step certificate create --profile=root-ca \
+    step certificate create --template="$STEPPATH/templates/root_ca.tpl" \
       --no-password --insecure \
       --not-after=87600h \
       "$CLUSTER_NAME Root" "$STEPPATH/certs/root/tls.crt" "$STEPPATH/certs/root/tls.key"
@@ -30,7 +30,7 @@ setup_certificates() {
   if $root_ca_is_new || ! kubectl get -n "$NAMESPACE" secret step-ca-intermediate >/dev/null; then
     printf "bootstrap.sh: Intermediate certificate does not exist or the root has been recreated, creating now\n" >&2
     mkdir "$STEPPATH/certs/intermediate"
-    step certificate create --profile=intermediate-ca \
+    step certificate create --template="$STEPPATH/templates/intermediate_ca.tpl" \
       --no-password --insecure \
       --not-after=87600h \
       --ca="$STEPPATH/certs/root/tls.crt" --ca-key="$STEPPATH/certs/root/tls.key" \
