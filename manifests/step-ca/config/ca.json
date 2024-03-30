@@ -8,12 +8,12 @@
     "type": "badgerv2",
     "dataSource": "/home/step/db"
   },
-  "root": "/home/step/certs/root/tls.crt",
-  "crt": "/home/step/certs/intermediate/tls.crt",
-  "key": "/home/step/certs/intermediate/tls.key",
+  "root": "/home/step/certs/root_ca.crt",
+  "crt": "/home/step/certs/intermediate_ca.crt",
+  "key": "/home/step/certs/intermediate_ca_key",
   "ssh": {
-    "hostKey": "/home/step/certs/intermediate/tls.key",
-    "userKey": "/home/step/certs/intermediate/tls.key"
+    "hostKey": "/home/step/certs/intermediate_ca_key",
+    "userKey": "/home/step/certs/intermediate_ca_key"
   },
   "authority": {
     "policy": {
