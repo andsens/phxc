@@ -18,7 +18,7 @@ setup_certificates() {
     root_ca_is_new=true
     step certificate create --profile=root-ca \
       --no-password --insecure \
-      --curve=Ed25519 --kty=OKP --not-after=87600h \
+      --not-after=87600h \
       "$CLUSTER_NAME Root" "$STEPPATH/certs/root/tls.crt" "$STEPPATH/certs/root/tls.key"
     kubectl create -n "$NAMESPACE" secret tls step-ca-root \
       --cert="$STEPPATH/certs/root/tls.crt" \
@@ -32,7 +32,7 @@ setup_certificates() {
     mkdir "$STEPPATH/certs/intermediate"
     step certificate create --profile=intermediate-ca \
       --no-password --insecure \
-      --curve=Ed25519 --kty=OKP --not-after=87600h \
+      --not-after=87600h \
       --ca="$STEPPATH/certs/root/tls.crt" --ca-key="$STEPPATH/certs/root/tls.key" \
       "$CLUSTER_NAME Intermediate" "$STEPPATH/certs/intermediate/tls.crt" "$STEPPATH/certs/intermediate/tls.key"
     kubectl create -n "$NAMESPACE" secret tls step-ca-intermediate \
@@ -56,7 +56,7 @@ setup_issuer_provisioner() {
     rm -f "$STEPPATH/certs/issuer-provisioner/pub.json"
     step crypto jwk create \
       --password-file="$STEPPATH/issuer-provisioner-password/password" \
-      --curve=Ed25519 --kty=OKP --use sig \
+      --use sig \
       "$STEPPATH/certs/issuer-provisioner/pub.json" "$STEPPATH/certs/issuer-provisioner/priv.json"
     kubectl create -n "$NAMESPACE" secret generic step-ca-issuer-provisioner \
       --from-file="$STEPPATH/certs/issuer-provisioner/pub.json" \
