@@ -60,6 +60,8 @@ declare -p "${prefix}__varspath" "${prefix}__bootstrapper" \
 
   # shellcheck disable=2154
   start_vm "$__bootstrapper"
+  # shellcheck disable=2064
+  trap "stop_vm \"$__bootstrapper\"" EXIT
 
   info "Waiting for bootstrapping to complete"
   while [[ -e "$BOOTSTRAPPER_NFS_SHARE/bootstrap-vms.args.sh" ]]; do
@@ -67,6 +69,7 @@ declare -p "${prefix}__varspath" "${prefix}__bootstrapper" \
   done
   info "Bootstrapping completed"
   stop_vm "$__bootstrapper"
+  trap "" EXIT
 
   local vmname hostname diskpath ret=0 latest_imgpath current_imgpath
   for vmhostdisk in "${VMNAME_HOSTNAME_DISKPATH[@]}"; do
