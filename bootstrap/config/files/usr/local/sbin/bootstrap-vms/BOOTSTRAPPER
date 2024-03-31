@@ -40,7 +40,7 @@ declare -p "${prefix}HOSTNAMES"; done; }
   fi
   # shellcheck disable=1091
   source "$nfs_path/bootstrap-vms.args.sh"
-
+  ! ${SHUTDOWN:-false} || trap "systemctl halt" EXIT
   info "Updating bootstrapper code"
   rm -rf "$bootstrapper_path"
   if [[ -n $BOOTSTRAPPER_GIT_DEPLOY_KEY ]]; then

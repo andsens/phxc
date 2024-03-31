@@ -87,7 +87,6 @@ declare -p "${prefix}__varspath" "${prefix}__bootstrapper" \
     fi
   done
   [[ $ret = 0 ]] || error "Failed to replace the disks on some VMs"
-  ! ${SHUTDOWN:-false} || systemctl halt
   return $ret
 }
 
