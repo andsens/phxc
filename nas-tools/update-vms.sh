@@ -45,7 +45,7 @@ declare -p "${prefix}__varspath" "${prefix}__bootstrapper" \
   source "$__varspath"
 
   local vmhostdisk vmhost hostnames=()
-  for vmhostdisk in "${VMNAME_HOSTNAME[@]}"; do
+  for vmhostdisk in "${VMNAME_HOSTNAME_DISKPATH[@]}"; do
     vmhost=${vmhostdisk%:*}
     hostnames+=("${vmhost#*:}")
   done
@@ -62,8 +62,8 @@ declare -p "${prefix}__varspath" "${prefix}__bootstrapper" \
   wait_for_vm_shutdown "$__bootstrapper"
   info "'%s' has completed bootstrapping and shut down again" "$__bootstrapper"
 
-  local vmname hostname diskpath ret latest_imgpath current_imgpath
-  for vmhostdisk in "${VMNAME_HOSTNAME[@]}"; do
+  local vmname hostname diskpath ret=0 latest_imgpath current_imgpath
+  for vmhostdisk in "${VMNAME_HOSTNAME_DISKPATH[@]}"; do
     vmname=${vmhostdisk%%:*}
     vmhost=${vmhostdisk%:*}
     hostname=${vmhost#*:}
