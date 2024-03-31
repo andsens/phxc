@@ -2,11 +2,13 @@
 Description=Link /var/lib/rancher and /var/lib/kubelet into the persistent volume
 Requires=populate-persistent.service
 After=populate-persistent.service
+Before=k3s.service
 ConditionPathExists=!/var/lib/rancher
 ConditionPathExists=!/var/lib/kubelet
 
 [Install]
 WantedBy=persistent-volume.target
+RequiredBy=k3s.service
 
 [Service]
 Type=oneshot
