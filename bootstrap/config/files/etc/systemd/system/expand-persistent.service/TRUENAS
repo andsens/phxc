@@ -9,4 +9,5 @@ WantedBy=persistent-volume.target
 
 [Service]
 Type=oneshot
+ExecStartPre=e2fsck -f {%TRUENAS_PERSISTENT_VOLUME_DEV_PATH%}
 ExecStart=resize2fs {%TRUENAS_PERSISTENT_VOLUME_DEV_PATH%}
