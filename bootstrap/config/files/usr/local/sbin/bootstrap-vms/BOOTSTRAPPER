@@ -68,7 +68,7 @@ EOF
       --varspath=$nfs_path/vars.sh \
       --cachepath="/var/lib/persistent/cache" \
       "$hostname" "$nfs_path/images/$hostname.tmp.raw"; then
-      info "Successfully to bootstrapped %s" "$hostname"
+      info "Successfully bootstrapped %s" "$hostname"
       mv "$nfs_path/images/$hostname.tmp.raw" "$nfs_path/images/$hostname.latest.raw"
     else
       error "Failed to bootstrap %s" "$hostname"
