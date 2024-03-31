@@ -49,10 +49,14 @@ declare -p "${prefix}__varspath" "${prefix}__bootstrapper" \
     vmhost=${vmhostdisk%:*}
     hostnames+=("${vmhost#*:}")
   done
+  local tee=tee
+  [[ $UID = 0 ]] || tee="sudo tee"
+  # shellcheck disable=2086
   printf -- '#!/usr/bin/env bash
 HOSTNAMES="%s"
 SHUTDOWN=true
-' "$BOOTSTRAPPER_GIT_REMOTE" "$BOOTSTRAPPER_GIT_DEPLOY_KEY" "${hostnames[*]}" > "$BOOTSTRAPPER_NFS_SHARE/bootstrap-vms.args.sh"
+' "$BOOTSTRAPPER_GIT_REMOTE" "$BOOTSTRAPPER_GIT_DEPLOY_KEY" "${hostnames[*]}" | \
+  $tee "$BOOTSTRAPPER_NFS_SHARE/bootstrap-vms.args.sh" >/dev/null
 
   # shellcheck disable=2154
   start_vm "$__bootstrapper"
