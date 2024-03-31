@@ -88,7 +88,7 @@ replace_vm_disk() {
 
   $dd if="$imgpath" of="$diskpath" bs=$((1024*128)) conv=sparse
   # shellcheck disable=2154
-  if $was_started && ! $start_again; then
+  if $was_started && $start_again; then
     start_vm "$name"
   fi
 }
