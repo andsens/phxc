@@ -1,7 +1,0 @@
-[Unit]
-Description=Target for handling the persistent volume
-Before=k3s.service
-
-[Install]
-RequiredBy=k3s.service
-WantedBy=multi-user.target
