@@ -5,7 +5,6 @@ until [[ -e $PKGROOT/upkg.json || $PKGROOT = '/' ]]; do PKGROOT=$(dirname "${PKG
 
 main() {
   source "$PKGROOT/.upkg/orbit-online/records.sh/records.sh"
-  source "$PKGROOT/.upkg/orbit-online/collections.sh/collections.sh"
 
   DOC="generate-vars-cluster-cm.sh - Generate a ConfigMap from /vars.sh
 Usage:

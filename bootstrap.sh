@@ -2,12 +2,11 @@
 # shellcheck source-path=.. disable=2064
 
 set -eo pipefail; shopt -s inherit_errexit
-PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
+PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")")
 PATH=$("$PKGROOT/.upkg/.bin/path_prepend" "$PKGROOT/.upkg/.bin")
 
 main() {
   source "$PKGROOT/.upkg/orbit-online/records.sh/records.sh"
-  source "$PKGROOT/.upkg/orbit-online/collections.sh/collections.sh"
   source "$PKGROOT/bootstrap/lib/mount.sh"
 
   DOC="bootstrap.sh - Bootstrap k3s cluster images
