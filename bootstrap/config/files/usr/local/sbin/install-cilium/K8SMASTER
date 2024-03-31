@@ -26,6 +26,7 @@ eval "${prefix}"'CLUSTER_IPV6_CIDR=${var_CLUSTER_IPV6_CIDR:-}'; local docopt_i=1
 [[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2; for ((;docopt_i>0;docopt_i--)); do
 declare -p "${prefix}CLUSTER_IPV4_CIDR" "${prefix}CLUSTER_IPV6_CIDR"; done; }
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"/usr/local/lib/upkg/andsens/docopt.sh/docopt-lib.sh"' K8SMASTER`
+  eval "$(docopt "$@")"
 
   local notified=false max_wait=300 wait_left=300
   while ! kubectl get -n kube-system deployment coredns -o name >/dev/null 2>&1; do
