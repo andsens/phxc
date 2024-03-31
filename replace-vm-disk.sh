@@ -7,7 +7,7 @@ fatal() { _log "$@"; exit 1; }
 info() { _log "$@"; }
 
 main() {
-  DOC="replace-vm-disk.sh - Replace a VM disk
+  DOC="replace-vm-disk.sh - Replace a VM disk in TrueNAS
 Usage:
   replace-vm-disk.sh [options] IMGPATH VMNAME DISKPATH
 
