@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+set -eo pipefail; shopt -s inherit_errexit
+
+# shellcheck source=../../../../../../../.upkg/orbit-online/records.sh/records.sh
+source "/usr/local/lib/upkg/orbit-online/records.sh/records.sh"
+
+BOOTSTRAPPER_GIT_REMOTE="{%BOOTSTRAPPER_GIT_REMOTE%}"
+BOOTSTRAPPER_GIT_DEPLOY_KEY="{%BOOTSTRAPPER_GIT_DEPLOY_KEY%}"
+
+main() {
+  info "Updating bootstrapper"
+  rm -rf /var/lib/persistent/bootstrapper
+  if [[ -n $BOOTSTRAPPER_GIT_DEPLOY_KEY ]]; then
+    eval "$(ssh-agent)" >&2
+    ssh-add -q <(cat <<EOF
+${BOOTSTRAPPER_GIT_DEPLOY_KEY}
+EOF
+  )
+  fi
+  git clone --depth 1 "$BOOTSTRAPPER_GIT_REMOTE" /var/lib/persistent/bootstrapper
+  if [[ -n $BOOTSTRAPPER_GIT_DEPLOY_KEY ]]; then
+    ssh-add -qD
+    eval "$(ssh-agent -k)" >&2
+  fi
+
+  (cd /var/lib/persistent/bootstrapper && upkg install)
+
+  local hostname ret=0
+  for hostname in k8s-nas bootstrapper; do
+    info "Bootstrapping %s" "$hostname"
+    if ! /var/lib/persistent/bootstrapper/bootstrap.sh create \
+      --varspath=/var/lib/bootstrapper/vars.sh \
+      --cachepath=/var/lib/bootstrapper/cache \
+      $hostname /var/lib/bootstrapper/images/$hostname-latest.raw; then
+      warning "Failed to bootstrap %s" "$hostname"
+      ret=1
+    fi
+  done
+  return $ret
+}
+
+main "$@"

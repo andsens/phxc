@@ -1,5 +1,6 @@
 [Unit]
 Description=Create /var/lib/persistent subdirs
+Requires=var-lib-persistent.mount
 After=var-lib-persistent.mount
 ConditionPathExists=!/var/lib/persistent/rancher
 

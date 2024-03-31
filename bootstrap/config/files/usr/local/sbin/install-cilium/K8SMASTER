@@ -1,19 +1,20 @@
 #!/usr/bin/env bash
+set -eo pipefail; shopt -s inherit_errexit
+
+# shellcheck source=../../../../../../../.upkg/orbit-online/records.sh/records.sh
+source "/usr/local/lib/upkg/orbit-online/records.sh/records.sh"
 
 notified=false
 max_wait=300
 wait_left=$max_wait
 while ! kubectl get -n kube-system deployment coredns -o name >/dev/null 2>&1; do
-  $notified || printf "install-cilium: k3s is not ready yet...\n" >&2
+  $notified || info "k3s is not ready yet..."
   notified=true
   sleep 1
-  if ((--wait_left <= 0)); then
-    printf "install-cilium: Timed out after %d seconds for cilium to become ready.\n" "$((max_wait / 60))" >&2
-    exit 1
-  fi
+  ((--wait_left > 0)) || fatal "Timed out after %d seconds for cilium to become ready." "$((max_wait / 60))"
 done
 if ! kubectl get -n kube-system deployment cilium-operator -o name >/dev/null 2>&1; then
-  printf "install-cilium: Cilium is not installed, installing now.\n" >&2
+  info "Cilium is not installed, installing now"
   exec /usr/local/bin/cilium install --version=1.15.1 \
     --set=ipam.operator.clusterPoolIPv4PodCIDRList="{%CLUSTER_IP4_CIDR%}" \
     --set=ipam.operator.clusterPoolIPv6PodCIDRList="{%CLUSTER_IP6_CIDR%}" \
@@ -27,5 +28,5 @@ if ! kubectl get -n kube-system deployment cilium-operator -o name >/dev/null 2>
     --set=socketLB.enabled=true \
     --set=kubeConfigPath=/etc/rancher/k3s/k3s.yaml
 else
-  printf "install-cilium: Cilium already installed, nothing to do.\n" >&2
+  info "Cilium already installed, nothing to do"
 fi

@@ -1,6 +1,8 @@
 [Unit]
 Description=Expand the filesystem on the persistent volume
+Requires=mkfs-persistent.service
 After=mkfs-persistent.service
+Before=var-lib-persistent.mount
 
 [Install]
 WantedBy=persistent-volume.target

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 # shellcheck disable=2034
 FAI_RAMDISKS="${target:?}/var/lib/dpkg ${target:?}/var/cache ${target:?}/var/lib/apt/lists"
-# shellcheck disable=2153
-MACHINE_ID=${MACHINE_IDS[$HOSTNAME]}
+MACHINE_ID_VAR=MACHINE_IDS_${HOSTNAME//-/_}
+MACHINE_ID=${!MACHINE_ID_VAR}

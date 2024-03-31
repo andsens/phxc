@@ -2,3 +2,5 @@ PACKAGES install-norec
 fai-server
 fai-setup-storage
 qemu-utils
+dosfstools
+apt-cacher-ng
