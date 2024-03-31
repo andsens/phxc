@@ -2,7 +2,7 @@
 Description=Bootstrap VMs specified in /var/lib/bootstrapper/bootstrap-vms.args.sh
 Requires=var-lib-bootstrapper.mount
 After=var-lib-bootstrapper.mount
-ConditionPathExists=/var/lib/bootstrapper/hostnames.conf
+ConditionPathExists=/var/lib/bootstrapper/bootstrap-vms.args.sh
 
 [Install]
 WantedBy=multi-user.target
