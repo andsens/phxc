@@ -58,7 +58,7 @@ start_vm() {
 stop_vm() {
   local name=$1 vmid
   if [[ $(get_vm_status "$name") = *STOPPED* ]]; then
-    error "Unable to stop VM. '%s' already stopped" "$name"
+    error "Unable to stop VM. '%s' is already stopped" "$name"
     return 1
   fi
   vmid=$(get_vm_id "$name")
