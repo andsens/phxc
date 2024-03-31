@@ -52,10 +52,7 @@ declare -p "${prefix}__varspath" "${prefix}__bootstrapper" \
   local tee=tee
   [[ $UID = 0 ]] || tee="sudo tee"
   # shellcheck disable=2086
-  printf -- '#!/usr/bin/env bash
-HOSTNAMES="%s"
-SHUTDOWN=true
-' "$BOOTSTRAPPER_GIT_REMOTE" "$BOOTSTRAPPER_GIT_DEPLOY_KEY" "${hostnames[*]}" | \
+  printf -- '#!/usr/bin/env bash\nHOSTNAMES="%s"\nSHUTDOWN=true\n' "${hostnames[*]}" | \
   $tee "$BOOTSTRAPPER_NFS_SHARE/bootstrap-vms.args.sh" >/dev/null
 
   # shellcheck disable=2154
