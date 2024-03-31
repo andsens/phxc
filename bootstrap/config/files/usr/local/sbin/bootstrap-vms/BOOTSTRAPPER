@@ -27,7 +27,7 @@ declare -p "${prefix}HOSTNAMES"; done; }
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"/usr/local/lib/upkg/andsens/docopt.sh/docopt-lib.sh"' BOOTSTRAPPER`
   eval "$(docopt "$@")"
 
-  local nfs_path=/var/lib/bootstrapper bootstrapper_path=/var/lib/bootstrapper
+  local nfs_path=/var/lib/bootstrapper bootstrapper_path=/var/lib/home-cluster
 
   # shellcheck source=../../../../../../../vars.sh
   source "$nfs_path/vars.sh"
