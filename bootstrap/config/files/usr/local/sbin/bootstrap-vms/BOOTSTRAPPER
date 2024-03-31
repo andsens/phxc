@@ -36,11 +36,14 @@ declare -p "${prefix}HOSTNAMES"; done; }
     if [[ ! -e "$nfs_path/bootstrap-vms.args.sh" ]]; then
       info "$nfs_path/bootstrap-vms.args.sh does not exist (and no hostnames provided on commandline), exiting"
       return 0
+    else
+      # shellcheck disable=1091
+      source "$nfs_path/bootstrap-vms.args.sh"
+      # shellcheck disable=2064
+      trap "rm \"$nfs_path/bootstrap-vms.args.sh\"" EXIT
     fi
   fi
-  # shellcheck disable=1091
-  source "$nfs_path/bootstrap-vms.args.sh"
-  ! ${SHUTDOWN:-false} || trap "printf 'bootstrap-vms: Shutting down system\n' >&2; systemctl halt" EXIT
+
   info "Updating bootstrapper code"
   rm -rf "$bootstrapper_path"
   if [[ -n $BOOTSTRAPPER_GIT_DEPLOY_KEY ]]; then

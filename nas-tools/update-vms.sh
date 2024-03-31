@@ -52,15 +52,18 @@ declare -p "${prefix}__varspath" "${prefix}__bootstrapper" \
   local tee=tee
   [[ $UID = 0 ]] || tee="sudo tee"
   # shellcheck disable=2086
-  printf -- '#!/usr/bin/env bash\nHOSTNAMES="%s"\nSHUTDOWN=true\n' "${hostnames[*]}" | \
-  $tee "$BOOTSTRAPPER_NFS_SHARE/bootstrap-vms.args.sh" >/dev/null
+  printf -- '#!/usr/bin/env bash\nHOSTNAMES="%s"\n' "${hostnames[*]}" | \
+    $tee "$BOOTSTRAPPER_NFS_SHARE/bootstrap-vms.args.sh" >/dev/null
 
   # shellcheck disable=2154
   start_vm "$__bootstrapper"
 
-  info "Waiting for '%s' to finish bootstrapping" "$__bootstrapper"
-  wait_for_vm_shutdown "$__bootstrapper"
-  info "'%s' has completed bootstrapping and shut down again" "$__bootstrapper"
+  info "Waiting for bootstrapping to complete"
+  while [[ -e "$BOOTSTRAPPER_NFS_SHARE/bootstrap-vms.args.sh" ]]; do
+    sleep 1
+  done
+  info "Bootstrapping completed"
+  stop_vm "$__bootstrapper"
 
   local vmname hostname diskpath ret=0 latest_imgpath current_imgpath
   for vmhostdisk in "${VMNAME_HOSTNAME_DISKPATH[@]}"; do
