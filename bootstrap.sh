@@ -59,7 +59,7 @@ declare -p "${prefix}__varspath" "${prefix}__cachepath" "${prefix}__imgsize" \
     IMGPATH=${IMGPATH:-"$PKGROOT/bootstrap/images/$HOSTNAME.raw"}
     [[ $__varspath != "\$PKGROOT/vars.sh" ]] || __varspath=$PKGROOT/vars.sh
     [[ $__cachepath != "\$PKGROOT/bootstrap/cache" ]] || __cachepath=$PKGROOT/bootstrap/cache
-    mkdir -p "$(dirname "$IMGPATH")" "$PKGROOT/bootstrap/logs"
+    mkdir -p "$(dirname "$IMGPATH")" "$PKGROOT/bootstrap/logs" "$__cachepath"
     rm -f "$PKGROOT/bootstrap/logs/$HOSTNAME"
     ln -s "/var/log/fai/$HOSTNAME/last" "$PKGROOT/bootstrap/logs/$HOSTNAME"
     # shellcheck disable=SC2086
