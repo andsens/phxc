@@ -1,6 +1,5 @@
 PACKAGES install-norec
-fai-server
-fai-setup-storage
+fai-server fai-setup-storage fai-doc
 qemu-utils
 dosfstools
 apt-cacher-ng

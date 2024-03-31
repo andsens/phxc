@@ -8,5 +8,6 @@ shasum -a 256 -c <(printf "8312d0fa0e47ff22387086021c8b096b899ff9344ca8622d80cc0
 set - install -g orbit-online/upkg@v0.14.0; eval "$src"'
 
 $ROOTCMD upkg install -g orbit-online/records.sh@v0.9.5
+$ROOTCMD upkg install -g andsens/docopt.sh@v1.0.0-upkg
 
 exit $error
