@@ -49,8 +49,9 @@ declare -p "${prefix}__varspath" "${prefix}__bootstrapper" \
     vmhost=${vmhostdisk%:*}
     hostnames+=("${vmhost#*:}")
   done
-  local tee=tee
+  local tee=tee mv=mv
   [[ $UID = 0 ]] || tee="sudo tee"
+  [[ $UID = 0 ]] || mv="sudo mv"
   # shellcheck disable=2086
   printf -- '#!/usr/bin/env bash\nHOSTNAMES="%s"\n' "${hostnames[*]}" | \
     $tee "$BOOTSTRAPPER_NFS_SHARE/bootstrap-vms.args.sh" >/dev/null
@@ -79,7 +80,7 @@ declare -p "${prefix}__varspath" "${prefix}__bootstrapper" \
       local res=0
       replace_vm_disk "$vmname" "$latest_imgpath" "$diskpath" || res=$?
       if [[ $res = 0 ]]; then
-        mv "$latest_imgpath" "$current_imgpath"
+        $mv "$latest_imgpath" "$current_imgpath"
       else
         error "Failed to replace disk for '%s'" "$vmname"
         ret=$res
