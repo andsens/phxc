@@ -38,8 +38,10 @@ declare -p "${prefix}__varspath" "${prefix}__bootstrapper" \
 "${prefix}VMNAME_HOSTNAME_DISKPATH"; done; }
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/docopt-lib-v1.0.0.sh"' update-vms.sh`
   eval "$(docopt "$@")"
-  cache_all_vms
 
+  log_forward_to_journald true
+
+  cache_all_vms
   [[ $__varspath != "\$PKGROOT/../vars.sh" ]] || __varspath=$(realpath "$PKGROOT/../vars.sh")
   # shellcheck source=../vars.sh
   source "$__varspath"
