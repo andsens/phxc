@@ -55,7 +55,7 @@ declare -p "${prefix}__varspath" "${prefix}__bootstrapper" \
   [[ $UID = 0 ]] || tee="sudo tee"
   [[ $UID = 0 ]] || mv="sudo mv"
   # shellcheck disable=2086
-  printf -- '#!/usr/bin/env bash\nHOSTNAMES="%s"\n' "${hostnames[*]}" | \
+  printf -- '#!/usr/bin/env bash\nHOSTNAMES=(%s)\n' "${hostnames[*]}" | \
     $tee "$BOOTSTRAPPER_NFS_SHARE/bootstrap-vms.args.sh" >/dev/null
 
   # shellcheck disable=2154
