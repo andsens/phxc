@@ -1,5 +1,7 @@
 [Unit]
 Description=Mount the persistent volume
+Requires=mkfs-persistent.service
+After=mkfs-persistent.service
 
 [Install]
 WantedBy=persistent-volume.target

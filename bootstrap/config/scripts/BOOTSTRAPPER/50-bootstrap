@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+error=0; trap 'error=$(($?>$error?$?:$error))' ERR # save maximum error code
+
+[[ -z $BOOTSTRAPPER_GIT_REMOTE_SSH_KEYS ]] || \
+  printf "%s\n" "$BOOTSTRAPPER_GIT_REMOTE_SSH_KEYS" >> "${target:?}/root/.ssh/known_hosts"
+
+fcopy -Sm root,root,0700 /usr/local/sbin/bootstrap
+
+for unit in bootstrap.service var-lib-bootstrapper.mount; do
+  fcopy -SM "/etc/systemd/system/$unit"
+  $ROOTCMD systemctl enable "$unit"
+done
+
+exit $error

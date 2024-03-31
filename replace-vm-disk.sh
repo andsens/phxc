@@ -14,9 +14,9 @@ Usage:
 Options:
   -S --no-start  Don't start the VM if it was stopped to replace the disk
 "
-  [[ $# -gt 3 ]] || fatal "$DOC"
-  [[ $# -lt 5 ]] || fatal "$DOC"
-  [[ $# -eq 3 || $1 = -S ]] || fatal "$DOC"
+  [[ $# -le 4 ]] || fatal "$DOC"
+  [[ $# -ge 3 ]] || fatal "$DOC"
+  [[ $# -ne 4 || $1 = -S ]] || fatal "$DOC"
   local __no_start=false
   [[ $# -eq 3 ]] || { __no_start=true; shift; }
   local IMGPATH=$1 VMNAME=$2 DISKPATH=$3
