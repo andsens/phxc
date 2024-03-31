@@ -36,8 +36,10 @@ declare -p "${prefix}__no_start" "${prefix}VMNAME" "${prefix}IMGPATH" \
   eval "$(docopt "$@")"
   cache_all_vms
 
+  local start_again=false
+  $__no_start || start_again=true
   # shellcheck disable=2153
-  replace_vm_disk "$VMNAME" "$IMGPATH" "$DISKPATH"
+  replace_vm_disk "$VMNAME" "$IMGPATH" "$DISKPATH" "$start_again"
 }
 
 main "$@"

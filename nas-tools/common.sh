@@ -76,7 +76,7 @@ wait_for_vm_shutdown() {
 }
 
 replace_vm_disk() {
-  local name=$1 imgpath=$2 diskpath=$3 dd=dd was_started=false
+  local name=$1 imgpath=$2 diskpath=$3 start_again=${4:-true} dd=dd was_started=false
   [[ $UID = 0 ]] || dd='sudo dd'
   # shellcheck disable=2153
   if [[ $(get_vm_status "$name") = *RUNNING* ]]; then
@@ -88,7 +88,7 @@ replace_vm_disk() {
 
   $dd if="$imgpath" of="$diskpath" bs=$((1024*128)) conv=sparse
   # shellcheck disable=2154
-  if $was_started && ! $__no_start; then
+  if $was_started && ! $start_again; then
     start_vm "$name"
   fi
 }
