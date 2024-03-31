@@ -83,6 +83,7 @@ declare -p "${prefix}__varspath" "${prefix}__bootstrapper" \
       replace_vm_disk "$vmname" "$latest_imgpath" "$diskpath" || res=$?
       if [[ $res = 0 ]]; then
         $mv "$latest_imgpath" "$current_imgpath"
+        info "Successfully replaced disk for '%s'" "$vmname"
       else
         error "Failed to replace disk for '%s'" "$vmname"
         ret=$res
@@ -92,7 +93,11 @@ declare -p "${prefix}__varspath" "${prefix}__bootstrapper" \
       ret=1
     fi
   done
-  [[ $ret = 0 ]] || error "Failed to replace the disks on some VMs"
+  if [[ $ret = 0 ]]; then
+    info "Successfully replaced the disks on all of the specified VMs"
+  else
+    error "Failed to replace the disks on some VMs"
+  fi
   return $ret
 }
 
