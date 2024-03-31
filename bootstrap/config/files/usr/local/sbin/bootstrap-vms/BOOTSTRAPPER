@@ -27,7 +27,7 @@ declare -p "${prefix}HOSTNAMES"; done; }
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"/usr/local/lib/upkg/andsens/docopt.sh/docopt-lib.sh"' BOOTSTRAPPER`
   eval "$(docopt "$@")"
 
-  local nfs_path=/var/lib/bootstrapper persistent_path=/var/lib/persistent
+  local nfs_path=/var/lib/bootstrapper bootstrapper_path=/var/lib/bootstrapper
 
   # shellcheck source=../../../../../../../vars.sh
   source "$nfs_path/vars.sh"
@@ -42,7 +42,7 @@ declare -p "${prefix}HOSTNAMES"; done; }
   source "$nfs_path/bootstrap-vms.args.sh"
 
   info "Updating bootstrapper code"
-  rm -rf "$persistent_path/bootstrapper"
+  rm -rf "$bootstrapper_path"
   if [[ -n $BOOTSTRAPPER_GIT_DEPLOY_KEY ]]; then
     eval "$(ssh-agent)" >&2
     ssh-add -q <(cat <<EOF
@@ -50,20 +50,20 @@ ${BOOTSTRAPPER_GIT_DEPLOY_KEY}
 EOF
   )
   fi
-  git clone --depth 1 "$BOOTSTRAPPER_GIT_REMOTE" "$persistent_path/bootstrapper"
+  git clone --depth 1 "$BOOTSTRAPPER_GIT_REMOTE" "$bootstrapper_path"
   if [[ -n $BOOTSTRAPPER_GIT_DEPLOY_KEY ]]; then
     ssh-add -qD
     eval "$(ssh-agent -k)" >&2
   fi
 
-  (cd "$persistent_path/bootstrapper" && upkg install)
+  (cd "$bootstrapper_path" && upkg install)
 
   local hostname ret=0
   for hostname in "${HOSTNAMES[@]}"; do
     info "Bootstrapping %s" "$hostname"
-    if /var/lib/persistent/bootstrapper/bootstrap.sh create \
+    if "$bootstrapper_path/bootstrap.sh" create \
       --varspath=$nfs_path/vars.sh \
-      --cachepath="$persistent_path/cache" \
+      --cachepath="/var/lib/persistent/cache" \
       "$hostname" "$nfs_path/images/$hostname.tmp.raw"; then
       info "Successfully to bootstrapped %s" "$hostname"
       mv "$nfs_path/images/$hostname.tmp.raw" "$nfs_path/images/$hostname.latest.raw"
