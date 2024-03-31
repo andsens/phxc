@@ -1,0 +1,11 @@
+[Unit]
+Description=Mount the bootstrapper images share
+After=network-online.target
+
+[Install]
+WantedBy=bootstrap.target
+
+[Mount]
+What=${TRUENAS_HOST_BRIDGE_SERVER_IP}:${BOOTSTRAPPER_NFS_IMAGES_SHARE}
+Where=/var/lib/persistent/images
+Type=nfs

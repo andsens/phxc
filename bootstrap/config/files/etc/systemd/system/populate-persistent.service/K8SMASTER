@@ -1,0 +1,11 @@
+[Unit]
+Description=Create /var/lib/persistent subdirs
+After=var-lib-persistent.mount
+ConditionPathExists=!/var/lib/persistent/rancher
+
+[Install]
+WantedBy=persistent-volume.target
+
+[Service]
+Type=oneshot
+ExecStart=mkdir /var/lib/persistent/lib-rancher /var/lib/persistent/lib-kubelet

@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+error=0; trap 'error=$(($?>$error?$?:$error))' ERR # save maximum error code
+
+mkdir "${target:?}/var/lib/persistent"
+
+for unit in persistent-volume.target mkfs-persistent.service expand-persistent.service var-lib-persistent.mount link-persistent.service; do
+  if fcopy -SM "/etc/systemd/system/$unit"; then
+    $ROOTCMD systemctl enable "$unit"
+  fi
+done
+
+exit $error

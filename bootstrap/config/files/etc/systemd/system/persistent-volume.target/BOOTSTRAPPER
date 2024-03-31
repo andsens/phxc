@@ -1,0 +1,8 @@
+[Unit]
+Description=Target for handling the persistent volume
+Requires=multi-user.target
+RequiredBy=bootstrap.target
+Before=bootstrap.target
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,11 @@
+[Unit]
+Description=Mount the persistent volume
+
+[Install]
+WantedBy=persistent-volume.target
+
+[Mount]
+What={%TRUENAS_PERSISTENT_VOLUME_DEV_PATH%}
+Where=/var/lib/persistent
+Type=ext4
+Options=defaults

@@ -26,7 +26,7 @@ After=network-online.target
 WantedBy=multi-user.target
 
 [Mount]
-What=${NFS_NODE_SERVER_IP}:${ADMIN_NFS_HOME_SHARE}
+What=${TRUENAS_HOST_BRIDGE_SERVER_IP}:${ADMIN_NFS_HOME_SHARE}
 Where=/home/${ADMIN_USERNAME}
 Type=nfs
 EOF

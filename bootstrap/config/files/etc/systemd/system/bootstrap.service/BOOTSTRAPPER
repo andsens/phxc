@@ -1,0 +1,9 @@
+[Unit]
+Description=Bootstrap all images
+
+[Install]
+WantedBy=bootstrap.target
+
+[Service]
+Type=oneshot
+ExecStart=true
