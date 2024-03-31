@@ -17,25 +17,25 @@ Options:
 # docopt parser below, refresh this parser with `docopt.sh update-vms.sh`
 # shellcheck disable=2016,1090,1091,2034,2154
 docopt() { source "$PKGROOT/docopt-lib-v1.0.0.sh" '1.0.0' || { ret=$?
-printf -- "exit %d\n" "$ret"; exit "$ret"; }; set -e; trimmed_doc=${DOC:0:280}
-usage=${DOC:70:51}; digest=91e0c; shorts=('' '')
-longs=(--bootstrapper --varspath); argcounts=(1 1); node_0(){
-value __bootstrapper 0; }; node_1(){ value __varspath 1; }; node_2(){
-value VMNAME_HOSTNAME a true; }; node_3(){ optional 0 1; }; node_4(){ optional 3
-}; node_5(){ oneormore 2; }; node_6(){ required 4 5; }; node_7(){ required 6; }
-cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2
-printf "%s\n" "${DOC:70:51}" >&2; exit 1; }'; unset var___bootstrapper \
-var___varspath var_VMNAME_HOSTNAME; parse 7 "$@"
-local prefix=${DOCOPT_PREFIX:-''}; unset "${prefix}__bootstrapper" \
-"${prefix}__varspath" "${prefix}VMNAME_HOSTNAME"
-eval "${prefix}"'__bootstrapper=${var___bootstrapper:-Bootstrapper}'
+printf -- "exit %d\n" "$ret"; exit "$ret"; }; set -e; trimmed_doc=${DOC:0:289}
+usage=${DOC:70:60}; digest=21917; shorts=('' '')
+longs=(--varspath --bootstrapper); argcounts=(1 1); node_0(){ value __varspath 0
+}; node_1(){ value __bootstrapper 1; }; node_2(){
+value VMNAME_HOSTNAME_DISKPATH a true; }; node_3(){ optional 0 1; }; node_4(){
+optional 3; }; node_5(){ oneormore 2; }; node_6(){ required 4 5; }; node_7(){
+required 6; }; cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2
+printf "%s\n" "${DOC:70:60}" >&2; exit 1; }'; unset var___varspath \
+var___bootstrapper var_VMNAME_HOSTNAME_DISKPATH; parse 7 "$@"
+local prefix=${DOCOPT_PREFIX:-''}; unset "${prefix}__varspath" \
+"${prefix}__bootstrapper" "${prefix}VMNAME_HOSTNAME_DISKPATH"
 eval "${prefix}"'__varspath=${var___varspath:-'"'"'$PKGROOT/../vars.sh'"'"'}'
-if declare -p var_VMNAME_HOSTNAME >/dev/null 2>&1; then
-eval "${prefix}"'VMNAME_HOSTNAME=("${var_VMNAME_HOSTNAME[@]}")'; else
-eval "${prefix}"'VMNAME_HOSTNAME=()'; fi; local docopt_i=1
+eval "${prefix}"'__bootstrapper=${var___bootstrapper:-Bootstrapper}'
+if declare -p var_VMNAME_HOSTNAME_DISKPATH >/dev/null 2>&1; then
+eval "${prefix}"'VMNAME_HOSTNAME_DISKPATH=("${var_VMNAME_HOSTNAME_DISKPATH[@]}")'
+else eval "${prefix}"'VMNAME_HOSTNAME_DISKPATH=()'; fi; local docopt_i=1
 [[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2; for ((;docopt_i>0;docopt_i--)); do
-declare -p "${prefix}__bootstrapper" "${prefix}__varspath" \
-"${prefix}VMNAME_HOSTNAME"; done; }
+declare -p "${prefix}__varspath" "${prefix}__bootstrapper" \
+"${prefix}VMNAME_HOSTNAME_DISKPATH"; done; }
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/docopt-lib-v1.0.0.sh"' update-vms.sh`
   eval "$(docopt "$@")"
   cache_all_vms
