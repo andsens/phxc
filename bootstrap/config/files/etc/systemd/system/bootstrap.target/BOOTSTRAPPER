@@ -1,0 +1,6 @@
+[Unit]
+Description=Target for bootstrapping images
+Requires=multi-user.target
+
+[Install]
+WantedBy=multi-user.target

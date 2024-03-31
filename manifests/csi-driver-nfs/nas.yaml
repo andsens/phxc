@@ -4,9 +4,9 @@ metadata:
   name: nas-nfs
 provisioner: nfs.csi.k8s.io
 parameters:
-  server: NFS_CLUSTER_SERVER_IP
-  share: NFS_CLUSTER_SHARE
-  subDir: NFS_CLUSTER_SUBDIR
+  server: CLUSTER_NFS_SERVER_IP
+  share: CLUSTER_NFS_SHARE
+  subDir: CLUSTER_NFS_SUBDIR
 reclaimPolicy: Delete
 volumeBindingMode: Immediate
 mountOptions: [nfsvers=4.1]

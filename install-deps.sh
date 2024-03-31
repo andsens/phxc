@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+sudo apt-get install -y --no-install-recommends fai-server fai-setup-storage qemu-utils
+
 wget -qO~/.local/bin/kpt https://github.com/kptdev/kpt/releases/download/v1.0.0-beta.49/kpt_linux_amd64
 wget -qO~/.local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/v1.28.4/bin/linux/amd64/kubectl
 wget -qO~/.local/bin/k9s https://github.com/derailed/k9s/releases/download/v0.31.9/k9s_linux_amd64.deb

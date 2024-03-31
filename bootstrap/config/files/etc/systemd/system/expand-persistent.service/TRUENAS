@@ -1,0 +1,10 @@
+[Unit]
+Description=Expand the filesystem on the persistent volume
+After=mkfs-persistent.service
+
+[Install]
+WantedBy=persistent-volume.target
+
+[Service]
+Type=oneshot
+ExecStart=resize2fs {%TRUENAS_PERSISTENT_VOLUME_DEV_PATH%}

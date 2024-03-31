@@ -13,7 +13,6 @@ main() {
   DOC="bootstrap.sh - Bootstrap k3s cluster images
 Usage:
   bootstrap create HOSTNAME [IMAGESIZE]
-  bootstrap create-var HOSTNAME
   bootstrap mount IMAGEPATH
   bootstrap boot IMAGEPATH
 "
@@ -21,30 +20,26 @@ Usage:
 # shellcheck disable=2016,1090,1091,2034
 docopt() { source "$PKGROOT/.upkg/andsens/docopt.sh/docopt-lib.sh" '1.0.0' || {
 ret=$?; printf -- "exit %d\n" "$ret"; exit "$ret"; }; set -e
-trimmed_doc=${DOC:0:177}; usage=${DOC:44:133}; digest=9f0ce; shorts=(); longs=()
+trimmed_doc=${DOC:0:145}; usage=${DOC:44:101}; digest=b5f27; shorts=(); longs=()
 argcounts=(); node_0(){ value HOSTNAME a; }; node_1(){ value IMAGESIZE a; }
 node_2(){ value IMAGEPATH a; }; node_3(){ _command create; }; node_4(){
-_command create_var create-var; }; node_5(){ _command mount; }; node_6(){
-_command boot; }; node_7(){ optional 1; }; node_8(){ required 3 0 7; }
-node_9(){ required 4 0; }; node_10(){ required 5 2; }; node_11(){ required 6 2
-}; node_12(){ either 8 9 10 11; }; node_13(){ required 12; }
+_command mount; }; node_5(){ _command boot; }; node_6(){ optional 1; }
+node_7(){ required 3 0 6; }; node_8(){ required 4 2; }; node_9(){ required 5 2
+}; node_10(){ either 7 8 9; }; node_11(){ required 10; }
 cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2
-printf "%s\n" "${DOC:44:133}" >&2; exit 1; }'; unset var_HOSTNAME \
-var_IMAGESIZE var_IMAGEPATH var_create var_create_var var_mount var_boot
-parse 13 "$@"; local prefix=${DOCOPT_PREFIX:-''}; unset "${prefix}HOSTNAME" \
-"${prefix}IMAGESIZE" "${prefix}IMAGEPATH" "${prefix}create" \
-"${prefix}create_var" "${prefix}mount" "${prefix}boot"
-eval "${prefix}"'HOSTNAME=${var_HOSTNAME:-}'
+printf "%s\n" "${DOC:44:101}" >&2; exit 1; }'; unset var_HOSTNAME \
+var_IMAGESIZE var_IMAGEPATH var_create var_mount var_boot; parse 11 "$@"
+local prefix=${DOCOPT_PREFIX:-''}; unset "${prefix}HOSTNAME" \
+"${prefix}IMAGESIZE" "${prefix}IMAGEPATH" "${prefix}create" "${prefix}mount" \
+"${prefix}boot"; eval "${prefix}"'HOSTNAME=${var_HOSTNAME:-}'
 eval "${prefix}"'IMAGESIZE=${var_IMAGESIZE:-}'
 eval "${prefix}"'IMAGEPATH=${var_IMAGEPATH:-}'
 eval "${prefix}"'create=${var_create:-false}'
-eval "${prefix}"'create_var=${var_create_var:-false}'
 eval "${prefix}"'mount=${var_mount:-false}'
 eval "${prefix}"'boot=${var_boot:-false}'; local docopt_i=1
 [[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2; for ((;docopt_i>0;docopt_i--)); do
 declare -p "${prefix}HOSTNAME" "${prefix}IMAGESIZE" "${prefix}IMAGEPATH" \
-"${prefix}create" "${prefix}create_var" "${prefix}mount" "${prefix}boot"; done
-}
+"${prefix}create" "${prefix}mount" "${prefix}boot"; done; }
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/andsens/docopt.sh/docopt-lib.sh"' bootstrap.sh`
   eval "$(docopt "$@")"
 
@@ -64,24 +59,6 @@ declare -p "${prefix}HOSTNAME" "${prefix}IMAGESIZE" "${prefix}IMAGEPATH" \
       sudo chown "$UID:$UID" "$image_path"
       sudo chown -R "$UID:$UID" "$PKGROOT/bootstrap/cache" "$image_path"
     fi
-  elif $create_var; then
-    local mkdir=mkdir image_path="$PKGROOT/bootstrap/images/$HOSTNAME.var.raw"
-    if [[ $UID != 0 ]]; then
-      mkdir="sudo mkdir"
-    fi
-    rm -f "$image_path"
-    truncate --size=5M "$image_path"
-    mkfs "$image_path"
-    mount_image "$image_path"
-    case $HOSTNAME in
-      k8s-nas)
-        $mkdir -p "$MOUNT_PATH/lib-rancher"
-        $mkdir -p "$MOUNT_PATH/lib-kubelet"
-        ;;
-      bootstrapper)
-        $mkdir -p "$MOUNT_PATH/cache"
-        ;;
-    esac
   elif $mount; then
     local mount_path
     mount_path=$PKGROOT/bootstrap/mnt/$(basename "$IMAGEPATH" .raw)

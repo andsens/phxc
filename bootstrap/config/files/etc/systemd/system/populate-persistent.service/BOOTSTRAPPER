@@ -1,0 +1,13 @@
+[Unit]
+Description=Create /var/lib/persistent subdirs
+After=var-lib-persistent.mount
+ConditionPathExists=!/var/lib/persistent/cache
+
+[Install]
+WantedBy=persistent-volume.target
+
+[Service]
+Type=oneshot
+ExecStart=\
+  mkdir /var/lib/persistent/cache
+  mkdir /var/lib/persistent/images
