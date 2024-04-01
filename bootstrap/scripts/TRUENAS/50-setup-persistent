@@ -4,10 +4,8 @@ error=0; trap 'error=$(($?>$error?$?:$error))' ERR # save maximum error code
 
 mkdir "${target:?}/var/lib/persistent"
 
-for unit in persistent-volume.target mkfs-persistent.service expand-persistent.service var-lib-persistent.mount link-persistent.service populate-persistent.service; do
-  if fcopy -SM "/etc/systemd/system/$unit"; then
-    $ROOTCMD systemctl enable "$unit"
-  fi
-done
+# https://www.freedesktop.org/software/systemd/man/latest/systemd.mount.html#x-systemd.makefs
+# The mkfgs and growfs options are not available when specifying this mount as a systemd mount unit, so we use fstab
+ainsl /etc/fstab "${TRUENAS_PERSISTENT_VOLUME_DEV_PATH}  /var/lib/persistent   ext4    defaults,x-systemd.makefs,x-systemd.growfs"
 
 exit $error

@@ -1,5 +1,0 @@
-[Unit]
-Description=Target for handling the persistent volume
-
-[Install]
-WantedBy=multi-user.target
