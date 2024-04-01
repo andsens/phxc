@@ -6,7 +6,7 @@ provisioner: nfs.csi.k8s.io
 parameters:
   server: CLUSTER_NFS_SERVER_IP
   share: CLUSTER_NFS_SHARE
-  subDir: CLUSTER_NFS_SUBDIR
+  subDir: '${pvc.metadata.namespace}/${pvc.metadata.name}'
 reclaimPolicy: Delete
 volumeBindingMode: Immediate
 mountOptions: [nfsvers=4.1]

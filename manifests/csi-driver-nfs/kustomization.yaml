@@ -45,17 +45,6 @@ replacements:
 - source:
     kind: ConfigMap
     name: cluster-vars
-    fieldPath: data.CLUSTER_NFS_SUBDIR
-  targets:
-  - select:
-      group: storage.k8s.io
-      kind: StorageClass
-      name: nas-nfs
-    fieldPaths:
-    - parameters.subDir
-- source:
-    kind: ConfigMap
-    name: cluster-vars
     fieldPath: data.CLUSTER_NFS_SERVER_IP_CIDR
   targets:
   - select:
