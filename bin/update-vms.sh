@@ -49,12 +49,8 @@ declare -p "${prefix}__bootstrapper" "${prefix}VMNAME_HOSTNAME_DISKPATH"; done
     vmhost=${vmhostdisk%:*}
     hostnames+=("${vmhost#*:}")
   done
-  local tee=tee mv=mv
-  [[ $UID = 0 ]] || tee="sudo tee"
-  [[ $UID = 0 ]] || mv="sudo mv"
   # shellcheck disable=2086
-  printf -- '#!/usr/bin/env bash\nHOSTNAMES=(%s)\n' "${hostnames[*]}" | \
-    $tee "$PKGROOT/bootstrap-vms.args.sh" >/dev/null
+  printf -- '#!/usr/bin/env bash\nHOSTNAMES=(%s)\n' "${hostnames[*]}" > "$PKGROOT/bootstrap-vms.args.sh"
   # shellcheck disable=2064
   trap "rm -f \"$PKGROOT/bootstrap-vms.args.sh\"" EXIT
 
@@ -85,7 +81,7 @@ declare -p "${prefix}__bootstrapper" "${prefix}VMNAME_HOSTNAME_DISKPATH"; done
       local res=0
       replace_vm_disk "$vmname" "$latest_imgpath" "$diskpath" || res=$?
       if [[ $res = 0 ]]; then
-        $mv "$latest_imgpath" "$current_imgpath"
+        mv "$latest_imgpath" "$current_imgpath"
         info "Successfully replaced disk for '%s'" "$vmname"
       else
         error "Failed to replace disk for '%s'" "$vmname"
