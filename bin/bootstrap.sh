@@ -43,12 +43,18 @@ declare -p "${prefix}__imgsize" "${prefix}__cachepath" "${prefix}HOSTNAME"; done
     read -rp 'Do you want to continue regardless? [y/N]' continue
     [[ $continue =~ [Yy] ]] || fatal "User aborted operation"
   fi
-  local env=env ln=ln imgpath=$PKGROOT/images/$HOSTNAME.raw
-  [[ $UID = 0 ]] || env="sudo env"
-  [[ $UID = 0 ]] || ln="sudo ln"
+  local env=env ln=ln rm=rm imgpath=$PKGROOT/images/$HOSTNAME.raw
+  if [[ $UID != 0 ]]; then
+    env="sudo env"
+    ln="sudo ln"
+    rm="sudo rm"
+  fi
   [[ $__cachepath != "\$PKGROOT/cache" ]] || __cachepath=$PKGROOT/cache
   mkdir -p "$(dirname "$imgpath")" "$PKGROOT/logs/fai" "$__cachepath"
-  [[ -e "/var/log/fai" ]] || $ln -s "$PKGROOT/logs/fai" "/var/log/fai"
+  if [[ ! -L "/var/log/fai" ]]; then
+    $rm -rf "$PKGROOT/logs/fai"
+    $ln -s "$PKGROOT/logs/fai" "/var/log/fai"
+  fi
   # shellcheck disable=SC2086
   $env - \
     "PATH=$PATH" \
