@@ -23,7 +23,7 @@ replacements:
 - source:
     kind: ConfigMap
     name: cluster-vars
-    fieldPath: data.CLUSTER_NFS_SERVER_IP
+    fieldPath: data.TRUENAS_HOST_BRIDGE_SERVER_IP
   targets:
   - select:
       group: storage.k8s.io
@@ -45,7 +45,7 @@ replacements:
 - source:
     kind: ConfigMap
     name: cluster-vars
-    fieldPath: data.CLUSTER_NFS_SERVER_IP_CIDR
+    fieldPath: data.TRUENAS_HOST_BRIDGE_SERVER_IP_CIDR
   targets:
   - select:
       group: networking.k8s.io

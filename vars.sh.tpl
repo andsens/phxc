@@ -7,6 +7,7 @@
 # For a random IPv4 subnet use random.org 1-255 for the two groups after the "10."
 # For a random IPv6 subnet use https://unique-local-ipv6.com/
 TRUENAS_HOST_BRIDGE_SERVER_IP="[fd25:9998:d0e7:e351:1a01:be9:4d9a:157d]"
+TRUENAS_HOST_BRIDGE_SERVER_IP_CIDR="fd25:9998:d0e7:e351:1a01:be9:4d9a:157d/128"
 
 # Used to confirm ensure scripts are run on the correct machine
 MACHINE_IDS_truenas='38a6ed82302b612fd55b9b69660a83e0'
@@ -57,6 +58,3 @@ CLUSTER_IPV4_CIDR="10.42.0.0/16"
 CLUSTER_IPV6_CIDR="fd73:9867:6b4d:42::/56"
 CLUSTER_IPV4_SERVICE_CIDR="10.43.0.0/16"
 CLUSTER_IPV6_SERVICE_CIDR="fd73:9867:6b4d:43::/112"
-
-CLUSTER_NFS_SERVER_IP="10.15.180.1"
-CLUSTER_NFS_SERVER_IP_CIDR="10.15.180.0/32"
