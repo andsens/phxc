@@ -1,0 +1,22 @@
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: external-dns
+  labels:
+    app.kubernetes.io/name: external-dns
+    app.kubernetes.io/component: external-dns
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: external-dns
+      app.kubernetes.io/component: external-dns
+  egress:
+  - toPorts:
+    - ports:
+      - port: "2379"
+    toEndpoints:
+    - matchLabels:
+        "k8s:io.kubernetes.pod.namespace": etcd
+        app.kubernetes.io/name: etcd
+        app.kubernetes.io/component: etcd

@@ -1,0 +1,7 @@
+apiVersion: kpt.dev/v1alpha1
+kind: ResourceGroup
+metadata:
+  name: inventory-49874018
+  namespace: kube-system
+  labels:
+    cli-utils.sigs.k8s.io/inventory-id: 78c77cbf3672249c918e9a62884adebcb03f2a2c-1712004395999570407
