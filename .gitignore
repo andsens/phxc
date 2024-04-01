@@ -5,3 +5,5 @@
 /mnt
 /vars.sh
 /bootstrap-vms.args.sh
+/deploy-key
+/deploy-key.pub
