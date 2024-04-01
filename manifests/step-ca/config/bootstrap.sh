@@ -27,6 +27,9 @@ setup_certificates() {
     printf "bootstrap.sh: Root certificate secret does not exist or has been recreated, creating now\n" >&2
     kubectl create -n "$NAMESPACE" secret tls step-ca-root \
       --cert="$STEPPATH/certs/root/tls.crt" \
+      --key="$STEPPATH/certs/root/tls.key" || \
+    kubectl replace -n "$NAMESPACE" secret tls step-ca-root \
+      --cert="$STEPPATH/certs/root/tls.crt" \
       --key="$STEPPATH/certs/root/tls.key"
   else
     printf "bootstrap.sh: Root certificate secret exists, skipping creation\n" >&2
@@ -70,8 +73,9 @@ setup_issuer_provisioner() {
     printf "bootstrap.sh: step-issuer provisioner JWK exists, skipping creation\n" >&2
   fi
 
-  if $jwk_is_new || ! kubectl get stepclusterissuer step-issuer >/dev/null; then
-    printf "bootstrap.sh: StepClusterIssuer does not exist or the provisioner JWK has been recreated, creating now\n" >&2
+  kubectl get stepclusterissuer step-issuer -ojsonpath='{.spec.caBundle}' | base64 -d >"$STEPPATH/certs/issuer-provisioner/caBundle.key" || true
+  if $jwk_is_new || ! diff -q "$STEPPATH/certs/root/tls.crt" "$STEPPATH/certs/issuer-provisioner/caBundle.key"; then
+    printf "bootstrap.sh: StepClusterIssuer does not exist, the provisioner JWK has been recreated, or the caBundle is incorrect, creating now\n" >&2
     kubectl apply -f <(printf -- "apiVersion: certmanager.step.sm/v1beta1
 kind: StepClusterIssuer
 metadata:

@@ -37,7 +37,7 @@ rules:
 - apiGroups: [certmanager.step.sm]
   resources: [stepclusterissuers]
   resourceNames: [step-issuer]
-  verbs: [get, delete]
+  verbs: [get, patch]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
