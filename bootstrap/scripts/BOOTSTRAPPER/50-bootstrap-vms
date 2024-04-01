@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+error=0; trap 'error=$(($?>$error?$?:$error))' ERR # save maximum error code
+
+fcopy -SM /etc/systemd/system/bootstrap-vms.service
+$ROOTCMD systemctl enable bootstrap-vms.service
+
+$ROOTCMD fai-mk-configspace
+
+exit $error

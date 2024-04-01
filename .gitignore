@@ -1,2 +1,7 @@
 /.upkg
+/cache
+/images
+/logs
+/mnt
 /vars.sh
+/bootstrap-vms.args.sh

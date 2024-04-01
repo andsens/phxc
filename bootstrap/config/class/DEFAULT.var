@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-# shellcheck source-path=../../../ disable=1090
-source "$VARSPATH"

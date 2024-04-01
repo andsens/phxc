@@ -8,17 +8,15 @@
 # For a random IPv6 subnet use https://unique-local-ipv6.com/
 TRUENAS_HOST_BRIDGE_SERVER_IP="[fd25:9998:d0e7:e351:1a01:be9:4d9a:157d]"
 
+# Used to confirm ensure scripts are run on the correct machine
+MACHINE_IDS_truenas='38a6ed82302b612fd55b9b69660a83e0'
+
 TIMEZONE=Europe/Copenhagen
 APTPROXY=http://localhost:3142
 
 TRUENAS_PERSISTENT_VOLUME_DEV_PATH=/dev/vdb
 
-HOME_CLUSTER_GIT_REMOTE=https://github.com/andsens/home-cluster.git
-HOME_CLUSTER_GIT_REMOTE_SSH_KEYS='|1|8jHpq1TRdjyRbwBRcH23I2OLtF8=|uk+0m7ScMP+V/M4ZfiVkyohWKDA= ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCj7ndNxQowgcQnjshcLrqPEiiphnt+VTTvDP6mHBL9j1aNUkY4Ue1gvwnGLVlOhGeYrnZaMgRK6+PKCUXaDbC7qtbW8gIkhL7aGCsOr/C56SJMy/BCZfxd1nWzAOxSDPgVsmerOBYfNqltV9/hWCqBywINIR+5dIg6JTJ72pcEpEjcYgXkE2YEFXV1JHnsKgbLWNlhScqb2UmyRkQyytRLtL+38TGxkxCflmO+5Z8CSSNY7GidjMIZ7Q4zMjA2n1nGrlTDkzwDCsw+wqFPGQA179cnfGWOWRVruj16z6XyvxvjJwbz0wQZ75XK5tKSb7FNyeIEs4TT4jk+S4dhPeAUC5y+bDYirYgM4GC7uEnztnZyaVWQ7B381AK4Qdrwt51ZqExKbQpTUNn+EjqoTwvqNj4kqx5QUCI0ThS/YkOxJCXmPUWZbhjpCg56i+2aB6CmK2JGhn57K5mj0MNdBXA4/WnwH6XoPWJzK5Nyu2zB3nAZp+S5hpQs+p1vN1/wsjk=
-|1|uQiPao7vfX6EtebIPrakQdTFeGA=|9xWf68bM3DiK+EkkE4T/ExnNHbg= ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBEmKSENjQEezOmxkZMy7opKgwFB9nkt5YRrYMjNuG5N87uRgg6CLrbo5wAdT/y6v0mKV0U2w0WZ2YB/++Tpockg=
-|1|E/XNHmuoBRKRPJu+eHMyjYli4g0=|q735yv4k6923UkPMM9b78WgBFTA= ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl'
-# Leave empty if using a public repo
-HOME_CLUSTER_GIT_DEPLOY_KEY=
+HOME_CLUSTER_NFS_SHARE=/mnt/cluster/home-cluster
 
 ######################
 ### Admin settings ###
@@ -47,6 +45,7 @@ BOOTSTRAPPER_NFS_SHARE=/mnt/cluster/bootstrapper
 
 MACHINE_IDS['k8s-nas']='2a178ed534ac2a67dbc8049d65eddc45'
 TRUENAS_HOST_BRIDGE_CLIENT_IPs['k8s-nas']="10.15.180.2/24,fd25:9998:d0e7:e351:1a01:be9:4d9a:157e/48"
+CLUSTER_NFS_SHARE=/mnt/cluster/workloads
 
 # Name of the cluster, used in various contexts to identify it outwardly
 # Spaces are allowed and might be replaced with _ or - depending on the context
@@ -66,5 +65,4 @@ CLUSTER_IPV6_SERVICE_CIDR="fd73:9867:6b4d:43::/112"
 
 CLUSTER_NFS_SERVER_IP="10.15.180.1"
 CLUSTER_NFS_SERVER_IP_CIDR="10.15.180.0/32"
-CLUSTER_NFS_SHARE=/mnt/cluster/storage/workloads
 CLUSTER_NFS_SUBDIR='${pvc.metadata.namespace}/${pvc.metadata.name}'

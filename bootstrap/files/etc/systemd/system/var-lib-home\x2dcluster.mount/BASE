@@ -1,0 +1,11 @@
+[Unit]
+Description=Mount the home-cluster share
+After=network-online.target
+
+[Install]
+WantedBy=multi-user.target
+
+[Mount]
+What={%TRUENAS_HOST_BRIDGE_SERVER_IP%}:{%HOME_CLUSTER_NFS_SHARE%}
+Where=/var/lib/home-cluster
+Type=nfs
