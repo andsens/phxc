@@ -46,10 +46,7 @@ declare -p "${prefix}HOSTNAMES"; done; }
   local hostname ret=0
   for hostname in "${HOSTNAMES[@]}"; do
     info "Bootstrapping %s" "$hostname"
-    if "$PKGROOT/bootstrap.sh" \
-      --varspath="$PKGROOT/vars.sh" \
-      --cachepath="/var/lib/persistent/cache" \
-      "$hostname"; then
+    if "$PKGROOT/bin/bootstrap.sh" --cachepath="/var/lib/persistent/cache" "$hostname"; then
       info "Successfully bootstrapped %s" "$hostname"
       mv "$PKGROOT/images/$hostname.raw" "$PKGROOT/images/$hostname.latest.raw"
     else
