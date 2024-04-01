@@ -8,23 +8,28 @@ main() {
 }
 
 setup_certificates() {
-  local root_ca_is_new=false
   printf "bootstrap.sh: Setting up root and intermediate certificates\n" >&2
 
-  mkdir "$STEPPATH/certs/root"
-  if ! kubectl get -n "$NAMESPACE" secret step-ca-root -o jsonpath='{.data.tls\.crt}' | base64 -d >"$STEPPATH/certs/root/tls.crt"; then
-    printf "bootstrap.sh: Root certificate does not exist, creating now\n" >&2
+  local root_ca_is_new=false
+  if [[ ! -e "$STEPPATH/certs/root/tls.key" ]]; then
     rm -f "$STEPPATH/certs/root/tls.crt"
+    printf "bootstrap.sh: Root certificate does not exist on PV, creating now\n" >&2
     root_ca_is_new=true
     step certificate create --template="$STEPPATH/templates/root_ca.tpl" \
       --no-password --insecure \
       --not-after=87600h \
       "$CLUSTER_NAME Root" "$STEPPATH/certs/root/tls.crt" "$STEPPATH/certs/root/tls.key"
+  else
+    printf "bootstrap.sh: Root certificate exists on PV, skipping creation\n" >&2
+  fi
+
+  if $root_ca_is_new || ! kubectl get -n "$NAMESPACE" secret step-ca-root -o jsonpath='{.data.tls\.crt}' >/dev/null; then
+    printf "bootstrap.sh: Root certificate secret does not exist or has been recreated, creating now\n" >&2
     kubectl create -n "$NAMESPACE" secret tls step-ca-root \
       --cert="$STEPPATH/certs/root/tls.crt" \
       --key="$STEPPATH/certs/root/tls.key"
   else
-    printf "bootstrap.sh: Root certificate exists, skipping creation\n" >&2
+    printf "bootstrap.sh: Root certificate secret exists, skipping creation\n" >&2
   fi
 
   if $root_ca_is_new || ! kubectl get -n "$NAMESPACE" secret step-ca-intermediate >/dev/null; then
