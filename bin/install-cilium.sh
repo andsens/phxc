@@ -9,23 +9,19 @@ main() {
 
   DOC="install-cilium - Install cilium in k3s
 Usage:
-  install-cilium CLUSTER_IPV4_CIDR CLUSTER_IPV6_CIDR
+  install-cilium
 "
 # docopt parser below, refresh this parser with `docopt.sh install-cilium.sh`
 # shellcheck disable=2016,1090,1091,2034
 docopt() { source "$PKGROOT/.upkg/andsens/docopt.sh/docopt-lib.sh" '1.0.0' || {
 ret=$?; printf -- "exit %d\n" "$ret"; exit "$ret"; }; set -e
-trimmed_doc=${DOC:0:98}; usage=${DOC:39:59}; digest=fd5a5; shorts=(); longs=()
-argcounts=(); node_0(){ value CLUSTER_IPV4_CIDR a; }; node_1(){
-value CLUSTER_IPV6_CIDR a; }; node_2(){ required 0 1; }; node_3(){ required 2; }
+trimmed_doc=${DOC:0:62}; usage=${DOC:39:23}; digest=014c6; shorts=(); longs=()
+argcounts=(); node_0(){ required ; }; node_1(){ required 0; }
 cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2
-printf "%s\n" "${DOC:39:59}" >&2; exit 1; }'; unset var_CLUSTER_IPV4_CIDR \
-var_CLUSTER_IPV6_CIDR; parse 3 "$@"; local prefix=${DOCOPT_PREFIX:-''}
-unset "${prefix}CLUSTER_IPV4_CIDR" "${prefix}CLUSTER_IPV6_CIDR"
-eval "${prefix}"'CLUSTER_IPV4_CIDR=${var_CLUSTER_IPV4_CIDR:-}'
-eval "${prefix}"'CLUSTER_IPV6_CIDR=${var_CLUSTER_IPV6_CIDR:-}'; local docopt_i=1
+printf "%s\n" "${DOC:39:23}" >&2; exit 1; }'; unset ; parse 1 "$@"; return 0
+local prefix=${DOCOPT_PREFIX:-''}; unset ; local docopt_i=1
 [[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2; for ((;docopt_i>0;docopt_i--)); do
-declare -p "${prefix}CLUSTER_IPV4_CIDR" "${prefix}CLUSTER_IPV6_CIDR"; done; }
+declare -p ; done; }
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/andsens/docopt.sh/docopt-lib.sh"' install-cilium.sh`
   eval "$(docopt "$@")"
   source "$PKGROOT/vars.sh"
@@ -40,6 +36,7 @@ declare -p "${prefix}CLUSTER_IPV4_CIDR" "${prefix}CLUSTER_IPV6_CIDR"; done; }
   done
   if ! kubectl get -n kube-system deployment cilium-operator -o name >/dev/null 2>&1; then
     info "Cilium is not installed, installing now"
+    set -x
     exec /usr/local/bin/cilium install --version=1.15.1 \
       --set=ipam.operator.clusterPoolIPv4PodCIDRList="$CLUSTER_IPV4_CIDR" \
       --set=ipam.operator.clusterPoolIPv6PodCIDRList="$CLUSTER_IPV6_CIDR" \
