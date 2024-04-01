@@ -56,14 +56,14 @@ declare -p "${prefix}__imgsize" "${prefix}__cachepath" "${prefix}HOSTNAME" \
 
   # shellcheck disable=SC2154
   if $create; then
-    local run_env=env
-    [[ $UID = 0 ]] || run_env="sudo env"
+    local env=env ln=ln
+    [[ $UID = 0 ]] || env="sudo env"
+    [[ $UID = 0 ]] || ln="sudo ln"
     [[ $__cachepath != "\$PKGROOT/cache" ]] || __cachepath=$PKGROOT/cache
     mkdir -p "$(dirname "$imgpath")" "$PKGROOT/logs/fai" "$__cachepath"
-    rm -f "$PKGROOT/logs/fai/$HOSTNAME"
-    ln -s "/var/log/fai/$HOSTNAME/last" "$PKGROOT/logs/fai/$HOSTNAME"
+    [[ -e "/var/log/fai" ]] || $ln -s "$PKGROOT/logs/fai" "/var/log/fai"
     # shellcheck disable=SC2086
-    $run_env - \
+    $env - \
       "PATH=$PATH" \
       "PKGROOT=$PKGROOT" \
       "CACHEPATH=$__cachepath" \
