@@ -36,8 +36,7 @@ declare -p ; done; }
   done
   if ! kubectl get -n kube-system deployment cilium-operator -o name >/dev/null 2>&1; then
     info "Cilium is not installed, installing now"
-    set -x
-    exec /usr/local/bin/cilium install --version=1.15.1 \
+    /usr/local/bin/cilium install --version=1.15.1 \
       --set=ipam.operator.clusterPoolIPv4PodCIDRList="$CLUSTER_IPV4_CIDR" \
       --set=ipam.operator.clusterPoolIPv6PodCIDRList="$CLUSTER_IPV6_CIDR" \
       --set=ipv6.enabled=true \
@@ -50,8 +49,16 @@ declare -p ; done; }
       --set=socketLB.enabled=true \
       --set=kubeConfigPath=/etc/rancher/k3s/k3s.yaml
   else
-    info "Cilium already installed, nothing to do"
+    info "Cilium is already installed"
   fi
+
+  info "Waiting for Cilium to become ready"
+  local max_wait=300 wait_left=300
+  while [[ ! $(kubectl get -n kube-system deployment cilium-operator -ojsonpath='{.status.readyReplicas}' 2>&1) != 1 ]]; do
+    sleep 1
+    ((--wait_left > 0)) || fatal "Timed out after %d seconds waiting for Cilium to become ready" "$max_wait"
+  done
+  info "Cilium is ready"
 }
 
 main "$@"

@@ -1,0 +1,9 @@
+apiVersion: cluster.local
+kind: ClusterVarsConfigMapGenerator
+metadata:
+  name: cluster-vars
+  annotations:
+    config.kubernetes.io/function: |
+      exec:
+        path: ./generate-cluster-vars-cm.sh
+spec: {}

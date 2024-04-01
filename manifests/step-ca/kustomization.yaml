@@ -2,15 +2,23 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: step-ca
 resources:
+- ../cluster-vars
 - https://raw.githubusercontent.com/smallstep/helm-charts/v0.22.0/step-issuer/crds/certmanager.step.sm_stepclusterissuers.yaml
 - https://raw.githubusercontent.com/smallstep/helm-charts/v0.22.0/step-issuer/crds/certmanager.step.sm_stepissuers.yaml
 - bootstrap.yaml
 - certificates.yaml
 - issuer.yaml
-- cluster-vars.yaml
 - namespace.yaml
 - Kptfile
 - resourcegroup.yaml
+patches:
+- patch: |-
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: cluster-vars
+      annotations:
+        config.kubernetes.io/local-config: "true"
 configMapGenerator:
 - files:
   - config/bootstrap.sh

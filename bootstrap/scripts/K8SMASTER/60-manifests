@@ -2,7 +2,12 @@
 
 error=0; trap 'error=$(($?>$error?$?:$error))' ERR # save maximum error code
 
-fcopy -SM /etc/systemd/system/apply-manifests.service
-$ROOTCMD systemctl enable apply-manifests.service
+wget -qO"${target:?}/usr/local/bin/kpt" https://github.com/kptdev/kpt/releases/download/v1.0.0-beta.49/kpt_linux_amd64
+chmod +x "${target:?}/usr/local/bin/kpt"
+wget -qO- https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.3.0/kustomize_v5.3.0_linux_amd64.tar.gz | tar xzC "${target:?}/usr/local/bin/" kustomize
+chmod +x "${target:?}/usr/local/bin/kustomize"
+
+fcopy -SM /etc/systemd/system/apply-all-manifests.service
+$ROOTCMD systemctl enable apply-all-manifests.service
 
 exit $error

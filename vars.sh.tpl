@@ -50,9 +50,6 @@ CLUSTER_NFS_SHARE=/mnt/cluster/workloads
 # "$CLUSTER_NAME Root" and "$CLUSTER_NAME Intermediate" for step-ca certificate CN
 CLUSTER_NAME="Elysium"
 
-# The name of the context for the cluster, used by the apply.sh scripts
-CLUSTER_CONTEXT=k3s
-
 # For a random IPv6 subnet use https://unique-local-ipv6.com/
 # https://github.com/cilium/cilium/issues/20756
 CLUSTER_IPV4_CIDR="10.42.0.0/16"

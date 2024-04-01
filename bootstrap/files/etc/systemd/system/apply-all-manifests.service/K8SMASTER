@@ -9,4 +9,4 @@ WantedBy=multi-user.target
 [Service]
 Type=oneshot
 Environment=HOME=/root KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-ExecStart=/var/lib/home-cluster/bin/apply-manifests.sh
+ExecStart=/var/lib/home-cluster/bin/apply-manifest.sh all

@@ -27,17 +27,17 @@ declare -p ; done; }
   existing_varnames=$(declare | grep '^[[:alpha:]].*=' | cut -d= -f1 | sort)
   source "$PKGROOT/vars.sh"
   readarray -t varnames < <(comm -13 <(printf "%s" "$existing_varnames") <(declare | grep '^[[:alpha:]].*=' | cut -d= -f1 | sort))
-  printf 'apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: cluster-vars
-  annotations:
-    config.kubernetes.io/local-config: "true"
-data:
+  printf 'kind: ResourceList
+items:
+- apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: cluster-vars
+  data:
 '
   for varname in "${varnames[@]}"; do
     if [[ $(declare -p "$varname") = 'declare -- '* ]]; then
-      printf "  %s: %s\n" "$varname" "$(jq --arg v "${!varname}" '.val=$v | .val' <<<"{}")"
+      printf "    %s: %s\n" "$varname" "$(jq --arg v "${!varname}" '.val=$v | .val' <<<"{}")"
     fi
   done
 }
