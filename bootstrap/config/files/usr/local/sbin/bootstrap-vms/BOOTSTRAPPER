@@ -46,15 +46,15 @@ declare -p "${prefix}HOSTNAMES"; done; }
 
   info "Updating bootstrapper code"
   rm -rf "$bootstrapper_path"
-  if [[ -n $BOOTSTRAPPER_GIT_DEPLOY_KEY ]]; then
+  if [[ -n $HOME_CLUSTER_GIT_DEPLOY_KEY ]]; then
     eval "$(ssh-agent)" >&2
     ssh-add -q <(cat <<EOF
-${BOOTSTRAPPER_GIT_DEPLOY_KEY}
+${HOME_CLUSTER_GIT_DEPLOY_KEY}
 EOF
   )
   fi
-  git clone --depth 1 "$BOOTSTRAPPER_GIT_REMOTE" "$bootstrapper_path"
-  if [[ -n $BOOTSTRAPPER_GIT_DEPLOY_KEY ]]; then
+  git clone --depth 1 "$HOME_CLUSTER_GIT_REMOTE" "$bootstrapper_path"
+  if [[ -n $HOME_CLUSTER_GIT_DEPLOY_KEY ]]; then
     ssh-add -qD
     eval "$(ssh-agent -k)" >&2
   fi
