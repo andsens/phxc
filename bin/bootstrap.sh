@@ -46,7 +46,7 @@ declare -p "${prefix}__imgsize" "${prefix}__cachepath" "${prefix}HOSTNAME" \
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/andsens/docopt.sh/docopt-lib.sh"' bootstrap.sh`
   eval "$(docopt "$@")"
   source "$PKGROOT/vars.sh"
-  if confirm_machine_id bootstrapper; then
+  if ! confirm_machine_id bootstrapper; then
     local continue
     read -rp 'Do you want to continue regardless? [y/N]' continue
     [[ $continue =~ [Yy] ]] || fatal "User aborted operation"
