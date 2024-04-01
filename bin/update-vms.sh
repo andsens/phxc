@@ -55,11 +55,13 @@ declare -p "${prefix}__bootstrapper" "${prefix}VMNAME_HOSTNAME_DISKPATH"; done
   # shellcheck disable=2086
   printf -- '#!/usr/bin/env bash\nHOSTNAMES=(%s)\n' "${hostnames[*]}" | \
     $tee "$PKGROOT/bootstrap-vms.args.sh" >/dev/null
+  # shellcheck disable=2064
+  trap "rm -f \"$PKGROOT/bootstrap-vms.args.sh\"" EXIT
 
   # shellcheck disable=2154
   start_vm "$__bootstrapper"
   # shellcheck disable=2064
-  trap "stop_vm \"$__bootstrapper\"" EXIT
+  trap "rm -f \"$PKGROOT/bootstrap-vms.args.sh\"; stop_vm \"$__bootstrapper\"" EXIT
 
   info "Waiting for bootstrapping to complete"
   while [[ -e "$PKGROOT/bootstrap-vms.args.sh" ]]; do
