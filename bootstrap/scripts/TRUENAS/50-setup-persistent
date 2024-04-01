@@ -6,6 +6,6 @@ mkdir "${target:?}/var/lib/persistent"
 
 # https://www.freedesktop.org/software/systemd/man/latest/systemd.mount.html#x-systemd.makefs
 # The mkfgs and growfs options are not available when specifying this mount as a systemd mount unit, so we use fstab
-ainsl /etc/fstab "${TRUENAS_PERSISTENT_VOLUME_DEV_PATH}  /var/lib/persistent   ext4    defaults,x-systemd.makefs,x-systemd.growfs"
+ainsl /etc/fstab "/dev/vdb  /var/lib/persistent   ext4    defaults,x-systemd.makefs,x-systemd.growfs"
 
 exit $error

@@ -12,9 +12,6 @@ TRUENAS_HOST_BRIDGE_SERVER_IP="[fd25:9998:d0e7:e351:1a01:be9:4d9a:157d]"
 MACHINE_IDS_truenas='38a6ed82302b612fd55b9b69660a83e0'
 
 TIMEZONE=Europe/Copenhagen
-APTPROXY=http://localhost:3142
-
-TRUENAS_PERSISTENT_VOLUME_DEV_PATH=/dev/vdb
 
 HOME_CLUSTER_NFS_SHARE=/mnt/cluster/home-cluster
 
