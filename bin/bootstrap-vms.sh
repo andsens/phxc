@@ -46,7 +46,7 @@ declare -p "${prefix}HOSTNAMES"; done; }
   local hostname ret=0
   for hostname in "${HOSTNAMES[@]}"; do
     info "Bootstrapping %s" "$hostname"
-    if "$PKGROOT/bootstrap.sh" create \
+    if "$PKGROOT/bootstrap.sh" \
       --varspath="$PKGROOT/vars.sh" \
       --cachepath="/var/lib/persistent/cache" \
       "$hostname"; then
