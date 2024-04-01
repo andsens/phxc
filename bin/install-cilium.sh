@@ -27,13 +27,13 @@ declare -p ; done; }
   source "$PKGROOT/vars.sh"
   confirm_machine_id k8s-nas
 
-  local notified=false max_wait=300 wait_left=300
-  while ! kubectl get -n kube-system deployment coredns -o name >/dev/null 2>&1; do
-    $notified || info "k3s is not ready yet..."
-    notified=true
+  info "Waiting for k3s to become ready"
+  local max_wait=300 wait_left=300
+  until kubectl get -n kube-system deployment coredns -o name >/dev/null 2>&1; do
     sleep 1
-    ((--wait_left > 0)) || fatal "Timed out after %d seconds for cilium to become ready." "$((max_wait / 60))"
+    ((--wait_left > 0)) || fatal "Timed out after %d seconds waiting for k3s to become ready." "$((max_wait / 60))"
   done
+
   if ! kubectl get -n kube-system deployment cilium-operator -o name >/dev/null 2>&1; then
     info "Cilium is not installed, installing now"
     /usr/local/bin/cilium install --version=1.15.1 \
@@ -53,8 +53,8 @@ declare -p ; done; }
   fi
 
   info "Waiting for Cilium to become ready"
-  local max_wait=300 wait_left=300
-  while [[ ! $(kubectl get -n kube-system deployment cilium-operator -ojsonpath='{.status.readyReplicas}' 2>&1) != 1 ]]; do
+  max_wait=300 wait_left=300
+  until [[ $(kubectl get -n kube-system deployment cilium-operator -ojsonpath='{.status.readyReplicas}' 2>&1) = 1 ]]; do
     sleep 1
     ((--wait_left > 0)) || fatal "Timed out after %d seconds waiting for Cilium to become ready" "$max_wait"
   done
