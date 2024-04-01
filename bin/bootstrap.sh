@@ -38,11 +38,6 @@ declare -p "${prefix}__imgsize" "${prefix}__cachepath" "${prefix}HOSTNAME"; done
   eval "$(docopt "$@")"
   source "$PKGROOT/vars.sh"
 
-  if ! confirm_machine_id bootstrapper; then
-    local continue
-    read -rp 'Do you want to continue regardless? [y/N]' continue
-    [[ $continue =~ [Yy] ]] || fatal "User aborted operation"
-  fi
   local env=env ln=ln rm=rm imgpath=$PKGROOT/images/$HOSTNAME.raw
   if [[ $UID != 0 ]]; then
     env="sudo env"
@@ -50,8 +45,14 @@ declare -p "${prefix}__imgsize" "${prefix}__cachepath" "${prefix}HOSTNAME"; done
     rm="sudo rm"
   fi
   [[ $__cachepath != "\$PKGROOT/cache" ]] || __cachepath=$PKGROOT/cache
-  mkdir -p "$(dirname "$imgpath")" "$PKGROOT/logs/fai" "$__cachepath"
-  if [[ ! -L "/var/log/fai" ]]; then
+  mkdir -p "$PKGROOT/images" "$PKGROOT/logs" "$__cachepath"
+
+  if ! confirm_machine_id bootstrapper; then
+    local continue
+    read -rp 'Do you want to continue regardless? [y/N]' continue
+    [[ $continue =~ [Yy] ]] || fatal "User aborted operation"
+    ln -s "/var/log/fai" "$PKGROOT/logs/fai"
+  else
     $rm -rf "$PKGROOT/logs/fai"
     $ln -s "$PKGROOT/logs/fai" "/var/log/fai"
   fi
