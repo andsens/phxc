@@ -1,0 +1,38 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ../cluster-vars
+- pool.yaml
+- Kptfile
+- resourcegroup.yaml
+patches:
+- patch: |-
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: cluster-vars
+      annotations:
+        config.kubernetes.io/local-config: "true"
+replacements:
+- source:
+    kind: ConfigMap
+    name: cluster-vars
+    fieldPath: data.CLUSTER_IPV4_LB_CIDR
+  targets:
+  - select:
+      group: cilium.io
+      kind: CiliumLoadBalancerIPPool
+      name: lan-addresses
+    fieldPaths:
+    - spec.blocks.0.cidr
+- source:
+    kind: ConfigMap
+    name: cluster-vars
+    fieldPath: data.CLUSTER_IPV6_LB_CIDR
+  targets:
+  - select:
+      group: cilium.io
+      kind: CiliumLoadBalancerIPPool
+      name: lan-addresses
+    fieldPaths:
+    - spec.blocks.1.cidr

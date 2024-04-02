@@ -45,6 +45,7 @@ declare -p "${prefix}MANIFEST" "${prefix}apply" "${prefix}all" "${prefix}__" \
   # shellcheck disable=2154
   if $all; then
     MANIFEST=(
+      cilium
       networkpolicies
       csi-driver-nfs
       kubernetes-secret-generator
