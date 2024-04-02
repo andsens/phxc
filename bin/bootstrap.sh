@@ -51,7 +51,7 @@ declare -p "${prefix}__imgsize" "${prefix}__cachepath" "${prefix}HOSTNAME"; done
     local continue
     read -rp 'Do you want to continue regardless? [y/N]' continue
     [[ $continue =~ [Yy] ]] || fatal "User aborted operation"
-    ln -s "/var/log/fai" "$PKGROOT/logs/fai"
+    [[ -L "$PKGROOT/logs/fai" ]] || ln -s "/var/log/fai" "$PKGROOT/logs/fai"
   else
     $rm -rf "$PKGROOT/logs/fai"
     $ln -s "$PKGROOT/logs/fai" "/var/log/fai"
