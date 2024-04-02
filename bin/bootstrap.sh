@@ -43,6 +43,7 @@ declare -p "${prefix}__imgsize" "${prefix}__cachepath" "${prefix}HOSTNAME"; done
     env="sudo env"
     ln="sudo ln"
     rm="sudo rm"
+    chown="sudo chown"
   fi
   [[ $__cachepath != "\$PKGROOT/cache" ]] || __cachepath=$PKGROOT/cache
   mkdir -p "$PKGROOT/images" "$PKGROOT/logs" "$__cachepath"
@@ -62,9 +63,9 @@ declare -p "${prefix}__imgsize" "${prefix}__cachepath" "${prefix}HOSTNAME"; done
     "PKGROOT=$PKGROOT" \
     "CACHEPATH=$__cachepath" \
     fai-diskimage --cspace "$PKGROOT/bootstrap" --new --size "${__imgsize:-1.5G}" --hostname "$HOSTNAME" "$imgpath"
-  if [[ $UID != 0 ]]; then
-    sudo chown "$UID:$UID" "$imgpath"
-    sudo chown -R "$UID:$UID" "$__cachepath" "$imgpath"
+  $chown "$(stat -c %u:%g "$(dirname "$imgpath")")" "$imgpath"
+  if [[ $__cachepath = "$PKGROOT"/* ]]; then
+    $chown -R "$(stat -c %u:%g "$(dirname "$__cachepath")")" "$__cachepath"
   fi
 }
 
