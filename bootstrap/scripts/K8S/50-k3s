@@ -12,10 +12,10 @@ k3s_exec_flags=(
   --disable-network-policy
   --disable-kube-proxy
   --disable-helm-controller
-  "--kube-controller-manager-arg=node-cidr-mask-size-ipv4=${CLUSTER_IPV4_CIDR##*/}"
-  "--kube-controller-manager-arg=node-cidr-mask-size-ipv6=${CLUSTER_IPV6_CIDR##*/}"
-  "--cluster-cidr=${CLUSTER_IPV4_CIDR},${CLUSTER_IPV6_CIDR}"
-  "--service-cidr=${CLUSTER_IPV4_SERVICE_CIDR},${CLUSTER_IPV6_SERVICE_CIDR}"
+  "--kube-controller-manager-arg=node-cidr-mask-size-ipv4=24"
+  "--kube-controller-manager-arg=node-cidr-mask-size-ipv6=112"
+  "--cluster-cidr=${CLUSTER_IPV4_POD_CIDR},${CLUSTER_IPV6_POD_CIDR}"
+  "--service-cidr=${CLUSTER_IPV4_SVC_CIDR},${CLUSTER_IPV6_SVC_CIDR}"
 )
 
 curl -sfL https://get.k3s.io | \

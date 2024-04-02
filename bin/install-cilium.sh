@@ -37,17 +37,22 @@ declare -p ; done; }
   if ! kubectl get -n kube-system deployment cilium-operator -o name >/dev/null 2>&1; then
     info "Cilium is not installed, installing now"
     /usr/local/bin/cilium install --version=1.15.1 \
-      --set=ipam.operator.clusterPoolIPv4PodCIDRList="$CLUSTER_IPV4_CIDR" \
-      --set=ipam.operator.clusterPoolIPv6PodCIDRList="$CLUSTER_IPV6_CIDR" \
-      --set=ipv6.enabled=true \
-      --set=envoy.enabled=false \
-      --set=hubble.enabled=false \
-      --set=hubble.relay.gops.enabled=false \
-      --set=kubeProxyReplacement=true \
-      --set=encryption.enabled=true \
-      --set=encryption.type=wireguard \
-      --set=socketLB.enabled=true \
-      --set=kubeConfigPath=/etc/rancher/k3s/k3s.yaml
+      --set ipam.mode=cluster-pool \
+      --set ipam.operator.clusterPoolIPv4PodCIDRList="$CLUSTER_IPV4_POD_CIDR" \
+      --set ipam.operator.clusterPoolIPv6PodCIDRList="$CLUSTER_IPV6_POD_CIDR" \
+      --set ipam.operator.clusterPoolIPv4MaskSize=24 \
+      --set ipam.operator.clusterPoolIPv6MaskSize=112 \
+      --set ipv6.enabled=true \
+      --set bpf.masquerade=true \
+      --set enableIPv6Masquerade=false \
+      --set envoy.enabled=false \
+      --set hubble.enabled=false \
+      --set hubble.relay.gops.enabled=false \
+      --set kubeProxyReplacement=true \
+      --set encryption.enabled=true \
+      --set encryption.type=wireguard \
+      --set socketLB.enabled=true \
+      --set kubeConfigPath=/etc/rancher/k3s/k3s.yaml
   else
     info "Cilium is already installed"
   fi

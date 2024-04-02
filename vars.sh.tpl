@@ -52,9 +52,12 @@ CLUSTER_NFS_SHARE=/mnt/cluster/workloads
 # "$CLUSTER_NAME Root" and "$CLUSTER_NAME Intermediate" for step-ca certificate CN
 CLUSTER_NAME="Elysium"
 
-# For a random IPv6 subnet use https://unique-local-ipv6.com/
-# https://github.com/cilium/cilium/issues/20756
-CLUSTER_IPV4_CIDR="10.42.0.0/16"
-CLUSTER_IPV6_CIDR="fd73:9867:6b4d:42::/56"
-CLUSTER_IPV4_SERVICE_CIDR="10.43.0.0/16"
-CLUSTER_IPV6_SERVICE_CIDR="fd73:9867:6b4d:43::/112"
+# The IPv6 subnet should be prefix delegate one matching your ISP
+CLUSTER_IPV4_POD_CIDR="10.64.0.0/16"
+CLUSTER_IPV6_POD_CIDR="fd73:9867:6b4d:cafe:0000:0::/96"
+CLUSTER_IPV4_SVC_CIDR="10.65.0.0/16"
+CLUSTER_IPV6_SVC_CIDR="fd73:9867:6b4d:cafe:0000:1::/112"
+
+# Router setup required, create a new VLAN with the range below
+CLUSTER_IPV4_LB_CIDR="10.66.0.0/16"
+CLUSTER_IPV6_LB_CIDR="fd73:9867:6b4d:cafe:0000:2::/112"
