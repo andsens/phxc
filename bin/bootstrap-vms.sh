@@ -2,6 +2,7 @@
 # shellcheck source-path=../
 set -eo pipefail; shopt -s inherit_errexit
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
+source "$PKGROOT/vars.sh"
 
 main() {
   source "$PKGROOT/.upkg/orbit-online/records.sh/records.sh"
@@ -28,7 +29,6 @@ eval "${prefix}"'HOSTNAMES=()'; fi; local docopt_i=1
 declare -p "${prefix}HOSTNAMES"; done; }
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/andsens/docopt.sh/docopt-lib.sh"' bootstrap-vms.sh`
   eval "$(docopt "$@")"
-  source "$PKGROOT/vars.sh"
   confirm_machine_id bootstrapper
 
   if [[ ${#HOSTNAMES[@]} -eq 0 ]]; then

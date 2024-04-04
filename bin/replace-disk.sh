@@ -2,6 +2,7 @@
 # shellcheck source-path=..
 set -eo pipefail; shopt -s inherit_errexit
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
+source "$PKGROOT/vars.sh"
 
 main() {
   source "$PKGROOT/.upkg/orbit-online/records.sh/records.sh"
@@ -37,7 +38,6 @@ declare -p "${prefix}__no_start" "${prefix}VMNAME" "${prefix}IMGPATH" \
 "${prefix}DISKPATH"; done; }
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/andsens/docopt.sh/docopt-lib.sh"' replace-disk.sh`
   eval "$(docopt "$@")"
-  source "$PKGROOT/vars.sh"
   confirm_machine_id truenas
 
   cache_all_vms

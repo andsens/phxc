@@ -2,6 +2,7 @@
 # shellcheck source-path=../
 set -eo pipefail; shopt -s inherit_errexit
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
+source "$PKGROOT/vars.sh"
 
 main() {
   source "$PKGROOT/.upkg/orbit-online/records.sh/records.sh"
@@ -36,7 +37,7 @@ declare -p "${prefix}__imgsize" "${prefix}__cachepath" "${prefix}HOSTNAME"; done
 }
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/andsens/docopt.sh/docopt-lib.sh"' bootstrap.sh`
   eval "$(docopt "$@")"
-  source "$PKGROOT/vars.sh"
+  confirm_machine_id bootstrapper
 
   local env=env ln=ln rm=rm imgpath=$PKGROOT/images/$HOSTNAME.raw
   if [[ $UID != 0 ]]; then
@@ -48,10 +49,7 @@ declare -p "${prefix}__imgsize" "${prefix}__cachepath" "${prefix}HOSTNAME"; done
   [[ $__cachepath != "\$PKGROOT/cache" ]] || __cachepath=$PKGROOT/cache
   mkdir -p "$PKGROOT/images" "$PKGROOT/logs" "$__cachepath"
 
-  if ! confirm_machine_id bootstrapper; then
-    local continue
-    read -rp 'Do you want to continue regardless? [y/N]' continue
-    [[ $continue =~ [Yy] ]] || fatal "User aborted operation"
+  if ! is_machine_id bootstrapper; then
     [[ -L "$PKGROOT/logs/fai" ]] || ln -s "/var/log/fai" "$PKGROOT/logs/fai"
   else
     $rm -rf "$PKGROOT/logs/fai"

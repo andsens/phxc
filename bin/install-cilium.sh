@@ -2,6 +2,7 @@
 # shellcheck source-path=..
 set -eo pipefail; shopt -s inherit_errexit
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
+source "$PKGROOT/vars.sh"
 
 main() {
   source "$PKGROOT/.upkg/orbit-online/records.sh/records.sh"
@@ -24,7 +25,6 @@ local prefix=${DOCOPT_PREFIX:-''}; unset ; local docopt_i=1
 declare -p ; done; }
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/andsens/docopt.sh/docopt-lib.sh"' install-cilium.sh`
   eval "$(docopt "$@")"
-  source "$PKGROOT/vars.sh"
   confirm_machine_id k8s-nas
 
   info "Waiting for k3s to become ready"
