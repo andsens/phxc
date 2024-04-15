@@ -1,3 +1,4 @@
+---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -46,8 +47,6 @@ spec:
   ports:
   - name: web
     port: 5000
-  - name: metrics
-    port: 5001
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
@@ -107,8 +106,6 @@ spec:
         ports:
         - name: web
           containerPort: 5000
-        - name: metrics
-          containerPort: 5001
         livenessProbe:
           httpGet:
             path: /

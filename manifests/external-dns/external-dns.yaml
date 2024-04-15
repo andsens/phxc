@@ -40,9 +40,6 @@ spec:
         env:
         - name: ETCD_URLS
           value: http://etcd.etcd:2379
-        ports:
-        - name: metrics
-          containerPort: 7979
         resources:
           requests:
             memory: 40Mi
