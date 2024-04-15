@@ -15,47 +15,19 @@ patches:
 - patch: |-
     apiVersion: v1
     kind: ConfigMap
-    metadata:
-      name: cluster-vars
-      annotations:
-        config.kubernetes.io/local-config: "true"
+    metadata: {name: cluster-vars, annotations: {config.kubernetes.io/local-config: "true"}}
 replacements:
-- source:
-    kind: ConfigMap
-    name: cluster-vars
-    fieldPath: data.TRUENAS_HOST_BRIDGE_SERVER_IP
+- source: {fieldPath: data.TRUENAS_HOST_BRIDGE_SERVER_IP, kind: ConfigMap, name: cluster-vars}
   targets:
-  - select:
-      group: storage.k8s.io
-      kind: StorageClass
-      name: nas-nfs
-    fieldPaths:
-    - parameters.server
-- source:
-    kind: ConfigMap
-    name: cluster-vars
-    fieldPath: data.CLUSTER_NFS_SHARE
+  - select: {group: storage.k8s.io, kind: StorageClass, name: nas-nfs}
+    fieldPaths: [parameters.server]
+- source: {fieldPath: data.CLUSTER_NFS_SHARE, kind: ConfigMap, name: cluster-vars}
   targets:
-  - select:
-      group: storage.k8s.io
-      kind: StorageClass
-      name: nas-nfs
-    fieldPaths:
-    - parameters.share
-- source:
-    kind: ConfigMap
-    name: cluster-vars
-    fieldPath: data.TRUENAS_HOST_BRIDGE_SERVER_IP_CIDR
+  - select: {group: storage.k8s.io, kind: StorageClass, name: nas-nfs}
+    fieldPaths: [parameters.share]
+- source: {fieldPath: data.TRUENAS_HOST_BRIDGE_SERVER_IP_CIDR, kind: ConfigMap, name: cluster-vars}
   targets:
-  - select:
-      group: networking.k8s.io
-      kind: NetworkPolicy
-      name: csi-nfs
-    fieldPaths:
-    - spec.ingress.0.from.0.ipBlock.cidr
-  - select:
-      group: networking.k8s.io
-      kind: NetworkPolicy
-      name: csi-nfs
-    fieldPaths:
-    - spec.egress.0.to.0.ipBlock.cidr
+  - select: {group: networking.k8s.io, kind: NetworkPolicy, name: csi-nfs}
+    fieldPaths: [spec.ingress.0.from.0.ipBlock.cidr]
+  - select: {group: networking.k8s.io, kind: NetworkPolicy, name: csi-nfs}
+    fieldPaths: [spec.egress.0.to.0.ipBlock.cidr]

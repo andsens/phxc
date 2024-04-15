@@ -15,10 +15,7 @@ patches:
 - patch: |-
     apiVersion: v1
     kind: ConfigMap
-    metadata:
-      name: cluster-vars
-      annotations:
-        config.kubernetes.io/local-config: "true"
+    metadata: {name: cluster-vars, annotations: {config.kubernetes.io/local-config: "true"}}
 configMapGenerator:
 - files:
   - config/bootstrap.sh
@@ -46,14 +43,7 @@ configMapGenerator:
 generatorOptions:
   disableNameSuffixHash: true
 replacements:
-- source:
-    kind: ConfigMap
-    name: cluster-vars
-    fieldPath: data.CLUSTER_NAME
+- source: {fieldPath: data.CLUSTER_NAME, kind: ConfigMap, name: cluster-vars}
   targets:
-  - select:
-      group: batch
-      kind: Job
-      name: step-ca-bootstrap
-    fieldPaths:
-    - spec.template.spec.containers.[name=step-ca-bootstrap].env.[name=CLUSTER_NAME].value
+  - select: {group: batch, kind: Job, name: step-ca-bootstrap}
+    fieldPaths: ["spec.template.spec.containers.[name=step-ca-bootstrap].env.[name=CLUSTER_NAME].value"]

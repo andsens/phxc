@@ -10,44 +10,18 @@ patches:
 - patch: |-
     apiVersion: v1
     kind: ConfigMap
-    metadata:
-      name: cluster-vars
-      annotations:
-        config.kubernetes.io/local-config: "true"
+    metadata: {name: cluster-vars, annotations: {config.kubernetes.io/local-config: "true"}}
 replacements:
-- source:
-    kind: ConfigMap
-    name: cluster-vars
-    fieldPath: data.CLUSTER_IPV4_LB_CIDR
+- source: {fieldPath: data.CLUSTER_IPV4_LB_CIDR, kind: ConfigMap, name: cluster-vars}
   targets:
-  - select:
-      group: cilium.io
-      kind: CiliumLoadBalancerIPPool
-      name: lan-addresses
-    fieldPaths:
-    - spec.blocks.0.cidr
-- source:
-    kind: ConfigMap
-    name: cluster-vars
-    fieldPath: data.CLUSTER_IPV6_LB_CIDR
+  - select: {group: cilium.io, kind: CiliumLoadBalancerIPPool, name: lan-addresses}
+    fieldPaths: [spec.blocks.0.cidr]
+- source: {fieldPath: data.CLUSTER_IPV6_LB_CIDR, kind: ConfigMap, name: cluster-vars}
   targets:
-  - select:
-      group: cilium.io
-      kind: CiliumLoadBalancerIPPool
-      name: lan-addresses
-    fieldPaths:
-    - spec.blocks.1.cidr
-- source:
-    kind: ConfigMap
-    name: cluster-vars
-    fieldPath: data.ROUTER_IPV4
+  - select: {group: cilium.io, kind: CiliumLoadBalancerIPPool, name: lan-addresses}
+    fieldPaths: [spec.blocks.1.cidr]
+- source: {fieldPath: data.ROUTER_IPV4, kind: ConfigMap, name: cluster-vars}
   targets:
-  - select:
-      group: cilium.io
-      kind: CiliumBGPPeeringPolicy
-      name: router
-    fieldPaths:
-    - spec.virtualRouters.0.neighbors.0.peerAddress
-    options:
-      delimiter: '/'
-      index: 0
+  - select: {group: cilium.io, kind: CiliumBGPPeeringPolicy, name: router}
+    fieldPaths: [spec.virtualRouters.0.neighbors.0.peerAddress]
+    options: {delimiter: '/', index: 0}

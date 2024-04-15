@@ -11,38 +11,19 @@ patches:
 - patch: |-
     apiVersion: v1
     kind: ConfigMap
-    metadata:
-      name: cluster-vars
-      annotations:
-        config.kubernetes.io/local-config: "true"
+    metadata: {name: cluster-vars, annotations: {config.kubernetes.io/local-config: "true"}}
 configMapGenerator:
 - files:
   - config/Corefile
   name: coredns-config
 replacements:
-- source:
-    kind: ConfigMap
-    name: cluster-vars
-    fieldPath: data.DNS_SVC_IPV4
+- source: {fieldPath: data.DNS_SVC_IPV4, kind: ConfigMap, name: cluster-vars}
   targets:
-  - select:
-      kind: Service
-      name: coredns
-    fieldPaths:
-    - metadata.annotations.io\.cilium/lb-ipam-ips
-    options:
-      delimiter: ','
-      index: 0
-- source:
-    kind: ConfigMap
-    name: cluster-vars
-    fieldPath: data.DNS_SVC_IPV6
+  - select: {kind: Service, name: coredns}
+    fieldPaths: [metadata.annotations.io\.cilium/lb-ipam-ips]
+    options: {delimiter: ',', index: 0}
+- source: {fieldPath: data.DNS_SVC_IPV6, kind: ConfigMap, name: cluster-vars}
   targets:
-  - select:
-      kind: Service
-      name: coredns
-    fieldPaths:
-    - metadata.annotations.io\.cilium/lb-ipam-ips
-    options:
-      delimiter: ','
-      index: 1
+  - select: {kind: Service, name: coredns}
+    fieldPaths: [metadata.annotations.io\.cilium/lb-ipam-ips]
+    options: {delimiter: ',', index: 1}
