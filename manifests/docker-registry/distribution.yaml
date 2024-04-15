@@ -26,6 +26,32 @@ spec:
           app.kubernetes.io/name: redis
           app.kubernetes.io/component: redis
 ---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: distribution
+  labels:
+    app.kubernetes.io/name: docker-registry
+    app.kubernetes.io/component: distribution
+  annotations:
+    app.kubernetes.io/name: docker-registry
+    cert-manager.io/cluster-issuer: ACME_PROVIDER
+spec:
+  tls:
+  - hosts: [cr.DOMAIN]
+    secretName: distribution-tls
+  rules:
+  - host: cr.DOMAIN
+    http:
+      paths:
+      - path: /v2
+        pathType: Prefix
+        backend:
+          service:
+            name: distribution
+            port:
+              name: web
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -33,14 +59,7 @@ metadata:
   labels:
     app.kubernetes.io/name: docker-registry
     app.kubernetes.io/component: distribution
-  annotations:
-    external-dns.alpha.kubernetes.io/hostname: CR_HOSTNAME
 spec:
-  type: LoadBalancer
-  ipFamilies:
-  - IPv4
-  - IPv6
-  ipFamilyPolicy: RequireDualStack
   selector:
     app.kubernetes.io/name: docker-registry
     app.kubernetes.io/component: distribution
@@ -101,8 +120,10 @@ spec:
             secretKeyRef:
               name: distribution-http-secret
               key: http-secret
+        - name: DOMAIN
+          value: cr.DOMAIN
         - name: REGISTRY_AUTH_TOKEN_REALM
-          value: CR_HOSTNAME/auth
+          value: $(DOMAIN)/auth
         ports:
         - name: web
           containerPort: 5000

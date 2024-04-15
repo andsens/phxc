@@ -23,10 +23,18 @@ configMapGenerator:
 generatorOptions:
   disableNameSuffixHash: true
 replacements:
-- source: {fieldPath: data.CR_HOSTNAME, kind: ConfigMap, name: cluster-vars}
+- source: {fieldPath: data.DOMAIN, kind: ConfigMap, name: cluster-vars}
   targets:
-  - select: {kind: Service, name: distribution}
-    fieldPaths: [metadata.annotations.external-dns\.alpha\.kubernetes\.io/hostname]
+  - select: {group: networking.k8s.io, kind: Ingress, name: distribution}
+    fieldPaths: [spec.tls.0.hosts.0]
+    options: {delimiter: '.', index: 1}
+  - select: {group: networking.k8s.io, kind: Ingress, name: distribution}
+    fieldPaths: [spec.rules.0.host]
+    options: {delimiter: '.', index: 1}
   - select: {group: apps, kind: StatefulSet, name: distribution}
-    fieldPaths: ["spec.template.spec.containers.[name=distribution].env.[name=REGISTRY_AUTH_TOKEN_REALM].value"]
-    options: {delimiter: '/', index: 0}
+    fieldPaths: ["spec.template.spec.containers.[name=distribution].env.[name=DOMAIN].value"]
+    options: {delimiter: '.', index: 1}
+- source: {fieldPath: data.ACME_PROVIDER, kind: ConfigMap, name: cluster-vars}
+  targets:
+  - select: {group: networking.k8s.io, kind: Ingress, name: distribution}
+    fieldPaths: [metadata.annotations.cert-manager\.io/cluster-issuer]
