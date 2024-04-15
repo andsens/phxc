@@ -16,6 +16,8 @@ configMapGenerator:
 - files:
   - config/Corefile
   name: coredns-config
+generatorOptions:
+  disableNameSuffixHash: true
 replacements:
 - source: {fieldPath: data.DNS_SVC_IPV4, kind: ConfigMap, name: cluster-vars}
   targets:

@@ -20,6 +20,8 @@ configMapGenerator:
 - files:
   - config.yml=config/distribution.yaml
   name: distribution
+generatorOptions:
+  disableNameSuffixHash: true
 replacements:
 - source: {fieldPath: data.CR_HOSTNAME, kind: ConfigMap, name: cluster-vars}
   targets:
