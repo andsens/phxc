@@ -39,5 +39,5 @@ auth:
     autoredirect: false
     rootcertbundle: /etc/docker/auth/jwt.crt
 redis:
-  addr: redis:6379
+  addr: redis.redis:6379
   db: 0
