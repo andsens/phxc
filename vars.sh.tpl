@@ -61,3 +61,7 @@ CLUSTER_IPV6_SVC_CIDR="fd73:9867:6b4d:cafe:0000:1::/112"
 # Router setup required, create a new VLAN with the range below
 CLUSTER_IPV4_LB_CIDR="10.66.0.0/16"
 CLUSTER_IPV6_LB_CIDR="fd73:9867:6b4d:cafe:0000:2::/112"
+
+# Fixed IP from the subnets above for your DNS server
+DNS_SVC_IPV4='10.66.0.1'
+DNS_SVC_IPV6='fd73:9867:6b4d:cafe:0000:2::1'

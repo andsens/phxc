@@ -75,6 +75,8 @@ metadata:
   labels:
     app.kubernetes.io/name: coredns
     app.kubernetes.io/component: coredns
+  annotations:
+    io.cilium/lb-ipam-ips: "DNS_SVC_IPV4,DNS_SVC_IPV6"
 spec:
   type: LoadBalancer
   ipFamilies:
