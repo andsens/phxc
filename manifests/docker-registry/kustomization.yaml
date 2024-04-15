@@ -38,3 +38,5 @@ replacements:
   targets:
   - select: {group: networking.k8s.io, kind: Ingress, name: distribution}
     fieldPaths: [metadata.annotations.cert-manager\.io/cluster-issuer]
+  - select: {group: networking.k8s.io, kind: Ingress, name: docker-auth}
+    fieldPaths: [metadata.annotations.cert-manager\.io/cluster-issuer]

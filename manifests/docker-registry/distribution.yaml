@@ -39,7 +39,7 @@ metadata:
 spec:
   tls:
   - hosts: [cr.DOMAIN]
-    secretName: distribution-tls
+    secretName: cr-tls
   rules:
   - host: cr.DOMAIN
     http:

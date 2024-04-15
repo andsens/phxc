@@ -27,6 +27,38 @@ spec:
         app.kubernetes.io/name: docker-registry
         app.kubernetes.io/component: redis
 ---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: docker-auth
+  labels:
+    app.kubernetes.io/name: docker-registry
+    app.kubernetes.io/component: auth
+  annotations:
+    cert-manager.io/cluster-issuer: ACME_PROVIDER
+spec:
+  tls:
+  - hosts: [cr.DOMAIN]
+    secretName: cr-tls
+  rules:
+  - host: cr.DOMAIN
+    http:
+      paths:
+      - path: /login
+        pathType: Prefix
+        backend:
+          service:
+            name: docker-auth
+            port:
+              name: web
+      - path: /auth
+        pathType: Prefix
+        backend:
+          service:
+            name: docker-auth
+            port:
+              name: web
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -35,11 +67,6 @@ metadata:
     app.kubernetes.io/name: docker-registry
     app.kubernetes.io/component: auth
 spec:
-  type: LoadBalancer
-  ipFamilies:
-  - IPv4
-  - IPv6
-  ipFamilyPolicy: RequireDualStack
   selector:
     app.kubernetes.io/name: docker-registry
     app.kubernetes.io/component: auth
