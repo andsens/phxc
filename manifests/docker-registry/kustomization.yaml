@@ -2,11 +2,17 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: docker-registry
 resources:
+- ../cluster-vars
 - auth.yaml
 - distribution.yaml
 - namespace.yaml
 - Kptfile
 - resourcegroup.yaml
+patches:
+- patch: |-
+    apiVersion: v1
+    kind: ConfigMap
+    metadata: {name: cluster-vars, annotations: {config.kubernetes.io/local-config: "true"}}
 configMapGenerator:
 - files:
   - auth_config.yml=config/auth.yaml
@@ -14,3 +20,11 @@ configMapGenerator:
 - files:
   - config.yml=config/distribution.yaml
   name: distribution
+replacements:
+- source: {fieldPath: data.CR_HOSTNAME, kind: ConfigMap, name: cluster-vars}
+  targets:
+  - select: {kind: Service, name: distribution}
+    fieldPaths: [metadata.annotations.external-dns\.alpha\.kubernetes\.io/hostname]
+  - select: {group: apps, kind: StatefulSet, name: distribution}
+    fieldPaths: ["spec.template.spec.containers.[name=distribution].env.[name=REGISTRY_AUTH_TOKEN_REALM].value"]
+    options: {delimiter: '/', index: 0}

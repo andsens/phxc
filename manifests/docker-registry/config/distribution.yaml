@@ -34,7 +34,6 @@ compatibility:
     enabled: false
 auth:
   token:
-    realm: https://cluster.local/auth
     service: Docker registry
     issuer: Docker registry auth server
     autoredirect: false
