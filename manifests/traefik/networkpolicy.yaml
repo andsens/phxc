@@ -1,0 +1,51 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: traefik
+  labels:
+    app.kubernetes.io/name: traefik
+    app.kubernetes.io/component: traefik
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: traefik
+      app.kubernetes.io/component: traefik
+  policyTypes: [Egress]
+  egress:
+  - ports:
+    - port: 8089
+    to:
+    - namespaceSelector:
+        matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: Exists
+      podSelector:
+        matchLabels:
+          acme.cert-manager.io/http01-solver: "true"
+  - ports:
+    - port: 9000
+    to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: traefik
+          app.kubernetes.io/component: traefik
+  - ports:
+    - port: 5000
+    to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: docker-registry
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: docker-registry
+          app.kubernetes.io/component: distribution
+  - ports:
+    - port: 5001
+    to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: docker-registry
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: docker-registry
+          app.kubernetes.io/component: auth

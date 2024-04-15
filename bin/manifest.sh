@@ -52,11 +52,12 @@ declare -p "${prefix}MANIFEST" "${prefix}apply" "${prefix}all" "${prefix}__" \
       cert-manager
       cert-manager-issuers
       step-ca
-      redis
-      docker-registry
       etcd
       coredns
       external-dns
+      traefik
+      redis
+      docker-registry
     )
   fi
   local manifest_name manifest_data

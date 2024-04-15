@@ -1,0 +1,36 @@
+log:
+  level: INFO
+  format: json
+ping:
+  entryPoint: traefik
+api:
+  dashboard: true
+  insecure: true
+serversTransport:
+  insecureSkipVerify: true
+accessLog:
+  format: json
+  fields:
+    headers:
+      defaultMode: drop
+      names:
+        uber-trace-id: keep
+entryPoints:
+  web:
+    address: ":8000"
+    http:
+      middlewares:
+      - redir-to-tls@file
+  websecure:
+    address: ":8443"
+    http:
+      tls: {}
+  traefik:
+    address: ":9000"
+providers:
+  file:
+    filename: /etc/traefik/file-provider.yaml
+  kubernetesIngress:
+    ingressEndpoint:
+      publishedService: traefik/traefik-frontend
+  kubernetesCRD: {}
