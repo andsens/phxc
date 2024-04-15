@@ -42,6 +42,7 @@ declare -p ; done; }
       --set ipam.operator.clusterPoolIPv6PodCIDRList="$CLUSTER_IPV6_POD_CIDR" \
       --set ipam.operator.clusterPoolIPv4MaskSize=24 \
       --set ipam.operator.clusterPoolIPv6MaskSize=112 \
+      --set bgpControlPlane.enabled=true \
       --set ipv6.enabled=true \
       --set bpf.masquerade=true \
       --set enableIPv6Masquerade=false \
@@ -53,6 +54,11 @@ declare -p ; done; }
       --set encryption.type=wireguard \
       --set socketLB.enabled=true \
       --set kubeConfigPath=/etc/rancher/k3s/k3s.yaml
+    kubectl patch -n kube-system cm cilium-config --patch-file <(printf "
+data:
+  enable-ipv6-ndp: \"true\"
+  ipv6-service-range: \"%s\"
+" "$CLUSTER_IPV6_SVC_CIDR")
   else
     info "Cilium is already installed"
   fi

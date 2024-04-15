@@ -1,0 +1,20 @@
+---
+apiVersion: cilium.io/v2alpha1
+kind: CiliumBGPPeeringPolicy
+metadata:
+ name: router
+spec:
+  nodeSelector:
+    matchLabels:
+      kubernetes.io/hostname: k8s-nas.local
+  virtualRouters:
+  # Hardcoded because kustomize always replaces with strings, and cilium needs this to be a number
+  # If you change it here, also change it in bin/usg.sh
+  - localASN: 64512
+    exportPodCIDR: true
+    serviceSelector:
+       matchExpressions:
+        - {key: somekey, operator: NotIn, values: ['never-used-value']}
+    neighbors:
+    - peerAddress: ROUTER_IPV4/32
+      peerASN: 64512

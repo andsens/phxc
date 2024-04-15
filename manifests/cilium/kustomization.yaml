@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
 - ../cluster-vars
 - pool.yaml
+- bgpp.yaml
 - Kptfile
 - resourcegroup.yaml
 patches:
@@ -36,3 +37,17 @@ replacements:
       name: lan-addresses
     fieldPaths:
     - spec.blocks.1.cidr
+- source:
+    kind: ConfigMap
+    name: cluster-vars
+    fieldPath: data.ROUTER_IPV4
+  targets:
+  - select:
+      group: cilium.io
+      kind: CiliumBGPPeeringPolicy
+      name: router
+    fieldPaths:
+    - spec.virtualRouters.0.neighbors.0.peerAddress
+    options:
+      delimiter: '/'
+      index: 0
