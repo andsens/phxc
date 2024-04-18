@@ -31,6 +31,12 @@ replacements:
   - select: {group: networking.k8s.io, kind: Ingress, name: distribution}
     fieldPaths: [spec.rules.0.host]
     options: {delimiter: '.', index: 1}
+  - select: {group: networking.k8s.io, kind: Ingress, name: docker-auth}
+    fieldPaths: [spec.tls.0.hosts.0]
+    options: {delimiter: '.', index: 1}
+  - select: {group: networking.k8s.io, kind: Ingress, name: docker-auth}
+    fieldPaths: [spec.rules.0.host]
+    options: {delimiter: '.', index: 1}
   - select: {group: apps, kind: StatefulSet, name: distribution}
     fieldPaths: ["spec.template.spec.containers.[name=distribution].env.[name=DOMAIN].value"]
     options: {delimiter: '.', index: 1}
