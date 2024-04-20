@@ -56,7 +56,6 @@ declare -p ; done; }
       --set kubeConfigPath=/etc/rancher/k3s/k3s.yaml
     kubectl patch -n kube-system cm cilium-config --patch-file <(printf "
 data:
-  enable-ipv6-ndp: \"true\"
   ipv6-service-range: \"%s\"
 " "$CLUSTER_IPV6_SVC_CIDR")
   else

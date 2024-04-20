@@ -25,3 +25,8 @@ replacements:
   - select: {group: cilium.io, kind: CiliumBGPPeeringPolicy, name: router}
     fieldPaths: [spec.virtualRouters.0.neighbors.0.peerAddress]
     options: {delimiter: '/', index: 0}
+- source: {fieldPath: data.ROUTER_IPV6, kind: ConfigMap, name: cluster-vars}
+  targets:
+  - select: {group: cilium.io, kind: CiliumBGPPeeringPolicy, name: router}
+    fieldPaths: [spec.virtualRouters.0.neighbors.1.peerAddress]
+    options: {delimiter: '/', index: 0}

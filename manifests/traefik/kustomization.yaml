@@ -5,7 +5,7 @@ resources:
 - ../cluster-vars
 - https://github.com/traefik/traefik-helm-chart.git//traefik/crds?ref=v27.0.2
 - namespace.yaml
-- traefik.yaml
+- traefik-deployment.yaml
 - networkpolicy.yaml
 - dashboard-ingress.yaml
 - Kptfile
@@ -27,8 +27,14 @@ replacements:
   targets:
   - select: {group: networking.k8s.io, kind: Ingress, name: traefik-dashboard}
     fieldPaths: [spec.tls.0.hosts.0]
+    options:
+      delimiter: .
+      index: 1
   - select: {group: networking.k8s.io, kind: Ingress, name: traefik-dashboard}
     fieldPaths: [spec.rules.0.host]
+    options:
+      delimiter: .
+      index: 1
 - source: {fieldPath: data.ACME_PROVIDER, kind: ConfigMap, name: cluster-vars}
   targets:
   - select: {group: networking.k8s.io, kind: Ingress, name: traefik-dashboard}

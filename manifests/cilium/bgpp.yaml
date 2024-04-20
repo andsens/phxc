@@ -18,3 +18,11 @@ spec:
     neighbors:
     - peerAddress: ROUTER_IPV4/32
       peerASN: 64512
+      families:
+      - afi: ipv4
+        safi: unicast
+    - peerAddress: ROUTER_IPV6/128
+      peerASN: 64512
+      families:
+      - afi: ipv6
+        safi: unicast
