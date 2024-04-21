@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 # shellcheck disable=2016,2034,2209
 
+WAN_IPV4='1.2.3.4'
+ROUTER_IPV4='192.168.1.1'
+ROUTER_IPV6='fd73:9867:6b4d:1234::1'
+UNIFI_USG_SSH_ADDR='192.168.1.1'
+UNIFI_CLOUDKEY_SSH_ADDR='ubnt@192.168.1.3'
+UNIFI_SITE=default
+
 # Fixed IP address for the link between the host and the K8S VM
 # Guide for setting up the bridge interface on TrueNAS:
 # https://www.truenas.com/community/threads/is-there-any-way-to-enable-create-an-virtual-switch.95269/page-2#post-674816
@@ -34,16 +41,16 @@ ADMIN_NFS_HOME_SHARE=/mnt/cluster/home/...
 #############################
 
 # Generate with dbus-uuidgen
-MACHINE_IDS['bootstrapper']='b8b235b3279c6054bc9f33ef6609287a'
-TRUENAS_HOST_BRIDGE_CLIENT_IPs['bootstrapper']="10.15.180.3/24,fd25:9998:d0e7:e351:1a01:be9:4d9a:157f/48"
+MACHINE_IDS_bootstrapper='b8b235b3279c6054bc9f33ef6609287a'
+TRUENAS_HOST_BRIDGE_CLIENT_IPS_bootstrapper="10.15.180.3/24,fd25:9998:d0e7:e351:1a01:be9:4d9a:157f/48"
 BOOTSTRAPPER_NFS_SHARE=/mnt/cluster/bootstrapper
 
 #########################
 ### Cluster settings ###
 #########################
 
-MACHINE_IDS['k8s-nas']='2a178ed534ac2a67dbc8049d65eddc45'
-TRUENAS_HOST_BRIDGE_CLIENT_IPs['k8s-nas']="10.15.180.2/24,fd25:9998:d0e7:e351:1a01:be9:4d9a:157e/48"
+MACHINE_IDS_k8s_nas='2a178ed534ac2a67dbc8049d65eddc45'
+TRUENAS_HOST_BRIDGE_CLIENT_IPS_k8s_nas="10.15.180.2/24,fd25:9998:d0e7:e351:1a01:be9:4d9a:157e/48"
 CLUSTER_NFS_SHARE=/mnt/cluster/workloads
 
 # Name of the cluster, used in various contexts to identify it outwardly
@@ -68,3 +75,5 @@ DNS_SVC_IPV6='fd73:9867:6b4d:cafe:0000:2::1'
 
 # The domain name under which the cluster is reachable
 DOMAIN=example.com
+
+ACME_PROVIDER="letsencrypt-staging"
