@@ -8,11 +8,6 @@ resources:
 - namespace.yaml
 - Kptfile
 - resourcegroup.yaml
-patches:
-- patch: |-
-    apiVersion: v1
-    kind: ConfigMap
-    metadata: {name: cluster-vars, annotations: {config.kubernetes.io/local-config: "true"}}
 configMapGenerator:
 - files:
   - auth_config.yml=config/auth.yaml
