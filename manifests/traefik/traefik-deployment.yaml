@@ -29,6 +29,8 @@ metadata:
     type: frontend
     app.kubernetes.io/name: traefik
     app.kubernetes.io/component: traefik
+  annotations:
+    io.cilium/lb-ipam-ips: "RPROXY_SVC_IPV4,RPROXY_SVC_IPV6"
 spec:
   type: LoadBalancer
   ipFamilies:

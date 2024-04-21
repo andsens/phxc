@@ -22,15 +22,21 @@ replacements:
   targets:
   - select: {group: networking.k8s.io, kind: Ingress, name: traefik-dashboard}
     fieldPaths: [spec.tls.0.hosts.0]
-    options:
-      delimiter: .
-      index: 1
+    options: {delimiter: ., index: 1}
   - select: {group: networking.k8s.io, kind: Ingress, name: traefik-dashboard}
     fieldPaths: [spec.rules.0.host]
-    options:
-      delimiter: .
-      index: 1
+    options: {delimiter: ., index: 1}
 - source: {fieldPath: data.ACME_PROVIDER, kind: ConfigMap, name: cluster-vars}
   targets:
   - select: {group: networking.k8s.io, kind: Ingress, name: traefik-dashboard}
     fieldPaths: [metadata.annotations.cert-manager\.io/cluster-issuer]
+- source: {fieldPath: data.RPROXY_SVC_IPV4, kind: ConfigMap, name: cluster-vars}
+  targets:
+  - select: {kind: Service, name: traefik-frontend}
+    fieldPaths: [metadata.annotations.io\.cilium/lb-ipam-ips]
+    options: {delimiter: ',', index: 0}
+- source: {fieldPath: data.RPROXY_SVC_IPV6, kind: ConfigMap, name: cluster-vars}
+  targets:
+  - select: {kind: Service, name: traefik-frontend}
+    fieldPaths: [metadata.annotations.io\.cilium/lb-ipam-ips]
+    options: {delimiter: ',', index: 1}

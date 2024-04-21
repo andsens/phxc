@@ -13,8 +13,6 @@ accessLog:
   fields:
     headers:
       defaultMode: drop
-      names:
-        uber-trace-id: keep
 entryPoints:
   web:
     address: ":8000"
