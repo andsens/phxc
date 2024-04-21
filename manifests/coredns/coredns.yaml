@@ -77,6 +77,7 @@ metadata:
     app.kubernetes.io/component: coredns
   annotations:
     io.cilium/lb-ipam-ips: "DNS_SVC_IPV4,DNS_SVC_IPV6"
+    external-dns.alpha.kubernetes.io/hostname: ns1.DOMAIN.
 spec:
   type: LoadBalancer
   ipFamilies:
@@ -125,6 +126,9 @@ spec:
         args:
         - -conf
         - /etc/coredns/Corefile
+        env:
+        - name: WAN_IPV4
+          value: WAN_IPV4
         ports:
         - name: dns-udp
           containerPort: 53

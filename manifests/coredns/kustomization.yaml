@@ -24,3 +24,12 @@ replacements:
   - select: {kind: Service, name: coredns}
     fieldPaths: [metadata.annotations.io\.cilium/lb-ipam-ips]
     options: {delimiter: ',', index: 1}
+- source: {fieldPath: data.DOMAIN, kind: ConfigMap, name: cluster-vars}
+  targets:
+  - select: {kind: Service, name: coredns}
+    fieldPaths: [metadata.annotations.external-dns\.alpha\.kubernetes\.io/hostname]
+    options: {delimiter: '.', index: 1}
+- source: {fieldPath: data.WAN_IPV4, kind: ConfigMap, name: cluster-vars}
+  targets:
+  - select: {group: apps, kind: Deployment, name: coredns}
+    fieldPaths: ["spec.template.spec.containers.[name=coredns].env.[name=WAN_IPV4].value"]
