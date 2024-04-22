@@ -2,7 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: docker-registry
 resources:
-- ../cluster-vars
+- ../settings
 - auth.yaml
 - distribution.yaml
 - namespace.yaml
@@ -18,7 +18,7 @@ configMapGenerator:
 generatorOptions:
   disableNameSuffixHash: true
 replacements:
-- source: {fieldPath: data.DOMAIN, kind: ConfigMap, name: cluster-vars}
+- source: {fieldPath: data.cluster.dns.domain, kind: ConfigMap, name: settings}
   targets:
   - select: {group: networking.k8s.io, kind: Ingress, name: distribution}
     fieldPaths: [spec.tls.0.hosts.0]
@@ -35,7 +35,7 @@ replacements:
   - select: {group: apps, kind: StatefulSet, name: distribution}
     fieldPaths: ["spec.template.spec.containers.[name=distribution].env.[name=DOMAIN].value"]
     options: {delimiter: '.', index: 1}
-- source: {fieldPath: data.ACME_PROVIDER, kind: ConfigMap, name: cluster-vars}
+- source: {fieldPath: data.cluster.reverse-proxy.acme-provider, kind: ConfigMap, name: settings}
   targets:
   - select: {group: networking.k8s.io, kind: Ingress, name: distribution}
     fieldPaths: [metadata.annotations.cert-manager\.io/cluster-issuer]

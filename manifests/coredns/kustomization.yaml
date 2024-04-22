@@ -2,7 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: coredns
 resources:
-- ../cluster-vars
+- ../settings
 - coredns.yaml
 - namespace.yaml
 - Kptfile
@@ -14,22 +14,22 @@ configMapGenerator:
 generatorOptions:
   disableNameSuffixHash: true
 replacements:
-- source: {fieldPath: data.DNS_SVC_IPV4, kind: ConfigMap, name: cluster-vars}
+- source: {fieldPath: data.cluster.dns.ip.v4, kind: ConfigMap, name: settings}
   targets:
   - select: {kind: Service, name: coredns}
     fieldPaths: [metadata.annotations.io\.cilium/lb-ipam-ips]
     options: {delimiter: ',', index: 0}
-- source: {fieldPath: data.DNS_SVC_IPV6, kind: ConfigMap, name: cluster-vars}
+- source: {fieldPath: data.cluster.dns.ip.v6, kind: ConfigMap, name: settings}
   targets:
   - select: {kind: Service, name: coredns}
     fieldPaths: [metadata.annotations.io\.cilium/lb-ipam-ips]
     options: {delimiter: ',', index: 1}
-- source: {fieldPath: data.DOMAIN, kind: ConfigMap, name: cluster-vars}
+- source: {fieldPath: data.cluster.dns.domain, kind: ConfigMap, name: settings}
   targets:
   - select: {kind: Service, name: coredns}
     fieldPaths: [metadata.annotations.external-dns\.alpha\.kubernetes\.io/hostname]
     options: {delimiter: '.', index: 1}
-- source: {fieldPath: data.WAN_IPV4, kind: ConfigMap, name: cluster-vars}
+- source: {fieldPath: data.cluster.dns.wan_ipv4, kind: ConfigMap, name: settings}
   targets:
   - select: {group: apps, kind: Deployment, name: coredns}
     fieldPaths: ["spec.template.spec.containers.[name=coredns].env.[name=WAN_IPV4].value"]

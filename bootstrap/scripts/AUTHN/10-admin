@@ -7,14 +7,17 @@ $ROOTCMD usermod -L root
 # enable sudo for admin
 ainsl /etc/sudoers "${ADMIN_USERNAME:?}   ALL = ALL"
 [ -f "${target:?}/usr/bin/sudo" ] || echo "WARNING. Package sudo is not installed"
-$ROOTCMD useradd -m -s ${ADMIN_USER_SHELL:?} -u "${ADMIN_UID:?}" "$ADMIN_USERNAME"
-$ROOTCMD usermod -p "${ADMIN_PASSWORD:?}" "$ADMIN_USERNAME"
+$ROOTCMD useradd -m -s "$ADMIN_SHELL" -u "$ADMIN_UID" "$ADMIN_USERNAME"
+[[ -z $ADMIN_PW_HASH ]] || $ROOTCMD usermod -p "$ADMIN_PW_HASH" "$ADMIN_USERNAME"
 $ROOTCMD adduser admin adm
 userdir=$($ROOTCMD getent passwd "$ADMIN_USERNAME" | cut -d: -f6 )
 $ROOTCMD mkdir "$userdir/.ssh"
+
 [[ -z $ADMIN_AUTH_KEYS ]] || ainsl -a "$userdir/.ssh/authorized_keys" "$ADMIN_AUTH_KEYS"
+
 $ROOTCMD chown -R "$ADMIN_USERNAME:$ADMIN_USERNAME" "$userdir/.ssh"
 $ROOTCMD chmod -R u=rwX,go=rX "$userdir/.ssh"
+
 if [[ -n $ADMIN_NFS_HOME_SHARE ]]; then
   systemd_unitname=$(systemd-escape -p --suffix=mount "/home/${ADMIN_USERNAME}")
   cat >"${target:?}/etc/systemd/system/${systemd_unitname}" <<EOF

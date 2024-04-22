@@ -3,7 +3,7 @@
 /images
 /logs
 /mnt
-/vars.sh
+/settings.yaml
 /bootstrap-vms.args.sh
 /deploy-key
 /deploy-key.pub

@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 
 is_machine_id() {
-  local hostname=$1 machine_id_var expected_machine_id actual_machine_id
-  machine_id_var=MACHINE_IDS_${hostname//-/_}
-  expected_machine_id=${!machine_id_var}
+  local hostname=$1 expected_machine_id actual_machine_id
+  expected_machine_id=$(get_setting "machines[\"$hostname\"].uuid")
   actual_machine_id=$(cat /etc/machine-id)
   if [[ $expected_machine_id = "$actual_machine_id" ]]; then
     return 0
@@ -13,8 +12,10 @@ is_machine_id() {
 }
 
 confirm_machine_id() {
-  local hostname=$1
-  if ! is_machine_id "$hostname"; then
+  local hostname=$1 expected_machine_id actual_machine_id
+  expected_machine_id=$(get_setting "machines[\"$hostname\"].uuid")
+  actual_machine_id=$(cat /etc/machine-id)
+  if [[ $expected_machine_id != "$actual_machine_id" ]]; then
     error "This script is intended to be run on '%s' (the machine-id '%s' does not match the expected '%s')" \
       "$hostname" "$actual_machine_id" "$expected_machine_id"
     printf "Do you want to continue regardless? [y/N]" >&2

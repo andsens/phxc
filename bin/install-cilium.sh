@@ -2,10 +2,10 @@
 # shellcheck source-path=..
 set -eo pipefail; shopt -s inherit_errexit
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
-source "$PKGROOT/vars.sh"
 
 main() {
   source "$PKGROOT/.upkg/orbit-online/records.sh/records.sh"
+  source "$PKGROOT/lib/settings.sh"
   source "$PKGROOT/lib/machine-id.sh"
 
   DOC="install-cilium - Install cilium in k3s
@@ -38,8 +38,8 @@ declare -p ; done; }
     info "Cilium is not installed, installing now"
     /usr/local/bin/cilium install --version=1.15.1 \
       --set ipam.mode=cluster-pool \
-      --set ipam.operator.clusterPoolIPv4PodCIDRList="$CLUSTER_IPV4_POD_CIDR" \
-      --set ipam.operator.clusterPoolIPv6PodCIDRList="$CLUSTER_IPV6_POD_CIDR" \
+      --set ipam.operator.clusterPoolIPv4PodCIDRList="$(get_setting cluster.cidrs.pod.v4)" \
+      --set ipam.operator.clusterPoolIPv6PodCIDRList="$(get_setting cluster.cidrs.pod.v6)" \
       --set ipam.operator.clusterPoolIPv4MaskSize=24 \
       --set ipam.operator.clusterPoolIPv6MaskSize=112 \
       --set bgpControlPlane.enabled=true \
@@ -57,7 +57,7 @@ declare -p ; done; }
     kubectl patch -n kube-system cm cilium-config --patch-file <(printf "
 data:
   ipv6-service-range: \"%s\"
-" "$CLUSTER_IPV6_SVC_CIDR")
+" "$(get_setting cluster.cidrs.svc.v6)")
   else
     info "Cilium is already installed"
   fi

@@ -5,6 +5,7 @@ PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
 
 main() {
   source "$PKGROOT/.upkg/orbit-online/records.sh/records.sh"
+  source "$PKGROOT/lib/settings.sh"
   source "$PKGROOT/lib/machine-id.sh"
   source "$PKGROOT/lib/mount.sh"
 

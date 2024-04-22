@@ -1,9 +1,9 @@
 apiVersion: cluster.local
-kind: ClusterVarsConfigMapGenerator
+kind: SettingsConfigMapGenerator
 metadata:
-  name: cluster-vars
+  name: settings
   annotations:
     config.kubernetes.io/function: |
       exec:
-        path: ./generate-cluster-vars-cm.sh
+        path: ./generate-settings-cm.sh
 spec: {}

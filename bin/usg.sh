@@ -2,10 +2,10 @@
 # shellcheck source-path=../
 set -eo pipefail; shopt -s inherit_errexit
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
-source "$PKGROOT/vars.sh"
 ssh="ssh -o ControlMaster=auto -o ControlPath=~/.ssh/%r@%h:%p -o ControlPersist=3s"
 
 main() {
+  source "$PKGROOT/lib/settings.sh"
   source "$PKGROOT/.upkg/orbit-online/records.sh/records.sh"
   source "$PKGROOT/lib/machine-id.sh"
 

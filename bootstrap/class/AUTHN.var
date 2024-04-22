@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
-# shellcheck disable=2016
+# shellcheck disable=2034
 
-ADMIN_UID=${ADMIN_UID:-3000}
-ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
-ADMIN_USER_SHELL=${ADMIN_USER_SHELL:-/bin/bash}
+ADMIN_UID=$(get_setting bootstrapper.admin.uid)
+ADMIN_USERNAME=$(get_setting bootstrapper.admin.username)
+ADMIN_AUTH_KEYS=$(query_setting 'bootstrapper.admin.authorized_keys[]')
+ADMIN_NFS_HOME_SHARE=$(get_setting bootstrapper.admin.nfs_home_share)
+ADMIN_SHELL=$(get_setting bootstrapper.admin.shell)
+ADMIN_PW_HASH=$(get_setting bootstrapper.admin.pwhash)

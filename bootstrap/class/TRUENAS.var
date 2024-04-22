@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 # shellcheck source-path=../../../ disable=2034,2154
-TRUENAS_HOST_BRIDGE_CLIENT_IPS_VAR=TRUENAS_HOST_BRIDGE_CLIENT_IPS_${HOSTNAME//-/_}
-readarray -t -d, addresses <<<"${!TRUENAS_HOST_BRIDGE_CLIENT_IPS_VAR}"
-NIC_HOST_ADDRESSES="$(printf "Address=%s\n" "${addresses[@]}")"
+NIC_HOST_ADDRESSES="$(query_setting '.bootstrapper.machines.bootstrapper.host_bridge_client_ip[] | "Address=" + .')"
+TRUENAS_HOST_BRIDGE_SERVER_IP="$(get_setting machines.truenas.host_bridge_ip.v4)"
+HOME_CLUSTER_NFS_SHARE="$(get_setting bootstrapper.home_cluster_nfs_share)"
