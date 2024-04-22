@@ -1,9 +1,17 @@
 .:53 {
-    view example1 {
+    view external-ipv4 {
         expr type() == 'A' && client_ip() != '{$WAN_IPV4}' && ! incidr(client_ip(), '0.0.0.0/8') && ! incidr(client_ip(), '10.0.0.0/8') && ! incidr(client_ip(), '100.64.0.0/10') && ! incidr(client_ip(), '127.0.0.0/8') && ! incidr(client_ip(), '169.254.0.0/16') && ! incidr(client_ip(), '172.16.0.0/12') && ! incidr(client_ip(), '192.0.0.0/24') && ! incidr(client_ip(), '192.0.2.0/24') && ! incidr(client_ip(), '192.88.99.0/24') && ! incidr(client_ip(), '192.168.0.0/16') && ! incidr(client_ip(), '198.18.0.0/15') && ! incidr(client_ip(), '198.51.100.0/24') && ! incidr(client_ip(), '203.0.113.0/24') && ! incidr(client_ip(), '224.0.0.0/4') && ! incidr(client_ip(), '240.0.0.0/4') && ! incidr(client_ip(), '255.255.255.255/32')
     }
     template IN ANY . {
         answer "{{.Name}} 60 IN A {$WAN_IPV4}"
+    }
+}
+.:53 {
+    view caa {
+        expr type() == 'CAA'
+    }
+    template IN ANY . {
+        answer "{{.Name}} 0 IN CAA 0 issue \"letsencrypt.org;\""
     }
 }
 .:53 {
