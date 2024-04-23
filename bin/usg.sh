@@ -5,9 +5,7 @@ PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
 ssh="ssh -o ControlMaster=auto -o ControlPath=~/.ssh/%r@%h:%p -o ControlPersist=3s"
 
 main() {
-  source "$PKGROOT/lib/settings.sh"
-  source "$PKGROOT/.upkg/orbit-online/records.sh/records.sh"
-  source "$PKGROOT/lib/machine-id.sh"
+  source "$PKGROOT/lib/common.sh"
 
   DOC="usg.sh - Manage a Unifi Security Gateway setup
 Usage:

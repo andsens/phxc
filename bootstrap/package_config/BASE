@@ -2,6 +2,6 @@ PACKAGES install-norec
 zstd
 systemd-boot
 ${kernelname}
-wget ca-certificates bash git jq
+wget ca-certificates bash git jq yq
 nfs-common
 libnss-mdns

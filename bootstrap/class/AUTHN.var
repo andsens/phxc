@@ -3,7 +3,7 @@
 
 ADMIN_UID=$(get_setting bootstrapper.admin.uid)
 ADMIN_USERNAME=$(get_setting bootstrapper.admin.username)
-ADMIN_AUTH_KEYS=$(query_setting 'bootstrapper.admin.authorized_keys[]')
+ADMIN_AUTH_KEYS=$(yq -r 'bootstrapper.admin.authorized_keys[]' "$PKGROOT/settings.yaml")
 ADMIN_NFS_HOME_SHARE=$(get_setting bootstrapper.admin.nfs_home_share)
 ADMIN_SHELL=$(get_setting bootstrapper.admin.shell)
 ADMIN_PW_HASH=$(get_setting bootstrapper.admin.pwhash)

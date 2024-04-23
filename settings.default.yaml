@@ -4,8 +4,11 @@
 ########################
 
 machines:
+  # machine-ids (uuid) are used to ensure scripts are run on the correct machine
+  workstation:
+    # Specify this to avoid confirmation prompts
+    uuid: 94c17f34807ada6784855a8066275870
   truenas:
-    # Used to ensure scripts are run on the correct machine
     uuid: '38a6ed82302b612fd55b9b69660a83e0'
     # Fixed IP address for the link between the host and the K8S VM
     # Guide for setting up the bridge interface on TrueNAS:

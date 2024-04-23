@@ -4,9 +4,7 @@ set -eo pipefail; shopt -s inherit_errexit
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
 
 main() {
-  source "$PKGROOT/.upkg/orbit-online/records.sh/records.sh"
-  source "$PKGROOT/lib/settings.sh"
-  source "$PKGROOT/lib/machine-id.sh"
+  source "$PKGROOT/lib/common.sh"
 
   DOC="install-cilium - Install cilium in k3s
 Usage:

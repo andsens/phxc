@@ -4,14 +4,11 @@ set -eo pipefail; shopt -s inherit_errexit
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
 
 main() {
-  source "$PKGROOT/.upkg/orbit-online/records.sh/records.sh"
-  source "$PKGROOT/lib/settings.sh"
-  source "$PKGROOT/lib/machine-id.sh"
-  source "$PKGROOT/lib/mount.sh"
+  source "$PKGROOT/lib/common.sh"
 
   DOC="bootstrap.sh - Bootstrap images
 Usage:
-  bootstrap.sh [options] HOSTNAME
+  bootstrap.sh [options] MACHINE
 
 Options:
   --imgsize=PATH    Size of the root disk [default: 1.5G]
@@ -21,25 +18,25 @@ Options:
 # shellcheck disable=2016,1090,1091,2034
 docopt() { source "$PKGROOT/.upkg/andsens/docopt.sh/docopt-lib.sh" '1.0.0' || {
 ret=$?; printf -- "exit %d\n" "$ret"; exit "$ret"; }; set -e
-trimmed_doc=${DOC:0:208}; usage=${DOC:32:40}; digest=fdd33; shorts=('' '')
+trimmed_doc=${DOC:0:207}; usage=${DOC:32:39}; digest=66b13; shorts=('' '')
 longs=(--imgsize --cachepath); argcounts=(1 1); node_0(){ value __imgsize 0; }
-node_1(){ value __cachepath 1; }; node_2(){ value HOSTNAME a; }; node_3(){
+node_1(){ value __cachepath 1; }; node_2(){ value MACHINE a; }; node_3(){
 optional 0 1; }; node_4(){ optional 3; }; node_5(){ required 4 2; }; node_6(){
 required 5; }; cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2
-printf "%s\n" "${DOC:32:40}" >&2; exit 1; }'; unset var___imgsize \
-var___cachepath var_HOSTNAME; parse 6 "$@"; local prefix=${DOCOPT_PREFIX:-''}
-unset "${prefix}__imgsize" "${prefix}__cachepath" "${prefix}HOSTNAME"
+printf "%s\n" "${DOC:32:39}" >&2; exit 1; }'; unset var___imgsize \
+var___cachepath var_MACHINE; parse 6 "$@"; local prefix=${DOCOPT_PREFIX:-''}
+unset "${prefix}__imgsize" "${prefix}__cachepath" "${prefix}MACHINE"
 eval "${prefix}"'__imgsize=${var___imgsize:-1.5G}'
 eval "${prefix}"'__cachepath=${var___cachepath:-'"'"'$PKGROOT/cache'"'"'}'
-eval "${prefix}"'HOSTNAME=${var_HOSTNAME:-}'; local docopt_i=1
+eval "${prefix}"'MACHINE=${var_MACHINE:-}'; local docopt_i=1
 [[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2; for ((;docopt_i>0;docopt_i--)); do
-declare -p "${prefix}__imgsize" "${prefix}__cachepath" "${prefix}HOSTNAME"; done
+declare -p "${prefix}__imgsize" "${prefix}__cachepath" "${prefix}MACHINE"; done
 }
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/andsens/docopt.sh/docopt-lib.sh"' bootstrap.sh`
   eval "$(docopt "$@")"
   confirm_machine_id bootstrapper
 
-  local env=env ln=ln rm=rm imgpath=$PKGROOT/images/$HOSTNAME.raw
+  local env=env ln=ln rm=rm imgpath=$PKGROOT/images/$MACHINE.raw
   if [[ $UID != 0 ]]; then
     env="sudo env"
     ln="sudo ln"
@@ -60,7 +57,7 @@ declare -p "${prefix}__imgsize" "${prefix}__cachepath" "${prefix}HOSTNAME"; done
     "PATH=$PATH" \
     "PKGROOT=$PKGROOT" \
     "CACHEPATH=$__cachepath" \
-    fai-diskimage --cspace "$PKGROOT/bootstrap" --new --size "${__imgsize:-1.5G}" --hostname "$HOSTNAME" "$imgpath"
+    fai-diskimage --cspace "$PKGROOT/bootstrap" --new --size "${__imgsize:-1.5G}" --hostname "$MACHINE" "$imgpath"
   $chown "$(stat -c %u:%g "$(dirname "$imgpath")")" "$imgpath"
   if [[ $__cachepath = "$PKGROOT"/* ]]; then
     $chown -R "$(stat -c %u:%g "$(dirname "$__cachepath")")" "$__cachepath"

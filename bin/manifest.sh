@@ -4,7 +4,7 @@ set -eo pipefail; shopt -s inherit_errexit
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
 
 main() {
-  source "$PKGROOT/.upkg/orbit-online/records.sh/records.sh"
+  source "$PKGROOT/lib/common.sh"
 
   DOC="apply-manifest.sh - Manage manifests
 Usage:
