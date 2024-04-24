@@ -36,7 +36,7 @@ declare -p "${prefix}MACHINE"; done; }
 
   cache_all_vms
 
-  # shellcheck disable=2086
+  # shellcheck disable=2153
   printf -- '#!/usr/bin/env bash\nMACHINE=(%s)\n' "${MACHINE[*]}" > "$PKGROOT/bootstrap-vms.args.sh"
   # shellcheck disable=2064
   trap "rm -f \"$PKGROOT/bootstrap-vms.args.sh\"" EXIT

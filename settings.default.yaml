@@ -15,10 +15,10 @@ machines:
     # https://www.truenas.com/community/threads/is-there-any-way-to-enable-create-an-virtual-switch.95269/page-2#post-674816
     # For a random IPv4 subnet use random.org 1-255 for the two groups after the "10."
     # For a random IPv6 subnet use https://unique-local-ipv6.com/
-    host_bridge_ip:
-      v4: 10.15.180.1/24
-      v6: '[fd25:9998:d0e7:e351:1a01:be9:4d9a:157d]'
-      server_ip_cidr: 'fd25:9998:d0e7:e351:1a01:be9:4d9a:157d/128'
+    host_bridge:
+      # Can be IPv4 or IPv6
+      ip: '[fd25:9998:d0e7:e351:1a01:be9:4d9a:157d]'
+      cidr: 'fd25:9998:d0e7:e351:1a01:be9:4d9a:157d/128'
   bootstrapper:
     # Generate with dbus-uuidgen
     uuid: 'b8b235b3279c6054bc9f33ef6609287a'
@@ -26,14 +26,14 @@ machines:
     vm: Bootstrapper
     # Path to the root disk in TrueNAS
     disk: /dev/zvol/cluster/Bootstrapper
-    host_bridge_ip:
+    host_bridge_nic_address:
       v4: 10.15.180.2/24
       v6: fd25:9998:d0e7:e351:1a01:be9:4d9a:157e/48
   k8s-nas:
     uuid: '2a178ed534ac2a67dbc8049d65eddc45'
     vm: Kubernetes
     disk: /dev/zvol/cluster/Kubernetes
-    host_bridge_ip:
+    host_bridge_nic_address:
       v4: 10.15.180.3/24
       v6: fd25:9998:d0e7:e351:1a01:be9:4d9a:157f/48
 
