@@ -5,15 +5,7 @@
 # do not use this if a menu will be presented
 [ "$flag_menu" ] && exit 0
 
-echo "BASE DEBIAN AUTHN"
-
-case $HOSTNAME in
-  bootstrapper)
-    echo "TRUENAS KVM AMD64 BOOTSTRAPPER" ;;
-  k8s-nas)
-    echo "TRUENAS KVM AMD64 K8S K8SMASTER" ;;
-  *)
-    printf "ERROR: Unknown hostname '%s'" "$HOSTNAME" >&2
-    exit 1
-    ;;
-esac
+if ! yq -r ".machines[\"$HOSTNAME\"].fai_classes | join(\" \")" "$PKGROOT/settings.yaml" 2>/dev/null; then
+  printf "ERROR: Unknown hostname '%s'" "$HOSTNAME" >&2
+  exit 1
+fi
