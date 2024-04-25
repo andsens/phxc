@@ -78,13 +78,17 @@ spec:
       labels:
         app.kubernetes.io/name: smallstep
         app.kubernetes.io/component: certificates
+        cluster.local/allow-internet-egress: "true"
     spec:
       securityContext:
         fsGroup: 1000
       initContainers:
-      - name: setup-issuer-provisioner
+      - name: setup-config
         image: cr.step.sm/smallstep/step-ca-bootstrap:latest
         command: [/home/step/setup-config/setup-config.sh]
+        env:
+        - name: STEP_CA_DOMAIN
+          value: pki.DOMAIN
         volumeMounts:
         - name: setup-config
           mountPath: /home/step/setup-config

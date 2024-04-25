@@ -57,3 +57,6 @@ replacements:
   - select: {kind: Service, name: step-ca-external}
     fieldPaths: [metadata.annotations.external-dns\.alpha\.kubernetes\.io/hostname]
     options: {delimiter: '.', index: 1}
+  - select: {group: apps, kind: StatefulSet, name: step-ca}
+    fieldPaths: ["spec.template.spec.initContainers.[name=setup-config].env.[name=STEP_CA_DOMAIN].value"]
+    options: {delimiter: '.', index: 1}
