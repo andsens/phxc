@@ -1,5 +1,5 @@
 #!/bin/bash
-set -eo pipefail; shopt -s inherit_errexit
+set -Eeo pipefail
 
 main() {
   : "${STEPPATH:?}"
