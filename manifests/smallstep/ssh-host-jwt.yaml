@@ -1,0 +1,148 @@
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: ssh-host-jwt
+  labels:
+    app.kubernetes.io/name: smallstep
+    app.kubernetes.io/component: ssh-host-jwt
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: smallstep
+      app.kubernetes.io/component: ssh-host-jwt
+  egress:
+  - toPorts:
+    - ports:
+      - port: "9000"
+    toEndpoints:
+    - matchLabels:
+        app.kubernetes.io/name: smallstep
+        app.kubernetes.io/component: certificates
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ssh-host-jwt
+  labels:
+    app.kubernetes.io/name: smallstep
+    app.kubernetes.io/component: bootstrap
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: ssh-host-jwt
+  labels:
+    app.kubernetes.io/name: smallstep
+    app.kubernetes.io/component: ssh-host-jwt
+rules:
+- apiGroups: [""]
+  resources: [nodes]
+  verbs: [get, list]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ssh-host-jwt
+  labels:
+    app.kubernetes.io/name: smallstep
+    app.kubernetes.io/component: ssh-host-jwt
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: ssh-host-jwt
+subjects:
+- kind: ServiceAccount
+  name: ssh-host-jwt
+---
+apiVersion: secretgenerator.mittwald.de/v1alpha1
+kind: StringSecret
+metadata:
+  name: ssh-host-provisioner-password
+  labels:
+    app.kubernetes.io/name: smallstep
+    app.kubernetes.io/component: issuer
+spec:
+  fields:
+  - fieldName: password
+    length: "32"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: ssh-host-jwt
+  labels:
+    app.kubernetes.io/name: smallstep
+    app.kubernetes.io/component: ssh-host-jwt
+spec:
+  schedule: "45 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: smallstep
+            app.kubernetes.io/component: ssh-host-jwt
+            cluster.local/allow-apiserver-egress: "true"
+        spec:
+          restartPolicy: Never
+          serviceAccountName: ssh-host-jwt
+          securityContext:
+            fsGroup: 1000
+          containers:
+          - name: ssh-host-jwt
+            image: cr.step.sm/smallstep/step-ca-bootstrap:latest
+            command: [/home/step/ssh-host-jwt.sh]
+            securityContext:
+              readOnlyRootFilesystem: true
+            volumeMounts:
+            - name: ssh-host-jwt
+              mountPath: /home/step/ssh-host-jwt.sh
+              subPath: ssh-host-jwt.sh
+              readOnly: true
+            - name: config
+              mountPath: /home/step/config
+            - name: certs
+              mountPath: /home/step/certs
+            - name: root-cert
+              mountPath: /home/step/root_ca.crt
+              subPath: tls.crt
+              readOnly: true
+            - name: ssh-host-provisioner-password
+              mountPath: /home/step/ssh-host-provisioner-password
+              readOnly: true
+            - name: jwt
+              mountPath: /home/step/jwt
+              readOnly: false
+          volumes:
+          - name: ssh-host-jwt
+            configMap:
+              name: ssh-host-jwt
+              defaultMode: 0777
+          - name: config
+            emptyDir: {}
+          - name: certs
+            emptyDir: {}
+          - name: root-cert
+            secret:
+              secretName: smallstep-root
+          - name: ssh-host-provisioner-password
+            secret:
+              secretName: ssh-host-provisioner-password
+          - name: jwt
+            persistentVolumeClaim:
+              claimName: ssh-host-jwt
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ssh-host-jwt
+  labels:
+    app.kubernetes.io/name: smallstep
+    app.kubernetes.io/component: ssh-host-jwt
+spec:
+  storageClassName: nas-nfs
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 1Mi

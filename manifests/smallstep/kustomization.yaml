@@ -8,6 +8,7 @@ resources:
 - bootstrap.yaml
 - certificates.yaml
 - issuer.yaml
+- ssh-host-jwt.yaml
 - namespace.yaml
 - Kptfile
 - resourcegroup.yaml
@@ -21,6 +22,12 @@ configMapGenerator:
 - files:
   - config/setup-config.sh
   name: step-ca-setup-config
+  options:
+    labels:
+      app.kubernetes.io/name: smallstep
+- files:
+  - config/ssh-host-jwt.sh
+  name: ssh-host-jwt
   options:
     labels:
       app.kubernetes.io/name: smallstep

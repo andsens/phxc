@@ -216,6 +216,18 @@ spec:
     name: selfsigned
   secretName: smallstep-webhook-tls
 ---
+apiVersion: secretgenerator.mittwald.de/v1alpha1
+kind: StringSecret
+metadata:
+  name: step-issuer-provisioner-password
+  labels:
+    app.kubernetes.io/name: smallstep
+    app.kubernetes.io/component: issuer
+spec:
+  fields:
+  - fieldName: password
+    length: "32"
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:

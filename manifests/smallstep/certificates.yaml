@@ -92,11 +92,17 @@ spec:
         volumeMounts:
         - name: setup-config
           mountPath: /home/step/setup-config
-        - name: issuer-provisioner
-          mountPath: /home/step/certs/issuer-provisioner
+        - name: step-issuer-provisioner
+          mountPath: /home/step/certs/step-issuer-provisioner
           readOnly: true
-        - name: issuer-provisioner-password
-          mountPath: /home/step/issuer-provisioner-password
+        - name: step-issuer-provisioner-password
+          mountPath: /home/step/step-issuer-provisioner-password
+          readOnly: true
+        - name: ssh-host-provisioner
+          mountPath: /home/step/certs/ssh-host-provisioner
+          readOnly: true
+        - name: ssh-host-provisioner-password
+          mountPath: /home/step/ssh-host-provisioner-password
           readOnly: true
         - name: config
           mountPath: /home/step/config-ro
@@ -157,12 +163,18 @@ spec:
         configMap:
           name: step-ca-setup-config
           defaultMode: 0777
-      - name: issuer-provisioner
+      - name: step-issuer-provisioner
         secret:
           secretName: step-issuer-provisioner
-      - name: issuer-provisioner-password
+      - name: step-issuer-provisioner-password
         secret:
           secretName: step-issuer-provisioner-password
+      - name: ssh-host-provisioner
+        secret:
+          secretName: step-ssh-host-provisioner
+      - name: ssh-host-provisioner-password
+        secret:
+          secretName: step-ssh-host-provisioner-password
       - name: root-cert
         secret:
           secretName: smallstep-root
