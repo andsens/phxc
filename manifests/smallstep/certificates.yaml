@@ -21,6 +21,30 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
+  name: step-ca-external
+  labels:
+    app.kubernetes.io/name: smallstep
+    app.kubernetes.io/component: certificates
+  annotations:
+    io.cilium/lb-ipam-ips: "SMALLSTEP_SVC_IPV4,SMALLSTEP_SVC_IPV6"
+    external-dns.alpha.kubernetes.io/hostname: pki.DOMAIN.
+spec:
+  type: LoadBalancer
+  ipFamilies:
+  - IPv4
+  - IPv6
+  ipFamilyPolicy: RequireDualStack
+  selector:
+    app.kubernetes.io/name: smallstep
+    app.kubernetes.io/component: certificates
+  ports:
+  - name: api
+    port: 9000
+    targetPort: api
+---
+apiVersion: v1
+kind: Service
+metadata:
   name: step-ca
   labels:
     app.kubernetes.io/name: smallstep

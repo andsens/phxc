@@ -72,9 +72,6 @@ cluster:
   # NFS CSI driver mount
   workloads_nfs_share: /mnt/cluster/workloads
 
-  # Name of the PKI root & intermediate
-  pki_name: 'Elysium'
-
   # CIDRs for the Kubernetes cluster
   # The IPv6 subnet can be a prefix delegated one from your ISP
   cidrs:
@@ -115,3 +112,10 @@ cluster:
       v4: '10.66.0.2'
       v6: 'fd73:9867:6b4d:cafe:0000:66::2'
 
+  # Smallstep PKI setup
+  pki:
+    # Name of the PKI root & intermediate
+    name: 'Elysium'
+    ip:
+      v4: '10.66.0.3'
+      v6: 'fd73:9867:6b4d:cafe:0000:66::3'

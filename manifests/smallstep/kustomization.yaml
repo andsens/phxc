@@ -38,7 +38,22 @@ configMapGenerator:
 generatorOptions:
   disableNameSuffixHash: true
 replacements:
-- source: {fieldPath: data.cluster.pki_name, kind: ConfigMap, name: settings}
+- source: {fieldPath: data.cluster.pki.name, kind: ConfigMap, name: settings}
   targets:
   - select: {group: batch, kind: Job, name: step-ca-bootstrap}
     fieldPaths: ["spec.template.spec.containers.[name=step-ca-bootstrap].env.[name=CLUSTER_NAME].value"]
+- source: {fieldPath: data.cluster.pki.ip.v4, kind: ConfigMap, name: settings}
+  targets:
+  - select: {kind: Service, name: step-ca-external}
+    fieldPaths: [metadata.annotations.io\.cilium/lb-ipam-ips]
+    options: {delimiter: ',', index: 0}
+- source: {fieldPath: data.cluster.pki.ip.v6, kind: ConfigMap, name: settings}
+  targets:
+  - select: {kind: Service, name: step-ca-external}
+    fieldPaths: [metadata.annotations.io\.cilium/lb-ipam-ips]
+    options: {delimiter: ',', index: 1}
+- source: {fieldPath: data.cluster.dns.domain, kind: ConfigMap, name: settings}
+  targets:
+  - select: {kind: Service, name: step-ca-external}
+    fieldPaths: [metadata.annotations.external-dns\.alpha\.kubernetes\.io/hostname]
+    options: {delimiter: '.', index: 1}
