@@ -50,6 +50,7 @@ declare -p ; done; }
       --set kubeProxyReplacement=true \
       --set encryption.enabled=true \
       --set encryption.type=wireguard \
+      --set encryption.nodeEncryption=true \
       --set socketLB.enabled=true \
       --set kubeConfigPath=/etc/rancher/k3s/k3s.yaml
     kubectl patch -n kube-system cm cilium-config --patch-file <(printf "
