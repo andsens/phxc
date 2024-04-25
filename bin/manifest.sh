@@ -51,7 +51,7 @@ declare -p "${prefix}MANIFEST" "${prefix}apply" "${prefix}all" "${prefix}__" \
       kubernetes-secret-generator
       cert-manager
       cert-manager-issuers
-      step-ca
+      smallstep
       etcd
       coredns
       external-dns

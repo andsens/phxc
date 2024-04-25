@@ -23,19 +23,19 @@ setup_certificates() {
     printf "bootstrap.sh: Root certificate exists on PV, skipping creation\n" >&2
   fi
 
-  if $root_ca_is_new || ! kubectl get -n "$NAMESPACE" secret step-ca-root -o jsonpath='{.data.tls\.crt}' >/dev/null; then
+  if $root_ca_is_new || ! kubectl get -n "$NAMESPACE" secret smallstep-root -o jsonpath='{.data.tls\.crt}' >/dev/null; then
     printf "bootstrap.sh: Root certificate secret does not exist or has been recreated, creating now\n" >&2
-    kubectl create -n "$NAMESPACE" secret tls step-ca-root \
+    kubectl create -n "$NAMESPACE" secret tls smallstep-root \
       --cert="$STEPPATH/certs/root/tls.crt" \
       --key="$STEPPATH/certs/root/tls.key" || \
-    kubectl replace -n "$NAMESPACE" secret tls step-ca-root \
+    kubectl replace -n "$NAMESPACE" secret tls smallstep-root \
       --cert="$STEPPATH/certs/root/tls.crt" \
       --key="$STEPPATH/certs/root/tls.key"
   else
     printf "bootstrap.sh: Root certificate secret exists, skipping creation\n" >&2
   fi
 
-  if $root_ca_is_new || ! kubectl get -n "$NAMESPACE" secret step-ca-intermediate >/dev/null; then
+  if $root_ca_is_new || ! kubectl get -n "$NAMESPACE" secret smallstep-intermediate >/dev/null; then
     printf "bootstrap.sh: Intermediate certificate does not exist or the root has been recreated, creating now\n" >&2
     mkdir "$STEPPATH/certs/intermediate"
     step certificate create --profile=intermediate-ca \
@@ -43,10 +43,10 @@ setup_certificates() {
       --not-after=87600h \
       --ca="$STEPPATH/certs/root/tls.crt" --ca-key="$STEPPATH/certs/root/tls.key" \
       "$CLUSTER_NAME Intermediate" "$STEPPATH/certs/intermediate/tls.crt" "$STEPPATH/certs/intermediate/tls.key"
-    kubectl create -n "$NAMESPACE" secret tls step-ca-intermediate \
+    kubectl create -n "$NAMESPACE" secret tls smallstep-intermediate \
       --cert="$STEPPATH/certs/intermediate/tls.crt" \
       --key="$STEPPATH/certs/intermediate/tls.key" || \
-    kubectl replace -n "$NAMESPACE" secret tls step-ca-intermediate \
+    kubectl replace -n "$NAMESPACE" secret tls smallstep-intermediate \
       --cert="$STEPPATH/certs/intermediate/tls.crt" \
       --key="$STEPPATH/certs/intermediate/tls.key"
   else
@@ -59,14 +59,14 @@ setup_issuer_provisioner() {
   local jwk_is_new=false
 
   mkdir "$STEPPATH/certs/issuer-provisioner"
-  if ! kubectl get -n "$NAMESPACE" secret step-ca-issuer-provisioner -o jsonpath='{.data.pub\.json}' | base64 -d >"$STEPPATH/certs/issuer-provisioner/pub.json"; then
+  if ! kubectl get -n "$NAMESPACE" secret step-issuer-provisioner -o jsonpath='{.data.pub\.json}' | base64 -d >"$STEPPATH/certs/issuer-provisioner/pub.json"; then
     printf "bootstrap.sh: step-issuer provisioner JWK does not exist, creating now\n" >&2
     rm -f "$STEPPATH/certs/issuer-provisioner/pub.json"
     step crypto jwk create \
       --password-file="$STEPPATH/issuer-provisioner-password/password" \
       --use sig \
       "$STEPPATH/certs/issuer-provisioner/pub.json" "$STEPPATH/certs/issuer-provisioner/priv.json"
-    kubectl create -n "$NAMESPACE" secret generic step-ca-issuer-provisioner \
+    kubectl create -n "$NAMESPACE" secret generic step-issuer-provisioner \
       --from-file="$STEPPATH/certs/issuer-provisioner/pub.json" \
       --from-file="$STEPPATH/certs/issuer-provisioner/priv.json"
   else
@@ -81,14 +81,14 @@ kind: StepClusterIssuer
 metadata:
   name: step-issuer
 spec:
-  url: https://step-ca.step-ca.svc.cluster.local:9000
+  url: https://step-ca.smallstep.svc.cluster.local:9000
   caBundle: %s
   provisioner:
     name: step-issuer
     kid: %s
     passwordRef:
-      namespace: step-ca
-      name: step-ca-issuer-provisioner-password
+      namespace: smallstep
+      name: step-issuer-provisioner-password
       key: password" "$(base64 -w0 "$STEPPATH/certs/root/tls.crt")" "$(step crypto jwk thumbprint < "$STEPPATH/certs/issuer-provisioner/pub.json")"
     )
   else

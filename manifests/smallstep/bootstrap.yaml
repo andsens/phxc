@@ -4,7 +4,7 @@ kind: ServiceAccount
 metadata:
   name: step-ca-bootstrap
   labels:
-    app.kubernetes.io/name: step-ca
+    app.kubernetes.io/name: smallstep
     app.kubernetes.io/component: bootstrap
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -12,7 +12,7 @@ kind: Role
 metadata:
   name: step-ca-bootstrap
   labels:
-    app.kubernetes.io/name: step-ca
+    app.kubernetes.io/name: smallstep
     app.kubernetes.io/component: bootstrap
 rules:
 - apiGroups: [""]
@@ -20,7 +20,7 @@ rules:
   verbs: [create]
 - apiGroups: [""]
   resources: [secrets]
-  resourceNames: [step-ca-root, step-ca-intermediate, step-ca-issuer-provisioner]
+  resourceNames: [smallstep-root, smallstep-intermediate, step-issuer-provisioner]
   verbs: [get, delete]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -28,7 +28,7 @@ kind: ClusterRole
 metadata:
   name: step-ca-bootstrap
   labels:
-    app.kubernetes.io/name: step-ca
+    app.kubernetes.io/name: smallstep
     app.kubernetes.io/component: bootstrap
 rules:
 - apiGroups: [certmanager.step.sm]
@@ -44,7 +44,7 @@ kind: RoleBinding
 metadata:
   name: step-ca-bootstrap
   labels:
-    app.kubernetes.io/name: step-ca
+    app.kubernetes.io/name: smallstep
     app.kubernetes.io/component: bootstrap
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -59,7 +59,7 @@ kind: ClusterRoleBinding
 metadata:
   name: step-ca-bootstrap
   labels:
-    app.kubernetes.io/name: step-ca
+    app.kubernetes.io/name: smallstep
     app.kubernetes.io/component: bootstrap
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -72,9 +72,9 @@ subjects:
 apiVersion: secretgenerator.mittwald.de/v1alpha1
 kind: StringSecret
 metadata:
-  name: step-ca-issuer-provisioner-password
+  name: step-issuer-provisioner-password
   labels:
-    app.kubernetes.io/name: step-ca
+    app.kubernetes.io/name: smallstep
     app.kubernetes.io/component: issuer
 spec:
   fields:
@@ -86,7 +86,7 @@ kind: Job
 metadata:
   name: step-ca-bootstrap
   labels:
-    app.kubernetes.io/name: step-ca
+    app.kubernetes.io/name: smallstep
     app.kubernetes.io/component: bootstrap
 spec:
   template:
@@ -138,7 +138,7 @@ spec:
           defaultMode: 0777
       - name: issuer-provisioner-password
         secret:
-          secretName: step-ca-issuer-provisioner-password
+          secretName: step-issuer-provisioner-password
       - name: certs
         emptyDir:
           medium: Memory
@@ -157,7 +157,7 @@ kind: PersistentVolumeClaim
 metadata:
   name: step-ca-root
   labels:
-    app.kubernetes.io/name: step-ca
+    app.kubernetes.io/name: smallstep
     app.kubernetes.io/component: bootstrap
 spec:
   storageClassName: nas-nfs

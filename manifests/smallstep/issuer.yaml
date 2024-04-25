@@ -4,12 +4,12 @@ kind: CiliumNetworkPolicy
 metadata:
   name: step-issuer
   labels:
-    app.kubernetes.io/name: step-ca
+    app.kubernetes.io/name: smallstep
     app.kubernetes.io/component: issuer
 spec:
   endpointSelector:
     matchLabels:
-      app.kubernetes.io/name: step-ca
+      app.kubernetes.io/name: smallstep
       app.kubernetes.io/component: issuer
   ingress:
   - toPorts:
@@ -23,7 +23,7 @@ spec:
       - port: "9000"
     toEndpoints:
     - matchLabels:
-        app.kubernetes.io/name: step-ca
+        app.kubernetes.io/name: smallstep
         app.kubernetes.io/component: certificates
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -44,7 +44,7 @@ kind: ClusterRole
 metadata:
   name: step-issuer-approver-role
   labels:
-    app.kubernetes.io/name: step-ca
+    app.kubernetes.io/name: smallstep
     app.kubernetes.io/component: issuer
 rules:
 - apiGroups: [cert-manager.io]
@@ -57,7 +57,7 @@ kind: ServiceAccount
 metadata:
   name: step-issuer
   labels:
-    app.kubernetes.io/name: step-ca
+    app.kubernetes.io/name: smallstep
     app.kubernetes.io/component: issuer
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -65,7 +65,7 @@ kind: RoleBinding
 metadata:
   name: step-issuer-leader-election-rolebinding
   labels:
-    app.kubernetes.io/name: step-ca
+    app.kubernetes.io/name: smallstep
     app.kubernetes.io/component: issuer
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -80,7 +80,7 @@ kind: Role
 metadata:
   name: step-issuer-leader-election-role
   labels:
-    app.kubernetes.io/name: step-ca
+    app.kubernetes.io/name: smallstep
     app.kubernetes.io/component: issuer
 rules:
 - apiGroups: [""]
@@ -101,7 +101,7 @@ kind: ClusterRoleBinding
 metadata:
   name: step-issuer-manager-rolebinding
   labels:
-    app.kubernetes.io/name: step-ca
+    app.kubernetes.io/name: smallstep
     app.kubernetes.io/component: issuer
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -110,14 +110,14 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: step-issuer
-  namespace: step-ca
+  namespace: smallstep
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: step-issuer-proxy-rolebinding
   labels:
-    app.kubernetes.io/name: step-ca
+    app.kubernetes.io/name: smallstep
     app.kubernetes.io/component: issuer
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -126,14 +126,14 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: step-issuer
-  namespace: step-ca
+  namespace: smallstep
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: step-issuer-manager-role
   labels:
-    app.kubernetes.io/name: step-ca
+    app.kubernetes.io/name: smallstep
     app.kubernetes.io/component: issuer
 rules:
 - apiGroups: [""]
@@ -173,7 +173,7 @@ kind: ClusterRole
 metadata:
   name: step-issuer-proxy-role
   labels:
-    app.kubernetes.io/name: step-ca
+    app.kubernetes.io/name: smallstep
     app.kubernetes.io/component: issuer
 rules:
 - apiGroups: [authentication.k8s.io]
@@ -188,11 +188,11 @@ kind: Service
 metadata:
   name: step-issuer
   labels:
-    app.kubernetes.io/name: step-ca
+    app.kubernetes.io/name: smallstep
     app.kubernetes.io/component: issuer
 spec:
   selector:
-    app.kubernetes.io/name: step-ca
+    app.kubernetes.io/name: smallstep
     app.kubernetes.io/component: issuer
   ports:
   - name: api
@@ -204,12 +204,12 @@ kind: Certificate
 metadata:
   name: smallstep-webhook-serving-cert
   labels:
-    app.kubernetes.io/name: step-ca
+    app.kubernetes.io/name: smallstep
     app.kubernetes.io/component: issuer
 spec:
-  commonName: step-issuer.step-ca.svc
+  commonName: step-issuer.smallstep.svc
   dnsNames:
-  - step-issuer.step-ca.svc.cluster.local
+  - step-issuer.smallstep.svc.cluster.local
   issuerRef:
     group: cert-manager.io
     kind: ClusterIssuer
@@ -221,18 +221,18 @@ kind: Deployment
 metadata:
   name: step-issuer
   labels:
-    app.kubernetes.io/name: step-ca
+    app.kubernetes.io/name: smallstep
     app.kubernetes.io/component: issuer
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: step-ca
+      app.kubernetes.io/name: smallstep
       app.kubernetes.io/component: issuer
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: step-ca
+        app.kubernetes.io/name: smallstep
         app.kubernetes.io/component: issuer
         cluster.local/allow-apiserver-egress: "true"
     spec:

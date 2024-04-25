@@ -1,6 +1,6 @@
 apiVersion: kpt.dev/v1alpha1
 kind: ResourceGroup
 metadata:
-  name: inventory-step-ca
+  name: inventory-smallstep
   labels:
     cli-utils.sigs.k8s.io/inventory-id: d96ead7ca078d4e4de2511bf7992f007fd643381-1710694462154008088
