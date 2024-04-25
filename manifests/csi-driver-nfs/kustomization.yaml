@@ -12,7 +12,7 @@ resources:
 - Kptfile
 - resourcegroup.yaml
 replacements:
-- source: {fieldPath: data.machines.truenas.host_bridge_ip.v6, kind: ConfigMap, name: settings}
+- source: {fieldPath: data.machines.truenas.host_bridge.ip, kind: ConfigMap, name: settings}
   targets:
   - select: {group: storage.k8s.io, kind: StorageClass, name: nas-nfs}
     fieldPaths: [parameters.server]
@@ -20,7 +20,7 @@ replacements:
   targets:
   - select: {group: storage.k8s.io, kind: StorageClass, name: nas-nfs}
     fieldPaths: [parameters.share]
-- source: {fieldPath: data.machines.truenas.host_bridge_ip.server_ip_cidr, kind: ConfigMap, name: settings}
+- source: {fieldPath: data.machines.truenas.host_bridge.cidr, kind: ConfigMap, name: settings}
   targets:
   - select: {group: networking.k8s.io, kind: NetworkPolicy, name: csi-nfs}
     fieldPaths: [spec.ingress.0.from.0.ipBlock.cidr]

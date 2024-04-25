@@ -79,17 +79,17 @@ get_config() {
 }
 
 get_ck_config() {
-  $ssh "$UNIFI_CLOUDKEY_SSH_ADDR" -- cat /srv/unifi/data/sites/$UNIFI_SITE/config.gateway.json
+  $ssh "$(get_setting cluster.router.cloudkey_ssh_address)" -- cat "/srv/unifi/data/sites/$(get_setting cluster.router.unifi_site)/config.gateway.json"
 }
 
 get_usg_config() {
-  $ssh "$UNIFI_USG_SSH_ADDR" -- mca-ctrl -t dump-cfg
+  $ssh "$(get_setting cluster.router.usg_ssh_address)" -- mca-ctrl -t dump-cfg
 }
 
 set_ck_config() {
   local config=$1
-  $ssh "$UNIFI_CLOUDKEY_SSH_ADDR" -- mkdir -p /srv/unifi/data/sites/$UNIFI_SITE
-  $ssh "$UNIFI_CLOUDKEY_SSH_ADDR" -- tee /srv/unifi/data/sites/$UNIFI_SITE/config.gateway.json <<<"$config" >/dev/null
+  $ssh "$(get_setting cluster.router.cloudkey_ssh_address)" -- mkdir -p "/srv/unifi/data/sites/$(get_setting cluster.router.unifi_site)"
+  $ssh "$(get_setting cluster.router.cloudkey_ssh_address)" -- tee "/srv/unifi/data/sites/$(get_setting cluster.router.unifi_site)/config.gateway.json" <<<"$config" >/dev/null
 }
 
 main "$@"
