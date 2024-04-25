@@ -36,6 +36,7 @@ declare -p "${prefix}__imgsize" "${prefix}__cachepath" "${prefix}MACHINE"; done
   eval "$(docopt "$@")"
   confirm_machine_id bootstrapper
 
+  # shellcheck disable=2153
   local env=env ln=ln rm=rm imgpath=$PKGROOT/images/$MACHINE.raw
   if [[ $UID != 0 ]]; then
     env="sudo env"
