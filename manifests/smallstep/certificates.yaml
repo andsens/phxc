@@ -171,10 +171,10 @@ spec:
           secretName: step-issuer-provisioner-password
       - name: ssh-host-provisioner
         secret:
-          secretName: step-ssh-host-provisioner
+          secretName: ssh-host-provisioner
       - name: ssh-host-provisioner-password
         secret:
-          secretName: step-ssh-host-provisioner-password
+          secretName: ssh-host-provisioner-password
       - name: root-cert
         secret:
           secretName: smallstep-root

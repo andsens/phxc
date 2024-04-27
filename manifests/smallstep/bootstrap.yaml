@@ -20,7 +20,7 @@ rules:
   verbs: [create]
 - apiGroups: [""]
   resources: [secrets]
-  resourceNames: [smallstep-root, smallstep-intermediate, step-issuer-provisioner, step-ssh-host-provisioner]
+  resourceNames: [smallstep-root, smallstep-intermediate, step-issuer-provisioner, ssh-host-provisioner]
   verbs: [get, delete]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -69,6 +69,30 @@ subjects:
 - kind: ServiceAccount
   name: step-ca-bootstrap
 ---
+apiVersion: secretgenerator.mittwald.de/v1alpha1
+kind: StringSecret
+metadata:
+  name: ssh-host-provisioner-password
+  labels:
+    app.kubernetes.io/name: smallstep
+    app.kubernetes.io/component: issuer
+spec:
+  fields:
+  - fieldName: password
+    length: "32"
+---
+apiVersion: secretgenerator.mittwald.de/v1alpha1
+kind: StringSecret
+metadata:
+  name: step-issuer-provisioner-password
+  labels:
+    app.kubernetes.io/name: smallstep
+    app.kubernetes.io/component: issuer
+spec:
+  fields:
+  - fieldName: password
+    length: "32"
+---
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -115,8 +139,8 @@ spec:
         - name: certs
           mountPath: /home/step/certs
           readOnly: false
-        - name: root
-          mountPath: /home/step/certs/root
+        - name: persistent-certs
+          mountPath: /home/step/persistent-certs
           readOnly: false
         - name: config
           mountPath: /home/step/config
@@ -138,9 +162,9 @@ spec:
       - name: certs
         emptyDir:
           medium: Memory
-      - name: root
+      - name: persistent-certs
         persistentVolumeClaim:
-          claimName: step-ca-root
+          claimName: step-ca-certs
       - name: config
         configMap:
           name: step-ca-config
@@ -151,7 +175,7 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: step-ca-root
+  name: step-ca-certs
   labels:
     app.kubernetes.io/name: smallstep
     app.kubernetes.io/component: bootstrap
