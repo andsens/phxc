@@ -129,6 +129,8 @@ spec:
         env:
         - name: WAN_IPV4
           value: WAN_IPV4
+        - name: DOMAIN
+          value: DOMAIN
         ports:
         - name: dns-udp
           containerPort: 53
