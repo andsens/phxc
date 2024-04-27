@@ -16,29 +16,43 @@
     "userKey": "/home/step/certs/intermediate_ca_key"
   },
   "authority": {
-    "policy": {
-      "x509": {
-        "allow": {
-          "dns": ["*.local"]
-        },
-        "allowWildcardNames": false
-      },
-      "ssh": {
-        "host": {
-          "allow": {
-            "dns": ["*.local"]
-          }
-        }
-      }
-    },
     "provisioners": [
       {
-        "type": "SSHPOP",
-        "name": "sshpop",
+        "type": "JWK",
+        "name": "step-issuer",
         "claims": {
-          "defaultHostSSHCertDuration": "672h",
-          "maxHostSSHCertDuration": "672h",
-          "enableSSHCA": true
+          "enableSSHCA": false,
+          "disableRenewal": false,
+          "allowRenewalAfterExpiry": false
+        },
+        "options": {
+          "x509": {
+            "allow": {
+              "dns": "*.local"
+            },
+            "allowWildcardNames": false
+          }
+        }
+      },
+      {
+        "type": "JWK",
+        "name": "ssh-host",
+        "claims": {
+          "minHostSSHCertDuration": "72h",
+          "maxHostSSHCertDuration": "72h",
+          "defaultHostSSHCertDuration": "72h",
+          "enableSSHCA": true,
+          "disableRenewal": false,
+          "allowRenewalAfterExpiry": false
+        },
+        "options": {
+          "ssh": {
+            "host": {
+              "allow": {
+                "dns": ["*.local"]
+              }
+            }
+          }
         }
       }
     ]
