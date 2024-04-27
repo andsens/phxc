@@ -1,0 +1,10 @@
+[Unit]
+Description=Generate SSH host keys
+Before=ssh.service
+
+[Install]
+RequiredBy=ssh.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/ssh-keygen -A

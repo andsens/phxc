@@ -12,14 +12,14 @@ setup_certificates() {
   printf "bootstrap.sh: Setting up root and intermediate certificates\n" >&2
 
   local root_ca_is_new=false
-  if [[ ! -e "$STEPPATH/persistent-certs/root_ca.key" ]]; then
+  if [[ ! -e "$STEPPATH/persistent-certs/root_ca_key" ]]; then
     rm -f "$STEPPATH/persistent-certs/root_ca.crt"
     printf "bootstrap.sh: Root certificate does not exist on PV, creating now\n" >&2
     root_ca_is_new=true
     step certificate create --profile=root-ca \
       --no-password --insecure \
       --not-after=87600h \
-      "$CLUSTER_NAME Root" "$STEPPATH/persistent-certs/root_ca.crt" "$STEPPATH/persistent-certs/root_ca.key"
+      "$CLUSTER_NAME Root" "$STEPPATH/persistent-certs/root_ca.crt" "$STEPPATH/persistent-certs/root_ca_key"
   else
     printf "bootstrap.sh: Root certificate exists on PV, skipping creation\n" >&2
   fi
@@ -28,10 +28,10 @@ setup_certificates() {
     printf "bootstrap.sh: Root certificate secret does not exist or has been recreated, creating now\n" >&2
     kubectl create -n "$NAMESPACE" secret tls smallstep-root \
       --cert="$STEPPATH/persistent-certs/root_ca.crt" \
-      --key="$STEPPATH/persistent-certs/root_ca.key" || \
+      --key="$STEPPATH/persistent-certs/root_ca_key" || \
     kubectl replace -n "$NAMESPACE" secret tls smallstep-root \
       --cert="$STEPPATH/persistent-certs/root_ca.crt" \
-      --key="$STEPPATH/persistent-certs/root_ca.key"
+      --key="$STEPPATH/persistent-certs/root_ca_key"
   else
     printf "bootstrap.sh: Root certificate secret exists, skipping creation\n" >&2
   fi
@@ -41,14 +41,14 @@ setup_certificates() {
     step certificate create --profile=intermediate-ca \
       --no-password --insecure \
       --not-after=87600h \
-      --ca="$STEPPATH/persistent-certs/root_ca.crt" --ca-key="$STEPPATH/persistent-certs/root_ca.key" \
-      "$CLUSTER_NAME Intermediate" "$STEPPATH/persistent-certs/intermediate_ca.crt" "$STEPPATH/persistent-certs/intermediate_ca.key"
+      --ca="$STEPPATH/persistent-certs/root_ca.crt" --ca-key="$STEPPATH/persistent-certs/root_ca_key" \
+      "$CLUSTER_NAME Intermediate" "$STEPPATH/persistent-certs/intermediate_ca.crt" "$STEPPATH/persistent-certs/intermediate_ca_key"
     kubectl create -n "$NAMESPACE" secret tls smallstep-intermediate \
       --cert="$STEPPATH/persistent-certs/intermediate_ca.crt" \
-      --key="$STEPPATH/persistent-certs/intermediate_ca.key" || \
+      --key="$STEPPATH/persistent-certs/intermediate_ca_key" || \
     kubectl replace -n "$NAMESPACE" secret tls smallstep-intermediate \
       --cert="$STEPPATH/persistent-certs/intermediate_ca.crt" \
-      --key="$STEPPATH/persistent-certs/intermediate_ca.key"
+      --key="$STEPPATH/persistent-certs/intermediate_ca_key"
   else
     printf "bootstrap.sh: Intermediate certificate exists, skipping creation\n" >&2
   fi
