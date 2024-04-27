@@ -20,7 +20,10 @@ machines:
       ip: '[fd25:9998:d0e7:e351:1a01:be9:4d9a:157d]'
       cidr: 'fd25:9998:d0e7:e351:1a01:be9:4d9a:157d/128'
   bootstrapper:
+    # FAI Bootstrapping classes to apply
     fai_classes: [BASE, DEBIAN, AUTHN, TRUENAS, KVM, AMD64, BOOTSTRAPPER]
+    # The size of the root disk
+    disksize: 2G
     # Generate with dbus-uuidgen
     uuid: 'b8b235b3279c6054bc9f33ef6609287a'
     # Name of the VM in TrueNAS
@@ -32,6 +35,7 @@ machines:
       v6: fd25:9998:d0e7:e351:1a01:be9:4d9a:157e/48
   k8s-nas:
     fai_classes: [BASE, DEBIAN, AUTHN, TRUENAS, KVM, AMD64, K8S, K8SMASTER]
+    disksize: 2G
     uuid: '2a178ed534ac2a67dbc8049d65eddc45'
     vm: Kubernetes
     disk: /dev/zvol/cluster/Kubernetes
