@@ -10,7 +10,7 @@ main() {
 Usage:
   install-deps [MACHINE]
 "
-# docopt parser below, refresh this parser with `docopt.sh install-deps.sh`
+# docopt parser below, refresh this parser with `docopt.sh install-deps`
 # shellcheck disable=2016,1090,1091,2034
 docopt() { source "$PKGROOT/.upkg/andsens/docopt.sh/docopt-lib.sh" '1.0.0' || {
 ret=$?; printf -- "exit %d\n" "$ret"; exit "$ret"; }; set -e
@@ -22,7 +22,7 @@ required 1; }; node_3(){ required 2; }; cat <<<' docopt_exit() {
 unset "${prefix}MACHINE"; eval "${prefix}"'MACHINE=${var_MACHINE:-}'
 local docopt_i=1; [[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2
 for ((;docopt_i>0;docopt_i--)); do declare -p "${prefix}MACHINE"; done; }
-# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/andsens/docopt.sh/docopt-lib.sh"' install-deps.sh`
+# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/andsens/docopt.sh/docopt-lib.sh"' install-deps`
   eval "$(docopt "$@")"
 
   # shellcheck disable=2153

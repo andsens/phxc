@@ -10,4 +10,4 @@ WantedBy=multi-user.target
 [Service]
 Type=oneshot
 Environment=KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-ExecStart=/var/lib/home-cluster/bin/sign-ssh-host-keys.sh
+ExecStart=/var/lib/home-cluster/bin/sign-ssh-host-keys

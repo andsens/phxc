@@ -19,7 +19,7 @@ wipefs -fa /dev/zvol/cluster/<DISK>
 
 ### Setup smallstep trust
 
-step ca bootstrap --ca-url pki.$(bin/settings.sh get cluster.dns.domain):9000 \
+step ca bootstrap --ca-url pki.$(bin/settings get cluster.dns.domain):9000 \
 	--fingerprint "$(step certificate fingerprint <(kubectl -n smallstep get secret smallstep-root -o=jsonpath='{.data.tls\.crt}' | base64 -d))"
 
 ### Trust host SSH certificates

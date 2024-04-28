@@ -9,7 +9,7 @@ spec:
       kubernetes.io/hostname: k8s-nas.local
   virtualRouters:
   # Hardcoded because kustomize always replaces with strings and cilium needs this to be a number
-  # If you change it here, also change it in bin/usg.sh
+  # If you change it here, also change it in bin/usg
   - localASN: 65000
     serviceSelector:
        matchExpressions:
