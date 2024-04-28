@@ -7,8 +7,8 @@ wget -qO- https://dl.smallstep.com/gh-release/cli/gh-release-header/v0.26.0/step
 chmod +x "${target:?}/usr/local/bin/step"
 
 for unit in sign-ssh-host-keys.service sign-ssh-host-keys.timer download-ssh-user-ca-keys.service; do
-  fcopy -SM /etc/systemd/system/$unit.timer
-  $ROOTCMD systemctl enable $unit.service
+  fcopy -SM /etc/systemd/system/$unit
+  $ROOTCMD systemctl enable $unit
 done
 
 fcopy -M /etc/ssh/sshd_config.d/20-host-key-certs.conf
