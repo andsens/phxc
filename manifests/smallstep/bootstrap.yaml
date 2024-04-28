@@ -123,8 +123,12 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
-        - name: CLUSTER_NAME
-          value: CLUSTER_NAME
+        - name: PKI_NAME
+          value: cluster.pkiName
+        - name: K8S_API_HOST
+          value: cluster.machines.k8sMaster.hostname
+        - name: KUBE_CONFIG_OWNER
+          value: admin.uid
         volumeMounts:
         - name: bootstrap
           mountPath: /home/step/bootstrap.sh

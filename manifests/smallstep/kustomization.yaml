@@ -41,7 +41,15 @@ replacements:
 - source: {fieldPath: data.cluster.pkiName, kind: ConfigMap, name: settings}
   targets:
   - select: {group: batch, kind: Job, name: step-ca-bootstrap}
-    fieldPaths: ["spec.template.spec.containers.[name=step-ca-bootstrap].env.[name=CLUSTER_NAME].value"]
+    fieldPaths: ["spec.template.spec.containers.[name=step-ca-bootstrap].env.[name=PKI_NAME].value"]
+- source: {fieldPath: data.machines.k8sMaster.hostname, kind: ConfigMap, name: settings}
+  targets:
+  - select: {group: batch, kind: Job, name: step-ca-bootstrap}
+    fieldPaths: ["spec.template.spec.containers.[name=step-ca-bootstrap].env.[name=K8S_API_HOST].value"]
+- source: {fieldPath: data.admin.uid, kind: ConfigMap, name: settings}
+  targets:
+  - select: {group: batch, kind: Job, name: step-ca-bootstrap}
+    fieldPaths: ["spec.template.spec.containers.[name=step-ca-bootstrap].env.[name=KUBE_CONFIG_OWNER].value"]
 - source: {fieldPath: data.cluster.smallstep.fixedIPv4, kind: ConfigMap, name: settings}
   targets:
   - select: {kind: Service, name: step-ca-external}
