@@ -6,6 +6,8 @@ ROOT_KEY_PATH=$STEPPATH/persistent-certs/root_ca_key
 ROOT_CRT_PATH=$STEPPATH/persistent-certs/root_ca.crt
 INTERMEDIATE_KEY_PATH=$STEPPATH/persistent-certs/intermediate_ca_key
 INTERMEDIATE_CRT_PATH=$STEPPATH/persistent-certs/intermediate_ca.crt
+KUBE_CLIENT_KEY_PATH=$STEPPATH/persistent-certs/kube_apiserver_client_ca_key
+KUBE_CLIENT_CRT_PATH=$STEPPATH/persistent-certs/kube_apiserver_client_ca.crt
 STEP_ISSUER_DIR=$STEPPATH/certs/step-issuer-provisioner
 SSH_HOST_DIR=$STEPPATH/certs/ssh-host-provisioner
 
@@ -19,6 +21,7 @@ main() {
 create_certificates() {
   info "Setting up root and intermediate certificates"
   local root_is_new=false
+
   if [[ ! -e "$ROOT_KEY_PATH" || ! -e "$ROOT_CRT_PATH" ]]; then
     info "Root key and/or cert do not exist on the PV, creating now"
     rm -f "$ROOT_CRT_PATH"
@@ -31,6 +34,7 @@ create_certificates() {
   else
     info "Root key and cert exists on the PV, skipping creation"
   fi
+
   if $root_is_new || [[ ! -e "$INTERMEDIATE_KEY_PATH" || ! -e "$INTERMEDIATE_CRT_PATH" ]]; then
     info "Intermediate key and/or cert do not exist on the PV or the root has been recreated, creating now"
     rm -f "$INTERMEDIATE_KEY_PATH" "$INTERMEDIATE_CRT_PATH"
@@ -38,14 +42,27 @@ create_certificates() {
       --no-password --insecure \
       --not-after=87600h \
       --ca="$ROOT_CRT_PATH" --ca-key="$ROOT_KEY_PATH" \
-      "$CLUSTER_NAME Intermediate" "$INTERMEDIATE_CRT_PATH" "$INTERMEDIATE_KEY_PATH"
+      "$CLUSTER_NAME" "$INTERMEDIATE_CRT_PATH" "$INTERMEDIATE_KEY_PATH"
   else
     info "Intermediate key & cert exists on the PV, skipping creation"
+  fi
+
+  if $root_is_new || [[ ! -e "$KUBE_CLIENT_KEY_PATH" || ! -e "$KUBE_CLIENT_CRT_PATH" ]]; then
+    info "kube-apiserver client CA key and/or cert do not exist on the PV or the root has been recreated, creating now"
+    rm -f "$KUBE_CLIENT_KEY_PATH" "$KUBE_CLIENT_CRT_PATH"
+    step certificate create --profile=intermediate-ca \
+      --no-password --insecure \
+      --not-after=87600h \
+      --ca="$ROOT_CRT_PATH" --ca-key="$ROOT_KEY_PATH" \
+      "$CLUSTER_NAME Kubernetes Client CA" "$KUBE_CLIENT_CRT_PATH" "$KUBE_CLIENT_KEY_PATH"
+  else
+    info "kube-apiserver client CA key & cert exists on the PV, skipping creation"
   fi
 }
 
 create_secrets() {
-  info "Setting up step issuer provisioner"
+  info "Creating smallstep certificate chain secrets"
+
   if [[ $(kubectl get -n "$NAMESPACE" secret smallstep-root -o jsonpath='{.data.tls\.crt}' | base64 -d) != $(cat "$ROOT_CRT_PATH") ]]; then
     info "Root certificate secret does not exist or does not match the one on the PV, creating now"
     kubectl delete -n "$NAMESPACE" secret smallstep-root 2>/dev/null || true
@@ -60,6 +77,14 @@ create_secrets() {
     kubectl create -n "$NAMESPACE" secret tls smallstep-intermediate --cert="$INTERMEDIATE_CRT_PATH" --key="$INTERMEDIATE_KEY_PATH"
   else
     info "Intermediate certificate secret exists and matches, skipping creation"
+  fi
+
+  if [[ $(kubectl get -n "$NAMESPACE" secret kube-apiserver-client-ca -o jsonpath='{.data.tls\.crt}' | base64 -d) != $(cat "$KUBE_CLIENT_CRT_PATH") ]]; then
+    info "kube-apiserver client CA certificate secret does not exist or does not match the one on the PV, creating now"
+    kubectl delete -n "$NAMESPACE" secret kube-apiserver-client-ca 2>/dev/null || true
+    kubectl create -n "$NAMESPACE" secret generic kube-apiserver-client-ca --from-file=tls.crt="$KUBE_CLIENT_CRT_PATH"
+  else
+    info "kube-apiserver client CA certificate secret exists and matches, skipping creation"
   fi
 }
 

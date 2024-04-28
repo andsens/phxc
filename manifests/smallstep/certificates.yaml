@@ -104,6 +104,10 @@ spec:
         - name: ssh-host-provisioner-password
           mountPath: /home/step/ssh-host-provisioner-password
           readOnly: true
+        - name: kube-apiserver-client-ca-cert
+          mountPath: /home/step/certs/kube_apiserver_client_ca.crt
+          subPath: tls.crt
+          readOnly: true
         - name: config
           mountPath: /home/step/config-ro
           readOnly: true
@@ -141,11 +145,11 @@ spec:
           mountPath: /home/step/certs/root_ca.crt
           subPath: tls.crt
           readOnly: true
-        - name: intermediate-cert
+        - name: intermediate
           mountPath: /home/step/certs/intermediate_ca.crt
           subPath: tls.crt
           readOnly: true
-        - name: intermediate-cert
+        - name: intermediate
           mountPath: /home/step/certs/intermediate_ca_key
           subPath: tls.key
           readOnly: true
@@ -178,9 +182,12 @@ spec:
       - name: root-cert
         secret:
           secretName: smallstep-root
-      - name: intermediate-cert
+      - name: intermediate
         secret:
           secretName: smallstep-intermediate
+      - name: kube-apiserver-client-ca-cert
+        secret:
+          secretName: kube-apiserver-client-ca
       - name: config
         configMap:
           name: step-ca-config

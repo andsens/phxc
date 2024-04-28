@@ -16,6 +16,7 @@ k3s_exec_flags=(
   "--kube-controller-manager-arg=node-cidr-mask-size-ipv6=112"
   "--cluster-cidr=${CLUSTER_IPV4_POD_CIDR},${CLUSTER_IPV6_POD_CIDR}"
   "--service-cidr=${CLUSTER_IPV4_SVC_CIDR},${CLUSTER_IPV6_SVC_CIDR}"
+  "--kube-apiserver-arg=client-ca-file=/var/lib/rancher/k3s/server/tls/client-ca-bundle.crt"
 )
 
 curl -sfL https://get.k3s.io | \

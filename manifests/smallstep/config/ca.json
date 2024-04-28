@@ -54,6 +54,14 @@
             }
           }
         }
+      },
+      {
+        "type": "X5C",
+        "name": "kube-apiserver-client-ca",
+        "claims": {
+          "enableSSHCA": true,
+          "allowRenewalAfterExpiry": true
+        }
       }
     ]
   },
