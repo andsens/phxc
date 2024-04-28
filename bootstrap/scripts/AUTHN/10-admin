@@ -9,7 +9,7 @@ ainsl /etc/sudoers "${ADMIN_USERNAME:?}   ALL = ALL"
 [ -f "${target:?}/usr/bin/sudo" ] || echo "WARNING. Package sudo is not installed"
 $ROOTCMD useradd -m -s "$ADMIN_SHELL" -u "$ADMIN_UID" "$ADMIN_USERNAME"
 [[ -z $ADMIN_PW_HASH ]] || $ROOTCMD usermod -p "$ADMIN_PW_HASH" "$ADMIN_USERNAME"
-$ROOTCMD adduser admin adm
+$ROOTCMD adduser $ADMIN_USERNAME adm
 userdir=$($ROOTCMD getent passwd "$ADMIN_USERNAME" | cut -d: -f6 )
 $ROOTCMD mkdir "$userdir/.ssh"
 
@@ -18,7 +18,7 @@ $ROOTCMD mkdir "$userdir/.ssh"
 $ROOTCMD chown -R "$ADMIN_USERNAME:$ADMIN_USERNAME" "$userdir/.ssh"
 $ROOTCMD chmod -R u=rwX,go=rX "$userdir/.ssh"
 
-if [[ -n $ADMIN_NFS_HOME_SHARE ]]; then
+if [[ -n $NFS_SHARES_ADMIN_HOME_ADDR ]]; then
   systemd_unitname=$(systemd-escape -p --suffix=mount "/home/${ADMIN_USERNAME}")
   cat >"${target:?}/etc/systemd/system/${systemd_unitname}" <<EOF
 [Unit]
