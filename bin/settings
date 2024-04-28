@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # shellcheck source-path=../
-set -eo pipefail; shopt -s inherit_errexit
+set -Eeo pipefail
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
 
 main() {
