@@ -1,8 +1,6 @@
 [Unit]
 Description=Sign SSH host keys
-Requires=k3s.service apply-all-manifests.service
 After=k3s.service apply-all-manifests.service
-Wants=network-online.target
 
 [Install]
 WantedBy=multi-user.target

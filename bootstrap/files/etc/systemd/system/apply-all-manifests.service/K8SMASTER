@@ -1,6 +1,6 @@
 [Unit]
 Description=Apply all home-cluster manifests
-Requires=install-cilium.service
+Requires=k3s.service install-cilium.service
 After=install-cilium.service
 
 [Install]

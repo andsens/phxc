@@ -6,7 +6,7 @@ wget -qO- https://dl.smallstep.com/gh-release/cli/gh-release-header/v0.26.0/step
   tar xzC "${target:?}/usr/local/bin" --strip-components 2 step_0.26.0/bin/step
 chmod +x "${target:?}/usr/local/bin/step"
 
-for unit in sign-ssh-host-keys.service sign-ssh-host-keys.timer download-ssh-user-ca-keys.service; do
+for unit in download-ssh-user-ca-keys.service sign-ssh-host-keys.service sign-ssh-host-keys.timer; do
   fcopy -SM /etc/systemd/system/$unit
   $ROOTCMD systemctl enable $unit
 done
