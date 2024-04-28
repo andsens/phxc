@@ -16,4 +16,4 @@ ExecStart=\
   ln -s /var/lib/persistent/lib-rancher /var/lib/rancher ; \
   ln -s /var/lib/persistent/lib-kubelet /var/lib/kubelet ;\
   mkdir -p /var/lib/rancher/k3s/server/tls ;\
-  ln -s client-ca.crt /var/lib/rancher/k3s/server/tls/client-ca-bundle.crt
+  bash -c 'ln -s client-ca.crt /var/lib/rancher/k3s/server/tls/client-ca-bundle.crt || true'
