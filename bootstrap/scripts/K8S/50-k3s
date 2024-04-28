@@ -24,9 +24,7 @@ curl -sfL https://get.k3s.io | \
   INSTALL_K3S_EXEC="${k3s_exec_flags[*]}" \
   $ROOTCMD sh -
 
-for unit in link-k3s-data.service adjust-kubeconf-perms.service; do
-  fcopy -SM "/etc/systemd/system/$unit"
-  $ROOTCMD systemctl enable "$unit"
-done
+fcopy -SM /etc/systemd/system/link-k3s-data.service
+$ROOTCMD systemctl enable link-k3s-data.service
 
 exit $error
