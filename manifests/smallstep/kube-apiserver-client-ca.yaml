@@ -2,15 +2,15 @@
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: step-ca
+  name: kube-apiserver-client-ca
   labels:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: certificates
+    app.kubernetes.io/component: kube-apiserver-client-ca
 spec:
   endpointSelector:
     matchLabels:
       app.kubernetes.io/name: smallstep
-      app.kubernetes.io/component: certificates
+      app.kubernetes.io/component: kube-apiserver-client-ca
   ingress:
   - toPorts:
     - ports:
@@ -21,13 +21,13 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: step-ca-external
+  name: kube-apiserver-client-ca-external
   labels:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: certificates
+    app.kubernetes.io/component: kube-apiserver-client-ca
   annotations:
-    io.cilium/lb-ipam-ips: "cluster.smallstep.fixedIPv4,cluster.smallstep.fixedIPv6"
-    external-dns.alpha.kubernetes.io/hostname: pki.DOMAIN.
+    io.cilium/lb-ipam-ips: "cluster.kubeAPIServerCA.fixedIPv4,cluster.kubeAPIServerCA.fixedIPv6"
+    external-dns.alpha.kubernetes.io/hostname: pki-kube.DOMAIN.
 spec:
   type: LoadBalancer
   ipFamilies:
@@ -36,76 +36,47 @@ spec:
   ipFamilyPolicy: RequireDualStack
   selector:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: certificates
+    app.kubernetes.io/component: kube-apiserver-client-ca
   ports:
   - name: api
-    port: 9000
-    targetPort: api
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: step-ca
-  labels:
-    app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: certificates
-spec:
-  type: ClusterIP
-  selector:
-    app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: certificates
-  ports:
-  - name: api
-    port: 9000
+    port: 9001
     targetPort: api
 ---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: step-ca
+  name: kube-apiserver-client-ca
   labels:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: certificates
+    app.kubernetes.io/component: kube-apiserver-client-ca
 spec:
   replicas: 1
-  serviceName: step-ca
+  serviceName: kube-apiserver-client-ca
   selector:
     matchLabels:
       app.kubernetes.io/name: smallstep
-      app.kubernetes.io/component: certificates
+      app.kubernetes.io/component: kube-apiserver-client-ca
   template:
     metadata:
       labels:
         app.kubernetes.io/name: smallstep
-        app.kubernetes.io/component: certificates
+        app.kubernetes.io/component: kube-apiserver-client-ca
         cluster.local/allow-internet-egress: "true"
     spec:
       securityContext:
         fsGroup: 1000
       initContainers:
-      - name: setup-step-ca-config
+      - name: setup-kube-apiserver-client-ca-config
         image: cr.step.sm/smallstep/step-ca-bootstrap:latest
-        command: [/home/step/setup-step-ca-config.sh]
+        command: [/home/step/setup-kube-apiserver-client-ca-config.sh]
         env:
         - name: STEP_CA_DOMAIN
-          value: pki.DOMAIN
+          value: pki-kube.DOMAIN
         volumeMounts:
-        - name: setup-step-ca-config
-          mountPath: /home/step/setup-step-ca-config.sh
-          subPath: setup-step-ca-config.sh
-        - name: step-issuer-provisioner
-          mountPath: /home/step/certs/step-issuer-provisioner
-          readOnly: true
-        - name: step-issuer-provisioner-password
-          mountPath: /home/step/step-issuer-provisioner-password
-          readOnly: true
-        - name: ssh-host-provisioner
-          mountPath: /home/step/certs/ssh-host-provisioner
-          readOnly: true
-        - name: ssh-host-provisioner-password
-          mountPath: /home/step/ssh-host-provisioner-password
-          readOnly: true
-        - name: kube-apiserver-client-ca-cert
+        - name: setup-kube-apiserver-client-ca-config
+          mountPath: /home/step/setup-kube-apiserver-client-ca-config.sh
+          subPath: setup-kube-apiserver-client-ca-config.sh
+        - name: kube-apiserver-client-ca
           mountPath: /home/step/certs/kube_apiserver_client_ca.crt
           subPath: tls.crt
           readOnly: true
@@ -146,12 +117,12 @@ spec:
           mountPath: /home/step/certs/root_ca.crt
           subPath: tls.crt
           readOnly: true
-        - name: intermediate
-          mountPath: /home/step/certs/intermediate_ca.crt
+        - name: kube-apiserver-client-ca
+          mountPath: /home/step/certs/kube_apiserver_client_ca.crt
           subPath: tls.crt
           readOnly: true
-        - name: intermediate
-          mountPath: /home/step/certs/intermediate_ca_key
+        - name: kube-apiserver-client-ca
+          mountPath: /home/step/certs/kube_apiserver_client_ca_key
           subPath: tls.key
           readOnly: true
         - name: config-rw
@@ -164,34 +135,19 @@ spec:
           mountPath: /home/step/templates
           readOnly: true
       volumes:
-      - name: setup-step-ca-config
+      - name: setup-kube-apiserver-client-ca-config
         configMap:
-          name: setup-step-ca-config
+          name: setup-kube-apiserver-client-ca-config
           defaultMode: 0777
-      - name: step-issuer-provisioner
-        secret:
-          secretName: step-issuer-provisioner
-      - name: step-issuer-provisioner-password
-        secret:
-          secretName: step-issuer-provisioner-password
-      - name: ssh-host-provisioner
-        secret:
-          secretName: ssh-host-provisioner
-      - name: ssh-host-provisioner-password
-        secret:
-          secretName: ssh-host-provisioner-password
       - name: root-cert
         secret:
           secretName: smallstep-root
-      - name: intermediate
-        secret:
-          secretName: smallstep-intermediate
-      - name: kube-apiserver-client-ca-cert
+      - name: kube-apiserver-client-ca
         secret:
           secretName: kube-apiserver-client-ca
       - name: config
         configMap:
-          name: step-ca-config
+          name: kube-apiserver-client-ca-config
       - name: config-rw
         emptyDir: {}
       - name: templates
@@ -202,7 +158,7 @@ spec:
       name: database
       labels:
         app.kubernetes.io/name: smallstep
-        app.kubernetes.io/component: certificates
+        app.kubernetes.io/component: kube-apiserver-client-ca
     spec:
       storageClassName: nas-nfs
       accessModes: [ReadWriteOnce]

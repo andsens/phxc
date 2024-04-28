@@ -89,7 +89,7 @@ create_secrets() {
   if [[ $(kubectl get -n "$NAMESPACE" secret kube-apiserver-client-ca -o jsonpath='{.data.tls\.crt}' | base64 -d) != $(cat "$KUBE_CLIENT_CA_CRT_PATH") ]]; then
     info "kube-apiserver client CA certificate secret does not exist or does not match the one on the PV, creating now"
     kubectl delete -n "$NAMESPACE" secret kube-apiserver-client-ca 2>/dev/null || true
-    kubectl create -n "$NAMESPACE" secret generic kube-apiserver-client-ca --from-file=tls.crt="$KUBE_CLIENT_CA_CRT_PATH"
+    kubectl create -n "$NAMESPACE" secret tls kube-apiserver-client-ca --cert="$KUBE_CLIENT_CA_CRT_PATH" --key="$KUBE_CLIENT_CA_KEY_PATH"
   else
     info "kube-apiserver client CA certificate secret exists and matches, skipping creation"
   fi
@@ -202,7 +202,7 @@ create_home_cluster_admin_kube_config() {
 info() {
   local tpl=$1; shift
   # shellcheck disable=2059
-  printf "setup-config.sh: $tpl\n" "$@" >&2
+  printf "bootstrap.sh: $tpl\n" "$@" >&2
 }
 
 main "$@"

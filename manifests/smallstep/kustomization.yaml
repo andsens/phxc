@@ -7,6 +7,7 @@ resources:
 - https://raw.githubusercontent.com/smallstep/helm-charts/v0.22.0/step-issuer/crds/certmanager.step.sm_stepissuers.yaml
 - bootstrap.yaml
 - certificates.yaml
+- kube-apiserver-client-ca.yaml
 - issuer.yaml
 - namespace.yaml
 - Kptfile
@@ -19,8 +20,8 @@ configMapGenerator:
     labels:
       app.kubernetes.io/name: smallstep
 - files:
-  - config/setup-config.sh
-  name: step-ca-setup-config
+  - config/setup-step-ca-config.sh
+  name: setup-step-ca-config
   options:
     labels:
       app.kubernetes.io/name: smallstep
@@ -30,8 +31,21 @@ configMapGenerator:
   options:
     labels:
       app.kubernetes.io/name: smallstep
-- files: []
+- files:
+  - config/templates/kube-apiserver-client-cert.tpl
   name: step-ca-templates
+  options:
+    labels:
+      app.kubernetes.io/name: smallstep
+- files:
+  - config/setup-kube-apiserver-client-ca-config.sh
+  name: setup-kube-apiserver-client-ca-config
+  options:
+    labels:
+      app.kubernetes.io/name: smallstep
+- files:
+  - ca.json=config/kube-apiserver-client-ca.json
+  name: kube-apiserver-client-ca-config
   options:
     labels:
       app.kubernetes.io/name: smallstep
@@ -66,5 +80,23 @@ replacements:
     fieldPaths: [metadata.annotations.external-dns\.alpha\.kubernetes\.io/hostname]
     options: {delimiter: '.', index: 1}
   - select: {group: apps, kind: StatefulSet, name: step-ca}
-    fieldPaths: ["spec.template.spec.initContainers.[name=setup-config].env.[name=STEP_CA_DOMAIN].value"]
+    fieldPaths: ["spec.template.spec.initContainers.[name=setup-step-ca-config].env.[name=STEP_CA_DOMAIN].value"]
+    options: {delimiter: '.', index: 1}
+- source: {fieldPath: data.cluster.kubeAPIServerClientCA.fixedIPv4, kind: ConfigMap, name: settings}
+  targets:
+  - select: {kind: Service, name: kube-apiserver-client-ca-external}
+    fieldPaths: [metadata.annotations.io\.cilium/lb-ipam-ips]
+    options: {delimiter: ',', index: 0}
+- source: {fieldPath: data.cluster.kubeAPIServerClientCA.fixedIPv6, kind: ConfigMap, name: settings}
+  targets:
+  - select: {kind: Service, name: kube-apiserver-client-ca-external}
+    fieldPaths: [metadata.annotations.io\.cilium/lb-ipam-ips]
+    options: {delimiter: ',', index: 1}
+- source: {fieldPath: data.cluster.domain, kind: ConfigMap, name: settings}
+  targets:
+  - select: {kind: Service, name: kube-apiserver-client-ca-external}
+    fieldPaths: [metadata.annotations.external-dns\.alpha\.kubernetes\.io/hostname]
+    options: {delimiter: '.', index: 1}
+  - select: {group: apps, kind: StatefulSet, name: kube-apiserver-client-ca}
+    fieldPaths: ["spec.template.spec.initContainers.[name=setup-kube-apiserver-client-ca-config].env.[name=STEP_CA_DOMAIN].value"]
     options: {delimiter: '.', index: 1}

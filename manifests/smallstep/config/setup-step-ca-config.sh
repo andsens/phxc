@@ -6,8 +6,8 @@ main() {
   apk add --update --no-cache jq moreutils
   jq --arg domain "$STEP_CA_DOMAIN" '.dnsNames+=[$domain]' "$STEPPATH/config-ro/ca.json" > "$STEPPATH/config/ca.json"
 
-  local step_issuer_config ssh_host_config step_issuer ssh_host
-  info "Storing and then removing step-issuer & ssh-host provisioners from ca.json"
+  local step_issuer_config ssh_host_config kube_client_config step_issuer ssh_host kube_client
+  info "Storing and then removing step-issuer, ssh-host, and kube-apiserver-client-ca provisioners from ca.json"
 
   # 1. Store the provisioner configs from ca.json
   step_issuer_config=$(jq '.authority.provisioners[] | select(.name=="step-issuer")' "$STEPPATH/config/ca.json")
@@ -59,7 +59,7 @@ main() {
 info() {
   local tpl=$1; shift
   # shellcheck disable=2059
-  printf "setup-config.sh: $tpl\n" "$@" >&2
+  printf "setup-step-ca-config.sh: $tpl\n" "$@" >&2
 }
 
 main "$@"
