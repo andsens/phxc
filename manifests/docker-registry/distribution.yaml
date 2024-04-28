@@ -195,7 +195,6 @@ spec:
             app.kubernetes.io/component: distribution
         spec:
           restartPolicy: Never
-          serviceAccountName: distribution
           containers:
           - name: distribution
             image: distribution/distribution:2.8.3
