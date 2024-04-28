@@ -48,7 +48,7 @@ machines:
   k8sMaster:
     hostname: k8s-nas.local
     faiClasses: [BASE, DEBIAN, AUTHN, TRUENAS, KVM, AMD64, K8S, K8SMASTER]
-    diskSize: 2G
+    diskSize: 3G
     uuid: '4b9dfd99a0884df18dd13324beb7e3d3'
     vm: Kubernetes
     disk: /dev/zvol/cluster/Kubernetes
