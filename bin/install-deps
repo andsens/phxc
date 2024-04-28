@@ -30,6 +30,9 @@ for ((;docopt_i>0;docopt_i--)); do declare -p "${prefix}MACHINE"; done; }
   machine_id=$(cat /etc/machine-id)
   if [[ -n $machine ]] || machine=$(get_machine "$machine_id"); then
     case "$machine" in
+      truenas)
+        install_step_cli
+        ;;
       workstation)
         TMPDIR=$(mktemp -d)
         # shellcheck disable=2064
@@ -43,10 +46,10 @@ for ((;docopt_i>0;docopt_i--)); do declare -p "${prefix}MACHINE"; done; }
         wget -qO- https://github.com/ahmetb/kubectx/releases/download/v0.9.5/kubens_v0.9.5_linux_x86_64.tar.gz | tar xzC "$HOME/.local/bin" kubens
         wget -qO- https://github.com/stern/stern/releases/download/v1.28.0/stern_1.28.0_linux_amd64.tar.gz | tar xzC "$HOME/.local/bin" stern
         wget -qO- https://get.helm.sh/helm-v3.14.3-linux-amd64.tar.gz | tar xzC "$HOME/.local/bin" --strip-components 1 linux-amd64/helm
-        wget -qO- https://dl.smallstep.com/gh-release/cli/gh-release-header/v0.26.0/step_linux_0.26.0_amd64.tar.gz | tar xzC "$HOME/.local/bin" --strip-components 2 step_0.26.0/bin/step
-        chmod +x "$HOME/.local/bin"/{kubectl,kpt,k9s,kustomize,kubectx,kubens,stern,helm,step}
+        chmod +x "$HOME/.local/bin"/{kubectl,kpt,k9s,kustomize,kubectx,kubens,stern,helm}
         sudo dpkg -i "$TMPDIR/k9s.deb"
-      ;;
+        install_step_cli
+        ;;
       *)
         info "No dependencies defined for %s" "$machine"
       ;;
@@ -54,6 +57,11 @@ for ((;docopt_i>0;docopt_i--)); do declare -p "${prefix}MACHINE"; done; }
   else
     fatal "Unknown machine-id: %s" "$machine_id"
   fi
+}
+
+install_step_cli() {
+  wget -qO- https://dl.smallstep.com/gh-release/cli/gh-release-header/v0.26.0/step_linux_0.26.0_amd64.tar.gz | tar xzC "$HOME/.local/bin" --strip-components 2 step_0.26.0/bin/step
+  chmod +x "$HOME/.local/bin/step"
 }
 
 install_common_deps() {
