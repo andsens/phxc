@@ -1,2 +1,3 @@
-AuthorizedKeysFile none
+# Remove the comment below to rely exclusively on signed SSH user keys
+# AuthorizedKeysFile none
 TrustedUserCAKeys /etc/ssh/user_ca_keys
