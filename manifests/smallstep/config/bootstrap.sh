@@ -8,6 +8,7 @@ INTERMEDIATE_KEY_PATH=$STEPPATH/persistent-certs/intermediate_ca_key
 INTERMEDIATE_CRT_PATH=$STEPPATH/persistent-certs/intermediate_ca.crt
 KUBE_CLIENT_KEY_PATH=$STEPPATH/persistent-certs/kube_apiserver_client_ca_key
 KUBE_CLIENT_CRT_PATH=$STEPPATH/persistent-certs/kube_apiserver_client_ca.crt
+KUBE_SERVER_CRT_PATH=$STEPPATH/persistent-certs/kube_apiserver_server_ca.crt
 STEP_ISSUER_DIR=$STEPPATH/certs/step-issuer-provisioner
 SSH_HOST_DIR=$STEPPATH/certs/ssh-host-provisioner
 
@@ -57,6 +58,13 @@ create_certificates() {
       "$CLUSTER_NAME Kubernetes Client CA" "$KUBE_CLIENT_CRT_PATH" "$KUBE_CLIENT_KEY_PATH"
   else
     info "kube-apiserver client CA key & cert exists on the PV, skipping creation"
+  fi
+
+  if ! diff -q /var/run/secrets/kubernetes.io/serviceaccount/ca.crt "$KUBE_SERVER_CRT_PATH"; then
+    info "kube-apiserver server CA cert is not up-to-date, copying to PV now"
+    cp /var/run/secrets/kubernetes.io/serviceaccount/ca.crt "$KUBE_SERVER_CRT_PATH"
+  else
+    info "kube-apiserver server CA cert matches the one on the PV"
   fi
 }
 

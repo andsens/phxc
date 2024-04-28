@@ -1,0 +1,109 @@
+#!/usr/bin/env bash
+# shellcheck source-path=../
+set -Eeo pipefail
+PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
+
+main() {
+  source "$PKGROOT/lib/common.sh"
+
+  DOC="auth - Manage cluster authentication
+Usage:
+  auth [options] setup SERVER_CA_CERT CERT KEY
+
+Commands:
+  setup: Requires the certificate and key that can be
+    issued with bin/kube-apiserver-cert. It will:
+      * Copy CERT & KEY to \$STEPPATH/certs
+      * Install the home-cluster.yaml kubernetes context with admin access
+      * Set up smallstep root trust
+      * Set up SSH certificate trust
+      * Set up admin access to Smallstep
+      * Sign any id_*.pub file in \$HOME/.ssh
+    Any existing certificate and/or key with the same basename will be replaced.
+"
+# docopt parser below, refresh this parser with `docopt.sh auth`
+# shellcheck disable=2016,1090,1091,2034
+docopt() { source "$PKGROOT/.upkg/andsens/docopt.sh/docopt-lib.sh" '1.0.0' || {
+ret=$?; printf -- "exit %d\n" "$ret"; exit "$ret"; }; set -e
+trimmed_doc=${DOC:0:563}; usage=${DOC:37:53}; digest=31992; shorts=(); longs=()
+argcounts=(); node_0(){ value SERVER_CA_CERT a; }; node_1(){ value CERT a; }
+node_2(){ value KEY a; }; node_3(){ _command setup; }; node_4(){ optional ; }
+node_5(){ optional 4; }; node_6(){ required 5 3 0 1 2; }; node_7(){ required 6
+}; cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2
+printf "%s\n" "${DOC:37:53}" >&2; exit 1; }'; unset var_SERVER_CA_CERT \
+var_CERT var_KEY var_setup; parse 7 "$@"; local prefix=${DOCOPT_PREFIX:-''}
+unset "${prefix}SERVER_CA_CERT" "${prefix}CERT" "${prefix}KEY" "${prefix}setup"
+eval "${prefix}"'SERVER_CA_CERT=${var_SERVER_CA_CERT:-}'
+eval "${prefix}"'CERT=${var_CERT:-}'; eval "${prefix}"'KEY=${var_KEY:-}'
+eval "${prefix}"'setup=${var_setup:-false}'; local docopt_i=1
+[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2; for ((;docopt_i>0;docopt_i--)); do
+declare -p "${prefix}SERVER_CA_CERT" "${prefix}CERT" "${prefix}KEY" \
+"${prefix}setup"; done; }
+# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/andsens/docopt.sh/docopt-lib.sh"' auth`
+  eval "$(docopt "$@")"
+  confirm_machine_id workstation
+
+  export STEPPATH=${STEPPATH:-$(step path)}
+  OLD_KUBECONFIG=$KUBECONFIG
+
+  mkdir -p "$STEPPATH/certs" "$HOME/.kube"
+  local cert_basename key_basename
+  cert_basename=$(basename "$CERT"); key_basename=$(basename "$KEY")
+  [[ -r "$SERVER_CA_CERT" ]] || fatal "The file %s does not exist or is not readable" "$SERVER_CA_CERT"
+  [[ -r "$CERT" ]] || fatal "The file %s does not exist or is not readable" "$CERT"
+  [[ -r "$KEY" ]] || fatal "The file %s does not exist or is not readable" "$KEY"
+
+  info "Copying CERT & KEY to %s" "$STEPPATH/certs"
+  cp "$CERT" "$STEPPATH/certs/$cert_basename"
+  cp "$KEY" "$STEPPATH/certs/$key_basename"
+
+  info "Setting up kubernetes client config"
+  kubectl config --kubeconfig "$HOME/.kube/home-cluster.yaml" set-cluster home-cluster \
+    --server="https://$(get_setting "machines.k8sMaster.hostname"):6443" \
+    --embed-certs --certificate-authority="$SERVER_CA_CERT"
+  kubectl config --kubeconfig "$HOME/.kube/home-cluster.yaml" set-credentials admin@home-cluster \
+    --client-certificate="$STEPPATH/certs/$cert_basename" --client-key="$STEPPATH/certs/$key_basename"
+  export KUBECONFIG="$HOME/.kube/home-cluster.yaml:$KUBECONFIG"
+  kubectl config --kubeconfig "$HOME/.kube/config.yaml" set-context home-cluster \
+    --cluster home-cluster --user admin@home-cluster
+
+  info "Bootstrapping Smallstep"
+  step ca bootstrap --force --ca-url "pki.$(bin/settings get cluster.domain):9000" \
+    --fingerprint "$(step certificate fingerprint <(\
+      kubectl --context home-cluster -n smallstep get secret smallstep-root -o=jsonpath='{.data.tls\.crt}' | base64 -d))"
+
+  info "Trusting SSH host keys signed by Smallstep"
+  local known_hosts=$HOME/.ssh/known_hosts expected_known_hosts_line current_known_hosts_line
+  expected_known_hosts_line="@cert-authority *.local $(step ssh config --host --roots)"
+  if [[ -e "$known_hosts" ]] && current_known_hosts_line=$(grep '^@cert-authority \*.local ' "$known_hosts"); then
+    if [[ $current_known_hosts_line != "$expected_known_hosts_line" ]]; then
+      warning "Replacing '@cert-authority *.local' line in %s, it does not match the current key" "$known_hosts"
+      local all_other_lines
+      all_other_lines=$(grep -v '^@cert-authority \*.local ' "$known_hosts")
+      printf "%s\n%s\n" "$all_other_lines" "$expected_known_hosts_line" >"$known_hosts"
+    else
+      info "The '@cert-authority *.local' line in %s exists and is correct" "$known_hosts"
+    fi
+  else
+    info "Appending '@cert-authority *.local ...' to %s" "$known_hosts"
+    printf "@cert-authority *.local %s\n" "$expected_known_hosts_line" >>"$known_hosts"
+  fi
+
+  info "Configuring admin access to Smallstep"
+  jq --arg path "$STEPPATH/certs/$cert_basename" '.["x5c-cert"] = $path' <"$STEPPATH/config/defaults.json" | sponge "$STEPPATH/config/defaults.json"
+  jq --arg path "$STEPPATH/certs/$key_basename" '.["x5c-key"] = $path' <"$STEPPATH/config/defaults.json" | sponge "$STEPPATH/config/defaults.json"
+
+  info "Signing all pubkeys in %s" "$HOME/.ssh"
+  local pubkey principal
+  principal=$(get_setting "admin.username")
+  for pubkey in "$HOME/.ssh"/id_*.pub; do
+    [[ $pubkey != *-cert.pub ]] || continue
+    step ssh certificate --force --sign "$principal" "$pubkey"
+  done
+
+  if [[ $OLD_KUBECONFIG != *"$HOME/.kube/home-cluster.yaml"* ]]; then
+    warning "Remember to add the new client config to your \$KUBECONFIG with KUBECONFIG=\$KUBECONFIG:\$HOME/.kube/home-cluster.yaml"
+  fi
+}
+
+main "$@"
