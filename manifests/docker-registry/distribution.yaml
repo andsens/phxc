@@ -35,7 +35,7 @@ metadata:
     app.kubernetes.io/component: distribution
   annotations:
     app.kubernetes.io/name: docker-registry
-    cert-manager.io/cluster-issuer: ACME_PROVIDER
+    cert-manager.io/cluster-issuer: cluster.acmeProvider
 spec:
   tls:
   - hosts: [cr.DOMAIN]

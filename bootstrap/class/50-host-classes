@@ -5,7 +5,7 @@
 # do not use this if a menu will be presented
 [ "$flag_menu" ] && exit 0
 
-if ! yq -r ".machines[\"$HOSTNAME\"].fai_classes | join(\" \")" "$PKGROOT/settings.yaml" 2>/dev/null; then
+if ! yq -r ".machines[\"$HOSTNAME\"].faiClasses | join(\" \")" "$PKGROOT/settings.yaml" 2>/dev/null; then
   printf "ERROR: Unknown hostname '%s'" "$HOSTNAME" >&2
   exit 1
 fi

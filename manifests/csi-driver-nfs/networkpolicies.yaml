@@ -11,14 +11,14 @@ spec:
   ingress:
   - from:
     - ipBlock:
-        cidr: TRUENAS_HOST_BRIDGE_SERVER_IP_CIDR
+        cidr: nfsShares.workloads.cidr
     ports:
     - port: 1110
       protocol: UDP
   egress:
   - to:
     - ipBlock:
-        cidr: TRUENAS_HOST_BRIDGE_SERVER_IP_CIDR
+        cidr: nfsShares.workloads.cidr
     ports:
     - port: 111
       protocol: TCP

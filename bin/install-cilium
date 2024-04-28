@@ -23,7 +23,7 @@ local prefix=${DOCOPT_PREFIX:-''}; unset ; local docopt_i=1
 declare -p ; done; }
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/andsens/docopt.sh/docopt-lib.sh"' install-cilium`
   eval "$(docopt "$@")"
-  confirm_machine_id k8s-nas
+  confirm_machine_id k8sMaster
 
   info "Waiting for k3s to become ready"
   local max_wait=300 wait_left=300
@@ -36,8 +36,8 @@ declare -p ; done; }
     info "Cilium is not installed, installing now"
     /usr/local/bin/cilium install --version=1.15.1 \
       --set ipam.mode=cluster-pool \
-      --set ipam.operator.clusterPoolIPv4PodCIDRList="$(get_setting cluster.cidrs.pod.v4)" \
-      --set ipam.operator.clusterPoolIPv6PodCIDRList="$(get_setting cluster.cidrs.pod.v6)" \
+      --set ipam.operator.clusterPoolIPv4PodCIDRList="$(get_setting cluster.cidrs.podIPv4)" \
+      --set ipam.operator.clusterPoolIPv6PodCIDRList="$(get_setting cluster.cidrs.podIPv6)" \
       --set ipam.operator.clusterPoolIPv4MaskSize=24 \
       --set ipam.operator.clusterPoolIPv6MaskSize=112 \
       --set bgpControlPlane.enabled=true \
@@ -56,7 +56,7 @@ declare -p ; done; }
     kubectl patch -n kube-system cm cilium-config --patch-file <(printf "
 data:
   ipv6-service-range: \"%s\"
-" "$(get_setting cluster.cidrs.svc.v6)")
+" "$(get_setting cluster.cidrs.svcIPv6)")
   else
     info "Cilium is already installed"
   fi

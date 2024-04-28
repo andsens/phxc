@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # shellcheck disable=2034
 
-CLUSTER_IPV4_POD_CIDR=$(get_setting cluster.cidrs.pod.v4)
-CLUSTER_IPV6_POD_CIDR=$(get_setting cluster.cidrs.pod.v6)
-CLUSTER_IPV4_SVC_CIDR=$(get_setting cluster.cidrs.svc.v4)
-CLUSTER_IPV6_SVC_CIDR=$(get_setting cluster.cidrs.svc.v6)
+CLUSTER_IPV4_POD_CIDR=$(get_setting cluster.cidrs.podIPv4)
+CLUSTER_IPV6_POD_CIDR=$(get_setting cluster.cidrs.podIPv6)
+CLUSTER_IPV4_SVC_CIDR=$(get_setting cluster.cidrs.svcIPv4)
+CLUSTER_IPV6_SVC_CIDR=$(get_setting cluster.cidrs.svcIPv6)

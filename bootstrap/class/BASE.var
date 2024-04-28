@@ -2,3 +2,4 @@
 # shellcheck disable=2034
 FAI_RAMDISKS="${target:?}/var/lib/dpkg ${target:?}/var/cache ${target:?}/var/lib/apt/lists"
 MACHINE_ID=$(get_setting "machines[\"$HOSTNAME\"].uuid")
+FQDN=$(get_setting "machines[\"$HOSTNAME\"].hostname")

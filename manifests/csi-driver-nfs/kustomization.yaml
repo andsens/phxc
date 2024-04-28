@@ -12,15 +12,15 @@ resources:
 - Kptfile
 - resourcegroup.yaml
 replacements:
-- source: {fieldPath: data.machines.truenas.host_bridge.ip, kind: ConfigMap, name: settings}
+- source: {fieldPath: data.nfsShares.workloads.addr, kind: ConfigMap, name: settings}
   targets:
   - select: {group: storage.k8s.io, kind: StorageClass, name: nas-nfs}
     fieldPaths: [parameters.server]
-- source: {fieldPath: data.cluster.workloads_nfs_share, kind: ConfigMap, name: settings}
+- source: {fieldPath: data.nfsShares.workloads.path, kind: ConfigMap, name: settings}
   targets:
   - select: {group: storage.k8s.io, kind: StorageClass, name: nas-nfs}
     fieldPaths: [parameters.share]
-- source: {fieldPath: data.machines.truenas.host_bridge.cidr, kind: ConfigMap, name: settings}
+- source: {fieldPath: data.nfsShares.workloads.cidr, kind: ConfigMap, name: settings}
   targets:
   - select: {group: networking.k8s.io, kind: NetworkPolicy, name: csi-nfs}
     fieldPaths: [spec.ingress.0.from.0.ipBlock.cidr]

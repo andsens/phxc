@@ -1,125 +1,124 @@
 ---
+
+##################
+### Admin user ###
+##################
+
+# The admin user is set up on all bootstrapped machines
+admin:
+  # If you are using the directory as home dir on TrueNAS, make sure the UID matches
+  uid: 3000
+  username: admin
+  shell: /bin/bash
+  # Generate with mkpasswd (from the `whois` package) and make sure to single quote
+  # This one was generated with:
+  # `tr -dc A-Za-z0-9~_- </dev/urandom | head -c 32 | mkpasswd --stdin`
+  pwhash: '$y$j9T$zlDgloQTrQBmfTJj54fSZ1$V8YJxEyBZcPWZx1u8a51c4oC2yyH69WAYdHH92XCA37'
+  # Each item is a line in the .ssh/authorized_keys file
+  authorized_keys:
+  - ssh-rsa ...
+  - ssh-rsa ...
+
 ########################
 ### Machine settings ###
 ########################
 
 machines:
-  # machine-ids (uuid) are used to ensure scripts are run on the correct machine
-  workstation:
-    # Specify this to avoid confirmation prompts
-    uuid: 94c17f34807ada6784855a8066275870
   truenas:
-    uuid: '38a6ed82302b612fd55b9b69660a83e0'
-    # Fixed IP address for the link between the host and the K8S VM
-    # Guide for setting up the bridge interface on TrueNAS:
-    # https://www.truenas.com/community/threads/is-there-any-way-to-enable-create-an-virtual-switch.95269/page-2#post-674816
-    # For a random IPv4 subnet use random.org 1-255 for the two groups after the "10."
-    # For a random IPv6 subnet use https://unique-local-ipv6.com/
-    host_bridge:
-      # Can be IPv4 or IPv6
-      ip: '[fd25:9998:d0e7:e351:1a01:be9:4d9a:157d]'
-      cidr: 'fd25:9998:d0e7:e351:1a01:be9:4d9a:157d/128'
+    # Used to ensure scripts are run on the correct machine
+    uuid: '755fd095cad346249ea190511773fc49'
+  workstation:
+    # Used to avoid confirmation prompts
+    uuid: '6406bb5c97082152279f3e4265ad32c0'
   bootstrapper:
-    # FAI Bootstrapping classes to apply
-    fai_classes: [BASE, DEBIAN, AUTHN, TRUENAS, KVM, AMD64, BOOTSTRAPPER]
-    # The size of the root disk
-    disksize: 2G
+    # The hostname is broadcast with avahi-daemon
+    hostname: bootstrapper.local
     # Generate with dbus-uuidgen
-    uuid: 'b8b235b3279c6054bc9f33ef6609287a'
+    uuid: 'b41befa0c64f0f2adfa18784660920f5'
+    # The FAI classes to apply when bootstrapping this machine
+    faiClasses: [BASE, DEBIAN, AUTHN, TRUENAS, KVM, AMD64, BOOTSTRAPPER]
+    # Size of the root disk
+    diskSize: 2G
     # Name of the VM in TrueNAS
     vm: Bootstrapper
     # Path to the root disk in TrueNAS
     disk: /dev/zvol/cluster/Bootstrapper
-    host_bridge_nic_address:
-      v4: 10.15.180.2/24
-      v6: fd25:9998:d0e7:e351:1a01:be9:4d9a:157e/48
-  k8s-nas:
-    fai_classes: [BASE, DEBIAN, AUTHN, TRUENAS, KVM, AMD64, K8S, K8SMASTER]
-    disksize: 2G
-    uuid: '2a178ed534ac2a67dbc8049d65eddc45'
+    # Addresses for the host bridge NIC
+    hostBridgeAddrs: [10.186.223.2/24, fd25:9998:d0e7:e351:1a01:be9:4d9a:157e/48]
+  k8sMaster:
+    hostname: k8s-nas.local
+    faiClasses: [BASE, DEBIAN, AUTHN, TRUENAS, KVM, AMD64, K8S, K8SMASTER]
+    diskSize: 2G
+    uuid: '4b9dfd99a0884df18dd13324beb7e3d3'
     vm: Kubernetes
     disk: /dev/zvol/cluster/Kubernetes
-    host_bridge_nic_address:
-      v4: 10.15.180.3/24
-      v6: fd25:9998:d0e7:e351:1a01:be9:4d9a:157f/48
+    hostBridgeAddrs: [10.186.223.3/24, fd25:9998:d0e7:e351:1a01:be9:4d9a:157f/48]
 
-#############################
-### Bootstrapper settings ###
-#############################
+##################
+### NFS Shares ###
+##################
 
-bootstrapper:
-  timezone: Europe/Copenhagen
-  images_nfs_share: /mnt/cluster/images
-  home_cluster_nfs_share: /mnt/cluster/home-cluster
-  # Admin user settings
-  admin:
-    # If you are using the directory as home dir on TrueNAS, make sure the UID matches
-    uid: 3000
-    username: admin
-    shell: /bin/bash
-    # Generate with mkpasswd (from the `whois` package) and make sure to single quote
-    # This one was generated with:
-    # `tr -dc A-Za-z0-9~_- </dev/urandom | head -c 32 | mkpasswd --stdin`
-    pwhash: '$y$j9T$zlDgloQTrQBmfTJj54fSZ1$V8YJxEyBZcPWZx1u8a51c4oC2yyH69WAYdHH92XCA37'
-    # Each item is a line in the .ssh/authorized_keys file
-    authorized_keys:
-    - ssh-rsa ...
-    - ssh-rsa ...
-    # The share to mount as the admin user home directory, leave empty to not mount anything
-    nfs_home_share: /mnt/cluster/home/admin
+nfsShares:
+  # Location of the home-cluster git repository
+  homeCluster:
+    addr: '[fd25:9998:d0e7:e351:1a01:be9:4d9a:157d]'
+    path: /mnt/cluster/home-cluster
+  # Where the bootstrapper should place images
+  images:
+    addr: '[fd25:9998:d0e7:e351:1a01:be9:4d9a:157d]'
+    path: /mnt/cluster/images
+  # NFS CSI driver mount
+  workloads:
+    addr: '[fd25:9998:d0e7:e351:1a01:be9:4d9a:157d]'
+    path: /mnt/cluster/workloads
+    # Required for kubernetes network policies
+    cidr: 'fd25:9998:d0e7:e351:1a01:be9:4d9a:157d/128'
+  # Will be mounted to the admin user home directory, leave empty to not mount anything
+  adminHome:
+    addr: '[fd25:9998:d0e7:e351:1a01:be9:4d9a:157d]'
+    path: /mnt/cluster/home/admin
 
 #########################
 ### Cluster settings ###
 #########################
 cluster:
-
-  # NFS CSI driver mount
-  workloads_nfs_share: /mnt/cluster/workloads
-
+  # Top-level domain name of your cluster
+  domain: example.org
+  # Name of the acme provider to use
+  acmeProvider: "letsencrypt-staging"
+  # IP to use for overriding external A record queries
+  wanIPv4: '1.2.3.4'
+  # Name of the PKI root & intermediate
+  pkiName: 'The Hub'
   # CIDRs for the Kubernetes cluster
   # The IPv6 subnet can be a prefix delegated one from your ISP
   cidrs:
-    pod:
-      v4: '10.64.0.0/16'
-      v6: 'fd73:9867:6b4d:cafe:0000:64::/96'
-    svc:
-      v4: '10.65.0.0/16'
-      v6: 'fd73:9867:6b4d:cafe:0000:65::/112'
-    lb:
-      v4: '10.66.0.0/16'
-      v6: 'fd73:9867:6b4d:cafe:0000:66::/112'
-
-  # Unifi/cilium setup
+    podIPv4: '10.32.0.0/16'
+    podIPv6: 'fd73:9867:6b4d:cafe:0000:32::/96'
+    svcIPv4: '10.33.0.0/16'
+    svcIPv6: 'fd73:9867:6b4d:cafe:0000:33::/112'
+    lbIPv4: '10.34.0.0/16'
+    lbIPv6: 'fd73:9867:6b4d:cafe:0000:34::/112'
+  # Used for BGP
   router:
-    ip:
-      v4: '192.168.1.1'
-      v6: 'fd73:9867:6b4d:0:feec:daff:fe04:a9ec'
-    usg_ssh_address: 'admin@192.168.1.1'
-    cloudkey_ssh_address: 'ubnt@192.168.1.3'
-    unifi_site: default
-
+    fixedIPv4: '192.168.1.1'
+    fixedIPv6: 'fd73:9867:6b4d:0:feec:daff:fe04:a9ec'
   # CoreDNS setup
-  dns:
+  coredns:
     # The domain name under which the cluster is reachable
-    domain: example.com
     # Fixed IP from the load balancer subnet above for port forwarding
-    ip:
-      v4: '10.66.0.1'
-      v6: 'fd73:9867:6b4d:cafe:0000:66::1'
-    # IP to use for overriding external A record queries
-    wan_ipv4: '1.2.3.4'
-
+    fixedIPv4: '10.34.0.1'
+    fixedIPv6: 'fd73:9867:6b4d:cafe:0000:34::1'
   # Traefik setup
-  reverse-proxy:
-    acme_provider: "letsencrypt-staging"
-    ip:
-      v4: '10.66.0.2'
-      v6: 'fd73:9867:6b4d:cafe:0000:66::2'
-
+  traefik:
+    fixedIPv4: '10.34.0.2'
+    fixedIPv6: 'fd73:9867:6b4d:cafe:0000:34::2'
   # Smallstep PKI setup
-  pki:
-    # Name of the PKI root & intermediate
-    name: 'Elysium'
-    ip:
-      v4: '10.66.0.3'
-      v6: 'fd73:9867:6b4d:cafe:0000:66::3'
+  smallstep:
+    fixedIPv4: '10.34.0.3'
+    fixedIPv6: 'fd73:9867:6b4d:cafe:0000:34::3'
+
+unifi:
+  usg_ssh_address: 'admin@192.168.1.1'
+  cloudkey_ssh_address: 'ubnt@192.168.1.3'
+  unifi_site: default

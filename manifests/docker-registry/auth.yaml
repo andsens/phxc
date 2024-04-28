@@ -35,7 +35,7 @@ metadata:
     app.kubernetes.io/name: docker-registry
     app.kubernetes.io/component: auth
   annotations:
-    cert-manager.io/cluster-issuer: ACME_PROVIDER
+    cert-manager.io/cluster-issuer: cluster.acmeProvider
 spec:
   tls:
   - hosts: [cr.DOMAIN]

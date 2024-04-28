@@ -4,8 +4,8 @@ metadata:
   name: nas-nfs
 provisioner: nfs.csi.k8s.io
 parameters:
-  server: TRUENAS_HOST_BRIDGE_SERVER_IP
-  share: CLUSTER_NFS_SHARE
+  server: nfsShares.workloads.addr
+  share: nfsShares.workloads.path
   subDir: '${pvc.metadata.namespace}/${pvc.metadata.name}'
 reclaimPolicy: Retain
 volumeBindingMode: Immediate

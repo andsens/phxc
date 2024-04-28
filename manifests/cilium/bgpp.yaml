@@ -15,12 +15,12 @@ spec:
        matchExpressions:
         - {key: somekey, operator: NotIn, values: ['never-used-value']}
     neighbors:
-    - peerAddress: ROUTER_IPV4/32
+    - peerAddress: cluster.router.fixedIPv4/32
       peerASN: 64512
       families:
       - afi: ipv4
         safi: unicast
-    - peerAddress: ROUTER_IPV6/128
+    - peerAddress: cluster.router.fixedIPv6/128
       peerASN: 64512
       families:
       - afi: ipv6

@@ -14,24 +14,24 @@ configMapGenerator:
 generatorOptions:
   disableNameSuffixHash: true
 replacements:
-- source: {fieldPath: data.cluster.dns.ip.v4, kind: ConfigMap, name: settings}
+- source: {fieldPath: data.cluster.coredns.fixedIPv4, kind: ConfigMap, name: settings}
   targets:
   - select: {kind: Service, name: coredns}
     fieldPaths: [metadata.annotations.io\.cilium/lb-ipam-ips]
     options: {delimiter: ',', index: 0}
-- source: {fieldPath: data.cluster.dns.ip.v6, kind: ConfigMap, name: settings}
+- source: {fieldPath: data.cluster.coredns.fixedIPv6, kind: ConfigMap, name: settings}
   targets:
   - select: {kind: Service, name: coredns}
     fieldPaths: [metadata.annotations.io\.cilium/lb-ipam-ips]
     options: {delimiter: ',', index: 1}
-- source: {fieldPath: data.cluster.dns.domain, kind: ConfigMap, name: settings}
+- source: {fieldPath: data.cluster.domain, kind: ConfigMap, name: settings}
   targets:
   - select: {kind: Service, name: coredns}
     fieldPaths: [metadata.annotations.external-dns\.alpha\.kubernetes\.io/hostname]
     options: {delimiter: '.', index: 1}
   - select: {group: apps, kind: Deployment, name: coredns}
     fieldPaths: ["spec.template.spec.containers.[name=coredns].env.[name=DOMAIN].value"]
-- source: {fieldPath: data.cluster.dns.wan_ipv4, kind: ConfigMap, name: settings}
+- source: {fieldPath: data.cluster.wanIPv4, kind: ConfigMap, name: settings}
   targets:
   - select: {group: apps, kind: Deployment, name: coredns}
     fieldPaths: ["spec.template.spec.containers.[name=coredns].env.[name=WAN_IPV4].value"]

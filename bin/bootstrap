@@ -55,7 +55,7 @@ declare -p "${prefix}__cachepath" "${prefix}MACHINE"; done; }
     "PATH=$PATH" \
     "PKGROOT=$PKGROOT" \
     "CACHEPATH=$__cachepath" \
-    fai-diskimage --cspace "$PKGROOT/bootstrap" --new --size "$(get_setting "machines[\"$HOSTNAME\"].disksize")" --hostname "$MACHINE" "$imgpath"
+    fai-diskimage --cspace "$PKGROOT/bootstrap" --new --size "$(get_setting "machines[\"$HOSTNAME\"].diskSize")" --hostname "$MACHINE" "$imgpath"
   $chown "$(stat -c %u:%g "$(dirname "$imgpath")")" "$imgpath"
   if [[ $__cachepath = "$PKGROOT"/* ]]; then
     $chown -R "$(stat -c %u:%g "$(dirname "$__cachepath")")" "$__cachepath"

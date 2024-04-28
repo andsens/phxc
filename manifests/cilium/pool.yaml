@@ -4,5 +4,5 @@ metadata:
   name: lan-addresses
 spec:
   blocks:
-  - cidr: CLUSTER_IPV4_LB_CIDR
-  - cidr: CLUSTER_IPV6_LB_CIDR
+  - cidr: cluster.cidrs.lbIPv4
+  - cidr: cluster.cidrs.lbIPv6

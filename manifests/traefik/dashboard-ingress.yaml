@@ -4,7 +4,7 @@ kind: Ingress
 metadata:
   name: traefik-dashboard
   annotations:
-    cert-manager.io/cluster-issuer: ACME_PROVIDER
+    cert-manager.io/cluster-issuer: cluster.acmeProvider
 spec:
   tls:
   - hosts: [traefik.DOMAIN]

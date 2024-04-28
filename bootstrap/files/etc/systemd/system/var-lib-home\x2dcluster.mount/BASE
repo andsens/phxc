@@ -6,6 +6,6 @@ After=network-online.target
 WantedBy=multi-user.target
 
 [Mount]
-What={%TRUENAS_HOST_BRIDGE_SERVER_IP%}:{%HOME_CLUSTER_NFS_SHARE%}
+What={%NFS_SHARES_HOME_CLUSTER_ADDR%}:{%NFS_SHARES_HOME_CLUSTER_PATH%}
 Where=/var/lib/home-cluster
 Type=nfs

@@ -38,7 +38,7 @@ declare -p "${prefix}__group" "${prefix}USER" "${prefix}enroll_ca" \
 
   # shellcheck disable=2154
   if $enroll_ca; then
-    confirm_machine_id k8s-nas
+    confirm_machine_id k8sMaster
 
     local kube_apiserver_client_ca_cert
     info "Waiting for the kube-apiserver client CA secret to be created"
@@ -73,7 +73,7 @@ declare -p "${prefix}__group" "${prefix}USER" "${prefix}enroll_ca" \
   elif $issue_cert; then
     confirm_machine_id truenas
     local step_ca_certs_path
-    step_ca_certs_path=$(get_setting "cluster.workloads_nfs_share")/smallstep/step-ca-certs
+    step_ca_certs_path=$(get_setting "nfsShares.workloads.path")/smallstep/step-ca-certs
     step certificate create --template=<(printf '{
   "subject": {
     "commonName": {{ toJson .Subject.CommonName }},

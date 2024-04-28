@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 # shellcheck source-path=../../../ disable=2034,2154
-NIC_HOST_ADDRESSES="$(yq -r ".machines[\"$HOSTNAME\"].host_bridge_nic_address[] | \"Address=\" + ." "$PKGROOT/settings.yaml")"
-TRUENAS_HOST_BRIDGE_SERVER_IP="$(get_setting machines.truenas.host_bridge.ip)"
-HOME_CLUSTER_NFS_SHARE="$(get_setting bootstrapper.home_cluster_nfs_share)"
+NIC_HOST_ADDRESSES="$(yq -r ".machines[\"$HOSTNAME\"].hostBridgeAddrs[] | \"Address=\" + ." "$PKGROOT/settings.yaml")"
+NFS_SHARES_HOME_CLUSTER_ADDR="$(get_setting nfsShares.homeCluster.addr)"
+NFS_SHARES_HOME_CLUSTER_PATH="$(get_setting nfsShares.homeCluster.path)"

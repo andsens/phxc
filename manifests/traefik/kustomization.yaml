@@ -18,7 +18,7 @@ configMapGenerator:
 generatorOptions:
   disableNameSuffixHash: true
 replacements:
-- source: {fieldPath: data.cluster.dns.domain, kind: ConfigMap, name: settings}
+- source: {fieldPath: data.cluster.domain, kind: ConfigMap, name: settings}
   targets:
   - select: {group: networking.k8s.io, kind: Ingress, name: traefik-dashboard}
     fieldPaths: [spec.tls.0.hosts.0]
@@ -26,16 +26,16 @@ replacements:
   - select: {group: networking.k8s.io, kind: Ingress, name: traefik-dashboard}
     fieldPaths: [spec.rules.0.host]
     options: {delimiter: ., index: 1}
-- source: {fieldPath: data.cluster.reverse-proxy.acme-provider, kind: ConfigMap, name: settings}
+- source: {fieldPath: data.cluster.acmeProvider, kind: ConfigMap, name: settings}
   targets:
   - select: {group: networking.k8s.io, kind: Ingress, name: traefik-dashboard}
     fieldPaths: [metadata.annotations.cert-manager\.io/cluster-issuer]
-- source: {fieldPath: data.cluster.reverse-proxy.ip.v4, kind: ConfigMap, name: settings}
+- source: {fieldPath: data.cluster.traefik.fixedIPv4, kind: ConfigMap, name: settings}
   targets:
   - select: {kind: Service, name: traefik-frontend}
     fieldPaths: [metadata.annotations.io\.cilium/lb-ipam-ips]
     options: {delimiter: ',', index: 0}
-- source: {fieldPath: data.cluster.reverse-proxy.ip.v6, kind: ConfigMap, name: settings}
+- source: {fieldPath: data.cluster.traefik.fixedIPv6, kind: ConfigMap, name: settings}
   targets:
   - select: {kind: Service, name: traefik-frontend}
     fieldPaths: [metadata.annotations.io\.cilium/lb-ipam-ips]

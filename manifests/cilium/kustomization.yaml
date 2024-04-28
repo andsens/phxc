@@ -7,20 +7,20 @@ resources:
 - Kptfile
 - resourcegroup.yaml
 replacements:
-- source: {fieldPath: data.cluster.cidrs.lb.v4, kind: ConfigMap, name: settings}
+- source: {fieldPath: data.cluster.cidrs.lbIPv4, kind: ConfigMap, name: settings}
   targets:
   - select: {group: cilium.io, kind: CiliumLoadBalancerIPPool, name: lan-addresses}
     fieldPaths: [spec.blocks.0.cidr]
-- source: {fieldPath: data.cluster.cidrs.lb.v6, kind: ConfigMap, name: settings}
+- source: {fieldPath: data.cluster.cidrs.lbIPv6, kind: ConfigMap, name: settings}
   targets:
   - select: {group: cilium.io, kind: CiliumLoadBalancerIPPool, name: lan-addresses}
     fieldPaths: [spec.blocks.1.cidr]
-- source: {fieldPath: data.cluster.router.ip.v4, kind: ConfigMap, name: settings}
+- source: {fieldPath: data.cluster.router.fixedIPv4, kind: ConfigMap, name: settings}
   targets:
   - select: {group: cilium.io, kind: CiliumBGPPeeringPolicy, name: router}
     fieldPaths: [spec.virtualRouters.0.neighbors.0.peerAddress]
     options: {delimiter: '/', index: 0}
-- source: {fieldPath: data.cluster.router.ip.v6, kind: ConfigMap, name: settings}
+- source: {fieldPath: data.cluster.router.fixedIPv6, kind: ConfigMap, name: settings}
   targets:
   - select: {group: cilium.io, kind: CiliumBGPPeeringPolicy, name: router}
     fieldPaths: [spec.virtualRouters.0.neighbors.1.peerAddress]
