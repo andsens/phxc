@@ -55,9 +55,11 @@ declare -p "${prefix}DEST" "${prefix}sign_host" "${prefix}download_ca"; done; }
       step ssh certificate --host --sign --force --provisioner=ssh-host --provisioner-password-file=<(printf "%s" "$ssh_host_provisioner_password") \
         "$(hostname -f)" "$pubkey"
     done
+    systemctl reload ssh
   elif $download_ca; then
     info "Downloading user CA keys to %s" "$DEST"
     step ssh config --host --roots >"$DEST"
+    systemctl reload ssh
   fi
 }
 
