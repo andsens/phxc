@@ -47,7 +47,7 @@ declare -p "${prefix}CONFIG" "${prefix}setup"; done; }
   OLD_KUBECONFIG=$KUBECONFIG
 
   mkdir -p "$STEPPATH/certs" "$HOME/.kube"
-  [[ -r "$CONFIG" ]] || fatal "The file %s does not exist or is not readable" "$SERVER_CA_CERT"
+  [[ -r "$CONFIG" ]] || fatal "The file %s does not exist or is not readable" "$CONFIG"
   local user_crt user_key
   user_crt=$(yq -r '.users[] | .user["client-certificate-data"]' "$CONFIG" | base64 -d)
   user_key=$(yq -r '.users[] | .user["client-key-data"]' "$CONFIG" | base64 -d)
@@ -103,6 +103,11 @@ declare -p "${prefix}CONFIG" "${prefix}setup"; done; }
     [[ $pubkey != *-cert.pub ]] || continue
     step ssh certificate --force --sign "$principal" "$pubkey"
   done
+
+  if [[ $CONFIG != "$HOME/.kube/home-cluster.yaml" ]]; then
+    info "Removing %s" "$CONFIG"
+    rm "$CONFIG"
+  fi
 
   if [[ $OLD_KUBECONFIG != *"$HOME/.kube/home-cluster.yaml"* ]]; then
     warning "Remember to add the new client config to your \$KUBECONFIG with KUBECONFIG=\$KUBECONFIG:\$HOME/.kube/home-cluster.yaml"

@@ -16,7 +16,6 @@ SSH_HOST_DIR=$STEPPATH/certs/ssh-host-provisioner
 ROOT_IS_NEW=false
 KUBE_CLIENT_CA_IS_NEW=false
 STEP_ISSUER_IS_NEW=false
-KUBE_ADMIN_CERT_IS_NEW=false
 
 main() {
   create_certificates
@@ -174,23 +173,29 @@ create_home_cluster_admin_kube_config() {
       --not-after=24h \
       --ca="$KUBE_CLIENT_CA_CRT_PATH" --ca-key="$KUBE_CLIENT_CA_KEY_PATH" \
       "system:admin" "$KUBE_ADMIN_CRT_PATH" "$KUBE_ADMIN_KEY_PATH"
-    KUBE_ADMIN_CERT_IS_NEW=true
   fi
 
-  if $KUBE_ADMIN_CERT_IS_NEW || [[ ! -e $KUBE_ADMIN_CONFIG_PATH ]]; then
-    info "Kube admin config does not exist, or the cert chain has changed, creating now"
-    rm -f "$KUBE_ADMIN_CONFIG_PATH"
-    kubectl config --kubeconfig "$KUBE_ADMIN_CONFIG_PATH" set-cluster home-cluster \
-      --embed-certs \
-      --server="https://$K8S_API_HOST:6443" \
-      --certificate-authority="/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
-    kubectl config --kubeconfig "$KUBE_ADMIN_CONFIG_PATH" set-credentials admin@home-cluster \
-      --embed-certs \
-      --client-certificate="$KUBE_ADMIN_CRT_PATH" \
-      --client-key="$KUBE_ADMIN_KEY_PATH"
+  [[ ! -e "$KUBE_ADMIN_CONFIG_PATH" ]] || mv "$KUBE_ADMIN_CONFIG_PATH" "$KUBE_ADMIN_CONFIG_PATH.old"
+  kubectl config --kubeconfig "$KUBE_ADMIN_CONFIG_PATH" set-cluster home-cluster \
+    --embed-certs \
+    --server="https://$K8S_API_HOST:6443" \
+    --certificate-authority="/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+  kubectl config --kubeconfig "$KUBE_ADMIN_CONFIG_PATH" set-credentials admin@home-cluster \
+    --embed-certs \
+    --client-certificate="$KUBE_ADMIN_CRT_PATH" \
+    --client-key="$KUBE_ADMIN_KEY_PATH"
+
+  if [[ -e "$KUBE_ADMIN_CONFIG_PATH.old" ]] && ! diff -q "$KUBE_ADMIN_CONFIG_PATH" "$KUBE_ADMIN_CONFIG_PATH.old"; then
+    info "A dependency for the admin kube config has changed, replacing old file"
+    rm "$KUBE_ADMIN_CONFIG_PATH.old"
+  elif [[ -e "$KUBE_ADMIN_CONFIG_PATH.old" ]]; then
+    info "All dependency for the admin kube config are the same, restoring old file"
+    mv "$KUBE_ADMIN_CONFIG_PATH.old" "$KUBE_ADMIN_CONFIG_PATH"
+  else
+    info "Admin kube config did not exist, it has been created"
   fi
 
-  info "Setting owner of kube config to %s:%s" "$KUBE_CONFIG_OWNER:$KUBE_CONFIG_OWNER"
+  info "Setting owner of kube config to %s:%s" "$KUBE_CONFIG_OWNER" "$KUBE_CONFIG_OWNER"
   chown "$KUBE_CONFIG_OWNER:$KUBE_CONFIG_OWNER" "$KUBE_ADMIN_CONFIG_PATH"
 }
 
