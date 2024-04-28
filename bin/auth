@@ -70,6 +70,10 @@ declare -p "${prefix}CONFIG" "${prefix}setup"; done; }
   kubectl config --kubeconfig "$HOME/.kube/config.yaml" set-context home-cluster \
     --cluster home-cluster --user admin@home-cluster
 
+  if ! kubectl get -n default pods >/dev/null; then
+    fatal "Unable to authenticate to the cluster, auth setup failed"
+  fi
+
   info "Bootstrapping Smallstep"
   step ca bootstrap --force --ca-url "pki.$(get_setting cluster.domain):9000" \
     --fingerprint "$(step certificate fingerprint <(\
