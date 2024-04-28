@@ -1,0 +1,2 @@
+AuthorizedKeysFile none
+TrustedUserCAKeys /etc/ssh/user_ca_keys

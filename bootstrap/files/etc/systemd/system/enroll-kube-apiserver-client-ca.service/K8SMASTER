@@ -1,7 +1,7 @@
 [Unit]
 Description=Enroll the Smallstep kube-apiserver Client CA in k3s
-Requires=apply-all-manifests.service
-After=apply-all-manifests.service
+Requires=k3s.service apply-all-manifests.service
+After=k3s.service apply-all-manifests.service
 
 [Install]
 WantedBy=multi-user.target
