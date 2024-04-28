@@ -42,17 +42,17 @@ declare -p "${prefix}MACHINE"; done; }
   fi
 
   # shellcheck disable=2153
-  printf -- '#!/usr/bin/env bash\nMACHINE=(%s)\n' "${MACHINE[*]}" > "$PKGROOT/bootstrap-vms.args.sh"
+  printf -- '#!/usr/bin/env bash\nMACHINE=(%s)\n' "${MACHINE[*]}" > "$PKGROOT/bootstrap.args.sh"
   # shellcheck disable=2064
-  trap "rm -f \"$PKGROOT/bootstrap-vms.args.sh\"" EXIT
+  trap "rm -f \"$PKGROOT/bootstrap.args.sh\"" EXIT
 
   # shellcheck disable=2154
   start_vm "$bootstrapper_vm"
   # shellcheck disable=2064
-  trap "rm -f \"$PKGROOT/bootstrap-vms.args.sh\"; stop_vm \"$bootstrapper_vm\"" EXIT
+  trap "rm -f \"$PKGROOT/bootstrap.args.sh\"; stop_vm \"$bootstrapper_vm\"" EXIT
 
   info "Waiting for bootstrapping to complete"
-  while [[ -e "$PKGROOT/bootstrap-vms.args.sh" ]]; do
+  while [[ -e "$PKGROOT/bootstrap.args.sh" ]]; do
     sleep 1
   done
   info "Bootstrapping completed"
