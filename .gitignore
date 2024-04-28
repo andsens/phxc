@@ -5,7 +5,7 @@
 /logs
 /mnt
 /settings.yaml
-/bootstrap-vms.args.sh
+/bootstrap.args.sh
 /deploy-key
 /deploy-key.pub
 /NOTES.md
