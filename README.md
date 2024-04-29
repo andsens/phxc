@@ -1,3 +1,35 @@
+# Home cluster
+
+## Requirements
+
+Linux or WSL
+
+## Setup
+
+### Clone & configure
+
+- Clone this repo your (WSL) workspace
+- Copy `settings.template.yaml` to settings.yaml and adjust values while you are doing the following:
+  - Create the TrueNAS host bridge
+    - Make sure to enable DHCP on the main NIC again after creating the host bridge
+  - Clone this repo to your NAS
+  - Run bin/install-deps on your NAS
+  - Create NFS mounts
+  - Setup VMs
+- Run `bin/install-deps`
+- Add cronjob on your NAS to run `lib/machine-commands/update-machines`
+- `fai-mk-configspace`
+- Run `bin/bootstrap k8sMaster bootstrapper`
+- Copy the resulting images to your NAS
+- Run `tools/replace-disk.sh k8sMaster` and `tools/replace-disk.sh bootstrapper`
+- Start k8sMaster
+
+### Setting up a TrueNAS host bridge
+
+- In order to securely mount NFS shares from your TrueNAS to your VMs Create a
+  For a random IPv4 subnet use random.org 1-255 for the two groups after the "10."
+  For a random IPv6 subnet use https://unique-local-ipv6.com/
+
 ### Setup home-cluster repo on TrueNAS
 
 ```
