@@ -7,5 +7,5 @@ WantedBy=multi-user.target
 
 [Service]
 Type=oneshot
-ExecStart=/var/lib/home-cluster/lib/machine-commands/enroll-kube-apiserver-client-ca-cert
+ExecStart=/var/lib/home-cluster/lib/machine-commands/enroll-kube-apiserver-client-ca
 TimeoutSec=1200
