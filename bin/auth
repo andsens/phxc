@@ -8,7 +8,8 @@ main() {
 
   DOC="auth - Manage cluster authentication
 Usage:
-  auth [options] setup CONFIG
+  auth setup CONFIG
+  auth renew
 
 Commands:
 setup:
@@ -28,110 +29,121 @@ setup:
 # shellcheck disable=2016,1090,1091,2034
 docopt() { source "$PKGROOT/.upkg/andsens/docopt.sh/docopt-lib.sh" '1.0.0' || {
 ret=$?; printf -- "exit %d\n" "$ret"; exit "$ret"; }; set -e
-trimmed_doc=${DOC:0:660}; usage=${DOC:37:36}; digest=f3b8b; shorts=(); longs=()
+trimmed_doc=${DOC:0:663}; usage=${DOC:37:39}; digest=cba11; shorts=(); longs=()
 argcounts=(); node_0(){ value CONFIG a; }; node_1(){ _command setup; }
-node_2(){ optional ; }; node_3(){ optional 2; }; node_4(){ required 3 1 0; }
-node_5(){ required 4; }; cat <<<' docopt_exit() {
-[[ -n $1 ]] && printf "%s\n" "$1" >&2; printf "%s\n" "${DOC:37:36}" >&2; exit 1
-}'; unset var_CONFIG var_setup; parse 5 "$@"; local prefix=${DOCOPT_PREFIX:-''}
-unset "${prefix}CONFIG" "${prefix}setup"
-eval "${prefix}"'CONFIG=${var_CONFIG:-}'
-eval "${prefix}"'setup=${var_setup:-false}'; local docopt_i=1
+node_2(){ _command renew; }; node_3(){ required 1 0; }; node_4(){ required 2; }
+node_5(){ either 3 4; }; node_6(){ required 5; }; cat <<<' docopt_exit() {
+[[ -n $1 ]] && printf "%s\n" "$1" >&2; printf "%s\n" "${DOC:37:39}" >&2; exit 1
+}'; unset var_CONFIG var_setup var_renew; parse 6 "$@"
+local prefix=${DOCOPT_PREFIX:-''}; unset "${prefix}CONFIG" "${prefix}setup" \
+"${prefix}renew"; eval "${prefix}"'CONFIG=${var_CONFIG:-}'
+eval "${prefix}"'setup=${var_setup:-false}'
+eval "${prefix}"'renew=${var_renew:-false}'; local docopt_i=1
 [[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2; for ((;docopt_i>0;docopt_i--)); do
-declare -p "${prefix}CONFIG" "${prefix}setup"; done; }
+declare -p "${prefix}CONFIG" "${prefix}setup" "${prefix}renew"; done; }
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/andsens/docopt.sh/docopt-lib.sh"' auth`
   eval "$(docopt "$@")"
   confirm_machine_id workstation
 
-  export STEPPATH=${STEPPATH:-$(step path)}
-  OLD_KUBECONFIG=$KUBECONFIG
+  export STEPPATH=${STEPPATH:-$(step path --base)}
+  local user_crt_path user_key_path
+  user_crt_path="$STEPPATH/authorities/home-cluster-kube-api-client/certs/home-cluster-admin.crt"
+  user_key_path="$STEPPATH/authorities/home-cluster-kube-api-client/certs/home-cluster-admin_key"
 
-  mkdir -p "$STEPPATH/certs" "$HOME/.kube"
-  [[ -r "$CONFIG" ]] || fatal "The file %s does not exist or is not readable" "$CONFIG"
-  local user_crt user_key
-  user_crt=$(yq -r '.users[] | .user["client-certificate-data"]' "$CONFIG" | base64 -d)
-  user_key=$(yq -r '.users[] | .user["client-key-data"]' "$CONFIG" | base64 -d)
+  # shellcheck disable=2154
+  if $setup; then
+    OLD_KUBECONFIG=$KUBECONFIG
 
-  info "Writing client cert & key to %s" "$STEPPATH/certs"
-  (
-    umask 077
-    printf "%s\n" "$user_crt" >"$STEPPATH/certs/home-cluster-admin.crt"
-    printf "%s\n" "$user_key" >"$STEPPATH/certs/home-cluster-admin_key"
-  )
+    mkdir -p "$STEPPATH/certs" "$HOME/.kube"
+    [[ -r "$CONFIG" ]] || fatal "The file %s does not exist or is not readable" "$CONFIG"
+    local user_crt user_key
+    user_crt=$(yq -r '.users[] | .user["client-certificate-data"]' "$CONFIG" | base64 -d)
+    user_key=$(yq -r '.users[] | .user["client-key-data"]' "$CONFIG" | base64 -d)
 
-  info "Setting up kubernetes config"
-  if [[ $CONFIG != "$HOME/.kube/home-cluster.yaml" ]]; then
-    cp "$CONFIG" "$HOME/.kube/home-cluster.yaml"
-  fi
-  kubectl config --kubeconfig "$HOME/.kube/home-cluster.yaml" set-credentials admin@home-cluster \
-    --client-certificate="$STEPPATH/certs/home-cluster-admin.crt" \
-    --client-key="$STEPPATH/certs/home-cluster-admin_key"
-  export KUBECONFIG="$HOME/.kube/home-cluster.yaml:$KUBECONFIG"
-  kubectl config --kubeconfig "$HOME/.kube/config.yaml" set-context home-cluster \
-    --cluster home-cluster --user admin@home-cluster
+    info "Writing client cert & key to %s" "$STEPPATH/certs"
+    (
+      umask 077
+      mkdir -p "$(dirname "$user_crt_path")"
+      printf "%s\n" "$user_crt" >"$user_crt_path"
+      printf "%s\n" "$user_key" >"$user_key_path"
+    )
 
-  if ! kubectl get -n default pods >/dev/null; then
-    fatal "Unable to authenticate to the cluster, auth setup failed"
-  fi
-
-  local pki_host pki_config_path
-  pki_host=pki.$(get_setting cluster.domain)
-  pki_kube_host=pki-kube.$(get_setting cluster.domain)
-
-  info "Bootstrapping Smallstep PKI context"
-  step ca bootstrap --context home-cluster-pki --force --ca-url "$pki_host:9000" \
-    --fingerprint "$(step certificate fingerprint <(\
-      kubectl --context home-cluster -n smallstep get secret smallstep-root -o=jsonpath='{.data.tls\.crt}' | base64 -d))"
-
-  info "Bootstrapping Smallstep Kube API Client context"
-  step ca bootstrap --context home-cluster-kube-api-client --force --ca-url "$pki_kube_host:9001" \
-    --fingerprint "$(step certificate fingerprint <(\
-      kubectl --context home-cluster -n smallstep get secret smallstep-root -o=jsonpath='{.data.tls\.crt}' | base64 -d))"
-
-  step context select home-cluster-pki
-
-  info "Trusting SSH host keys signed by Smallstep"
-  local known_hosts=$HOME/.ssh/known_hosts expected_known_hosts_line current_known_hosts_line
-  expected_known_hosts_line="@cert-authority *.local $(step ssh config --context home-cluster-pki --host --roots)"
-  if [[ -e "$known_hosts" ]] && current_known_hosts_line=$(grep '^@cert-authority \*.local ' "$known_hosts"); then
-    if [[ $current_known_hosts_line != "$expected_known_hosts_line" ]]; then
-      warning "Replacing '@cert-authority *.local' line in %s, it does not match the current key" "$known_hosts"
-      local all_other_lines
-      all_other_lines=$(grep -v '^@cert-authority \*.local ' "$known_hosts")
-      printf "%s\n%s\n" "$all_other_lines" "$expected_known_hosts_line" >"$known_hosts"
-    else
-      info "The '@cert-authority *.local' line in %s exists and is correct" "$known_hosts"
+    info "Setting up kubernetes config"
+    if [[ $CONFIG != "$HOME/.kube/home-cluster.yaml" ]]; then
+      cp "$CONFIG" "$HOME/.kube/home-cluster.yaml"
     fi
-  else
-    info "Appending '@cert-authority *.local ...' to %s" "$known_hosts"
-    printf "@cert-authority *.local %s\n" "$expected_known_hosts_line" >>"$known_hosts"
-  fi
+    kubectl config --kubeconfig "$HOME/.kube/home-cluster.yaml" set-credentials admin@home-cluster \
+      --client-certificate="$user_crt_path" \
+      --client-key="$user_key_path"
+    export KUBECONFIG="$HOME/.kube/home-cluster.yaml:$KUBECONFIG"
+    kubectl config --kubeconfig "$HOME/.kube/config.yaml" set-context home-cluster \
+      --cluster home-cluster --user admin@home-cluster
 
-  local pki_kube_host pki_kube_config_path
-  pki_config_path=$STEPPATH/profiles/home-cluster-pki/config/defaults.json
-  pki_kube_config_path=$STEPPATH/profiles/home-cluster-kube-api-client/config/defaults.json
+    if ! kubectl get -n default pods >/dev/null; then
+      fatal "Unable to authenticate to the cluster, auth setup failed"
+    fi
 
-  info "Configuring X5C provisioner access to Smallstep"
-  jq --arg path "$STEPPATH/certs/home-cluster-admin.crt" '.["x5c-cert"] = $path' <"$pki_config_path" | sponge "$pki_config_path"
-  jq --arg path "$STEPPATH/certs/home-cluster-admin_key" '.["x5c-key"] = $path' <"$pki_config_path" | sponge "$pki_config_path"
-  jq --arg path "$STEPPATH/certs/home-cluster-admin.crt" '.["x5c-cert"] = $path' <"$pki_kube_config_path" | sponge "$pki_kube_config_path"
-  jq --arg path "$STEPPATH/certs/home-cluster-admin_key" '.["x5c-key"] = $path' <"$pki_kube_config_path" | sponge "$pki_kube_config_path"
+    local pki_host pki_config_path
+    pki_host=pki.$(get_setting cluster.domain)
+    pki_kube_host=pki-kube.$(get_setting cluster.domain)
 
-  info "Signing all pubkeys in %s" "$HOME/.ssh"
-  local pubkey principal
-  principal=$(get_setting "admin.username")
-  for pubkey in "$HOME/.ssh"/id_*.pub; do
-    [[ $pubkey != *-cert.pub ]] || continue
-    step ssh certificate --context home-cluster-pki --force --sign "$principal" "$pubkey"
-  done
+    info "Bootstrapping Smallstep PKI context"
+    step ca bootstrap --context home-cluster-pki --force --ca-url "$pki_host:9000" \
+      --fingerprint "$(step certificate fingerprint <(\
+        kubectl --context home-cluster -n smallstep get secret smallstep-root -o=jsonpath='{.data.tls\.crt}' | base64 -d))"
 
-  if [[ $CONFIG != "$HOME/.kube/home-cluster.yaml" ]]; then
-    info "Removing %s" "$CONFIG"
-    rm "$CONFIG"
-  fi
+    info "Bootstrapping Smallstep Kube API Client context"
+    step ca bootstrap --context home-cluster-kube-api --force --ca-url "$pki_kube_host:9001" \
+      --fingerprint "$(step certificate fingerprint <(\
+        kubectl --context home-cluster -n smallstep get secret smallstep-root -o=jsonpath='{.data.tls\.crt}' | base64 -d))"
 
-  if [[ $OLD_KUBECONFIG != *"$HOME/.kube/home-cluster.yaml"* ]]; then
-    warning "Remember to add the new client config to your \$KUBECONFIG with KUBECONFIG=\$KUBECONFIG:\$HOME/.kube/home-cluster.yaml"
+    step context select home-cluster-pki
+
+    info "Trusting SSH host keys signed by Smallstep"
+    local known_hosts=$HOME/.ssh/known_hosts expected_known_hosts_line current_known_hosts_line
+    expected_known_hosts_line="@cert-authority *.local $(step ssh config --context home-cluster-pki --host --roots)"
+    if [[ -e "$known_hosts" ]] && current_known_hosts_line=$(grep '^@cert-authority \*.local ' "$known_hosts"); then
+      if [[ $current_known_hosts_line != "$expected_known_hosts_line" ]]; then
+        warning "Replacing '@cert-authority *.local' line in %s, it does not match the current key" "$known_hosts"
+        local all_other_lines
+        all_other_lines=$(grep -v '^@cert-authority \*.local ' "$known_hosts")
+        printf "%s\n%s\n" "$all_other_lines" "$expected_known_hosts_line" >"$known_hosts"
+      else
+        info "The '@cert-authority *.local' line in %s exists and is correct" "$known_hosts"
+      fi
+    else
+      info "Appending '@cert-authority *.local ...' to %s" "$known_hosts"
+      printf "@cert-authority *.local %s\n" "$expected_known_hosts_line" >>"$known_hosts"
+    fi
+
+    local pki_kube_host pki_kube_config_path
+    pki_config_path=$STEPPATH/profiles/home-cluster-pki/config/defaults.json
+    pki_kube_config_path=$STEPPATH/profiles/home-cluster-kube-api/config/defaults.json
+
+    info "Configuring X5C provisioner access to Smallstep"
+    jq --arg path "$user_crt_path" '.["x5c-cert"] = $path' <"$pki_config_path" | sponge "$pki_config_path"
+    jq --arg path "$user_key_path" '.["x5c-key"] = $path' <"$pki_config_path" | sponge "$pki_config_path"
+    jq --arg path "$user_crt_path" '.["x5c-cert"] = $path' <"$pki_kube_config_path" | sponge "$pki_kube_config_path"
+    jq --arg path "$user_key_path" '.["x5c-key"] = $path' <"$pki_kube_config_path" | sponge "$pki_kube_config_path"
+
+    info "Signing all pubkeys in %s" "$HOME/.ssh"
+    local pubkey principal
+    principal=$(get_setting "admin.username")
+    for pubkey in "$HOME/.ssh"/id_*.pub; do
+      [[ $pubkey != *-cert.pub ]] || continue
+      step ssh certificate --context home-cluster-pki --force --sign "$principal" "$pubkey"
+    done
+
+    if [[ $CONFIG != "$HOME/.kube/home-cluster.yaml" ]]; then
+      info "Removing %s" "$CONFIG"
+      rm "$CONFIG"
+    fi
+
+    if [[ $OLD_KUBECONFIG != *"$HOME/.kube/home-cluster.yaml"* ]]; then
+      warning "Remember to add the new client config to your \$KUBECONFIG with KUBECONFIG=\$KUBECONFIG:\$HOME/.kube/home-cluster.yaml"
+    fi
+  elif $renew; then
+    step ca renew --force --context home-cluster-kube-api "$user_crt_path" "$user_key_path"
   fi
 }
 
