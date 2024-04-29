@@ -7,5 +7,8 @@ secsuite=$release-security
 FAI_DEBOOTSTRAP="$release http://deb.debian.org/debian $PKGROOT/lib/debootstrap-script.sh"
 FAI_DEBOOTSTRAP_OPTS="--exclude=info --include=locales --unpack-tarball=$CACHEPATH/debootstrap/$release.tar"
 if ifclass AMD64; then
-   kernelname=linux-image-amd64
+   arch_suffix=amd64
+fi
+if ! ifclass WSL; then
+   kernelname=linux-image-$arch_suffix
 fi

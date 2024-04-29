@@ -43,10 +43,12 @@ declare -p "${prefix}MACHINE"; done; }
     fi
   fi
 
-  local machine ret=0
+  local machine ret=0 cur_ret
   for machine in "${MACHINE[@]}"; do
     info "Bootstrapping %s" "$machine"
-    if bootstrap "$machine"; then
+    cur_ret=0
+    set +e; (set -e; bootstrap "$machine"); cur_ret=$?; set -e
+    if [[ $cur_ret -eq 0 ]]; then
       info "Successfully bootstrapped %s" "$machine"
     else
       error "Failed to bootstrap %s" "$machine"
@@ -65,6 +67,10 @@ bootstrap() {
     ln="sudo ln"
     rm="sudo rm"
     chown="sudo chown"
+    losetup="sudo losetup"
+    dd="sudo dd"
+    mktemp="sudo mktemp"
+    qemuimg="sudo qemu-img"
   fi
   [[ -e $(dirname "$cachepath") ]] || cachepath=$PKGROOT/cache
   mkdir -p "$PKGROOT/images" "$PKGROOT/logs" "$cachepath"
@@ -81,6 +87,17 @@ bootstrap() {
     "PKGROOT=$PKGROOT" \
     "CACHEPATH=$cachepath" \
     fai-diskimage --cspace "$PKGROOT/bootstrap" --new --size "$(get_setting "machines[\"$machine\"].diskSize")" --hostname "$machine" "$imgpath"
+  if yq -re ".machines[\"$machine\"].faiClasses[] | select(.==\"WSL\")" "$PKGROOT/settings.yaml" >/dev/null; then
+    info "Converting partitioned raw image to unpartitioned vhdx"
+    local img_basepath loop_path
+    img_basepath=$(dirname "$imgpath")/$(basename "$imgpath" .raw)
+    loop_path=$($losetup --show --find --partscan "$imgpath")
+    # shellcheck disable=SC2064
+    trap "$losetup --detach \"$loop_path\"; $rm \"$img_basepath.unpartitioned.raw\"" EXIT
+    $dd if="${loop_path}p1" of="$img_basepath.unpartitioned.raw"
+    $qemuimg convert -p -f raw -O vhdx -o subformat=dynamic "$img_basepath.unpartitioned.raw" "$img_basepath.vhdx"
+    imgpath=$img_basepath.vhdx
+  fi
   $chown "$(stat -c %u:%g "$(dirname "$imgpath")")" "$imgpath"
   if [[ $cachepath = "$PKGROOT"/* ]]; then
     $chown -R "$(stat -c %u:%g "$(dirname "$cachepath")")" "$cachepath"

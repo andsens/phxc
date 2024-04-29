@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 # shellcheck source-path=../../../ disable=2034,2154
+NIC_1=ens3
+NIC_HOST=ens4
 NIC_HOST_ADDRESSES="$(yq -r ".machines[\"$HOSTNAME\"].hostBridgeAddrs[] | \"Address=\" + ." "$PKGROOT/settings.yaml")"
-NFS_SHARES_HOME_CLUSTER_ADDR="$(get_setting nfsShares.homeCluster.addr)"
-NFS_SHARES_HOME_CLUSTER_PATH="$(get_setting nfsShares.homeCluster.path)"

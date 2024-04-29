@@ -2,7 +2,7 @@
 
 error=0; trap 'error=$(($?>$error?$?:$error))' ERR # save maximum error code
 
-wget -qO- https://dl.smallstep.com/gh-release/cli/gh-release-header/v0.26.0/step_linux_0.26.0_amd64.tar.gz | \
+wget -qO- "https://dl.smallstep.com/gh-release/cli/gh-release-header/v0.26.0/step_linux_0.26.0_${arch_suffix:?}.tar.gz" | \
   tar xzC "${target:?}/usr/local/bin" --strip-components 2 step_0.26.0/bin/step
 chmod +x "${target:?}/usr/local/bin/step"
 
