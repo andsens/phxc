@@ -3,5 +3,8 @@
 error=0; trap 'error=$(($?>$error?$?:$error))' ERR # save maximum error code
 
 fcopy -iSM /etc/systemd/network/host.network
+fcopy -iSM /etc/systemd/network/lan0.network
+
+$ROOTCMD systemctl enable systemd-networkd
 
 exit $error

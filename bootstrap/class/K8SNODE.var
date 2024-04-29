@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# shellcheck disable=2034
+
+K3S_URL=https://$(get_setting machines.k8sMaster.hostname):6443
+K3S_TOKEN=$(get_setting cluster.k3sToken):6443
