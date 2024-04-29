@@ -74,14 +74,25 @@ declare -p "${prefix}CONFIG" "${prefix}setup"; done; }
     fatal "Unable to authenticate to the cluster, auth setup failed"
   fi
 
-  info "Bootstrapping Smallstep"
-  step ca bootstrap --force --ca-url "pki.$(get_setting cluster.domain):9000" \
+  local pki_host pki_config_path
+  pki_host=pki.$(get_setting cluster.domain)
+  pki_kube_host=pki-kube.$(get_setting cluster.domain)
+
+  info "Bootstrapping Smallstep PKI context"
+  step ca bootstrap --context home-cluster-pki --force --ca-url "$pki_host:9000" \
     --fingerprint "$(step certificate fingerprint <(\
       kubectl --context home-cluster -n smallstep get secret smallstep-root -o=jsonpath='{.data.tls\.crt}' | base64 -d))"
 
+  info "Bootstrapping Smallstep Kube API Client context"
+  step ca bootstrap --context home-cluster-kube-api-client --force --ca-url "$pki_kube_host:9001" \
+    --fingerprint "$(step certificate fingerprint <(\
+      kubectl --context home-cluster -n smallstep get secret smallstep-root -o=jsonpath='{.data.tls\.crt}' | base64 -d))"
+
+  step context select home-cluster-pki
+
   info "Trusting SSH host keys signed by Smallstep"
   local known_hosts=$HOME/.ssh/known_hosts expected_known_hosts_line current_known_hosts_line
-  expected_known_hosts_line="@cert-authority *.local $(step ssh config --host --roots)"
+  expected_known_hosts_line="@cert-authority *.local $(step ssh config --context home-cluster-pki --host --roots)"
   if [[ -e "$known_hosts" ]] && current_known_hosts_line=$(grep '^@cert-authority \*.local ' "$known_hosts"); then
     if [[ $current_known_hosts_line != "$expected_known_hosts_line" ]]; then
       warning "Replacing '@cert-authority *.local' line in %s, it does not match the current key" "$known_hosts"
@@ -96,16 +107,22 @@ declare -p "${prefix}CONFIG" "${prefix}setup"; done; }
     printf "@cert-authority *.local %s\n" "$expected_known_hosts_line" >>"$known_hosts"
   fi
 
-  info "Configuring admin access to Smallstep"
-  jq --arg path "$STEPPATH/certs/home-cluster-admin.crt" '.["x5c-cert"] = $path' <"$STEPPATH/config/defaults.json" | sponge "$STEPPATH/config/defaults.json"
-  jq --arg path "$STEPPATH/certs/home-cluster-admin_key" '.["x5c-key"] = $path' <"$STEPPATH/config/defaults.json" | sponge "$STEPPATH/config/defaults.json"
+  local pki_kube_host pki_kube_config_path
+  pki_config_path=$STEPPATH/profiles/home-cluster-pki/config/defaults.json
+  pki_kube_config_path=$STEPPATH/profiles/home-cluster-kube-api-client/config/defaults.json
+
+  info "Configuring X5C provisioner access to Smallstep"
+  jq --arg path "$STEPPATH/certs/home-cluster-admin.crt" '.["x5c-cert"] = $path' <"$pki_config_path" | sponge "$pki_config_path"
+  jq --arg path "$STEPPATH/certs/home-cluster-admin_key" '.["x5c-key"] = $path' <"$pki_config_path" | sponge "$pki_config_path"
+  jq --arg path "$STEPPATH/certs/home-cluster-admin.crt" '.["x5c-cert"] = $path' <"$pki_kube_config_path" | sponge "$pki_kube_config_path"
+  jq --arg path "$STEPPATH/certs/home-cluster-admin_key" '.["x5c-key"] = $path' <"$pki_kube_config_path" | sponge "$pki_kube_config_path"
 
   info "Signing all pubkeys in %s" "$HOME/.ssh"
   local pubkey principal
   principal=$(get_setting "admin.username")
   for pubkey in "$HOME/.ssh"/id_*.pub; do
     [[ $pubkey != *-cert.pub ]] || continue
-    step ssh certificate --force --sign "$principal" "$pubkey"
+    step ssh certificate --context home-cluster-pki --force --sign "$principal" "$pubkey"
   done
 
   if [[ $CONFIG != "$HOME/.kube/home-cluster.yaml" ]]; then
