@@ -92,11 +92,6 @@ spec:
         args: [/home/step/config/ca.json]
         securityContext:
           readOnlyRootFilesystem: true
-        env:
-        - name: NAMESPACE
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
         ports:
         - name: api
           containerPort: 9000
