@@ -47,8 +47,8 @@ declare -p "${prefix}CONFIG" "${prefix}setup" "${prefix}renew"; done; }
 
   export STEPPATH=${STEPPATH:-$(step path --base)}
   local user_crt_path user_key_path
-  user_crt_path="$STEPPATH/authorities/home-cluster-kube-api-client/certs/home-cluster-admin.crt"
-  user_key_path="$STEPPATH/authorities/home-cluster-kube-api-client/certs/home-cluster-admin_key"
+  user_crt_path="$STEPPATH/authorities/home-cluster-kube-api/certs/home-cluster-admin.crt"
+  user_key_path="$STEPPATH/authorities/home-cluster-kube-api/certs/home-cluster-admin_key"
 
   # shellcheck disable=2154
   if $setup; then
