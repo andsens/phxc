@@ -57,3 +57,12 @@ step ca bootstrap --ca-url pki.$(bin/settings get cluster.domain):9000 \
 ### Trust host SSH certificates
 
 `printf "@cert-authority *.local %s\n" "$(step ssh config --host --roots)" >>$HOME/.ssh/known_hosts`
+
+# Cool features
+
+- Security for untrusted network
+- cilium networking
+- k3s is bare-bones
+- Config changes kept to a minimum
+
+# How to reauth when init admin cert has expired
