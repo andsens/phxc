@@ -1,0 +1,35 @@
+name: Test
+
+on:
+  push:
+    branches: [ '*' ]
+    tags: [ '*' ]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Run ShellCheck
+      uses: ludeeus/action-shellcheck@master
+      env:
+        SHELLCHECK_OPTS: -x
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Install bats
+      uses: bats-core/bats-action@2.0.0
+      with:
+        detik-install: false
+    - name: Run tests
+      run: bats --formatter tap13 tests > tests/results.tap
+      env:
+        BATS_LIB_PATH: /usr/lib
+    - name: Generate test summary
+      uses: test-summary/action@v2
+      with:
+        paths: tests/results.tap
+      if: always()
