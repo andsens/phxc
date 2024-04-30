@@ -159,8 +159,8 @@ create_ssh_host_provisioner_key() {
 create_home_cluster_admin_kube_config() {
   info "Creating home-cluster admin kube config"
 
-  if $ROOT_IS_NEW || $KUBE_CLIENT_CA_IS_NEW || [[ ! -e $KUBE_ADMIN_CRT_PATH || ! -e $KUBE_ADMIN_KEY_PATH ]]; then
-    info "Client cert and/or key does not exist, or the cert chain has changed, creating now"
+  if $ROOT_IS_NEW || $KUBE_CLIENT_CA_IS_NEW || [[ ! -e $KUBE_ADMIN_CRT_PATH || ! -e $KUBE_ADMIN_KEY_PATH ]] || step certificate needs-renewal "$KUBE_ADMIN_CRT_PATH"; then
+    info "Client cert and/or key does not exist, has expired, or the cert chain has changed, creating now"
     step certificate create --template=<(printf '{
       "subject": {
         "commonName": {{ toJson .Subject.CommonName }},
@@ -173,6 +173,8 @@ create_home_cluster_admin_kube_config() {
       --not-after=24h \
       --ca="$KUBE_CLIENT_CA_CRT_PATH" --ca-key="$KUBE_CLIENT_CA_KEY_PATH" \
       "system:admin" "$KUBE_ADMIN_CRT_PATH" "$KUBE_ADMIN_KEY_PATH"
+  else
+    info "Client cert exist, is not expired, and chain is correct, not creating"
   fi
 
   [[ ! -e "$KUBE_ADMIN_CONFIG_PATH" ]] || mv "$KUBE_ADMIN_CONFIG_PATH" "$KUBE_ADMIN_CONFIG_PATH.old"
