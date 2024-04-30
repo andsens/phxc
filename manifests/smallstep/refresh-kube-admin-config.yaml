@@ -1,0 +1,56 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: refresh-kube-admin-config
+  labels:
+    app.kubernetes.io/name: smallstep
+    app.kubernetes.io/component: refresh-kube-admin-config
+spec:
+  schedule: "00 05 * * *"
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: smallstep
+            app.kubernetes.io/component: refresh-kube-admin-config
+        spec:
+          restartPolicy: Never
+          containers:
+          - name: refresh-kube-admin-config
+            image: cr.step.sm/smallstep/step-ca-bootstrap:latest
+            command: [/home/step/create-kube-admin-config.sh]
+            securityContext:
+              readOnlyRootFilesystem: true
+            env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: K8S_API_HOST
+              value: machines.k8sMaster.hostname
+            - name: KUBE_CONFIG_OWNER
+              value: admin.uid
+            volumeMounts:
+            - name: bootstrap
+              mountPath: /home/step/create-kube-admin-config.sh
+              subPath: create-kube-admin-config.sh
+              readOnly: true
+            - name: certs
+              mountPath: /home/step/certs
+              readOnly: false
+            - name: persistent-certs
+              mountPath: /home/step/persistent-certs
+              readOnly: false
+          volumes:
+          - name: bootstrap
+            configMap:
+              name: bootstrap
+              defaultMode: 0777
+          - name: certs
+            emptyDir:
+              medium: Memory
+          - name: persistent-certs
+            persistentVolumeClaim:
+              claimName: step-ca-certs

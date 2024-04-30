@@ -7,6 +7,7 @@ resources:
 - https://raw.githubusercontent.com/smallstep/helm-charts/v0.22.0/step-issuer/crds/certmanager.step.sm_stepissuers.yaml
 - bootstrap.yaml
 - certificates.yaml
+- refresh-kube-admin-config.yaml
 - kube-apiserver-client-ca.yaml
 - issuer.yaml
 - namespace.yaml
@@ -15,6 +16,10 @@ resources:
 configMapGenerator:
 - files:
   - config/bootstrap.sh
+  - config/create-cas.sh
+  - config/create-step-issuer.sh
+  - config/create-ssh-host-provisioner.sh
+  - config/create-kube-admin-config.sh
   name: bootstrap
   options:
     labels:
@@ -64,6 +69,14 @@ replacements:
   targets:
   - select: {group: batch, kind: Job, name: bootstrap}
     fieldPaths: ["spec.template.spec.containers.[name=bootstrap].env.[name=KUBE_CONFIG_OWNER].value"]
+- source: {fieldPath: data.machines.k8sMaster.hostname, kind: ConfigMap, name: settings}
+  targets:
+  - select: {group: batch, kind: CronJob, name: refresh-kube-admin-config}
+    fieldPaths: ["spec.jobTemplate.spec.template.spec.containers.[name=refresh-kube-admin-config].env.[name=K8S_API_HOST].value"]
+- source: {fieldPath: data.admin.uid, kind: ConfigMap, name: settings}
+  targets:
+  - select: {group: batch, kind: CronJob, name: refresh-kube-admin-config}
+    fieldPaths: ["spec.jobTemplate.spec.template.spec.containers.[name=refresh-kube-admin-config].env.[name=KUBE_CONFIG_OWNER].value"]
 - source: {fieldPath: data.cluster.smallstep.fixedIPv4, kind: ConfigMap, name: settings}
   targets:
   - select: {kind: Service, name: step-ca-external}

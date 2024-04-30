@@ -59,7 +59,7 @@ main() {
 info() {
   local tpl=$1; shift
   # shellcheck disable=2059
-  printf "setup-step-ca-config.sh: $tpl\n" "$@" >&2
+  printf "%s: $tpl\n" "$(basename "$0")" "$@" >&2
 }
 
 main "$@"

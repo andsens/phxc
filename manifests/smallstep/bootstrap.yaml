@@ -115,7 +115,7 @@ spec:
       containers:
       - name: bootstrap
         image: cr.step.sm/smallstep/step-ca-bootstrap:latest
-        command: [/home/step/bootstrap.sh]
+        command: [/home/step/bootstrap/bootstrap.sh]
         securityContext:
           readOnlyRootFilesystem: true
         env:
@@ -131,8 +131,7 @@ spec:
           value: admin.uid
         volumeMounts:
         - name: bootstrap
-          mountPath: /home/step/bootstrap.sh
-          subPath: bootstrap.sh
+          mountPath: /home/step/bootstrap
           readOnly: true
         - name: step-issuer-provisioner-password
           mountPath: /home/step/step-issuer-provisioner-password
