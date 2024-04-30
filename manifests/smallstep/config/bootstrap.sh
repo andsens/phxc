@@ -186,6 +186,8 @@ create_home_cluster_admin_kube_config() {
     --embed-certs \
     --client-certificate="$KUBE_ADMIN_CRT_PATH" \
     --client-key="$KUBE_ADMIN_KEY_PATH"
+  kubectl config --kubeconfig "$KUBE_ADMIN_CONFIG_PATH" set-context home-cluster \
+    --current --cluster home-cluster --user admin@home-cluster
 
   if [[ -e "$KUBE_ADMIN_CONFIG_PATH.old" ]] && ! diff -q "$KUBE_ADMIN_CONFIG_PATH" "$KUBE_ADMIN_CONFIG_PATH.old"; then
     info "A dependency for the admin kube config has changed, replacing old file"
