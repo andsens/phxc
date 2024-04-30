@@ -11,12 +11,13 @@ $ROOTCMD useradd -m -s "$ADMIN_SHELL" -u "$ADMIN_UID" "$ADMIN_USERNAME"
 [[ -z $ADMIN_PW_HASH ]] || $ROOTCMD usermod -p "$ADMIN_PW_HASH" "$ADMIN_USERNAME"
 $ROOTCMD adduser $ADMIN_USERNAME adm
 userdir=$($ROOTCMD getent passwd "$ADMIN_USERNAME" | cut -d: -f6 )
-$ROOTCMD mkdir "$userdir/.ssh"
 
-[[ -z $ADMIN_AUTH_KEYS ]] || ainsl -a "$userdir/.ssh/authorized_keys" "$ADMIN_AUTH_KEYS"
-
-$ROOTCMD chown -R "$ADMIN_USERNAME:$ADMIN_USERNAME" "$userdir/.ssh"
-$ROOTCMD chmod -R u=rwX,go=rX "$userdir/.ssh"
+if ifclass SSH; then
+  $ROOTCMD mkdir "$userdir/.ssh"
+  [[ -z $ADMIN_AUTH_KEYS ]] || ainsl -a "$userdir/.ssh/authorized_keys" "$ADMIN_AUTH_KEYS"
+  $ROOTCMD chown -R "$ADMIN_USERNAME:$ADMIN_USERNAME" "$userdir/.ssh"
+  $ROOTCMD chmod -R u=rwX,go=rX "$userdir/.ssh"
+fi
 
 if [[ -n $NFS_SHARES_ADMIN_HOME_ADDR ]]; then
   systemd_unitname=$(systemd-escape -p --suffix=mount "/home/${ADMIN_USERNAME}")

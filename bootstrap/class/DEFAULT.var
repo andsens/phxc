@@ -2,3 +2,6 @@
 # shellcheck source-path=../.. disable=2034
 
 source "$PKGROOT/lib/settings.sh"
+if ifclass AMD64; then
+   arch_suffix=amd64
+fi

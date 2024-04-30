@@ -1,7 +1,5 @@
 PACKAGES install-norec
-zstd
-systemd-boot
-${kernelname}
+avahi-daemon
 wget ca-certificates bash git jq yq
 nfs-common
 libnss-mdns

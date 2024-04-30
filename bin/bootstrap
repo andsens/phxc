@@ -69,7 +69,6 @@ bootstrap() {
     chown="sudo chown"
     losetup="sudo losetup"
     dd="sudo dd"
-    mktemp="sudo mktemp"
     qemuimg="sudo qemu-img"
   fi
   [[ -e $(dirname "$cachepath") ]] || cachepath=$PKGROOT/cache

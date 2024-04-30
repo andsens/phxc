@@ -1,4 +1,2 @@
 PACKAGES install-norec
-avahi-daemon
 openssh-client openssh-server
-sudo zsh
