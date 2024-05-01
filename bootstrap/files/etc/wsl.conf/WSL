@@ -4,3 +4,6 @@ networkingMode = mirrored
 systemd = true
 [interop]
 appendWindowsPath = false
+[network]
+hostname = {%FQDN%}
+generateHosts = false
