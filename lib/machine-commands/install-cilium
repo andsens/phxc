@@ -40,6 +40,7 @@ declare -p ; done; }
       --set ipam.operator.clusterPoolIPv6PodCIDRList="$(get_setting cluster.cidrs.podIPv6)" \
       --set ipam.operator.clusterPoolIPv4MaskSize=24 \
       --set ipam.operator.clusterPoolIPv6MaskSize=112 \
+      --set k8sServiceHost="$(get_setting cluster.cilium.k8sServiceHost)" \
       --set bgpControlPlane.enabled=true \
       --set ipv6.enabled=true \
       --set bpf.masquerade=true \
