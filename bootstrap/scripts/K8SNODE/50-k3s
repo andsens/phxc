@@ -8,4 +8,7 @@ curl -sfL https://get.k3s.io | \
   K3S_URL=$K3S_URL \
   $ROOTCMD sh -
 
+# /etc/rancher/k3s is created on master nodes but not on agents for some reason
+mkdir -p "${target:?}/etc/rancher/k3s"
+
 exit $error
