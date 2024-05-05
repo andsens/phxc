@@ -35,3 +35,11 @@ replacements:
   targets:
   - select: {group: apps, kind: Deployment, name: coredns}
     fieldPaths: ["spec.template.spec.containers.[name=coredns].env.[name=WAN_IPV4].value"]
+- source: {fieldPath: data.machines.k8sMaster.fixedIPv4, kind: ConfigMap, name: settings}
+  targets:
+  - select: {group: apps, kind: Deployment, name: coredns}
+    fieldPaths: ["spec.template.spec.containers.[name=coredns].env.[name=K8SMASTER_IPV4].value"]
+- source: {fieldPath: data.machines.k8sMaster.fixedIPv6, kind: ConfigMap, name: settings}
+  targets:
+  - select: {group: apps, kind: Deployment, name: coredns}
+    fieldPaths: ["spec.template.spec.containers.[name=coredns].env.[name=K8SMASTER_IPV6].value"]

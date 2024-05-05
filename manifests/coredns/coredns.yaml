@@ -131,6 +131,10 @@ spec:
           value: cluster.wanIPv4
         - name: DOMAIN
           value: cluster.domain
+        - name: K8SMASTER_IPV4
+          value: machines.k8sMaster.fixedIPv4
+        - name: K8SMASTER_IPV6
+          value: machines.k8sMaster.fixedIPv6
         ports:
         - name: dns-udp
           containerPort: 53

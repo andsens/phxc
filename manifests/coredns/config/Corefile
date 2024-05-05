@@ -18,6 +18,12 @@
     template IN NS {$DOMAIN}. {
         answer "{$DOMAIN}. 0 IN NS ns1.{$DOMAIN}"
     }
+    template IN A api.{$DOMAIN}. {
+        answer "api.{$DOMAIN}. 60 IN A {$K8SMASTER_IPV4}"
+    }
+    template IN AAAA api.{$DOMAIN}. {
+        answer "api.{$DOMAIN}. 60 IN AAAA {$K8SMASTER_IPV6}"
+    }
     template IN CAA {$DOMAIN}. {
         answer "{$DOMAIN}. 0 IN CAA 0 issue \"letsencrypt.org;\""
     }
