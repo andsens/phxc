@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # shellcheck source-path=../
-set -Eeo pipefail
+set -Eeo pipefail; shopt -s inherit_errexit
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
 
 main() {
@@ -8,7 +8,7 @@ main() {
 
   DOC="bootstrap - Bootstrap images
 Usage:
-  bootstrap [options] [MACHINE...]
+  bootstrap [MACHINE...]
 "
 # docopt parser below, refresh this parser with `docopt.sh bootstrap`
 # shellcheck disable=2016,1090,1091,2034,2154
@@ -28,6 +28,10 @@ declare -p "${prefix}MACHINE"; done; }
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/andsens/docopt.sh/docopt-lib.sh"' bootstrap`
   eval "$(docopt "$@")"
   confirm_machine_id bootstrapper
+  if [[ $UID != 0 ]]; then
+    export HOME_CLUSTER_IGNORE_MACHINE_ID=true
+    exec sudo "${BASH_SOURCE[0]}" "$@"
+  fi
 
   # shellcheck disable=2153
   if [[ ${#MACHINE[@]} -eq 0 ]]; then
@@ -61,27 +65,18 @@ declare -p "${prefix}MACHINE"; done; }
 
 bootstrap() {
   local machine=$1
-  local env=env ln=ln rm=rm imgpath=$PKGROOT/images/$machine.raw cachepath=/var/lib/persistent/cache
-  if [[ $UID != 0 ]]; then
-    env="sudo env"
-    ln="sudo ln"
-    rm="sudo rm"
-    chown="sudo chown"
-    losetup="sudo losetup"
-    dd="sudo dd"
-    qemuimg="sudo qemu-img"
-  fi
+  local imgpath=$PKGROOT/images/$machine.raw cachepath=/var/lib/persistent/cache
   [[ -e $(dirname "$cachepath") ]] || cachepath=$PKGROOT/cache
   mkdir -p "$PKGROOT/images" "$PKGROOT/logs" "$cachepath"
 
   if ! is_machine_id bootstrapper; then
     [[ -L "$PKGROOT/logs/fai" ]] || ln -s "/var/log/fai" "$PKGROOT/logs/fai"
   else
-    $rm -rf "$PKGROOT/logs/fai"
-    $ln -s "$PKGROOT/logs/fai" "/var/log/fai"
+    rm -rf "$PKGROOT/logs/fai"
+    ln -s "$PKGROOT/logs/fai" "/var/log/fai"
   fi
   # shellcheck disable=SC2086
-  $env - \
+  env - \
     "PATH=$PATH" \
     "PKGROOT=$PKGROOT" \
     "CACHEPATH=$cachepath" \
@@ -102,19 +97,19 @@ bootstrap() {
     img_basepath=$(dirname "$imgpath")/$(basename "$imgpath" .raw)
     if $is_wsl; then
       img_sourcepath=$img_basepath.unpartitioned.raw
-      loop_path=$($losetup --show --find --partscan "$imgpath")
+      loop_path=$(losetup --show --find --partscan "$imgpath")
       # shellcheck disable=SC2064
-      trap "$losetup --detach \"$loop_path\"; $rm \"$img_basepath.unpartitioned.raw\"" EXIT
-      $dd if="${loop_path}p1" of="$img_basepath.unpartitioned.raw"
+      trap "losetup --detach \"$loop_path\"; rm \"$img_basepath.unpartitioned.raw\"" EXIT
+      dd if="${loop_path}p1" of="$img_basepath.unpartitioned.raw"
     else
       img_sourcepath=$img_basepath.raw
     fi
-    $qemuimg convert -p -f raw -O vhdx -o subformat=dynamic "$img_sourcepath" "$img_basepath.vhdx"
+    qemuimg convert -p -f raw -O vhdx -o subformat=dynamic "$img_sourcepath" "$img_basepath.vhdx"
     imgpath=$img_basepath.vhdx
   fi
-  $chown "$(stat -c %u:%g "$(dirname "$imgpath")")" "$imgpath"
+  chown "$(stat -c %u:%g "$(dirname "$imgpath")")" "$imgpath"
   if [[ $cachepath = "$PKGROOT"/* ]]; then
-    $chown -R "$(stat -c %u:%g "$(dirname "$cachepath")")" "$cachepath"
+    chown -R "$(stat -c %u:%g "$(dirname "$cachepath")")" "$cachepath"
   fi
 }
 
