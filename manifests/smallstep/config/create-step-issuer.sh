@@ -1,5 +1,5 @@
 #!/bin/bash
-set -Eeo pipefail
+set -Eeo pipefail; shopt -s inherit_errexit
 
 : "${PKI_NAME:?}" "${STEPPATH:?}" "${NAMESPACE:?}" "${K8S_API_HOST:?}" "${KUBE_CONFIG_OWNER:?}"
 ROOT_CRT_PATH=$STEPPATH/persistent-certs/root_ca.crt

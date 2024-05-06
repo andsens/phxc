@@ -1,5 +1,5 @@
 #!/bin/bash
-set -Eeo pipefail
+set -Eeo pipefail; shopt -s inherit_errexit
 
 : "${PKI_NAME:?}" "${STEPPATH:?}" "${NAMESPACE:?}"
 ROOT_KEY_PATH=$STEPPATH/persistent-certs/root_ca_key

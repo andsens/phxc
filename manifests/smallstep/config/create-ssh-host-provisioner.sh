@@ -1,5 +1,5 @@
 #!/bin/bash
-set -Eeo pipefail
+set -Eeo pipefail; shopt -s inherit_errexit
 
 : "${STEPPATH:?}" "${NAMESPACE:?}"
 SSH_HOST_DIR=$STEPPATH/certs/ssh-host-provisioner

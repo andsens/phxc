@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # shellcheck source-path=../../
-set -Eeo pipefail
+set -Eeo pipefail; shopt -s inherit_errexit
 until [[ -e $PKGROOT/upkg.json || $PKGROOT = '/' ]]; do PKGROOT=$(dirname "${PKGROOT:-$(realpath "${BASH_SOURCE[0]}")}"); done
 
 main() {

@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-set -Eeo pipefail
+set -Eeo pipefail; shopt -s inherit_errexit
 
 @test 'ensure all fai scripts are executable' {
   # shellcheck disable=SC2314
