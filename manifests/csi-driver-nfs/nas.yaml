@@ -1,12 +1,26 @@
+---
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: nas-nfs
+  name: nas-nfs-workloads
 provisioner: nfs.csi.k8s.io
 parameters:
   server: nfsShares.workloads.addr
   share: nfsShares.workloads.path
   subDir: '${pvc.metadata.namespace}/${pvc.metadata.name}'
+reclaimPolicy: Retain
+volumeBindingMode: Immediate
+mountOptions: [nfsvers=4.1]
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: nas-nfs-images
+provisioner: nfs.csi.k8s.io
+parameters:
+  server: nfsShares.homeCluster.addr
+  share: nfsShares.homeCluster.path
+  subDir: images
 reclaimPolicy: Retain
 volumeBindingMode: Immediate
 mountOptions: [nfsvers=4.1]

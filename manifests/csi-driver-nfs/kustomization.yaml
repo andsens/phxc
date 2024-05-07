@@ -8,21 +8,22 @@ resources:
 - https://github.com/kubernetes-csi/csi-driver-nfs/raw/master/deploy/v4.6.0/csi-nfs-node.yaml
 - https://github.com/kubernetes-csi/csi-driver-nfs/raw/master/deploy/v4.6.0/crd-csi-snapshot.yaml
 - nas.yaml
-- networkpolicies.yaml
 - Kptfile
 - resourcegroup.yaml
 replacements:
+- source: {fieldPath: data.nfsShares.homeCluster.addr, kind: ConfigMap, name: settings}
+  targets:
+  - select: {group: storage.k8s.io, kind: StorageClass, name: nas-nfs-images}
+    fieldPaths: [parameters.server]
+- source: {fieldPath: data.nfsShares.homeCluster.path, kind: ConfigMap, name: settings}
+  targets:
+  - select: {group: storage.k8s.io, kind: StorageClass, name: nas-nfs-images}
+    fieldPaths: [parameters.share]
 - source: {fieldPath: data.nfsShares.workloads.addr, kind: ConfigMap, name: settings}
   targets:
-  - select: {group: storage.k8s.io, kind: StorageClass, name: nas-nfs}
+  - select: {group: storage.k8s.io, kind: StorageClass, name: nas-nfs-workloads}
     fieldPaths: [parameters.server]
 - source: {fieldPath: data.nfsShares.workloads.path, kind: ConfigMap, name: settings}
   targets:
-  - select: {group: storage.k8s.io, kind: StorageClass, name: nas-nfs}
+  - select: {group: storage.k8s.io, kind: StorageClass, name: nas-nfs-workloads}
     fieldPaths: [parameters.share]
-- source: {fieldPath: data.nfsShares.workloads.cidr, kind: ConfigMap, name: settings}
-  targets:
-  - select: {group: networking.k8s.io, kind: NetworkPolicy, name: csi-nfs}
-    fieldPaths: [spec.ingress.0.from.0.ipBlock.cidr]
-  - select: {group: networking.k8s.io, kind: NetworkPolicy, name: csi-nfs}
-    fieldPaths: [spec.egress.0.to.0.ipBlock.cidr]

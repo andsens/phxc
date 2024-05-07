@@ -155,7 +155,7 @@ spec:
         app.kubernetes.io/name: smallstep
         app.kubernetes.io/component: kube-apiserver-client-ca
     spec:
-      storageClassName: nas-nfs
+      storageClassName: nas-nfs-workloads
       accessModes: [ReadWriteOnce]
       resources:
         requests:
