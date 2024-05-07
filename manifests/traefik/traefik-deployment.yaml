@@ -111,7 +111,6 @@ metadata:
     app.kubernetes.io/name: traefik
     app.kubernetes.io/component: traefik
 spec:
-  replicas: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: traefik

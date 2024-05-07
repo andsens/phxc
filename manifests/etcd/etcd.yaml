@@ -54,7 +54,6 @@ apiVersion: apps/v1
 metadata:
   name: etcd
 spec:
-  replicas: 1
   serviceName: etcd
   selector:
     matchLabels:

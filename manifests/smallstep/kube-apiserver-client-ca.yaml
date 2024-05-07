@@ -50,7 +50,6 @@ metadata:
     app.kubernetes.io/name: smallstep
     app.kubernetes.io/component: kube-apiserver-client-ca
 spec:
-  replicas: 1
   serviceName: kube-apiserver-client-ca
   selector:
     matchLabels:

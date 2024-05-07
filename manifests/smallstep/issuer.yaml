@@ -224,7 +224,6 @@ metadata:
     app.kubernetes.io/name: smallstep
     app.kubernetes.io/component: issuer
 spec:
-  replicas: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: smallstep

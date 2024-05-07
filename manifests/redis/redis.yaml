@@ -45,7 +45,6 @@ apiVersion: apps/v1
 metadata:
   name: redis
 spec:
-  replicas: 1
   serviceName: redis
   selector:
     matchLabels:

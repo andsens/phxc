@@ -103,7 +103,6 @@ metadata:
     app.kubernetes.io/name: coredns
     app.kubernetes.io/component: coredns
 spec:
-  replicas: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: coredns

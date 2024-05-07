@@ -67,7 +67,6 @@ metadata:
     app.kubernetes.io/name: smallstep
     app.kubernetes.io/component: certificates
 spec:
-  replicas: 1
   serviceName: step-ca
   selector:
     matchLabels:

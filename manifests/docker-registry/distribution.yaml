@@ -97,7 +97,6 @@ metadata:
     app.kubernetes.io/name: docker-registry
     app.kubernetes.io/component: distribution
 spec:
-  replicas: 1
   serviceName: distribution
   selector:
     matchLabels:
