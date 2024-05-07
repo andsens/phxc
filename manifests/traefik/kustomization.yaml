@@ -26,10 +26,18 @@ replacements:
   - select: {group: networking.k8s.io, kind: Ingress, name: traefik-dashboard}
     fieldPaths: [spec.rules.0.host]
     options: {delimiter: ., index: 1}
-- source: {fieldPath: data.cluster.acmeProvider, kind: ConfigMap, name: settings}
+- source: {fieldPath: data.cluster.acmeProvider.group, kind: ConfigMap, name: settings}
   targets:
   - select: {group: networking.k8s.io, kind: Ingress, name: traefik-dashboard}
-    fieldPaths: [metadata.annotations.cert-manager\.io/cluster-issuer]
+    fieldPaths: [metadata.annotations.cert-manager\.io/issuer-group]
+- source: {fieldPath: data.cluster.acmeProvider.kind, kind: ConfigMap, name: settings}
+  targets:
+  - select: {group: networking.k8s.io, kind: Ingress, name: traefik-dashboard}
+    fieldPaths: [metadata.annotations.cert-manager\.io/issuer-kind]
+- source: {fieldPath: data.cluster.acmeProvider.issuer, kind: ConfigMap, name: settings}
+  targets:
+  - select: {group: networking.k8s.io, kind: Ingress, name: traefik-dashboard}
+    fieldPaths: [metadata.annotations.cert-manager\.io/issuer]
 - source: {fieldPath: data.cluster.traefik.fixedIPv4, kind: ConfigMap, name: settings}
   targets:
   - select: {kind: Service, name: traefik-frontend}

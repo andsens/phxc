@@ -35,9 +35,21 @@ replacements:
   - select: {group: apps, kind: StatefulSet, name: distribution}
     fieldPaths: ["spec.template.spec.containers.[name=distribution].env.[name=DOMAIN].value"]
     options: {delimiter: '.', index: 1}
-- source: {fieldPath: data.cluster.acmeProvider, kind: ConfigMap, name: settings}
+- source: {fieldPath: data.cluster.acmeProvider.group, kind: ConfigMap, name: settings}
   targets:
   - select: {group: networking.k8s.io, kind: Ingress, name: distribution}
-    fieldPaths: [metadata.annotations.cert-manager\.io/cluster-issuer]
+    fieldPaths: [metadata.annotations.cert-manager\.io/issuer-group]
   - select: {group: networking.k8s.io, kind: Ingress, name: docker-auth}
-    fieldPaths: [metadata.annotations.cert-manager\.io/cluster-issuer]
+    fieldPaths: [metadata.annotations.cert-manager\.io/issuer-group]
+- source: {fieldPath: data.cluster.acmeProvider.kind, kind: ConfigMap, name: settings}
+  targets:
+  - select: {group: networking.k8s.io, kind: Ingress, name: distribution}
+    fieldPaths: [metadata.annotations.cert-manager\.io/issuer-kind]
+  - select: {group: networking.k8s.io, kind: Ingress, name: docker-auth}
+    fieldPaths: [metadata.annotations.cert-manager\.io/issuer-kind]
+- source: {fieldPath: data.cluster.acmeProvider.issuer, kind: ConfigMap, name: settings}
+  targets:
+  - select: {group: networking.k8s.io, kind: Ingress, name: distribution}
+    fieldPaths: [metadata.annotations.cert-manager\.io/issuer]
+  - select: {group: networking.k8s.io, kind: Ingress, name: docker-auth}
+    fieldPaths: [metadata.annotations.cert-manager\.io/issuer]
