@@ -16,6 +16,8 @@ spec:
             app.kubernetes.io/name: smallstep
             app.kubernetes.io/component: refresh-kube-admin-config
         spec:
+          nodeSelector:
+            kubernetes.io/hostname: machines.k8sMaster.hostname
           restartPolicy: Never
           containers:
           - name: refresh-kube-admin-config
@@ -37,6 +39,12 @@ spec:
               mountPath: /home/step/create-kube-admin-config.sh
               subPath: create-kube-admin-config.sh
               readOnly: true
+            - name: kube-apiserver-client-ca-cert
+              mountPath: /home/step/certs/kube_apiserver_client_ca.crt
+              readOnly: true
+            - name: kube-apiserver-client-ca-key
+              mountPath: /home/step/certs/kube_apiserver_client_ca_key
+              readOnly: true
             - name: certs
               mountPath: /home/step/certs
               readOnly: false
@@ -48,6 +56,14 @@ spec:
             configMap:
               name: bootstrap
               defaultMode: 0777
+          - name: kube-apiserver-client-ca-cert
+            hostPath:
+              path: /var/lib/persistent/lib-rancher/k3s/server/tls/client-ca.crt
+              type: File
+          - name: kube-apiserver-client-ca-key
+            hostPath:
+              path: /var/lib/persistent/lib-rancher/k3s/server/tls/client-ca.key
+              type: File
           - name: certs
             emptyDir:
               medium: Memory

@@ -15,17 +15,17 @@ resources:
 - resourcegroup.yaml
 configMapGenerator:
 - files:
-  - config/bootstrap.sh
-  - config/create-cas.sh
-  - config/create-step-issuer.sh
-  - config/create-ssh-host-provisioner.sh
-  - config/create-kube-admin-config.sh
+  - config/scripts/bootstrap.sh
+  - config/scripts/create-cas.sh
+  - config/scripts/create-step-issuer.sh
+  - config/scripts/create-ssh-host-provisioner.sh
+  - config/scripts/create-kube-admin-config.sh
   name: bootstrap
   options:
     labels:
       app.kubernetes.io/name: smallstep
 - files:
-  - config/setup-step-ca-config.sh
+  - config/scripts/setup-step-ca-config.sh
   name: setup-step-ca-config
   options:
     labels:
@@ -43,7 +43,7 @@ configMapGenerator:
     labels:
       app.kubernetes.io/name: smallstep
 - files:
-  - config/setup-kube-apiserver-client-ca-config.sh
+  - config/scripts/setup-kube-apiserver-client-ca-config.sh
   name: setup-kube-apiserver-client-ca-config
   options:
     labels:
@@ -113,3 +113,11 @@ replacements:
   - select: {group: apps, kind: StatefulSet, name: kube-apiserver-client-ca}
     fieldPaths: ["spec.template.spec.initContainers.[name=setup-kube-apiserver-client-ca-config].env.[name=STEP_CA_DOMAIN].value"]
     options: {delimiter: '.', index: 1}
+- source: {fieldPath: data.machines.k8sMaster.hostname, kind: ConfigMap, name: settings}
+  targets:
+  - select: {group: batch, kind: Job, name: bootstrap}
+    fieldPaths: [spec.template.spec.nodeSelector.kubernetes\.io/hostname]
+  - select: {group: batch, kind: CronJob, name: refresh-kube-admin-config}
+    fieldPaths: [spec.jobTemplate.spec.template.spec.nodeSelector.kubernetes\.io/hostname]
+  - select: {group: apps, kind: StatefulSet, name: kube-apiserver-client-ca}
+    fieldPaths: [spec.template.spec.nodeSelector.kubernetes\.io/hostname]

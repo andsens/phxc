@@ -62,6 +62,8 @@ spec:
         app.kubernetes.io/component: kube-apiserver-client-ca
         cluster.local/allow-internet-egress: "true"
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: machines.k8sMaster.hostname
       securityContext:
         fsGroup: 1000
       initContainers:
@@ -75,10 +77,15 @@ spec:
         - name: setup-kube-apiserver-client-ca-config
           mountPath: /home/step/setup-kube-apiserver-client-ca-config.sh
           subPath: setup-kube-apiserver-client-ca-config.sh
-        - name: kube-apiserver-client-ca
-          mountPath: /home/step/certs/kube_apiserver_client_ca.crt
-          subPath: tls.crt
           readOnly: true
+        - name: kube-apiserver-client-ca-cert
+          mountPath: /home/step/certs/kube_apiserver_client_ca.crt
+          readOnly: true
+        - name: kube-apiserver-client-ca-key
+          mountPath: /home/step/certs/kube_apiserver_client_ca_key
+          readOnly: true
+        - name: certs
+          mountPath: /home/step/certs-ram
         - name: config
           mountPath: /home/step/config-ro
           readOnly: true
@@ -107,17 +114,8 @@ spec:
             scheme: HTTPS
           initialDelaySeconds: 5
         volumeMounts:
-        - name: root-cert
-          mountPath: /home/step/certs/root_ca.crt
-          subPath: tls.crt
-          readOnly: true
-        - name: kube-apiserver-client-ca
-          mountPath: /home/step/certs/kube_apiserver_client_ca.crt
-          subPath: tls.crt
-          readOnly: true
-        - name: kube-apiserver-client-ca
-          mountPath: /home/step/certs/kube_apiserver_client_ca_key
-          subPath: tls.key
+        - name: certs
+          mountPath: /home/step/certs
           readOnly: true
         - name: config-rw
           mountPath: /home/step/config
@@ -133,12 +131,17 @@ spec:
         configMap:
           name: setup-kube-apiserver-client-ca-config
           defaultMode: 0777
-      - name: root-cert
-        secret:
-          secretName: smallstep-root
-      - name: kube-apiserver-client-ca
-        secret:
-          secretName: kube-apiserver-client-ca
+      - name: certs
+        emptyDir:
+          medium: Memory
+      - name: kube-apiserver-client-ca-cert
+        hostPath:
+          path: /var/lib/persistent/lib-rancher/k3s/server/tls/client-ca.crt
+          type: File
+      - name: kube-apiserver-client-ca-key
+        hostPath:
+          path: /var/lib/persistent/lib-rancher/k3s/server/tls/client-ca.key
+          type: File
       - name: config
         configMap:
           name: kube-apiserver-client-ca-config

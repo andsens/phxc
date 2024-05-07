@@ -92,17 +92,20 @@ spec:
         - name: setup-step-ca-config
           mountPath: /home/step/setup-step-ca-config.sh
           subPath: setup-step-ca-config.sh
+          readOnly: true
         - name: step-issuer-provisioner
-          mountPath: /home/step/certs/step-issuer-provisioner
+          mountPath: /home/step/step-issuer-provisioner
           readOnly: true
         - name: step-issuer-provisioner-password
           mountPath: /home/step/step-issuer-provisioner-password
+          subPath: password
           readOnly: true
         - name: ssh-host-provisioner
-          mountPath: /home/step/certs/ssh-host-provisioner
+          mountPath: /home/step/ssh-host-provisioner
           readOnly: true
         - name: ssh-host-provisioner-password
           mountPath: /home/step/ssh-host-provisioner-password
+          subPath: password
           readOnly: true
         - name: kube-apiserver-client-ca-cert
           mountPath: /home/step/certs/kube_apiserver_client_ca.crt

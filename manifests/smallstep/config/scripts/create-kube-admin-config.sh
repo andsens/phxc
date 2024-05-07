@@ -2,9 +2,8 @@
 set -Eeo pipefail; shopt -s inherit_errexit
 
 : "${STEPPATH:?}" "${NAMESPACE:?}" "${K8S_API_HOST:?}" "${KUBE_CONFIG_OWNER:?}"
-ROOT_CRT_PATH=$STEPPATH/persistent-certs/root_ca.crt
-KUBE_CLIENT_CA_KEY_PATH=$STEPPATH/persistent-certs/kube_apiserver_client_ca_key
-KUBE_CLIENT_CA_CRT_PATH=$STEPPATH/persistent-certs/kube_apiserver_client_ca.crt
+KUBE_CLIENT_CA_KEY_PATH=$STEPPATH/certs/kube_apiserver_client_ca_key
+KUBE_CLIENT_CA_CRT_PATH=$STEPPATH/certs/kube_apiserver_client_ca.crt
 KUBE_ADMIN_KEY_PATH=$STEPPATH/persistent-certs/system:admin_key
 KUBE_ADMIN_CRT_PATH=$STEPPATH/persistent-certs/system:admin.crt
 KUBE_ADMIN_CONFIG_PATH=$STEPPATH/persistent-certs/home-cluster.yaml
@@ -14,7 +13,7 @@ main() {
   info "Creating kube admin client cert and kube admin config"
 
   if [[ ! -e $KUBE_ADMIN_KEY_PATH ]] || \
-        ! step certificate verify "$KUBE_ADMIN_CRT_PATH" --roots="$ROOT_CRT_PATH,$KUBE_CLIENT_CA_CRT_PATH" || \
+        ! step certificate verify "$KUBE_ADMIN_CRT_PATH" --roots="$KUBE_CLIENT_CA_CRT_PATH" || \
           step certificate needs-renewal "$KUBE_ADMIN_CRT_PATH"; then
     info "Kube admin client cert validation failed, (re-)creating now"
     step certificate create --template=<(printf '{
@@ -59,7 +58,7 @@ main() {
 info() {
   local tpl=$1; shift
   # shellcheck disable=2059
-  printf "%s: $tpl\n" "$(basename "$0")" "$@" >&2
+  printf "%s: $tpl\n" "$(basename "${BASH_SOURCE[0]}")" "$@" >&2
 }
 
 main "$@"

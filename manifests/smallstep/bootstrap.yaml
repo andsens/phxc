@@ -108,6 +108,8 @@ spec:
         app.kubernetes.io/component: bootstrap
         cluster.local/allow-apiserver-egress: "true"
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: machines.k8sMaster.hostname
       restartPolicy: Never
       serviceAccountName: bootstrap
       securityContext:
@@ -142,6 +144,12 @@ spec:
         - name: certs
           mountPath: /home/step/certs
           readOnly: false
+        - name: kube-apiserver-client-ca-cert
+          mountPath: /home/step/certs/kube_apiserver_client_ca.crt
+          readOnly: true
+        - name: kube-apiserver-client-ca-key
+          mountPath: /home/step/certs/kube_apiserver_client_ca_key
+          readOnly: true
         - name: persistent-certs
           mountPath: /home/step/persistent-certs
           readOnly: false
@@ -165,6 +173,14 @@ spec:
       - name: certs
         emptyDir:
           medium: Memory
+      - name: kube-apiserver-client-ca-cert
+        hostPath:
+          path: /var/lib/persistent/lib-rancher/k3s/server/tls/client-ca.crt
+          type: File
+      - name: kube-apiserver-client-ca-key
+        hostPath:
+          path: /var/lib/persistent/lib-rancher/k3s/server/tls/client-ca.key
+          type: File
       - name: persistent-certs
         persistentVolumeClaim:
           claimName: step-ca-certs

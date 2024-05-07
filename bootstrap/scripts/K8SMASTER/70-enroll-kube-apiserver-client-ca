@@ -1,8 +1,0 @@
-#!/usr/bin/env bash
-
-error=0; trap 'error=$(($?>$error?$?:$error))' ERR # save maximum error code
-
-fcopy -SM /etc/systemd/system/enroll-kube-apiserver-client-ca.service
-$ROOTCMD systemctl enable enroll-kube-apiserver-client-ca.service
-
-exit $error

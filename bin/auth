@@ -95,7 +95,7 @@ declare -p "${prefix}CONFIG" "${prefix}setup" "${prefix}renew"; done; }
     info "Bootstrapping Smallstep Kube API Client context"
     step ca bootstrap --context home-cluster-kube-api --force --ca-url "$pki_kube_host:9001" \
       --fingerprint "$(step certificate fingerprint <(\
-        kubectl --context home-cluster -n smallstep get secret smallstep-root -o=jsonpath='{.data.tls\.crt}' | base64 -d))"
+        kubectl --context home-cluster -n smallstep get secret kube-apiserver-client-ca -o=jsonpath='{.data.tls\.crt}' | base64 -d))"
 
     step context select home-cluster-pki
 

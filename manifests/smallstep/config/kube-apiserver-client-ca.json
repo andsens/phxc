@@ -8,7 +8,7 @@
     "type": "badgerv2",
     "dataSource": "/home/step/db"
   },
-  "root": "/home/step/certs/root_ca.crt",
+  "root": "/home/step/certs/kube_apiserver_client_ca.crt",
   "crt": "/home/step/certs/kube_apiserver_client_ca.crt",
   "key": "/home/step/certs/kube_apiserver_client_ca_key",
   "authority": {

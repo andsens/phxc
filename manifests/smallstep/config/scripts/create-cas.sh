@@ -6,8 +6,7 @@ ROOT_KEY_PATH=$STEPPATH/persistent-certs/root_ca_key
 ROOT_CRT_PATH=$STEPPATH/persistent-certs/root_ca.crt
 INTERMEDIATE_KEY_PATH=$STEPPATH/persistent-certs/intermediate_ca_key
 INTERMEDIATE_CRT_PATH=$STEPPATH/persistent-certs/intermediate_ca.crt
-KUBE_CLIENT_CA_KEY_PATH=$STEPPATH/persistent-certs/kube_apiserver_client_ca_key
-KUBE_CLIENT_CA_CRT_PATH=$STEPPATH/persistent-certs/kube_apiserver_client_ca.crt
+KUBE_CLIENT_CA_CRT_PATH=$STEPPATH/certs/kube_apiserver_client_ca.crt
 
 main() {
   create_certificates
@@ -40,19 +39,6 @@ create_certificates() {
   else
     info "Intermediate CA validation succeeded"
   fi
-
-  if [[ ! -e $KUBE_CLIENT_CA_KEY_PATH ]] || \
-        ! step certificate verify "$KUBE_CLIENT_CA_CRT_PATH" --roots="$ROOT_CRT_PATH" || \
-          step certificate needs-renewal "$INTERMEDIATE_CRT_PATH"; then
-    info "kube-apiserver client CA validation failed, (re-)creating now"
-    step certificate create --profile=intermediate-ca \
-      --force --no-password --insecure \
-      --not-after=87600h \
-      --ca="$ROOT_CRT_PATH" --ca-key="$ROOT_KEY_PATH" \
-      "$PKI_NAME Kubernetes Client CA" "$KUBE_CLIENT_CA_CRT_PATH" "$KUBE_CLIENT_CA_KEY_PATH"
-  else
-    info "kube-apiserver client CA validation succeeded"
-  fi
 }
 
 create_secrets() {
@@ -77,7 +63,7 @@ create_secrets() {
   if [[ $(kubectl get -n "$NAMESPACE" secret kube-apiserver-client-ca -o jsonpath='{.data.tls\.crt}' | base64 -d) != $(cat "$KUBE_CLIENT_CA_CRT_PATH") ]]; then
     info "kube-apiserver client CA secret validation failed, (re-)creating now"
     kubectl delete -n "$NAMESPACE" secret kube-apiserver-client-ca 2>/dev/null || true
-    kubectl create -n "$NAMESPACE" secret tls kube-apiserver-client-ca --cert="$KUBE_CLIENT_CA_CRT_PATH" --key="$KUBE_CLIENT_CA_KEY_PATH"
+    kubectl create -n "$NAMESPACE" secret generic kube-apiserver-client-ca --from-file=tls.crt="$KUBE_CLIENT_CA_CRT_PATH"
   else
     info "kube-apiserver client CA secret validation succeeded"
   fi
@@ -86,7 +72,7 @@ create_secrets() {
 info() {
   local tpl=$1; shift
   # shellcheck disable=2059
-  printf "%s: $tpl\n" "$(basename "$0")" "$@" >&2
+  printf "%s: $tpl\n" "$(basename "${BASH_SOURCE[0]}")" "$@" >&2
 }
 
 main "$@"
