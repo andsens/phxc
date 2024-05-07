@@ -1,6 +1,7 @@
 ---
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
+namespace: cert-manager
 metadata:
   name: cert-manager
   labels:
