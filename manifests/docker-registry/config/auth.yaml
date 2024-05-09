@@ -14,3 +14,9 @@ acl:
     account: /.*/
   actions: [pull]
   comment: Everybody can pull
+- match:
+    account: system/admin
+  actions: ["*"]
+  comment: Admin can do everything
+ext_auth:
+  command: "/scripts/auth.sh"

@@ -1,30 +1,31 @@
 ---
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
 metadata:
   name: distribution
   labels:
     app.kubernetes.io/name: docker-registry
     app.kubernetes.io/component: distribution
 spec:
-  podSelector:
+  endpointSelector:
     matchLabels:
       app.kubernetes.io/name: docker-registry
       app.kubernetes.io/component: distribution
-  policyTypes:
-  - Ingress
-  - Egress
+  ingress:
+  - toPorts:
+    - ports:
+      - port: "5000"
+    fromEntities:
+    - all
   egress:
-  - ports:
-    - port: 6379
-    to:
-    - namespaceSelector:
-        matchLabels:
-          kubernetes.io/metadata.name: redis
-      podSelector:
-        matchLabels:
-          app.kubernetes.io/name: redis
-          app.kubernetes.io/component: redis
+  - toPorts:
+    - ports:
+      - port: "6379"
+    toEndpoints:
+    - matchLabels:
+        "k8s:io.kubernetes.pod.namespace": redis
+        app.kubernetes.io/name: redis
+        app.kubernetes.io/component: redis
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -124,7 +125,7 @@ spec:
         - name: DOMAIN
           value: cr.DOMAIN
         - name: REGISTRY_AUTH_TOKEN_REALM
-          value: $(DOMAIN)/auth
+          value: https://$(DOMAIN)/auth
         ports:
         - name: web
           containerPort: 5000

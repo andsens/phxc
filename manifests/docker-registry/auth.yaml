@@ -62,6 +62,43 @@ spec:
               name: web
 ---
 apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: docker-auth
+  labels:
+    app.kubernetes.io/name: docker-registry
+    app.kubernetes.io/component: auth
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: docker-auth
+  labels:
+    app.kubernetes.io/name: docker-registry
+    app.kubernetes.io/component: auth
+rules:
+- apiGroups: [""]
+  resources: [secrets]
+  resourceNames: [kube-apiserver-client-ca]
+  verbs: [get, delete]
+  namespaces: [smallstep]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: docker-auth
+  labels:
+    app.kubernetes.io/name: docker-registry
+    app.kubernetes.io/component: auth
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: docker-auth
+subjects:
+- kind: ServiceAccount
+  name: docker-auth
+---
+apiVersion: v1
 kind: Service
 metadata:
   name: docker-auth
@@ -93,32 +130,18 @@ spec:
       labels:
         app.kubernetes.io/name: docker-registry
         app.kubernetes.io/component: auth
+        cluster.local/allow-apiserver-egress: "true"
+        cluster.local/allow-internet-egress: "true"
     spec:
+      serviceAccountName: docker-auth
       containers:
       - name: docker-auth
         image: cesanta/docker_auth:1.12.0
+        command: [/scripts/init-docker-auth.sh]
         args: ['-alsologtostderr', '/config/auth_config.yml']
-        securityContext:
-          readOnlyRootFilesystem: true
         ports:
         - name: web
           containerPort: 5001
-        livenessProbe:
-          httpGet:
-            path: /
-            port: web
-          failureThreshold: 20
-          periodSeconds: 30
-          successThreshold: 1
-          timeoutSeconds: 5
-        readinessProbe:
-          httpGet:
-            path: /
-            port: web
-          failureThreshold: 20
-          periodSeconds: 30
-          successThreshold: 1
-          timeoutSeconds: 5
         resources:
           requests:
             cpu: 50m
@@ -129,6 +152,8 @@ spec:
         - name: config
           mountPath: /config/auth_config.yml
           subPath: auth_config.yml
+        - name: scripts
+          mountPath: /scripts
         - name: jwt-cert
           mountPath: /config/certs
         - name: tmp
@@ -137,6 +162,10 @@ spec:
       - name: config
         configMap:
           name: auth-config
+      - name: scripts
+        configMap:
+          defaultMode: 0777
+          name: auth-scripts
       - name: jwt-cert
         secret:
           secretName: distribution-jwt-cert

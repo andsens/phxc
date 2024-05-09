@@ -13,6 +13,10 @@ configMapGenerator:
   - auth_config.yml=config/auth.yaml
   name: auth-config
 - files:
+  - config/scripts/auth.sh
+  - config/scripts/init-docker-auth.sh
+  name: auth-scripts
+- files:
   - config.yml=config/distribution.yaml
   name: distribution
 generatorOptions:
