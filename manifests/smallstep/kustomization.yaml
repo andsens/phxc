@@ -7,29 +7,13 @@ resources:
 - https://raw.githubusercontent.com/smallstep/helm-charts/v0.22.0/step-issuer/crds/certmanager.step.sm_stepissuers.yaml
 - bootstrap.yaml
 - certificates.yaml
-- refresh-kube-admin-config.yaml
+- refresh-kube-config.yaml
 - kube-apiserver-client-ca.yaml
 - issuer.yaml
 - namespace.yaml
 - Kptfile
 - resourcegroup.yaml
 configMapGenerator:
-- files:
-  - config/scripts/bootstrap.sh
-  - config/scripts/create-cas.sh
-  - config/scripts/create-step-issuer.sh
-  - config/scripts/create-ssh-host-provisioner.sh
-  - config/scripts/create-kube-admin-config.sh
-  name: bootstrap
-  options:
-    labels:
-      app.kubernetes.io/name: smallstep
-- files:
-  - config/scripts/setup-step-ca-config.sh
-  name: setup-step-ca-config
-  options:
-    labels:
-      app.kubernetes.io/name: smallstep
 - files:
   - config/ca.json
   name: step-ca-config
@@ -43,12 +27,6 @@ configMapGenerator:
     labels:
       app.kubernetes.io/name: smallstep
 - files:
-  - config/scripts/setup-kube-apiserver-client-ca-config.sh
-  name: setup-kube-apiserver-client-ca-config
-  options:
-    labels:
-      app.kubernetes.io/name: smallstep
-- files:
   - ca.json=config/kube-apiserver-client-ca.json
   name: kube-apiserver-client-ca-config
   options:
@@ -57,26 +35,6 @@ configMapGenerator:
 generatorOptions:
   disableNameSuffixHash: true
 replacements:
-- source: {fieldPath: data.cluster.pkiName, kind: ConfigMap, name: settings}
-  targets:
-  - select: {group: batch, kind: Job, name: bootstrap}
-    fieldPaths: ["spec.template.spec.containers.[name=bootstrap].env.[name=PKI_NAME].value"]
-- source: {fieldPath: data.machines.k8sMaster.hostname, kind: ConfigMap, name: settings}
-  targets:
-  - select: {group: batch, kind: Job, name: bootstrap}
-    fieldPaths: ["spec.template.spec.containers.[name=bootstrap].env.[name=K8S_API_HOST].value"]
-- source: {fieldPath: data.admin.uid, kind: ConfigMap, name: settings}
-  targets:
-  - select: {group: batch, kind: Job, name: bootstrap}
-    fieldPaths: ["spec.template.spec.containers.[name=bootstrap].env.[name=KUBE_CONFIG_OWNER].value"]
-- source: {fieldPath: data.machines.k8sMaster.hostname, kind: ConfigMap, name: settings}
-  targets:
-  - select: {group: batch, kind: CronJob, name: refresh-kube-admin-config}
-    fieldPaths: ["spec.jobTemplate.spec.template.spec.containers.[name=refresh-kube-admin-config].env.[name=K8S_API_HOST].value"]
-- source: {fieldPath: data.admin.uid, kind: ConfigMap, name: settings}
-  targets:
-  - select: {group: batch, kind: CronJob, name: refresh-kube-admin-config}
-    fieldPaths: ["spec.jobTemplate.spec.template.spec.containers.[name=refresh-kube-admin-config].env.[name=KUBE_CONFIG_OWNER].value"]
 - source: {fieldPath: data.cluster.smallstep.fixedIPv4, kind: ConfigMap, name: settings}
   targets:
   - select: {kind: Service, name: step-ca-external}
@@ -87,14 +45,6 @@ replacements:
   - select: {kind: Service, name: step-ca-external}
     fieldPaths: [metadata.annotations.io\.cilium/lb-ipam-ips]
     options: {delimiter: ',', index: 1}
-- source: {fieldPath: data.cluster.domain, kind: ConfigMap, name: settings}
-  targets:
-  - select: {kind: Service, name: step-ca-external}
-    fieldPaths: [metadata.annotations.external-dns\.alpha\.kubernetes\.io/hostname]
-    options: {delimiter: '.', index: 1}
-  - select: {group: apps, kind: StatefulSet, name: step-ca}
-    fieldPaths: ["spec.template.spec.initContainers.[name=setup-step-ca-config].env.[name=STEP_CA_DOMAIN].value"]
-    options: {delimiter: '.', index: 1}
 - source: {fieldPath: data.cluster.kubeAPIServerClientCA.fixedIPv4, kind: ConfigMap, name: settings}
   targets:
   - select: {kind: Service, name: kube-apiserver-client-ca-external}
@@ -107,17 +57,33 @@ replacements:
     options: {delimiter: ',', index: 1}
 - source: {fieldPath: data.cluster.domain, kind: ConfigMap, name: settings}
   targets:
-  - select: {kind: Service, name: kube-apiserver-client-ca-external}
+  - select: {kind: Service, name: step-ca-external}
     fieldPaths: [metadata.annotations.external-dns\.alpha\.kubernetes\.io/hostname]
     options: {delimiter: '.', index: 1}
-  - select: {group: apps, kind: StatefulSet, name: kube-apiserver-client-ca}
-    fieldPaths: ["spec.template.spec.initContainers.[name=setup-kube-apiserver-client-ca-config].env.[name=STEP_CA_DOMAIN].value"]
+  - select: {kind: Service, name: kube-apiserver-client-ca-external}
+    fieldPaths: [metadata.annotations.external-dns\.alpha\.kubernetes\.io/hostname]
     options: {delimiter: '.', index: 1}
 - source: {fieldPath: data.machines.k8sMaster.hostname, kind: ConfigMap, name: settings}
   targets:
   - select: {group: batch, kind: Job, name: bootstrap}
     fieldPaths: [spec.template.spec.nodeSelector.kubernetes\.io/hostname]
-  - select: {group: batch, kind: CronJob, name: refresh-kube-admin-config}
-    fieldPaths: [spec.jobTemplate.spec.template.spec.nodeSelector.kubernetes\.io/hostname]
   - select: {group: apps, kind: StatefulSet, name: kube-apiserver-client-ca}
     fieldPaths: [spec.template.spec.nodeSelector.kubernetes\.io/hostname]
+  - select: {group: batch, kind: CronJob, name: refresh-kube-config}
+    fieldPaths: [spec.jobTemplate.spec.template.spec.nodeSelector.kubernetes\.io/hostname]
+- source: {fieldPath: data.nfsShares.homeCluster.addr, kind: ConfigMap, name: settings}
+  targets:
+  - select: {group: batch, kind: Job}
+    fieldPaths: ["spec.template.spec.volumes.[name=home-cluster].nfs.server"]
+  - select: {group: batch, kind: CronJob}
+    fieldPaths: ["spec.jobTemplate.spec.template.spec.volumes.[name=home-cluster].nfs.server"]
+  - select: {group: apps, kind: StatefulSet}
+    fieldPaths: ["spec.template.spec.volumes.[name=home-cluster].nfs.server"]
+- source: {fieldPath: data.nfsShares.homeCluster.path, kind: ConfigMap, name: settings}
+  targets:
+  - select: {group: batch, kind: Job}
+    fieldPaths: ["spec.template.spec.volumes.[name=home-cluster].nfs.path"]
+  - select: {group: batch, kind: CronJob}
+    fieldPaths: ["spec.jobTemplate.spec.template.spec.volumes.[name=home-cluster].nfs.path"]
+  - select: {group: apps, kind: StatefulSet}
+    fieldPaths: ["spec.template.spec.volumes.[name=home-cluster].nfs.path"]

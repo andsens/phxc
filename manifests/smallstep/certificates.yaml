@@ -84,14 +84,10 @@ spec:
       initContainers:
       - name: setup-step-ca-config
         image: cr.step.sm/smallstep/step-ca-bootstrap:latest
-        command: [/home/step/setup-step-ca-config.sh]
-        env:
-        - name: STEP_CA_DOMAIN
-          value: pki.DOMAIN
+        command: [/var/lib/home-cluster/lib/container-commands/smallstep/setup-step-ca-config.sh]
         volumeMounts:
-        - name: setup-step-ca-config
-          mountPath: /home/step/setup-step-ca-config.sh
-          subPath: setup-step-ca-config.sh
+        - name: home-cluster
+          mountPath: /var/lib/home-cluster
           readOnly: true
         - name: step-issuer-provisioner
           mountPath: /home/step/step-issuer-provisioner
@@ -161,10 +157,11 @@ spec:
           mountPath: /home/step/templates
           readOnly: true
       volumes:
-      - name: setup-step-ca-config
-        configMap:
-          name: setup-step-ca-config
-          defaultMode: 0777
+      - name: home-cluster
+        nfs:
+          server: nfsShares.homeCluster.addr
+          path: nfsShares.homeCluster.path
+          readOnly: true
       - name: step-issuer-provisioner
         secret:
           secretName: step-issuer-provisioner

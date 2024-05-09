@@ -106,6 +106,7 @@ spec:
       labels:
         app.kubernetes.io/name: smallstep
         app.kubernetes.io/component: bootstrap
+        cluster.local/allow-internet-egress: "true"
         cluster.local/allow-apiserver-egress: "true"
     spec:
       nodeSelector:
@@ -117,23 +118,15 @@ spec:
       containers:
       - name: bootstrap
         image: cr.step.sm/smallstep/step-ca-bootstrap:latest
-        command: [/home/step/bootstrap/bootstrap.sh]
-        securityContext:
-          readOnlyRootFilesystem: true
+        command: [/var/lib/home-cluster/lib/container-commands/smallstep/bootstrap.sh]
         env:
         - name: NAMESPACE
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
-        - name: PKI_NAME
-          value: cluster.pkiName
-        - name: K8S_API_HOST
-          value: machines.k8sMaster.hostname
-        - name: KUBE_CONFIG_OWNER
-          value: admin.uid
         volumeMounts:
-        - name: bootstrap
-          mountPath: /home/step/bootstrap
+        - name: home-cluster
+          mountPath: /var/lib/home-cluster
           readOnly: true
         - name: step-issuer-provisioner-password
           mountPath: /home/step/step-issuer-provisioner-password
@@ -160,6 +153,11 @@ spec:
           mountPath: /home/step/templates
           readOnly: true
       volumes:
+      - name: home-cluster
+        nfs:
+          server: nfsShares.homeCluster.addr
+          path: nfsShares.homeCluster.path
+          readOnly: true
       - name: bootstrap
         configMap:
           name: bootstrap

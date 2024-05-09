@@ -2,10 +2,10 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: refresh-kube-admin-config
+  name: refresh-kube-config
   labels:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: refresh-kube-admin-config
+    app.kubernetes.io/component: refresh-kube-config
 spec:
   schedule: "00 05 * * *"
   jobTemplate:
@@ -14,30 +14,25 @@ spec:
         metadata:
           labels:
             app.kubernetes.io/name: smallstep
-            app.kubernetes.io/component: refresh-kube-admin-config
+            app.kubernetes.io/component: refresh-kube-config
+            cluster.local/allow-internet-egress: "true"
         spec:
           nodeSelector:
             kubernetes.io/hostname: machines.k8sMaster.hostname
           restartPolicy: Never
           containers:
-          - name: refresh-kube-admin-config
+          - name: refresh-kube-config
             image: cr.step.sm/smallstep/step-ca-bootstrap:latest
-            command: [/home/step/create-kube-admin-config.sh]
-            securityContext:
-              readOnlyRootFilesystem: true
+            command: [/var/lib/home-cluster/lib/container-commands/smallstep/create-kube-config.sh]
+            args: [system:admin, system:masters]
             env:
             - name: NAMESPACE
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-            - name: K8S_API_HOST
-              value: machines.k8sMaster.hostname
-            - name: KUBE_CONFIG_OWNER
-              value: admin.uid
             volumeMounts:
-            - name: bootstrap
-              mountPath: /home/step/create-kube-admin-config.sh
-              subPath: create-kube-admin-config.sh
+            - name: home-cluster
+              mountPath: /var/lib/home-cluster
               readOnly: true
             - name: kube-apiserver-client-ca-cert
               mountPath: /home/step/certs/kube_apiserver_client_ca.crt
@@ -52,10 +47,11 @@ spec:
               mountPath: /home/step/persistent-certs
               readOnly: false
           volumes:
-          - name: bootstrap
-            configMap:
-              name: bootstrap
-              defaultMode: 0777
+          - name: home-cluster
+            nfs:
+              server: nfsShares.homeCluster.addr
+              path: nfsShares.homeCluster.path
+              readOnly: true
           - name: kube-apiserver-client-ca-cert
             hostPath:
               path: /var/lib/persistent/lib-rancher/k3s/server/tls/client-ca.crt

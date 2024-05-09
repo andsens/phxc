@@ -5,6 +5,7 @@ PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../..")
 
 main() {
   source "$PKGROOT/lib/common.sh"
+  source "$PKGROOT/lib/vm.sh"
 
   DOC="update-machines - Update and reboot machines with the new disk images
 Usage:

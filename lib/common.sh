@@ -1,10 +1,15 @@
 #!/usr/bin/env bash
 # shellcheck source-path=..
 
+# shellcheck disable=SC2034
+STEP_KUBE_API_CONTEXT=home-cluster-kube-api
+STEP_PKI_CONTEXT=home-cluster-pki
+KUBE_CONTEXT=home-cluster
+KUBE_CLUSTER=home-cluster
+DOCKER_CRED_HELPER=home-cluster
+
 PATH=$("$PKGROOT/.upkg/.bin/path_prepend" "$PKGROOT/.upkg/.bin")
 
 source "$PKGROOT/.upkg/orbit-online/records.sh/records.sh"
 source "$PKGROOT/.upkg/orbit-online/collections.sh/collections.sh"
-source "$PKGROOT/lib/mount.sh"
 source "$PKGROOT/lib/settings.sh"
-source "$PKGROOT/lib/vm.sh"

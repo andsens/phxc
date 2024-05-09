@@ -69,14 +69,10 @@ spec:
       initContainers:
       - name: setup-kube-apiserver-client-ca-config
         image: cr.step.sm/smallstep/step-ca-bootstrap:latest
-        command: [/home/step/setup-kube-apiserver-client-ca-config.sh]
-        env:
-        - name: STEP_CA_DOMAIN
-          value: pki-kube.DOMAIN
+        command: [/var/lib/home-cluster/lib/container-commands/smallstep/setup-kube-apiserver-client-ca-config.sh]
         volumeMounts:
-        - name: setup-kube-apiserver-client-ca-config
-          mountPath: /home/step/setup-kube-apiserver-client-ca-config.sh
-          subPath: setup-kube-apiserver-client-ca-config.sh
+        - name: home-cluster
+          mountPath: /var/lib/home-cluster
           readOnly: true
         - name: kube-apiserver-client-ca-cert
           mountPath: /home/step/certs/kube_apiserver_client_ca.crt
@@ -127,10 +123,11 @@ spec:
           mountPath: /home/step/templates
           readOnly: true
       volumes:
-      - name: setup-kube-apiserver-client-ca-config
-        configMap:
-          name: setup-kube-apiserver-client-ca-config
-          defaultMode: 0777
+      - name: home-cluster
+        nfs:
+          server: nfsShares.homeCluster.addr
+          path: nfsShares.homeCluster.path
+          readOnly: true
       - name: certs
         emptyDir:
           medium: Memory

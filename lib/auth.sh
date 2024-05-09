@@ -1,13 +1,6 @@
 #!/usr/bin/env bash
 # shellcheck source-path=..
 
-# shellcheck disable=SC2034
-STEP_KUBE_API_CONTEXT=home-cluster-kube-api
-STEP_PKI_CONTEXT=home-cluster-pki
-KUBE_CONTEXT=home-cluster
-KUBE_CLUSTER=home-cluster
-DOCKER_CRED_HELPER=home-cluster
-
 extract_kube_config_to_smallstep() {
   local step_profile=$1 kube_config_path=$2 crt username cert_path
   crt=$(yq -r '.users[] | .user["client-certificate-data"]' "$kube_config_path" | base64 -d)

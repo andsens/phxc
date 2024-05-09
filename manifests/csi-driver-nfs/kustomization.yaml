@@ -11,14 +11,6 @@ resources:
 - Kptfile
 - resourcegroup.yaml
 replacements:
-- source: {fieldPath: data.nfsShares.homeCluster.addr, kind: ConfigMap, name: settings}
-  targets:
-  - select: {group: storage.k8s.io, kind: StorageClass, name: nas-nfs-images}
-    fieldPaths: [parameters.server]
-- source: {fieldPath: data.nfsShares.homeCluster.path, kind: ConfigMap, name: settings}
-  targets:
-  - select: {group: storage.k8s.io, kind: StorageClass, name: nas-nfs-images}
-    fieldPaths: [parameters.share]
 - source: {fieldPath: data.nfsShares.workloads.addr, kind: ConfigMap, name: settings}
   targets:
   - select: {group: storage.k8s.io, kind: StorageClass, name: nas-nfs-workloads}

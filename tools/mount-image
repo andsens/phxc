@@ -5,6 +5,7 @@ PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
 
 main() {
   source "$PKGROOT/lib/common.sh"
+  source "$PKGROOT/lib/mount.sh"
 
   DOC="mount-image - Mount images
 Usage:

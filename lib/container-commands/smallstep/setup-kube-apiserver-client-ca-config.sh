@@ -1,10 +1,12 @@
 #!/bin/bash
+# shellcheck source-path=../../..
 set -Eeo pipefail; shopt -s inherit_errexit
+PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../..")
+apk add jq py3-pip
+pip install -q yq
+source "$PKGROOT/lib/common.sh"
+source "$PKGROOT/lib/container-commands/smallstep/paths.sh"
 
-: "${STEPPATH:?}" "${STEP_CA_DOMAIN:?}"
-CERTS_RAM_PATH=$STEPPATH/certs-ram
-KUBE_CLIENT_CA_KEY_PATH=$STEPPATH/certs/kube_apiserver_client_ca_key
-KUBE_CLIENT_CA_CRT_PATH=$STEPPATH/certs/kube_apiserver_client_ca.crt
 
 main() {
   setup_config
@@ -12,10 +14,8 @@ main() {
 }
 
 setup_config() {
-  apk add --update --no-cache jq
-
   local config
-  config=$(jq --arg domain "$STEP_CA_DOMAIN" '.dnsNames+=[$domain]' "$STEPPATH/config-ro/ca.json")
+  config=$(jq --arg domain "pki-kube.$(get_setting cluster.domain)" '.dnsNames+=[$domain]' "$STEPPATH/config-ro/ca.json")
 
   local kube_client_config kube_client
   info "Storing and then removing kube-apiserver-client-ca provisioner"
@@ -56,18 +56,12 @@ setup_config() {
 }
 
 copy_ca() {
+  local certs_ram_path=$STEPPATH/certs-ram
   info "Copying kube-apiserver-client-ca cert & key to RAM backed volume"
-  # Copy the client CA cert & key to the RAM backed certs dir
-  cp "$KUBE_CLIENT_CA_CRT_PATH" "$CERTS_RAM_PATH/$(basename "$KUBE_CLIENT_CA_CRT_PATH")"
-  cp "$KUBE_CLIENT_CA_KEY_PATH" "$CERTS_RAM_PATH/$(basename "$KUBE_CLIENT_CA_KEY_PATH")"
-  chown step:step "$CERTS_RAM_PATH/$(basename "$KUBE_CLIENT_CA_CRT_PATH")"
-  chown step:step "$CERTS_RAM_PATH/$(basename "$KUBE_CLIENT_CA_KEY_PATH")"
-}
-
-info() {
-  local tpl=$1; shift
-  # shellcheck disable=2059
-  printf "%s: $tpl\n" "$(basename "${BASH_SOURCE[0]}")" "$@" >&2
+  cp "$KUBE_CLIENT_CA_CRT_PATH" "$certs_ram_path/$(basename "$KUBE_CLIENT_CA_CRT_PATH")"
+  cp "$KUBE_CLIENT_CA_KEY_PATH" "$certs_ram_path/$(basename "$KUBE_CLIENT_CA_KEY_PATH")"
+  chown step:step "$certs_ram_path/$(basename "$KUBE_CLIENT_CA_CRT_PATH")"
+  chown step:step "$certs_ram_path/$(basename "$KUBE_CLIENT_CA_KEY_PATH")"
 }
 
 main "$@"

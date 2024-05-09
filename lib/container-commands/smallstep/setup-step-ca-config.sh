@@ -1,16 +1,19 @@
 #!/bin/bash
+# shellcheck source-path=../../..
 set -Eeo pipefail; shopt -s inherit_errexit
-
-: "${STEPPATH:?}" "${STEP_CA_DOMAIN:?}"
-KUBE_CLIENT_CA_CRT_PATH=$STEPPATH/certs/kube_apiserver_client_ca.crt
-STEP_ISSUER_DIR=$STEPPATH/step-issuer-provisioner
-SSH_HOST_DIR=$STEPPATH/ssh-host-provisioner
+PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../..")
+apk add jq py3-pip
+pip install -q yq
+source "$PKGROOT/lib/common.sh"
+source "$PKGROOT/lib/container-commands/smallstep/paths.sh"
 
 main() {
-  apk add --update --no-cache jq
+  local \
+    step_issuer_dir=$STEPPATH/step-issuer-provisioner \
+    ssh_host_dir=$STEPPATH/ssh-host-provisioner
 
   local config
-  config=$(jq --arg domain "$STEP_CA_DOMAIN" '.dnsNames+=[$domain]' "$STEPPATH/config-ro/ca.json")
+  config=$(jq --arg domain "pki.$(get_setting cluster.domain)" '.dnsNames+=[$domain]' "$STEPPATH/config-ro/ca.json")
 
   local name provisioner_names=(step-issuer ssh-host kube-apiserver-client-ca)
 
@@ -30,15 +33,15 @@ main() {
 
   info "Adding step-issuer provisioner key"
   step ca provisioner add step-issuer --type JWK \
-    --public-key="$STEP_ISSUER_DIR/pub.json" \
-    --private-key="$STEP_ISSUER_DIR/priv.json" \
-    --password-file="$STEP_ISSUER_DIR-password"
+    --public-key="$step_issuer_dir/pub.json" \
+    --private-key="$step_issuer_dir/priv.json" \
+    --password-file="$step_issuer_dir-password"
 
   info "Adding ssh-host provisioner key"
   step ca provisioner add ssh-host --type JWK \
-    --public-key="$SSH_HOST_DIR/pub.json" \
-    --private-key="$SSH_HOST_DIR/priv.json" \
-    --password-file="$SSH_HOST_DIR-password"
+    --public-key="$ssh_host_dir/pub.json" \
+    --private-key="$ssh_host_dir/priv.json" \
+    --password-file="$ssh_host_dir-password"
 
   info "Adding kube-apiserver client CA provisioner certificate"
   step ca provisioner add kube-apiserver-client-ca --type X5C --x5c-root "$KUBE_CLIENT_CA_CRT_PATH"
@@ -71,12 +74,6 @@ main() {
   done
 
   printf "%s\n" "$config" >"$STEPPATH/config/ca.json" # done, write the config
-}
-
-info() {
-  local tpl=$1; shift
-  # shellcheck disable=2059
-  printf "%s: $tpl\n" "$(basename "${BASH_SOURCE[0]}")" "$@" >&2
 }
 
 main "$@"
