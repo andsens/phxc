@@ -10,13 +10,6 @@ resources:
 - dashboard-ingress.yaml
 - Kptfile
 - resourcegroup.yaml
-configMapGenerator:
-- files:
-  - config/file-provider.yaml
-  - config/traefik.yaml
-  name: traefik
-generatorOptions:
-  disableNameSuffixHash: true
 replacements:
 - source: {fieldPath: data.cluster.domain, kind: ConfigMap, name: settings}
   targets:
@@ -48,3 +41,11 @@ replacements:
   - select: {kind: Service, name: traefik-frontend}
     fieldPaths: [metadata.annotations.io\.cilium/lb-ipam-ips]
     options: {delimiter: ',', index: 1}
+- source: {fieldPath: data.nfsShares.homeCluster.addr, kind: ConfigMap, name: settings}
+  targets:
+  - select: {group: apps}
+    fieldPaths: ["spec.template.spec.volumes.[name=home-cluster].nfs.server"]
+- source: {fieldPath: data.nfsShares.homeCluster.path, kind: ConfigMap, name: settings}
+  targets:
+  - select: {group: apps}
+    fieldPaths: ["spec.template.spec.volumes.[name=home-cluster].nfs.path"]

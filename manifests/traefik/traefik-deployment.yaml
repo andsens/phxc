@@ -173,17 +173,19 @@ spec:
           successThreshold: 1
           timeoutSeconds: 2
         volumeMounts:
-        - name: config
+        - name: home-cluster
           mountPath: /etc/traefik/traefik.yaml
-          subPath: traefik.yaml
-        - name: config
+          subPath: config/traefik/traefik.yaml
+        - name: home-cluster
           mountPath: /etc/traefik/file-provider.yaml
-          subPath: file-provider.yaml
+          subPath: config/traefik/file-provider.yaml
         - mountPath: /tmp
           name: tmp
       volumes:
-      - name: config
-        configMap:
-          name: traefik
+      - name: home-cluster
+        nfs:
+          server: nfsShares.homeCluster.addr
+          path: nfsShares.homeCluster.path
+          readOnly: true
       - name: tmp
         emptyDir: {}
