@@ -52,10 +52,10 @@ declare -p "${prefix}CONFIG" "${prefix}setup" "${prefix}renew"; done; }
     OLD_KUBECONFIG=$KUBECONFIG
     [[ -r "$CONFIG" ]] || fatal "The file %s does not exist or is not readable" "$CONFIG"
 
-    extract_kube_config_crt_to_smallstep "$STEP_KUBE_API_CONTEXT" "$CONFIG"
+    extract_kube_config_to_smallstep "$STEP_KUBE_API_CONTEXT" "$CONFIG"
     setup_kube_config "$STEP_KUBE_API_CONTEXT" "$KUBE_CONTEXT" "$KUBE_CLUSTER"
-    setup_smallstep_context "$STEP_PKI_CONTEXT" "$KUBE_CONTEXT" "pki.$(get_setting cluster.domain)" smallstep smallstep-root
-    setup_smallstep_context "$STEP_KUBE_API_CONTEXT" "$KUBE_CONTEXT" "pki-kube.$(get_setting cluster.domain)" smallstep kube-apiserver-client-ca
+    setup_smallstep_context "$STEP_PKI_CONTEXT" "$KUBE_CONTEXT" "pki.$(get_setting cluster.domain):9000" smallstep smallstep-root
+    setup_smallstep_context "$STEP_KUBE_API_CONTEXT" "$KUBE_CONTEXT" "pki-kube.$(get_setting cluster.domain):9001" smallstep kube-apiserver-client-ca
     setup_docker_cred_helper "cr.$(get_setting cluster.domain)" "$DOCKER_CRED_HELPER" "$HOME/.docker/config.json"
     setup_ssh_host_cert_trust "$STEP_PKI_CONTEXT" "*.local" "$HOME/.ssh/known_hosts"
     sign_ssh_client_keys "$STEP_PKI_CONTEXT" "$(get_setting "admin.username")"

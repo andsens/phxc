@@ -43,11 +43,22 @@ setup_smallstep_context() {
       kubectl --context "$kube_context" -n "$root_secret_ns" get secret "$root_secret_name" -o=jsonpath='{.data.tls\.crt}' | base64 -d))"
 }
 
+setup_docker_cred_helper() {
+  local cr=$1 helper=$2 docker_config_path=$3 docker_config
+  mkdir -p "$(dirname "$docker_config_path")"
+  docker_config={}
+  [[ ! -e $docker_config_path ]] || docker_config=$(cat "$docker_config_path")
+  docker_config=$(jq --arg cr "$cr" --arg helper "$helper" '.auths[$cr]={} | .credHelpers[$cr]=$helper' <<<"$docker_config")
+  printf "%s\n" "$docker_config" >"$docker_config_path"
+}
+
 setup_ssh_host_cert_trust() {
   local step_profile=$1 hosts=$2 known_hosts_path=$3
   info "Trusting SSH host keys signed by Smallstep"
+  # `step ssh config` doesn't work right with --context or --profile
+  step context select "$step_profile"
   local expected_known_hosts_line current_known_hosts_line
-  expected_known_hosts_line="@cert-authority $hosts $(step ssh config --context "$step_profile" --host --roots)"
+  expected_known_hosts_line="@cert-authority $hosts $(step ssh config --host --roots)"
   if [[ -e "$known_hosts_path" ]] && current_known_hosts_line=$(grep -F "@cert-authority $hosts " "$known_hosts_path"); then
     if [[ $current_known_hosts_line != "$expected_known_hosts_line" ]]; then
       warning "Replacing '@cert-authority $hosts' line in %s, it does not match the current key" "$known_hosts_path"
@@ -71,13 +82,6 @@ sign_ssh_client_keys() {
     [[ $pubkey != *-cert.pub ]] || continue
     step ssh certificate --context "$step_context" --force --sign "$principal" "$pubkey"
   done
-}
-
-setup_docker_cred_helper() {
-  local cr=$1 helper=$2 docker_config=$3
-  mkdir -p "$docker_config"
-  [[ -e $docker_config ]] || printf '{}\n' >"$docker_config"
-  jq --arg cr "$cr" --arg helper "$helper" '.auths[$cr]={} | .credHelpers[$cr]=$helper' <<<"$docker_config" | sponge "$docker_config"
 }
 
 get_kube_config_path() {
