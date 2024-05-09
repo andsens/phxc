@@ -138,7 +138,7 @@ spec:
       - name: docker-auth
         image: cesanta/docker_auth:1.12.0
         command: [/var/lib/home-cluster/lib/container-commands/docker-registry/init-docker-auth.sh]
-        args: ['-alsologtostderr', '/config/auth_config.yml']
+        args: ['-alsologtostderr', '/var/lib/home-cluster/config/docker/auth.yaml']
         ports:
         - name: web
           containerPort: 5001
@@ -152,9 +152,6 @@ spec:
         - name: home-cluster
           mountPath: /var/lib/home-cluster
           readOnly: true
-        - name: config
-          mountPath: /config/auth_config.yml
-          subPath: auth_config.yml
         - name: jwt-cert
           mountPath: /config/certs
         - name: tmp

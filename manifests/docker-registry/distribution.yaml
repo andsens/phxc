@@ -152,8 +152,10 @@ spec:
           limits:
             memory: 768Mi
         volumeMounts:
-        - name: config
-          mountPath: /etc/docker/registry
+        - name: home-cluster
+          mountPath: /etc/docker/registry/config.yml
+          subPath: config/docker/distribution.yaml
+          readOnly: true
         - name: jwt-cert
           mountPath: /etc/docker/auth/jwt.crt
           subPath: tls.crt
@@ -163,9 +165,11 @@ spec:
         fsGroup: 1000
         runAsUser: 1000
       volumes:
-      - name: config
-        configMap:
-          name: distribution
+      - name: home-cluster
+        nfs:
+          server: nfsShares.homeCluster.addr
+          path: nfsShares.homeCluster.path
+          readOnly: true
       - name: jwt-cert
         secret:
           secretName: distribution-jwt-cert
@@ -204,12 +208,16 @@ spec:
             securityContext:
               readOnlyRootFilesystem: true
             volumeMounts:
-            - name: config
-              mountPath: /etc/docker/registry
+            - name: home-cluster
+              mountPath: /etc/docker/registry/config.yml
+              subPath: config/docker/distribution.yaml
+              readOnly: true
           securityContext:
             fsGroup: 1000
             runAsUser: 1000
           volumes:
-          - name: config
-            configMap:
-              name: distribution
+          - name: home-cluster
+            nfs:
+              server: nfsShares.homeCluster.addr
+              path: nfsShares.homeCluster.path
+              readOnly: true
