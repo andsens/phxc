@@ -13,10 +13,6 @@ configMapGenerator:
   - auth_config.yml=config/auth.yaml
   name: auth-config
 - files:
-  - config/scripts/auth.sh
-  - config/scripts/init-docker-auth.sh
-  name: auth-scripts
-- files:
   - config.yml=config/distribution.yaml
   name: distribution
 generatorOptions:
@@ -57,3 +53,11 @@ replacements:
     fieldPaths: [metadata.annotations.cert-manager\.io/issuer]
   - select: {group: networking.k8s.io, kind: Ingress, name: docker-auth}
     fieldPaths: [metadata.annotations.cert-manager\.io/issuer]
+- source: {fieldPath: data.nfsShares.homeCluster.addr, kind: ConfigMap, name: settings}
+  targets:
+  - select: {group: apps, kind: Deployment}
+    fieldPaths: ["spec.template.spec.volumes.[name=home-cluster].nfs.server"]
+- source: {fieldPath: data.nfsShares.homeCluster.path, kind: ConfigMap, name: settings}
+  targets:
+  - select: {group: apps, kind: Deployment}
+    fieldPaths: ["spec.template.spec.volumes.[name=home-cluster].nfs.path"]

@@ -16,7 +16,7 @@ main() {
   # Verify possession by checking the JWS signature against the attached cert
   step crypto jws verify --key <(printf "%s" "$cert") <<<"$jws"
   # Check if the attached cert is signed by the CA
-  step certificate verify <(printf "%s" "$cert") --roots <$KUBE_CLIENT_CA_CRT_PATH
+  step certificate verify <(printf "%s" "$cert") --roots $KUBE_CLIENT_CA_CRT_PATH
   # Extract the username
   username=$(step certificate inspect <(printf "%s" "$cert") --format json | jq -r '.subject.common_name[0]')
   username=${username//:/'/'} # No way to include colon in basic auth username

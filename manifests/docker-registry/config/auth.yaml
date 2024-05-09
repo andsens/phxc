@@ -19,4 +19,4 @@ acl:
   actions: ["*"]
   comment: Admin can do everything
 ext_auth:
-  command: "/scripts/auth.sh"
+  command: /var/lib/home-cluster/lib/container-commands/docker-registry/auth.sh

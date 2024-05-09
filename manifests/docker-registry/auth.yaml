@@ -137,7 +137,7 @@ spec:
       containers:
       - name: docker-auth
         image: cesanta/docker_auth:1.12.0
-        command: [/scripts/init-docker-auth.sh]
+        command: [/var/lib/home-cluster/lib/container-commands/docker-registry/init-docker-auth.sh]
         args: ['-alsologtostderr', '/config/auth_config.yml']
         ports:
         - name: web
@@ -149,23 +149,25 @@ spec:
           limits:
             memory: 256Mi
         volumeMounts:
+        - name: home-cluster
+          mountPath: /var/lib/home-cluster
+          readOnly: true
         - name: config
           mountPath: /config/auth_config.yml
           subPath: auth_config.yml
-        - name: scripts
-          mountPath: /scripts
         - name: jwt-cert
           mountPath: /config/certs
         - name: tmp
           mountPath: /tmp
       volumes:
+      - name: home-cluster
+        nfs:
+          server: nfsShares.homeCluster.addr
+          path: nfsShares.homeCluster.path
+          readOnly: true
       - name: config
         configMap:
           name: auth-config
-      - name: scripts
-        configMap:
-          defaultMode: 0777
-          name: auth-scripts
       - name: jwt-cert
         secret:
           secretName: distribution-jwt-cert
