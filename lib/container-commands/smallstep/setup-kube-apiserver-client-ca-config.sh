@@ -15,7 +15,7 @@ main() {
 
 setup_config() {
   local config
-  config=$(jq --arg domain "pki-kube.$(get_setting cluster.domain)" '.dnsNames+=[$domain]' "$STEPPATH/config-ro/ca.json")
+  config=$(jq --arg domain "pki-kube.$(get_setting cluster.domain)" '.dnsNames+=[$domain]' "/var/lib/home-cluster/config/smallstep/kube-apiserver-client-ca.json")
 
   local kube_client_config kube_client
   info "Storing and then removing kube-apiserver-client-ca provisioner"

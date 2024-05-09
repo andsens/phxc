@@ -13,27 +13,6 @@ resources:
 - namespace.yaml
 - Kptfile
 - resourcegroup.yaml
-configMapGenerator:
-- files:
-  - config/ca.json
-  name: step-ca-config
-  options:
-    labels:
-      app.kubernetes.io/name: smallstep
-- files:
-  - config/templates/kube-apiserver-client-cert.tpl
-  name: step-ca-templates
-  options:
-    labels:
-      app.kubernetes.io/name: smallstep
-- files:
-  - ca.json=config/kube-apiserver-client-ca.json
-  name: kube-apiserver-client-ca-config
-  options:
-    labels:
-      app.kubernetes.io/name: smallstep
-generatorOptions:
-  disableNameSuffixHash: true
 replacements:
 - source: {fieldPath: data.cluster.smallstep.fixedIPv4, kind: ConfigMap, name: settings}
   targets:

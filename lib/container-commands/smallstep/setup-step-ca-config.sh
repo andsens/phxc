@@ -13,7 +13,7 @@ main() {
     ssh_host_dir=$STEPPATH/ssh-host-provisioner
 
   local config
-  config=$(jq --arg domain "pki.$(get_setting cluster.domain)" '.dnsNames+=[$domain]' "$STEPPATH/config-ro/ca.json")
+  config=$(jq --arg domain "pki.$(get_setting cluster.domain)" '.dnsNames+=[$domain]' "/var/lib/home-cluster/config/smallstep/ca.json")
 
   local name provisioner_names=(step-issuer ssh-host kube-apiserver-client-ca)
 

@@ -82,9 +82,6 @@ spec:
           readOnly: true
         - name: certs
           mountPath: /home/step/certs-ram
-        - name: config
-          mountPath: /home/step/config-ro
-          readOnly: true
         - name: config-rw
           mountPath: /home/step/config
       containers:
@@ -119,9 +116,6 @@ spec:
         - name: database
           mountPath: /home/step/db
           readOnly: false
-        - name: templates
-          mountPath: /home/step/templates
-          readOnly: true
       volumes:
       - name: home-cluster
         nfs:
@@ -139,14 +133,8 @@ spec:
         hostPath:
           path: /var/lib/persistent/lib-rancher/k3s/server/tls/client-ca.key
           type: File
-      - name: config
-        configMap:
-          name: kube-apiserver-client-ca-config
       - name: config-rw
         emptyDir: {}
-      - name: templates
-        configMap:
-          name: step-ca-templates
   volumeClaimTemplates:
   - metadata:
       name: database

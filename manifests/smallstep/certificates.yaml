@@ -107,9 +107,6 @@ spec:
           mountPath: /home/step/certs/kube_apiserver_client_ca.crt
           subPath: tls.crt
           readOnly: true
-        - name: config
-          mountPath: /home/step/config-ro
-          readOnly: true
         - name: config-rw
           mountPath: /home/step/config
       containers:
@@ -153,9 +150,6 @@ spec:
         - name: database
           mountPath: /home/step/db
           readOnly: false
-        - name: templates
-          mountPath: /home/step/templates
-          readOnly: true
       volumes:
       - name: home-cluster
         nfs:
@@ -183,14 +177,8 @@ spec:
       - name: kube-apiserver-client-ca-cert
         secret:
           secretName: kube-apiserver-client-ca
-      - name: config
-        configMap:
-          name: step-ca-config
       - name: config-rw
         emptyDir: {}
-      - name: templates
-        configMap:
-          name: step-ca-templates
   volumeClaimTemplates:
   - metadata:
       name: database

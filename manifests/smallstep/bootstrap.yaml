@@ -146,12 +146,6 @@ spec:
         - name: persistent-certs
           mountPath: /home/step/persistent-certs
           readOnly: false
-        - name: config
-          mountPath: /home/step/config
-          readOnly: true
-        - name: templates
-          mountPath: /home/step/templates
-          readOnly: true
       volumes:
       - name: home-cluster
         nfs:
@@ -182,12 +176,6 @@ spec:
       - name: persistent-certs
         persistentVolumeClaim:
           claimName: step-ca-certs
-      - name: config
-        configMap:
-          name: step-ca-config
-      - name: templates
-        configMap:
-          name: step-ca-templates
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
