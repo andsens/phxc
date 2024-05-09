@@ -7,12 +7,6 @@ resources:
 - namespace.yaml
 - Kptfile
 - resourcegroup.yaml
-configMapGenerator:
-- files:
-  - config/Corefile
-  name: coredns-config
-generatorOptions:
-  disableNameSuffixHash: true
 replacements:
 - source: {fieldPath: data.cluster.coredns.fixedIPv4, kind: ConfigMap, name: settings}
   targets:
@@ -43,3 +37,11 @@ replacements:
   targets:
   - select: {group: apps, kind: Deployment, name: coredns}
     fieldPaths: ["spec.template.spec.containers.[name=coredns].env.[name=K8SMASTER_IPV6].value"]
+- source: {fieldPath: data.nfsShares.homeCluster.addr, kind: ConfigMap, name: settings}
+  targets:
+  - select: {group: apps}
+    fieldPaths: ["spec.template.spec.volumes.[name=home-cluster].nfs.server"]
+- source: {fieldPath: data.nfsShares.homeCluster.path, kind: ConfigMap, name: settings}
+  targets:
+  - select: {group: apps}
+    fieldPaths: ["spec.template.spec.volumes.[name=home-cluster].nfs.path"]

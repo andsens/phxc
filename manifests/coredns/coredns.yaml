@@ -162,9 +162,13 @@ spec:
           successThreshold: 1
           timeoutSeconds: 5
         volumeMounts:
-        - name: config
-          mountPath: /etc/coredns
+        - name: home-cluster
+          mountPath: /etc/coredns/Corefile
+          subPath: config/coredns/Corefile
+          readOnly: true
       volumes:
-      - name: config
-        configMap:
-          name: coredns-config
+      - name: home-cluster
+        nfs:
+          server: nfsShares.homeCluster.addr
+          path: nfsShares.homeCluster.path
+          readOnly: true
