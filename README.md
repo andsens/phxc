@@ -2,6 +2,7 @@
 
 ## Requirements
 
+https://www.adrian.idv.hk/2022-09-30-diskless/
 Linux or WSL
 
 ## Setup
@@ -9,7 +10,7 @@ Linux or WSL
 ### Clone & configure
 
 - Clone this repo your (WSL) workspace
-- Copy `settings.template.yaml` to settings.yaml and adjust values while you are doing the following:
+- Copy `config/config/home-cluster.template.yaml` to `config/config/home-cluster.yaml` and adjust values while you are doing the following:
   - Create the TrueNAS host bridge
     - Make sure to enable DHCP on the main NIC again after creating the host bridge
   - Clone this repo to your NAS
@@ -66,3 +67,24 @@ step ca bootstrap --ca-url pki.$(bin/settings get cluster.domain):9000 \
 - Config changes kept to a minimum
 
 # How to reauth when init admin cert has expired
+
+Simply copy home-cluster.yaml from the NFS mount. It is regenerated every 24h
+and bin/auth is built to be re-run.
+
+# How to setup WSL
+
+In your windows home directory setup mirrored networking for WSL:
+
+```
+[wsl2]
+networkingMode = mirrored
+# optional
+dnsTunneling = true
+```
+
+The shutdown wsl with `wsl --shutdown`
+
+Import the generated vhdx in windows with `wsl --import-in-place k8s-wsl D:\WSL\k8sWSL.vhdx`
+To refresh an image, run `wsl --unregister k8s-wsl` and then import it again.
+
+Setup Hyper-W firewall to allow incoming requests

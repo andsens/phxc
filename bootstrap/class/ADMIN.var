@@ -3,7 +3,7 @@
 
 ADMIN_UID=$(get_setting admin.uid)
 ADMIN_USERNAME=$(get_setting admin.username)
-ADMIN_AUTH_KEYS=$(yq -r '.admin.authorized_keys[]' "$PKGROOT/settings.yaml")
+ADMIN_AUTH_KEYS=$(yq -r '.admin.authorized_keys[]' "$PKGROOT/config/home-cluster.yaml")
 NFS_SHARES_ADMIN_HOME_ADDR=$(get_setting nfsShares.adminHome.addr)
 NFS_SHARES_ADMIN_HOME_PATH=$(get_setting nfsShares.adminHome.path)
 ADMIN_SHELL=$(get_setting admin.shell)

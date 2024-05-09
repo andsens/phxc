@@ -39,7 +39,7 @@ declare -p "${prefix}MACHINE"; done; }
 
   if [[ ${#MACHINE[@]} -eq 0 ]]; then
     info "No machines specified, choosing all"
-    readarray -d $'\n' MACHINE < <(yq -r '.machines | to_entries[] | select(.key != "truenas" and .key != "workstation") | .key' settings.yaml)
+    readarray -d $'\n' MACHINE < <(yq -r '.machines | to_entries[] | select(.key != "truenas" and .key != "workstation") | .key' "$PKGROOT/config/home-cluster.yaml")
   fi
 
   # shellcheck disable=2153

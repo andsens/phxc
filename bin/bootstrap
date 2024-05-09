@@ -82,8 +82,8 @@ bootstrap() {
     "CACHEPATH=$cachepath" \
     fai-diskimage --cspace "$PKGROOT/bootstrap" --new --size "$(get_setting "machines[\"$machine\"].diskSize")" --hostname "$machine" "$imgpath"
   local convert_to_vhdx=false is_wsl=false
-  ! yq -re ".machines[\"$machine\"].faiClasses[] | select(.==\"HYPERV\")" "$PKGROOT/settings.yaml" >/dev/null || convert_to_vhdx=true
-  if yq -re ".machines[\"$machine\"].faiClasses[] | select(.==\"WSL\")" "$PKGROOT/settings.yaml" >/dev/null; then
+  ! yq -re ".machines[\"$machine\"].faiClasses[] | select(.==\"HYPERV\")" "$PKGROOT/config/home-cluster.yaml" >/dev/null || convert_to_vhdx=true
+  if yq -re ".machines[\"$machine\"].faiClasses[] | select(.==\"WSL\")" "$PKGROOT/config/home-cluster.yaml" >/dev/null; then
     convert_to_vhdx=true
     is_wsl=true
   fi

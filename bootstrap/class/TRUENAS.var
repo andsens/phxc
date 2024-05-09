@@ -2,4 +2,4 @@
 # shellcheck source-path=../../../ disable=2034,2154
 NIC_1=ens3
 NIC_HOST=ens4
-NIC_HOST_ADDRESSES="$(yq -r ".machines[\"$HOSTNAME\"].hostBridgeAddrs[] | \"Address=\" + ." "$PKGROOT/settings.yaml")"
+NIC_HOST_ADDRESSES="$(yq -r ".machines[\"$HOSTNAME\"].hostBridgeAddrs[] | \"Address=\" + ." "$PKGROOT/config/home-cluster.yaml")"
