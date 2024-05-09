@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# shellcheck source-path=../..
+set -Eeo pipefail; shopt -s inherit_errexit
+PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../..")
+
+main() {
+  source "$PKGROOT/lib/common.sh"
+
+  DOC="create-k3s-registry-config - Creates a registry config for k3s
+Usage:
+  create-k3s-registry-config [options]
+
+Options:
+  -u --username USERNAME  The registry username [default: kubernetes]
+  -p --password PASSWORD  The registry password [default: random]
+
+Note:
+  The password will be read by docker_auth and embedded in the config
+"
+# docopt parser below, refresh this parser with `docopt.sh create-k3s-registry-config`
+# shellcheck disable=2016,1090,1091,2034
+docopt() { source "$PKGROOT/.upkg/andsens/docopt.sh/docopt-lib.sh" '1.0.0' || {
+ret=$?; printf -- "exit %d\n" "$ret"; exit "$ret"; }; set -e
+trimmed_doc=${DOC:0:331}; usage=${DOC:63:45}; digest=14687; shorts=(-p -u)
+longs=(--password --username); argcounts=(1 1); node_0(){ value __password 0; }
+node_1(){ value __username 1; }; node_2(){ optional 0 1; }; node_3(){ optional 2
+}; node_4(){ required 3; }; node_5(){ required 4; }; cat <<<' docopt_exit() {
+[[ -n $1 ]] && printf "%s\n" "$1" >&2; printf "%s\n" "${DOC:63:45}" >&2; exit 1
+}'; unset var___password var___username; parse 5 "$@"
+local prefix=${DOCOPT_PREFIX:-''}; unset "${prefix}__password" \
+"${prefix}__username"; eval "${prefix}"'__password=${var___password:-random}'
+eval "${prefix}"'__username=${var___username:-kubernetes}'; local docopt_i=1
+[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2; for ((;docopt_i>0;docopt_i--)); do
+declare -p "${prefix}__password" "${prefix}__username"; done; }
+# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/andsens/docopt.sh/docopt-lib.sh"' create-k3s-registry-config`
+  eval "$(docopt "$@")"
+
+  if [[ $__password = 'random' ]]; then
+    # tr complains about broken pipe once head has read enough, ignore it
+    __password=$(tr -dc A-Za-z0-9_- </dev/urandom 2>/dev/null | head -c 32) || true
+  fi
+
+  mkdir -p "/etc/rancher/k3s"
+  umask 077
+  # shellcheck disable=SC2016,SC2154
+  yq -y --arg domain "$(get_setting cluster.domain)" --arg username "$__username" --arg password "$__password" \
+  '.mirrors["cr.\($domain)"].endpoint=["https://cr.\($domain)/v2"] |
+  .configs["cr.\($domain)"].auth.username=$username |
+  .configs["cr.\($domain)"].auth.password=$password' <<<'{}' >/etc/rancher/k3s/registries.yaml
+}
+
+main "$@"

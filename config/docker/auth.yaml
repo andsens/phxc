@@ -8,7 +8,8 @@ token:
 # Create passwords with:
 # PASSWORD=$(randpass -l 32); HASH=$(htpasswd -nbB "" "$PASSWORD"); printf "%s\n%s\n" "${HASH/#:/}" "$PASSWORD"; unset HASH PASSWORD
 users:
-  "": {} # anonymous access
+  $K3S_USERNAME:
+    password: $K3S_PASSWORD
 acl:
 - match:
     account: /.*/

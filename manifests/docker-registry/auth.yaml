@@ -152,6 +152,9 @@ spec:
         - name: home-cluster
           mountPath: /var/lib/home-cluster
           readOnly: true
+        - name: k3s-registry-config
+          mountPath: /etc/rancher/k3s/registries.yaml
+          readOnly: true
         - name: jwt-cert
           mountPath: /config/certs
         - name: tmp
@@ -162,6 +165,10 @@ spec:
           server: nfsShares.homeCluster.addr
           path: nfsShares.homeCluster.path
           readOnly: true
+      - name: k3s-registry-config
+        hostPath:
+          path: /etc/rancher/k3s/registries.yaml
+          type: File
       - name: config
         configMap:
           name: auth-config

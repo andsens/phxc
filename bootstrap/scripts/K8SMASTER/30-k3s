@@ -24,4 +24,7 @@ curl -sfL https://get.k3s.io | \
   INSTALL_K3S_EXEC="${k3s_exec_flags[*]}" \
   $ROOTCMD sh -
 
+fcopy -SM /etc/systemd/system/create-k3s-registry-config.service
+$ROOTCMD systemctl enable create-k3s-registry-config.service
+
 exit $error

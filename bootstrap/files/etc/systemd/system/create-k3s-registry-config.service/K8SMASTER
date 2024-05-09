@@ -1,0 +1,11 @@
+[Unit]
+Description=Creates a K3S registry config
+Before=k3s.service
+ConditionPathExists=!/etc/rancher/k3s/registries.yaml
+
+[Install]
+RequiredBy=k3s.service
+
+[Service]
+Type=oneshot
+ExecStart=/var/lib/home-cluster/lib/machine-commands/create-k3s-registry-config
