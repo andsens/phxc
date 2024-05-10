@@ -8,7 +8,6 @@ get_setting() {
   if yq -re ".$parent | has(\"$key\")" "$PKGROOT/config/home-cluster.yaml" >/dev/null; then
     yq -re ".$path // empty" "$PKGROOT/config/home-cluster.yaml"
   else
-    type fatal >/dev/null 2>&1 || source "$PKGROOT/.upkg/orbit-online/records.sh/records.sh"
     fatal "Unable to find setting path '%s' in %s" "$path" "$PKGROOT/config/home-cluster.yaml"
     return 1
   fi

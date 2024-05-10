@@ -15,31 +15,26 @@ Note:
   MANIFEST is a path relative to /manifests e.g. cert-manager
 "
 # docopt parser below, refresh this parser with `docopt.sh manifest`
-# shellcheck disable=2016,1090,1091,2034,2154
-docopt() { source "$PKGROOT/.upkg/andsens/docopt.sh/docopt-lib.sh" '1.0.0' || {
-ret=$?; printf -- "exit %d\n" "$ret"; exit "$ret"; }; set -e
-trimmed_doc=${DOC:0:195}; usage=${DOC:34:92}; digest=0c1c9; shorts=(); longs=()
-argcounts=(); node_0(){ value MANIFEST a true; }; node_1(){ _command apply; }
-node_2(){ _command all; }; node_3(){ _command __ --; }; node_4(){
-_command kptargs kptargs true; }; node_5(){ _command build; }; node_6(){
-oneormore 0; }; node_7(){ either 2 6; }; node_8(){ required 7; }; node_9(){
-oneormore 4; }; node_10(){ optional 3 9; }; node_11(){ required 1 8 10; }
-node_12(){ required 5 8; }; node_13(){ either 11 12; }; node_14(){ required 13
-}; cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2
-printf "%s\n" "${DOC:34:92}" >&2; exit 1; }'; unset var_MANIFEST var_apply \
-var_all var___ var_kptargs var_build; parse 14 "$@"
-local prefix=${DOCOPT_PREFIX:-''}; unset "${prefix}MANIFEST" "${prefix}apply" \
-"${prefix}all" "${prefix}__" "${prefix}kptargs" "${prefix}build"
-if declare -p var_MANIFEST >/dev/null 2>&1; then
-eval "${prefix}"'MANIFEST=("${var_MANIFEST[@]}")'; else
-eval "${prefix}"'MANIFEST=()'; fi; eval "${prefix}"'apply=${var_apply:-false}'
-eval "${prefix}"'all=${var_all:-false}'; eval "${prefix}"'__=${var___:-false}'
-eval "${prefix}"'kptargs=${var_kptargs:-0}'
-eval "${prefix}"'build=${var_build:-false}'; local docopt_i=1
-[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2; for ((;docopt_i>0;docopt_i--)); do
-declare -p "${prefix}MANIFEST" "${prefix}apply" "${prefix}all" "${prefix}__" \
-"${prefix}kptargs" "${prefix}build"; done; }
-# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/andsens/docopt.sh/docopt-lib.sh"' manifest`
+# shellcheck disable=2016,2086,2317,1090,1091,2034,2154
+docopt() { source "$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh" '2.0.0a3' || {
+ret=$?;printf -- "exit %d\n" "$ret";exit "$ret";};set -e
+trimmed_doc=${DOC:0:195};usage=${DOC:34:92};digest=0c1c9;options=();node_0(){
+value MANIFEST a true;};node_1(){ switch apply a:apply;};node_2(){ switch all \
+a:all;};node_3(){ switch kptargs a:kptargs true;};node_4(){ switch build a:build
+};node_5(){ switch __ a:--;};node_6(){ sequence 1 7 9;};node_7(){ choice 2 8;}
+node_8(){ repeatable 0;};node_9(){ optional 5 10;};node_10(){ repeatable 3;}
+node_11(){ sequence 4 7;};node_12(){ choice 6 11;};cat <<<' docopt_exit() { [[ \
+-n $1 ]] && printf "%s\n" "$1" >&2;printf "%s\n" "${DOC:34:92}" >&2;exit 1;}'
+local varnames=(MANIFEST apply all kptargs build __) varname;for varname in \
+"${varnames[@]}"; do unset "var_$varname";done;parse 12 "$@";local \
+p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset "$p$varname"
+done;if declare -p var_MANIFEST >/dev/null 2>&1; then eval $p'MANIFEST=("${var'\
+'_MANIFEST[@]}")';else eval $p'MANIFEST=()';fi;eval $p'apply=${var_apply:-fals'\
+'e};'$p'all=${var_all:-false};'$p'kptargs=${var_kptargs:-0};'$p'build=${var_bu'\
+'ild:-false};'$p'__=${var___:-false};';local docopt_i=1;[[ $BASH_VERSION =~ \
+^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for varname in \
+"${varnames[@]}"; do declare -p "$p$varname";done;done;}
+# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh"' manifest`
   eval "$(docopt "$@")"
 
   # shellcheck disable=2154

@@ -10,6 +10,6 @@ DOCKER_CRED_HELPER=home-cluster
 
 PATH=$("$PKGROOT/.upkg/.bin/path_prepend" "$PKGROOT/.upkg/.bin")
 
-source "$PKGROOT/.upkg/orbit-online/records.sh/records.sh"
-source "$PKGROOT/.upkg/orbit-online/collections.sh/collections.sh"
+source "$PKGROOT/.upkg/records.sh/records.sh"
+source "$PKGROOT/.upkg/collections.sh/collections.sh"
 source "$PKGROOT/lib/settings.sh"

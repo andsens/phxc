@@ -18,21 +18,21 @@ Note:
   The password will be read by docker_auth and embedded in the config
 "
 # docopt parser below, refresh this parser with `docopt.sh create-k3s-registry-config`
-# shellcheck disable=2016,1090,1091,2034
-docopt() { source "$PKGROOT/.upkg/andsens/docopt.sh/docopt-lib.sh" '1.0.0' || {
-ret=$?; printf -- "exit %d\n" "$ret"; exit "$ret"; }; set -e
-trimmed_doc=${DOC:0:331}; usage=${DOC:63:45}; digest=14687; shorts=(-p -u)
-longs=(--password --username); argcounts=(1 1); node_0(){ value __password 0; }
-node_1(){ value __username 1; }; node_2(){ optional 0 1; }; node_3(){ optional 2
-}; node_4(){ required 3; }; node_5(){ required 4; }; cat <<<' docopt_exit() {
-[[ -n $1 ]] && printf "%s\n" "$1" >&2; printf "%s\n" "${DOC:63:45}" >&2; exit 1
-}'; unset var___password var___username; parse 5 "$@"
-local prefix=${DOCOPT_PREFIX:-''}; unset "${prefix}__password" \
-"${prefix}__username"; eval "${prefix}"'__password=${var___password:-random}'
-eval "${prefix}"'__username=${var___username:-kubernetes}'; local docopt_i=1
-[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2; for ((;docopt_i>0;docopt_i--)); do
-declare -p "${prefix}__password" "${prefix}__username"; done; }
-# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/andsens/docopt.sh/docopt-lib.sh"' create-k3s-registry-config`
+# shellcheck disable=2016,2086,2317,1090,1091,2034
+docopt() { source "$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh" '2.0.0a3' || {
+ret=$?;printf -- "exit %d\n" "$ret";exit "$ret";};set -e
+trimmed_doc=${DOC:0:331};usage=${DOC:63:45};digest=14687;options=('-u --userna'\
+'me 1' '-p --password 1');node_0(){ value __username 0;};node_1(){ value \
+__password 1;};node_2(){ optional 0 1;};cat <<<' docopt_exit() { [[ -n $1 ]] \
+&& printf "%s\n" "$1" >&2;printf "%s\n" "${DOC:63:45}" >&2;exit 1;}';local \
+varnames=(__username __password) varname;for varname in "${varnames[@]}"; do
+unset "var_$varname";done;parse 2 "$@";local p=${DOCOPT_PREFIX:-''};for \
+varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__username=${v'\
+'ar___username:-kubernetes};'$p'__password=${var___password:-random};';local \
+docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
+((;docopt_i>0;docopt_i--)); do for varname in "${varnames[@]}"; do declare -p \
+"$p$varname";done;done;}
+# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh"' create-k3s-registry-config`
   eval "$(docopt "$@")"
 
   if [[ $__password = 'random' ]]; then

@@ -1,9 +1,20 @@
 {
-  "dependencies": {
-    "andsens/docopt.sh": "v1.0.0-upkg",
-    "orbit-online/records.sh": "v0.9.5",
-    "orbit-online/checkdeps": "v1.0.2",
-    "orbit-online/collections.sh": "v0.0.1",
-    "orbit-online/path-tools": "v0.2.1"
-  }
+  "dependencies": [
+    {
+      "tar": "https://github.com/andsens/docopt.sh/releases/download/v2.0.0-alpha3/docopt-lib.sh-v2.0.0-alpha3.tar.gz",
+      "sha256": "efab2d2d7efb1e4eae76fd77eea7a0fb524ab7cd441e3b33159ee55ec57d243e"
+    },
+    {
+      "git": "https://github.com/orbit-online/records.sh",
+      "sha1": "493ebb2c7c52dcf8f83a6fcaae6c7cbcfb2be736"
+    },
+    {
+      "git": "https://github.com/orbit-online/collections.sh",
+      "sha1": "b23ba2baf16ea6cdf5dfad176c4440eb8736dad4"
+    },
+    {
+      "git": "https://github.com/orbit-online/path-tools",
+      "sha1": "f8154fb7846f892127c18e28afab4c82058bca14"
+    }
+  ]
 }

@@ -29,22 +29,21 @@ renew:
   Renew the kube-apiserver client certificate
 "
 # docopt parser below, refresh this parser with `docopt.sh auth`
-# shellcheck disable=2016,1090,1091,2034
-docopt() { source "$PKGROOT/.upkg/andsens/docopt.sh/docopt-lib.sh" '1.0.0' || {
-ret=$?; printf -- "exit %d\n" "$ret"; exit "$ret"; }; set -e
-trimmed_doc=${DOC:0:708}; usage=${DOC:37:39}; digest=9b984; shorts=(); longs=()
-argcounts=(); node_0(){ value CONFIG a; }; node_1(){ _command setup; }
-node_2(){ _command renew; }; node_3(){ required 1 0; }; node_4(){ required 2; }
-node_5(){ either 3 4; }; node_6(){ required 5; }; cat <<<' docopt_exit() {
-[[ -n $1 ]] && printf "%s\n" "$1" >&2; printf "%s\n" "${DOC:37:39}" >&2; exit 1
-}'; unset var_CONFIG var_setup var_renew; parse 6 "$@"
-local prefix=${DOCOPT_PREFIX:-''}; unset "${prefix}CONFIG" "${prefix}setup" \
-"${prefix}renew"; eval "${prefix}"'CONFIG=${var_CONFIG:-}'
-eval "${prefix}"'setup=${var_setup:-false}'
-eval "${prefix}"'renew=${var_renew:-false}'; local docopt_i=1
-[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2; for ((;docopt_i>0;docopt_i--)); do
-declare -p "${prefix}CONFIG" "${prefix}setup" "${prefix}renew"; done; }
-# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/andsens/docopt.sh/docopt-lib.sh"' auth`
+# shellcheck disable=2016,2086,2317,1090,1091,2034
+docopt() { source "$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh" '2.0.0a3' || {
+ret=$?;printf -- "exit %d\n" "$ret";exit "$ret";};set -e
+trimmed_doc=${DOC:0:708};usage=${DOC:37:39};digest=9b984;options=();node_0(){
+value CONFIG a;};node_1(){ switch setup a:setup;};node_2(){ switch renew a:renew
+};node_3(){ sequence 1 0;};node_4(){ choice 3 2;};cat <<<' docopt_exit() { [[ \
+-n $1 ]] && printf "%s\n" "$1" >&2;printf "%s\n" "${DOC:37:39}" >&2;exit 1;}'
+local varnames=(CONFIG setup renew) varname;for varname in "${varnames[@]}"; do
+unset "var_$varname";done;parse 4 "$@";local p=${DOCOPT_PREFIX:-''};for \
+varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'CONFIG=${var_C'\
+'ONFIG:-};'$p'setup=${var_setup:-false};'$p'renew=${var_renew:-false};';local \
+docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
+((;docopt_i>0;docopt_i--)); do for varname in "${varnames[@]}"; do declare -p \
+"$p$varname";done;done;}
+# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh"' auth`
   eval "$(docopt "$@")"
   confirm_machine_id workstation
 

@@ -11,18 +11,18 @@ Usage:
   install-deps [MACHINE]
 "
 # docopt parser below, refresh this parser with `docopt.sh install-deps`
-# shellcheck disable=2016,1090,1091,2034
-docopt() { source "$PKGROOT/.upkg/andsens/docopt.sh/docopt-lib.sh" '1.0.0' || {
-ret=$?; printf -- "exit %d\n" "$ret"; exit "$ret"; }; set -e
-trimmed_doc=${DOC:0:67}; usage=${DOC:36:31}; digest=1c414; shorts=(); longs=()
-argcounts=(); node_0(){ value MACHINE a; }; node_1(){ optional 0; }; node_2(){
-required 1; }; node_3(){ required 2; }; cat <<<' docopt_exit() {
-[[ -n $1 ]] && printf "%s\n" "$1" >&2; printf "%s\n" "${DOC:36:31}" >&2; exit 1
-}'; unset var_MACHINE; parse 3 "$@"; local prefix=${DOCOPT_PREFIX:-''}
-unset "${prefix}MACHINE"; eval "${prefix}"'MACHINE=${var_MACHINE:-}'
-local docopt_i=1; [[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2
-for ((;docopt_i>0;docopt_i--)); do declare -p "${prefix}MACHINE"; done; }
-# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/andsens/docopt.sh/docopt-lib.sh"' install-deps`
+# shellcheck disable=2016,2086,2317,1090,1091,2034
+docopt() { source "$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh" '2.0.0a3' || {
+ret=$?;printf -- "exit %d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:67}
+usage=${DOC:36:31};digest=1c414;options=();node_0(){ value MACHINE a;};node_1(){
+optional 0;};cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2
+printf "%s\n" "${DOC:36:31}" >&2;exit 1;}';local varnames=(MACHINE) varname
+for varname in "${varnames[@]}"; do unset "var_$varname";done;parse 1 "$@"
+local p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset \
+"$p$varname";done;eval $p'MACHINE=${var_MACHINE:-};';local docopt_i=1;[[ \
+$BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for \
+varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
+# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh"' install-deps`
   eval "$(docopt "$@")"
 
   # shellcheck disable=2153

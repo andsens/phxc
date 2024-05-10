@@ -15,24 +15,21 @@ Options:
   -S --no-start  Don't start the VM if it was stopped to replace the disk
 "
 # docopt parser below, refresh this parser with `docopt.sh replace-disk`
-# shellcheck disable=2016,1090,1091,2034
-docopt() { source "$PKGROOT/.upkg/andsens/docopt.sh/docopt-lib.sh" '1.0.0' || {
-ret=$?; printf -- "exit %d\n" "$ret"; exit "$ret"; }; set -e
-trimmed_doc=${DOC:0:177}; usage=${DOC:44:49}; digest=c5f1f; shorts=(-S)
-longs=(--no-start); argcounts=(0); node_0(){ switch __no_start 0; }; node_1(){
-value MACHINE a; }; node_2(){ value IMGPATH a; }; node_3(){ optional 0; }
-node_4(){ optional 3; }; node_5(){ optional 2; }; node_6(){ required 4 1 5; }
-node_7(){ required 6; }; cat <<<' docopt_exit() {
-[[ -n $1 ]] && printf "%s\n" "$1" >&2; printf "%s\n" "${DOC:44:49}" >&2; exit 1
-}'; unset var___no_start var_MACHINE var_IMGPATH; parse 7 "$@"
-local prefix=${DOCOPT_PREFIX:-''}; unset "${prefix}__no_start" \
-"${prefix}MACHINE" "${prefix}IMGPATH"
-eval "${prefix}"'__no_start=${var___no_start:-false}'
-eval "${prefix}"'MACHINE=${var_MACHINE:-}'
-eval "${prefix}"'IMGPATH=${var_IMGPATH:-}'; local docopt_i=1
-[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2; for ((;docopt_i>0;docopt_i--)); do
-declare -p "${prefix}__no_start" "${prefix}MACHINE" "${prefix}IMGPATH"; done; }
-# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/andsens/docopt.sh/docopt-lib.sh"' replace-disk`
+# shellcheck disable=2016,2086,2317,1090,1091,2034
+docopt() { source "$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh" '2.0.0a3' || {
+ret=$?;printf -- "exit %d\n" "$ret";exit "$ret";};set -e
+trimmed_doc=${DOC:0:177};usage=${DOC:44:49};digest=c5f1f;options=('-S --no-sta'\
+'rt 0');node_0(){ switch __no_start 0;};node_1(){ value MACHINE a;};node_2(){
+value IMGPATH a;};node_3(){ optional 0;};node_4(){ optional 2;};node_5(){
+sequence 3 1 4;};cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2
+printf "%s\n" "${DOC:44:49}" >&2;exit 1;}';local varnames=(__no_start MACHINE \
+IMGPATH) varname;for varname in "${varnames[@]}"; do unset "var_$varname";done
+parse 5 "$@";local p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do
+unset "$p$varname";done;eval $p'__no_start=${var___no_start:-false};'$p'MACHIN'\
+'E=${var_MACHINE:-};'$p'IMGPATH=${var_IMGPATH:-};';local docopt_i=1;[[ \
+$BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for \
+varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
+# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh"' replace-disk`
   eval "$(docopt "$@")"
   confirm_machine_id truenas
 
