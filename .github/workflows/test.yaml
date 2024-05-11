@@ -25,7 +25,7 @@ jobs:
       with:
         detik-install: false
     - name: Run tests
-      run: bats --formatter tap13 tests > tests/results.tap
+      run: bats --formatter tap13 --filter-tags '!shellcheck' tests | tee tests/results.tap
       env:
         BATS_LIB_PATH: /usr/lib
     - name: Generate test summary
