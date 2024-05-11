@@ -11,10 +11,10 @@ extract_kube_config_to_smallstep() {
   (
     umask 077
     mkdir -p "$cert_path"
-     printf "%s\n" "$crt" >"$cert_path/$username.cert"
+     printf "%s\n" "$crt" >"$cert_path/$username.crt"
     yq -r '.users[] | .user["client-key-data"]' "$kube_config_path" | base64 -d >"$cert_path/${username}_key"
   )
-  set_smallstep_x5c_cert_path "$step_profile" "$cert_path/$username.cert"
+  set_smallstep_x5c_cert_path "$step_profile" "$cert_path/$username.crt"
   set_smallstep_x5c_key_path "$step_profile" "$cert_path/${username}_key"
 }
 
