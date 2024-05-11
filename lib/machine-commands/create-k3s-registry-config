@@ -35,18 +35,34 @@ docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh"' create-k3s-registry-config`
   eval "$(docopt "$@")"
 
+  local config config_path=/etc/rancher/k3s/registries.yaml domain=distribution.docker-registry.svc.cluster.local
+
   if [[ $__password = 'random' ]]; then
-    # tr complains about broken pipe once head has read enough, ignore it
-    __password=$(tr -dc A-Za-z0-9_- </dev/urandom 2>/dev/null | head -c 32) || true
+    # shellcheck disable=SC2016
+    if [[ -e "$config_path" ]] && __password=$(yq -r --arg domain "$domain" '.configs[$domain].auth.password' "$config_path" 2>/dev/null); then
+      info "Existing password found in '%s' reusing" "$config_path"
+    else
+      # tr complains about broken pipe once head has read enough, ignore it
+      __password=$(tr -dc A-Za-z0-9_- </dev/urandom 2>/dev/null | head -c 32) || true
+    fi
   fi
 
-  mkdir -p /etc/rancher/k3s
-  umask 077
   # shellcheck disable=SC2016,SC2154
-  yq -y --arg domain "distribution.docker-registry.svc.cluster.local" --arg username "$__username" --arg password "$__password" \
-  '.mirrors[$domain].endpoint=["http://\($domain):5000/v2"] |
-  .configs[$domain].auth.username=$username |
-  .configs[$domain].auth.password=$password' <<<'{}' >/etc/rancher/k3s/registries.yaml
+  config=$(yq -y --arg domain "$domain" --arg username "$__username" --arg password "$__password" \
+    '.mirrors[$domain].endpoint=["http://\($domain)/v2"] |
+    .configs[$domain].auth.username=$username |
+    .configs[$domain].auth.password=$password |
+    .configs[$domain].tls.insecure_skip_verify=true' <<<'{}'
+  )
+  if [[ ! -e "$config_path" ]] || ! diff -q <(printf "%s" "$config") "$config_path" 2>/dev/null; then
+    info "K3S registries config validation failed, (re-)creating now."
+    mkdir -p /etc/rancher/k3s
+    umask 077
+    printf "%s" "$config" >"$config_path"
+  else
+    info "K3S registries config validation succeeded"
+  fi
+
 }
 
 main "$@"
