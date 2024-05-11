@@ -44,7 +44,7 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
         wget -qO- https://github.com/stern/stern/releases/download/v1.28.0/stern_1.28.0_linux_amd64.tar.gz | tar xzC "$HOME/.local/bin" stern
         wget -qO- https://get.helm.sh/helm-v3.14.3-linux-amd64.tar.gz | tar xzC "$HOME/.local/bin" --strip-components 1 linux-amd64/helm
         wget -qO- https://dl.smallstep.com/gh-release/cli/gh-release-header/v0.26.0/step_linux_0.26.0_amd64.tar.gz | tar xzC "$HOME/.local/bin" --strip-components 2 step_0.26.0/bin/step
-        chmod +x "$HOME/.local/bin"/{kubectl,kpt,k9s,kustomize,kubectx,kubens,stern,helm,step}
+        chmod +x "$HOME/.local/bin"/{kubectl,kpt,kustomize,kubectx,kubens,stern,helm,step}
         sudo dpkg -i "$TMPDIR/k9s.deb"
         ;;
       *)
@@ -73,7 +73,7 @@ install_common_deps() {
       break
     fi
   done
-  if type upkg >/dev/null 2>&1; then
+  if ! type upkg >/dev/null 2>&1; then
     bash -ec 'src=$(wget -qO- https://raw.githubusercontent.com/orbit-online/upkg/v0.14.0/upkg.sh); \
     shasum -a 256 -c <(printf "8312d0fa0e47ff22387086021c8b096b899ff9344ca8622d80cc0d1d579dccff  -") <<<"$src"; \
     set - install -g orbit-online/upkg@v0.14.0; eval "$src"'
