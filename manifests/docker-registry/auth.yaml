@@ -137,7 +137,7 @@ spec:
       - name: docker-auth
         image: cesanta/docker_auth:1.12.0
         command: [/var/lib/home-cluster/lib/container-commands/docker-registry/init-docker-auth.sh]
-        args: ['-alsologtostderr', '/var/lib/home-cluster/config/docker/auth.yaml']
+        args: ['-alsologtostderr', '/config/auth_config.yml']
         ports:
         - name: web
           containerPort: 5001

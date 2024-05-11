@@ -1,0 +1,23 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ../settings
+- credentials.yaml
+- smallstep.yaml
+- namespace.yaml
+- networkpolicy.yaml
+- Kptfile
+- resourcegroup.yaml
+replacements:
+- source: {fieldPath: data.nfsShares.homeCluster.addr, kind: ConfigMap, name: settings}
+  targets:
+  - select: {group: batch, kind: Job}
+    fieldPaths: ["spec.template.spec.volumes.[name=home-cluster].nfs.server"]
+- source: {fieldPath: data.nfsShares.homeCluster.path, kind: ConfigMap, name: settings}
+  targets:
+  - select: {group: batch, kind: Job}
+    fieldPaths: ["spec.template.spec.volumes.[name=home-cluster].nfs.path"]
+- source: {fieldPath: data.cluster.domain, kind: ConfigMap, name: settings}
+  targets:
+  - select: {group: batch, kind: Job, name: build-smallstep}
+    fieldPaths: ["spec.template.spec.containers.[name=kaniko].env.[name=DOMAIN].value"]

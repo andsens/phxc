@@ -9,14 +9,18 @@ token:
 # PASSWORD=$(randpass -l 32); HASH=$(htpasswd -nbB "" "$PASSWORD"); printf "%s\n%s\n" "${HASH/#:/}" "$PASSWORD"; unset HASH PASSWORD
 users:
   $K3S_USERNAME:
-    password: $K3S_PASSWORD
+    password: "$K3S_PASSWORD"
   $KANIKO_USERNAME:
-    password: $KANIKO_PASSWORD
+    password: "$KANIKO_PASSWORD"
 acl:
 - match:
-    account: /.*/
+    account: $K3S_USERNAME
   actions: [pull]
-  comment: Everybody can pull
+  comment: $K3S_USERNAME can pull
+- match:
+    account: $KANIKO_USERNAME
+  actions: [pull, push]
+  comment: $KANIKO_USERNAME can pull & push
 - match:
     account: system/admin
   actions: ["*"]

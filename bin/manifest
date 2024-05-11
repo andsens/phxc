@@ -46,6 +46,7 @@ done;if declare -p var_MANIFEST >/dev/null 2>&1; then eval $p'MANIFEST=("${var'\
       kubernetes-secret-generator
       bootstrap-secrets
       docker-registry
+      kaniko
       cert-manager
       cert-manager-issuers
       smallstep

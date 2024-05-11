@@ -3,7 +3,7 @@
 # shellcheck disable=SC2016
 set -Eeo pipefail; shopt -s inherit_errexit
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../..")
-apk add -q --update --no-cache jq kubectl gettext whois py3-virtualenv
+apk add -q --update --no-cache jq kubectl gettext whois py3-virtualenv apache2-utils
 virtualenv -q /usr/local/lib/yq
 /usr/local/lib/yq/bin/pip3 install yq
 ln -s /usr/local/lib/yq/bin/yq /usr/local/bin/yq
@@ -15,12 +15,14 @@ main() {
   info "Hashing k3s registry credentials"
   local k3s_username k3s_password
   k3s_username=$(yq -re --arg domain "$(get_setting cluster.domain)" '.configs["cr.\($domain)"].auth.username' /etc/rancher/k3s/registries.yaml)
-  k3s_password=$(yq -re --arg domain "$(get_setting cluster.domain)" '.configs["cr.\($domain)"].auth.password' /etc/rancher/k3s/registries.yaml | mkpasswd --stdin)
+  k3s_password=$(yq -re --arg domain "$(get_setting cluster.domain)" '.configs["cr.\($domain)"].auth.password' /etc/rancher/k3s/registries.yaml | htpasswd -nBi "")
+  k3s_password=${k3s_password#:}
 
   info "Hashing kaniko registry credentials"
   local kaniko_password
   kaniko_username=$(cat /kaniko-credentials/username)
-  kaniko_password=$(mkpasswd --stdin </kaniko-credentials/password)
+  kaniko_password=$(htpasswd -nbB "" "$(cat kaniko-credentials/password)")
+  kaniko_password=${kaniko_password#:}
 
   info "Replacing variables in auth.yaml"
   K3S_USERNAME=$k3s_username K3S_PASSWORD=$k3s_password \

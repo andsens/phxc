@@ -68,7 +68,8 @@ spec:
     app.kubernetes.io/component: distribution
   ports:
   - name: web
-    port: 5000
+    port: 80
+    targetPort: 5000
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate

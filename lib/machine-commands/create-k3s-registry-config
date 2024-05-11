@@ -43,10 +43,10 @@ docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
   mkdir -p /etc/rancher/k3s
   umask 077
   # shellcheck disable=SC2016,SC2154
-  yq -y --arg domain "$(get_setting cluster.domain)" --arg username "$__username" --arg password "$__password" \
-  '.mirrors["cr.\($domain)"].endpoint=["https://cr.\($domain)/v2"] |
-  .configs["cr.\($domain)"].auth.username=$username |
-  .configs["cr.\($domain)"].auth.password=$password' <<<'{}' >/etc/rancher/k3s/registries.yaml
+  yq -y --arg domain "distribution.docker-registry.svc.cluster.local" --arg username "$__username" --arg password "$__password" \
+  '.mirrors[$domain].endpoint=["http://\($domain):5000/v2"] |
+  .configs[$domain].auth.username=$username |
+  .configs[$domain].auth.password=$password' <<<'{}' >/etc/rancher/k3s/registries.yaml
 }
 
 main "$@"
