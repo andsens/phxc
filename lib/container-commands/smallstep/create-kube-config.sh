@@ -14,19 +14,18 @@ main() {
     crt_path=$STEPPATH/persistent-certs/${username}.crt \
     kube_config_path=$STEPPATH/persistent-certs/home-cluster.yaml \
     new_kube_config_path=$STEPPATH/certs/home-cluster.yaml
+
+  local extra_names='[]' group
+  for group in "${groups[@]}"; do
+    extra_names=$(jq --arg group "$group" '.+=[{"type":"2.5.4.10", "value": $group}]' <<<"$extra_names")
+  done
   local template='{
     "subject": {
       "commonName": {{ toJson .Subject.CommonName }},
-      "extraNames": [{"type":"2.5.4.10", "value": "system:masters"}]
+      "extraNames": '$extra_names'
     },
     "keyUsage": ["keyEncipherment", "digitalSignature"],
     "extKeyUsage": ["clientAuth"]}'
-  local group
-  for group in "${groups[@]}"; do
-    template=$(jq --arg group "$group" '.subject.extraNames+=[
-      {"type":"2.5.4.10", "value": $group}
-    ]') <<<"$template"
-  done
 
   info "Creating kube config for user '%s'" "$username"
 
