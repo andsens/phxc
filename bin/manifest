@@ -43,18 +43,17 @@ done;if declare -p var_MANIFEST >/dev/null 2>&1; then eval $p'MANIFEST=("${var'\
       cilium
       networkpolicies
       csi-driver-nfs
+      etcd
+      coredns
+      traefik
+      external-dns
       kubernetes-secret-generator
-      bootstrap-secrets
+      redis
       docker-registry
       kaniko
       cert-manager
       cert-manager-issuers
       smallstep
-      etcd
-      coredns
-      external-dns
-      traefik
-      redis
     )
   fi
   local manifest_name manifest_data
