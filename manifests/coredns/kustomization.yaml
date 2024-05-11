@@ -3,6 +3,7 @@ kind: Kustomization
 namespace: kube-system
 resources:
 - ../settings
+- custom-config.yaml
 - service.yaml
 - networkpolicy.yaml
 - Kptfile
@@ -23,3 +24,11 @@ replacements:
   - select: {kind: Service, name: coredns}
     fieldPaths: [metadata.annotations.external-dns\.alpha\.kubernetes\.io/hostname]
     options: {delimiter: '.', index: 1}
+- source: {fieldPath: data.nfsShares.homeCluster.addr, kind: ConfigMap, name: settings}
+  targets:
+  - select: {group: batch, kind: Job, name: create-coredns-custom}
+    fieldPaths: ["spec.template.spec.volumes.[name=home-cluster].nfs.server"]
+- source: {fieldPath: data.nfsShares.homeCluster.path, kind: ConfigMap, name: settings}
+  targets:
+  - select: {group: batch, kind: Job, name: create-coredns-custom}
+    fieldPaths: ["spec.template.spec.volumes.[name=home-cluster].nfs.path"]
