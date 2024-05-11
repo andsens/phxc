@@ -25,6 +25,8 @@ spec:
             image: distribution.docker-registry.svc.cluster.local/step-ca-bootstrap:latest
             command: [/var/lib/home-cluster/lib/container-commands/smallstep/create-kube-config.sh]
             args: [system:admin, system:masters]
+            securityContext:
+              readOnlyRootFilesystem: true
             volumeMounts:
             - name: home-cluster
               mountPath: /var/lib/home-cluster

@@ -119,6 +119,8 @@ spec:
       - name: bootstrap
         image: distribution.docker-registry.svc.cluster.local/step-ca-bootstrap:latest
         command: [/var/lib/home-cluster/lib/container-commands/smallstep/bootstrap.sh]
+        securityContext:
+          readOnlyRootFilesystem: true
         env:
         - name: NAMESPACE
           valueFrom:

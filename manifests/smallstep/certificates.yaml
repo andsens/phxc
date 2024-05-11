@@ -85,6 +85,8 @@ spec:
       - name: setup-step-ca-config
         image: distribution.docker-registry.svc.cluster.local/step-ca-bootstrap:latest
         command: [/var/lib/home-cluster/lib/container-commands/smallstep/setup-step-ca-config.sh]
+        securityContext:
+          readOnlyRootFilesystem: true
         volumeMounts:
         - name: home-cluster
           mountPath: /var/lib/home-cluster
