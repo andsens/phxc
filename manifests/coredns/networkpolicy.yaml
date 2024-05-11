@@ -1,0 +1,46 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: coredns
+  labels:
+    k8s-app: kube-dns
+spec:
+  endpointSelector:
+    matchLabels:
+      k8s-app: kube-dns
+  ingress:
+  - toPorts:
+    - ports:
+      - port: "53"
+        protocol: TCP
+      - port: "53"
+        protocol: UDP
+    fromEntities:
+    - cluster
+  - toPorts:
+    - ports:
+      - port: "5353"
+        protocol: TCP
+      - port: "5353"
+        protocol: UDP
+    fromEntities:
+    - world
+  egress:
+  - toEntities:
+    - kube-apiserver
+  - toPorts:
+    - ports:
+      - port: "53"
+        protocol: UDP
+      - port: "53"
+        protocol: TCP
+    toEntities:
+    - world
+  - toPorts:
+    - ports:
+      - port: "2379"
+    toEndpoints:
+    - matchLabels:
+        "k8s:io.kubernetes.pod.namespace": etcd
+        app.kubernetes.io/name: etcd
+        app.kubernetes.io/component: etcd

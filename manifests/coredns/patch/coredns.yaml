@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coredns
+spec:
+  template:
+    spec:
+      containers:
+      - name: coredns
+        ports:
+        - name: dns-ext
+          containerPort: 5353
+          protocol: UDP
+        - name: dns-tcp-ext
+          containerPort: 5353
+          protocol: TCP
+        env:
+        - name: WAN_IPV4
+          value: cluster.wanIPv4
+        - name: DOMAIN
+          value: cluster.domain
+        - name: K8SMASTER_IPV4
+          value: machines.k8sMaster.fixedIPv4
+        - name: K8SMASTER_IPV6
+          value: machines.k8sMaster.fixedIPv6
+        - name: ETCD_IPV4
+          value: cluster.etcd.fixedIPv4
+        - name: ETCD_IPV6
+          value: cluster.etcd.fixedIPv6
+      volumes:
+      - name: custom-config-volume
+        $retainKeys:
+        - name
+        - nfs
+        nfs:
+          server: nfsShares.homeCluster.addr
+          path: nfsShares.homeCluster.path/config/coredns
+          readOnly: true

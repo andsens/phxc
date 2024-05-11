@@ -1,36 +1,32 @@
 ---
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
 metadata:
   name: etcd
   labels:
     app.kubernetes.io/name: etcd
     app.kubernetes.io/component: etcd
 spec:
-  podSelector:
+  endpointSelector:
     matchLabels:
       app.kubernetes.io/name: etcd
       app.kubernetes.io/component: etcd
-  policyTypes:
-  - Ingress
   ingress:
-  - ports:
-    - port: 2379
-    from:
-    - namespaceSelector:
-        matchLabels:
-          kubernetes.io/metadata.name: coredns
-      podSelector:
-        matchLabels:
-          app.kubernetes.io/name: coredns
-          app.kubernetes.io/component: coredns
-    - namespaceSelector:
-        matchLabels:
-          kubernetes.io/metadata.name: external-dns
-      podSelector:
-        matchLabels:
-          app.kubernetes.io/name: external-dns
-          app.kubernetes.io/component: external-dns
+  - toPorts:
+    - ports:
+      - port: "2379"
+    fromEndpoints:
+    - matchLabels:
+        "k8s:io.kubernetes.pod.namespace": kube-system
+        k8s-app: kube-dns
+    - matchLabels:
+        "k8s:io.kubernetes.pod.namespace": coredns
+        app.kubernetes.io/name: coredns
+        app.kubernetes.io/component: coredns
+    - matchLabels:
+        "k8s:io.kubernetes.pod.namespace": external-dns
+        app.kubernetes.io/name: external-dns
+        app.kubernetes.io/component: external-dns
 ---
 apiVersion: v1
 kind: Service
@@ -40,6 +36,12 @@ metadata:
     app.kubernetes.io/name: etcd
     app.kubernetes.io/component: etcd
 spec:
+  ipFamilyPolicy: RequireDualStack
+  type: ClusterIP
+  clusterIP: cluster.etcd.fixedIP
+  clusterIPs:
+  - cluster.etcd.fixedIPv4
+  - cluster.etcd.fixedIPv6
   selector:
     app.kubernetes.io/name: etcd
     app.kubernetes.io/component: etcd

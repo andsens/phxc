@@ -10,15 +10,3 @@ spec:
   egress:
   - toEntities:
     - kube-apiserver
----
-apiVersion: cilium.io/v2
-kind: CiliumNetworkPolicy
-metadata:
-  namespace: kube-system
-  name: apiserver-egress-kube-system
-spec:
-  endpointSelector:
-    matchLabels: {}
-  egress:
-  - toEntities:
-    - kube-apiserver

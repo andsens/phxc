@@ -6,5 +6,6 @@ resources:
 - database-jump-host.yaml
 - dns.yaml
 - internet-egress.yaml
+- kube-system.yaml
 - Kptfile
 - resourcegroup.yaml
