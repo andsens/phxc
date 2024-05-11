@@ -40,7 +40,7 @@ docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
     __password=$(tr -dc A-Za-z0-9_- </dev/urandom 2>/dev/null | head -c 32) || true
   fi
 
-  mkdir -p "/etc/rancher/k3s"
+  mkdir -p /etc/rancher/k3s
   umask 077
   # shellcheck disable=SC2016,SC2154
   yq -y --arg domain "$(get_setting cluster.domain)" --arg username "$__username" --arg password "$__password" \
