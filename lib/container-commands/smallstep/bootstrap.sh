@@ -6,13 +6,13 @@ apk add jq py3-pip
 pip install -q yq
 source "$PKGROOT/lib/common.sh"
 source "$PKGROOT/lib/container-commands/smallstep/paths.sh"
-: "${NAMESPACE:?}"
 
 main() {
   create_ca_certificates
   create_ca_secrets
   create_step_issuer_provisioner
   create_ssh_host_provisioner
+  "$PKGROOT/lib/container-commands/create-kube-apiserver-client-ca-secret.sh" /home/step/certs/kube_apiserver_client_ca.crt
   "$PKGROOT/lib/container-commands/smallstep/create-kube-config.sh" system:admin system:masters
 }
 
@@ -48,28 +48,20 @@ create_ca_certificates() {
 create_ca_secrets() {
   info "Creating smallstep certificate chain secrets"
 
-  if [[ $(kubectl get -n "$NAMESPACE" secret smallstep-root -o jsonpath='{.data.tls\.crt}' | base64 -d) != $(cat "$ROOT_CRT_PATH") ]]; then
+  if [[ $(kubectl get -n smallstep secret smallstep-root -o jsonpath='{.data.tls\.crt}' | base64 -d) != $(cat "$ROOT_CRT_PATH") ]]; then
     info "Root CA secret validation failed, (re-)creating now"
-    kubectl delete -n "$NAMESPACE" secret smallstep-root 2>/dev/null || true
-    kubectl create -n "$NAMESPACE" secret generic smallstep-root --from-file=tls.crt="$ROOT_CRT_PATH"
+    kubectl delete -n smallstep secret smallstep-root 2>/dev/null || true
+    kubectl create -n smallstep secret generic smallstep-root --from-file=tls.crt="$ROOT_CRT_PATH"
   else
     info "Root CA secret validation succeeded"
   fi
 
-  if [[ $(kubectl get -n "$NAMESPACE" secret smallstep-intermediate -o jsonpath='{.data.tls\.crt}' | base64 -d) != $(cat "$INTERMEDIATE_CRT_PATH") ]]; then
+  if [[ $(kubectl get -n smallstep secret smallstep-intermediate -o jsonpath='{.data.tls\.crt}' | base64 -d) != $(cat "$INTERMEDIATE_CRT_PATH") ]]; then
     info "Intermediate CA secret validation failed, (re-)creating now"
-    kubectl delete -n "$NAMESPACE" secret smallstep-intermediate 2>/dev/null || true
-    kubectl create -n "$NAMESPACE" secret tls smallstep-intermediate --cert="$INTERMEDIATE_CRT_PATH" --key="$INTERMEDIATE_KEY_PATH"
+    kubectl delete -n smallstep secret smallstep-intermediate 2>/dev/null || true
+    kubectl create -n smallstep secret tls smallstep-intermediate --cert="$INTERMEDIATE_CRT_PATH" --key="$INTERMEDIATE_KEY_PATH"
   else
     info "Intermediate CA secret validation succeeded"
-  fi
-
-  if [[ $(kubectl get -n "$NAMESPACE" secret kube-apiserver-client-ca -o jsonpath='{.data.tls\.crt}' | base64 -d) != $(cat "$KUBE_CLIENT_CA_CRT_PATH") ]]; then
-    info "kube-apiserver client CA secret validation failed, (re-)creating now"
-    kubectl delete -n "$NAMESPACE" secret kube-apiserver-client-ca 2>/dev/null || true
-    kubectl create -n "$NAMESPACE" secret generic kube-apiserver-client-ca --from-file=tls.crt="$KUBE_CLIENT_CA_CRT_PATH"
-  else
-    info "kube-apiserver client CA secret validation succeeded"
   fi
 }
 
@@ -79,23 +71,23 @@ create_step_issuer_provisioner() {
   local step_issuer_dir=$STEPPATH/certs/step-issuer-provisioner
 
   mkdir "$step_issuer_dir"
-  if ! kubectl get -n "$NAMESPACE" secret step-issuer-provisioner -o jsonpath='{.data.pub\.json}' | base64 -d >"$step_issuer_dir/pub.json"; then
+  if ! kubectl get -n smallstep secret step-issuer-provisioner -o jsonpath='{.data.pub\.json}' | base64 -d >"$step_issuer_dir/pub.json"; then
     info "step-issuer provisioner validation failed, (re-)creating now"
     step crypto jwk create \
       --force --password-file="$STEPPATH/step-issuer-provisioner-password/password" \
       --use sig \
       "$step_issuer_dir/pub.json" "$step_issuer_dir/priv.json"
-    kubectl create -n "$NAMESPACE" secret generic step-issuer-provisioner \
+    kubectl create -n smallstep secret generic step-issuer-provisioner \
       --from-file="$step_issuer_dir/pub.json" \
       --from-file="$step_issuer_dir/priv.json"
   else
     info "step-issuer provisioner validation succeeded"
   fi
 
-  kubectl get -n "$NAMESPACE" stepclusterissuer step-issuer -ojsonpath='{.spec.caBundle}' | base64 -d >"$step_issuer_dir/caBundle.key" || true
+  kubectl get -n smallstep stepclusterissuer step-issuer -ojsonpath='{.spec.caBundle}' | base64 -d >"$step_issuer_dir/caBundle.key" || true
   local expected_kid actual_kid
   expected_kid=$(step crypto jwk thumbprint < "$step_issuer_dir/pub.json")
-  actual_kid=$(kubectl get -n "$NAMESPACE" stepclusterissuer step-issuer -ojsonpath='{.spec.provisioner.kid}' || true)
+  actual_kid=$(kubectl get -n smallstep stepclusterissuer step-issuer -ojsonpath='{.spec.provisioner.kid}' || true)
   if ! diff -q "$ROOT_CRT_PATH" "$step_issuer_dir/caBundle.key" || [[ $actual_kid != "$expected_kid" ]]; then
     info "StepClusterIssuer validation failed, (re-)creating now"
     kubectl apply -f <(printf -- "apiVersion: certmanager.step.sm/v1beta1
@@ -112,7 +104,7 @@ spec:
     passwordRef:
       namespace: smallstep
       name: step-issuer-provisioner-password
-      key: password" "$NAMESPACE" "$(base64 -w0 "$ROOT_CRT_PATH")" "$(step crypto jwk thumbprint < "$step_issuer_dir/pub.json")"
+      key: password" smallstep "$(base64 -w0 "$ROOT_CRT_PATH")" "$(step crypto jwk thumbprint < "$step_issuer_dir/pub.json")"
     )
   else
     info "StepClusterIssuer validation succeeded"
@@ -125,13 +117,13 @@ create_ssh_host_provisioner() {
   local ssh_host_dir=$STEPPATH/certs/ssh-host-provisioner
 
   mkdir "$ssh_host_dir"
-  if ! kubectl get -n "$NAMESPACE" secret ssh-host-provisioner -o jsonpath='{.data.pub\.json}' | base64 -d >"$ssh_host_dir/pub.json"; then
+  if ! kubectl get -n smallstep secret ssh-host-provisioner -o jsonpath='{.data.pub\.json}' | base64 -d >"$ssh_host_dir/pub.json"; then
     info "ssh-host provisioner validation failed, (re-)creating now"
     step crypto jwk create \
       --force --password-file="$STEPPATH/ssh-host-provisioner-password/password" \
       --use sig \
       "$ssh_host_dir/pub.json" "$ssh_host_dir/priv.json"
-    kubectl create -n "$NAMESPACE" secret generic ssh-host-provisioner \
+    kubectl create -n smallstep secret generic ssh-host-provisioner \
       --from-file="$ssh_host_dir/pub.json" \
       --from-file="$ssh_host_dir/priv.json"
   else

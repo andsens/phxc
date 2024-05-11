@@ -152,10 +152,6 @@ spec:
           server: nfsShares.homeCluster.addr
           path: nfsShares.homeCluster.path
           readOnly: true
-      - name: bootstrap
-        configMap:
-          name: bootstrap
-          defaultMode: 0777
       - name: step-issuer-provisioner-password
         secret:
           secretName: step-issuer-provisioner-password

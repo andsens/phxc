@@ -44,6 +44,8 @@ done;if declare -p var_MANIFEST >/dev/null 2>&1; then eval $p'MANIFEST=("${var'\
       networkpolicies
       csi-driver-nfs
       kubernetes-secret-generator
+      bootstrap-secrets
+      docker-registry
       cert-manager
       cert-manager-issuers
       smallstep
@@ -52,7 +54,6 @@ done;if declare -p var_MANIFEST >/dev/null 2>&1; then eval $p'MANIFEST=("${var'\
       external-dns
       traefik
       redis
-      docker-registry
     )
   fi
   local manifest_name manifest_data

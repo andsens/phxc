@@ -93,14 +93,13 @@ spec:
     length: "32"
 ---
 apiVersion: apps/v1
-kind: StatefulSet
+kind: Deployment
 metadata:
   name: distribution
   labels:
     app.kubernetes.io/name: docker-registry
     app.kubernetes.io/component: distribution
 spec:
-  serviceName: distribution
   selector:
     matchLabels:
       app.kubernetes.io/name: docker-registry
@@ -159,7 +158,7 @@ spec:
         - name: jwt-cert
           mountPath: /etc/docker/auth/jwt.crt
           subPath: tls.crt
-        - name: data
+        - name: images
           mountPath: /var/lib/registry
       securityContext:
         fsGroup: 1000
@@ -173,15 +172,9 @@ spec:
       - name: jwt-cert
         secret:
           secretName: distribution-jwt-cert
-  volumeClaimTemplates:
-  - metadata:
-      name: data
-    spec:
-      storageClassName: nas-nfs-workloads
-      accessModes: [ReadWriteOnce]
-      resources:
-        requests:
-          storage: 5Gi
+      - name: images
+        persistentVolumeClaim:
+          claimName: images
 ---
 apiVersion: batch/v1
 kind: CronJob
@@ -212,6 +205,8 @@ spec:
               mountPath: /etc/docker/registry/config.yml
               subPath: config/docker/distribution.yaml
               readOnly: true
+            - name: images
+              mountPath: /var/lib/registry
           securityContext:
             fsGroup: 1000
             runAsUser: 1000
@@ -221,3 +216,20 @@ spec:
               server: nfsShares.homeCluster.addr
               path: nfsShares.homeCluster.path
               readOnly: true
+          - name: images
+            persistentVolumeClaim:
+              claimName: images
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: images
+  labels:
+    app.kubernetes.io/name: docker-registry
+    app.kubernetes.io/component: distribution
+spec:
+  storageClassName: nas-nfs-workloads
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 5Gi

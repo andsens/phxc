@@ -24,7 +24,8 @@ spec:
       - port: "6379"
     toEndpoints:
     - matchLabels:
-        app.kubernetes.io/name: docker-registry
+        "k8s:io.kubernetes.pod.namespace": redis
+        app.kubernetes.io/name: redis
         app.kubernetes.io/component: redis
 ---
 apiVersion: networking.k8s.io/v1
@@ -69,39 +70,20 @@ metadata:
     app.kubernetes.io/name: docker-registry
     app.kubernetes.io/component: auth
 ---
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
+apiVersion: v1
+kind: Secret
 metadata:
-  name: docker-auth
-  labels:
-    app.kubernetes.io/name: docker-registry
-    app.kubernetes.io/component: auth
-rules:
-- apiGroups: [""]
-  resources: [secrets]
-  resourceNames: [kube-apiserver-client-ca]
-  verbs: [get, delete]
-  namespaces: [smallstep]
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: docker-auth
-  labels:
-    app.kubernetes.io/name: docker-registry
-    app.kubernetes.io/component: auth
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: docker-auth
-subjects:
-- kind: ServiceAccount
-  name: docker-auth
+  name: kaniko-credentials
+  annotations:
+    secret-generator.v1.mittwald.de/autogenerate: password
+data:
+  username: a2FuaWtv # kaniko
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: docker-auth
+  namespace: docker-registry
   labels:
     app.kubernetes.io/name: docker-registry
     app.kubernetes.io/component: auth
@@ -117,6 +99,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: docker-auth
+  namespace: docker-registry
   labels:
     app.kubernetes.io/name: docker-registry
     app.kubernetes.io/component: auth
@@ -134,6 +117,22 @@ spec:
         cluster.local/allow-internet-egress: "true"
     spec:
       serviceAccountName: docker-auth
+      initContainers:
+      - name: setup-docker-auth-config
+        image: alpine
+        command: [sh, -c, 'apk add -q bash; bash /var/lib/home-cluster/lib/container-commands/docker-registry/setup-docker-auth-config.sh']
+        volumeMounts:
+        - name: home-cluster
+          mountPath: /var/lib/home-cluster
+          readOnly: true
+        - name: k3s-registry-config
+          mountPath: /etc/rancher/k3s/registries.yaml
+          readOnly: true
+        - name: kaniko-credentials
+          mountPath: /kaniko-credentials
+          readOnly: true
+        - name: config
+          mountPath: /config
       containers:
       - name: docker-auth
         image: cesanta/docker_auth:1.12.0
@@ -152,11 +151,13 @@ spec:
         - name: home-cluster
           mountPath: /var/lib/home-cluster
           readOnly: true
-        - name: k3s-registry-config
-          mountPath: /etc/rancher/k3s/registries.yaml
-          readOnly: true
+        - name: config
+          mountPath: /config
         - name: jwt-cert
-          mountPath: /config/certs
+          mountPath: /config/certs/jwt
+        - name: kube-apiserver-client-ca
+          mountPath: /config/certs/kube_apiserver_client_ca.crt
+          subPath: tls.crt
         - name: tmp
           mountPath: /tmp
       volumes:
@@ -165,13 +166,19 @@ spec:
           server: nfsShares.homeCluster.addr
           path: nfsShares.homeCluster.path
           readOnly: true
+      - name: config
+        emptyDir:
+          medium: Memory
       - name: k3s-registry-config
         hostPath:
           path: /etc/rancher/k3s/registries.yaml
           type: File
-      - name: config
-        configMap:
-          name: auth-config
+      - name: kaniko-credentials
+        secret:
+          secretName: kaniko-credentials
+      - name: kube-apiserver-client-ca
+        secret:
+          secretName: kube-apiserver-client-ca
       - name: jwt-cert
         secret:
           secretName: distribution-jwt-cert

@@ -3,13 +3,15 @@ server:
 token:
   issuer: Docker registry auth server
   expiration: 900
-  certificate: /config/certs/tls.crt
-  key: /config/certs/tls.key
+  certificate: /config/certs/jwt/tls.crt
+  key: /config/certs/jwt/tls.key
 # Create passwords with:
 # PASSWORD=$(randpass -l 32); HASH=$(htpasswd -nbB "" "$PASSWORD"); printf "%s\n%s\n" "${HASH/#:/}" "$PASSWORD"; unset HASH PASSWORD
 users:
   $K3S_USERNAME:
     password: $K3S_PASSWORD
+  $KANIKO_USERNAME:
+    password: $KANIKO_PASSWORD
 acl:
 - match:
     account: /.*/
