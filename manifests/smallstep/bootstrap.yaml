@@ -117,7 +117,7 @@ spec:
         fsGroup: 1000
       containers:
       - name: bootstrap
-        image: cr.step.sm/smallstep/step-ca-bootstrap:latest
+        image: distribution.docker-registry.svc.cluster.local/step-ca-bootstrap:latest
         command: [/var/lib/home-cluster/lib/container-commands/smallstep/bootstrap.sh]
         env:
         - name: NAMESPACE

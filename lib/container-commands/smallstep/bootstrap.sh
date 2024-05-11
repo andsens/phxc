@@ -2,8 +2,6 @@
 # shellcheck source-path=../../..
 set -Eeo pipefail; shopt -s inherit_errexit
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../..")
-apk add jq py3-pip
-pip install -q yq
 source "$PKGROOT/lib/common.sh"
 source "$PKGROOT/lib/container-commands/smallstep/paths.sh"
 

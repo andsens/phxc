@@ -22,7 +22,7 @@ spec:
           restartPolicy: Never
           containers:
           - name: refresh-kube-config
-            image: cr.step.sm/smallstep/step-ca-bootstrap:latest
+            image: distribution.docker-registry.svc.cluster.local/step-ca-bootstrap:latest
             command: [/var/lib/home-cluster/lib/container-commands/smallstep/create-kube-config.sh]
             args: [system:admin, system:masters]
             volumeMounts:

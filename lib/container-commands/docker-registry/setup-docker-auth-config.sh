@@ -14,8 +14,8 @@ main() {
   mkdir -p /config/certs
   info "Hashing k3s registry credentials"
   local k3s_username k3s_password
-  k3s_username=$(yq -re --arg domain "$(get_setting cluster.domain)" '.configs["cr.\($domain)"].auth.username' /etc/rancher/k3s/registries.yaml)
-  k3s_password=$(yq -re --arg domain "$(get_setting cluster.domain)" '.configs["cr.\($domain)"].auth.password' /etc/rancher/k3s/registries.yaml | htpasswd -nBi "")
+  k3s_username=$(yq -re '.configs["distribution.docker-registry.svc.cluster.local"].auth.username' /etc/rancher/k3s/registries.yaml)
+  k3s_password=$(yq -re '.configs["distribution.docker-registry.svc.cluster.local"].auth.password' /etc/rancher/k3s/registries.yaml | htpasswd -nBi "")
   k3s_password=${k3s_password#:}
 
   info "Hashing kaniko registry credentials"

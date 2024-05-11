@@ -68,7 +68,7 @@ spec:
         fsGroup: 1000
       initContainers:
       - name: setup-kube-apiserver-client-ca-config
-        image: cr.step.sm/smallstep/step-ca-bootstrap:latest
+        image: distribution.docker-registry.svc.cluster.local/step-ca-bootstrap:latest
         command: [/var/lib/home-cluster/lib/container-commands/smallstep/setup-kube-apiserver-client-ca-config.sh]
         volumeMounts:
         - name: home-cluster

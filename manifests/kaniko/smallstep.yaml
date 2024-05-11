@@ -21,7 +21,8 @@ spec:
         image: gcr.io/kaniko-project/executor:latest
         args:
         - --context=/var/lib/home-cluster/containers/step-ca-bootstrap
-        - --destination=cr.$(DOMAIN)/step-ca-bootstrap:latest
+        - --destination=distribution.docker-registry.svc.cluster.local/step-ca-bootstrap:latest
+        - --insecure-registry=distribution.docker-registry.svc.cluster.local
         - --skip-tls-verify
         env:
         - name: DOMAIN
