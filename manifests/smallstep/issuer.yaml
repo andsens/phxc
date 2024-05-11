@@ -239,6 +239,8 @@ spec:
       containers:
       - name: step-issuer
         image: cr.step.sm/smallstep/step-issuer:0.9.1
+        securityContext:
+          readOnlyRootFilesystem: true
         ports:
         - name: api
           containerPort: 443

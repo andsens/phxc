@@ -64,6 +64,8 @@ spec:
         image: cr.step.sm/smallstep/step-ca-bootstrap:latest
         command: [/var/lib/home-cluster/lib/container-commands/create-kube-apiserver-client-ca-secret.sh]
         args: [/certs/kube_apiserver_client_ca.crt]
+        securityContext:
+          readOnlyRootFilesystem: true
         env:
         - name: NAMESPACE
           valueFrom:
