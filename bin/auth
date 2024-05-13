@@ -60,6 +60,7 @@ docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
     setup_docker_cred_helper "cr.$(get_setting cluster.domain)" "$DOCKER_CRED_HELPER" "$HOME/.docker/config.json"
     setup_ssh_host_cert_trust "$STEP_PKI_CONTEXT" "*.local" "$HOME/.ssh/known_hosts"
     sign_ssh_client_keys "$STEP_PKI_CONTEXT" "$(get_setting "admin.username")"
+    renew_client_cert "$STEP_KUBE_API_CONTEXT"
 
     if [[ $CONFIG != "$HOME/.kube/home-cluster.yaml" ]]; then
       info "Removing %s" "$CONFIG"
@@ -69,7 +70,7 @@ docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
       warning "Remember to add the new client config to your \$KUBECONFIG with KUBECONFIG=\$KUBECONFIG:\$HOME/.kube/home-cluster.yaml"
     fi
   elif $renew; then
-    step ca renew --force --context home-cluster-kube-api "$(get_kube_crt_path)" "$(get_kube_key_path)"
+    renew_client_cert "$STEP_KUBE_API_CONTEXT"
   fi
 }
 

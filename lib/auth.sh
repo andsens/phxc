@@ -84,6 +84,11 @@ sign_ssh_client_keys() {
   done
 }
 
+renew_client_cert() {
+  local step_context=$1
+    step ca renew --context "$step_context" --force "$(get_kube_crt_path "$step_context")" "$(get_kube_key_path "$step_context")"
+}
+
 get_kube_config_path() {
   local kube_context=$1
   printf "%s/.kube/%s.yaml" "$HOME" "$kube_context"
