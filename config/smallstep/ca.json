@@ -22,8 +22,7 @@
         "name": "step-issuer",
         "claims": {
           "enableSSHCA": false,
-          "disableRenewal": false,
-          "allowRenewalAfterExpiry": false
+          "disableRenewal": false
         },
         "options": {
           "x509": {
@@ -43,7 +42,7 @@
           "defaultHostSSHCertDuration": "72h",
           "enableSSHCA": true,
           "disableRenewal": false,
-          "allowRenewalAfterExpiry": false
+          "allowRenewalAfterExpiry": true
         },
         "options": {
           "ssh": {
@@ -59,8 +58,8 @@
         "type": "X5C",
         "name": "kube-apiserver-client-ca",
         "claims": {
-          "enableSSHCA": true,
-          "allowRenewalAfterExpiry": true
+          "disableRenewal": true,
+          "enableSSHCA": true
         }
       }
     ]

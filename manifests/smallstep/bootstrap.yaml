@@ -113,8 +113,6 @@ spec:
         kubernetes.io/hostname: machines.k8sMaster.hostname
       restartPolicy: Never
       serviceAccountName: bootstrap
-      securityContext:
-        fsGroup: 1000
       containers:
       - name: bootstrap
         image: distribution.docker-registry.svc.cluster.local/step-ca-bootstrap:latest

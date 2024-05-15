@@ -79,8 +79,6 @@ spec:
         app.kubernetes.io/component: certificates
         cluster.local/allow-internet-egress: "true"
     spec:
-      securityContext:
-        fsGroup: 1000
       initContainers:
       - name: setup-step-ca-config
         image: distribution.docker-registry.svc.cluster.local/step-ca-bootstrap:latest
@@ -113,7 +111,7 @@ spec:
           mountPath: /home/step/config
       containers:
       - name: step-certificates
-        image: cr.step.sm/smallstep/step-ca:0.25.2
+        image: cr.step.sm/smallstep/step-ca:0.26.1
         command: [/usr/local/bin/step-ca]
         args: [/home/step/config/ca.json]
         securityContext:
