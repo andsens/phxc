@@ -30,9 +30,7 @@ metadata:
     external-dns.alpha.kubernetes.io/hostname: pki-kube.DOMAIN.
 spec:
   type: LoadBalancer
-  ipFamilies:
-  - IPv4
-  - IPv6
+  ipFamilies: [IPv4, IPv6]
   ipFamilyPolicy: RequireDualStack
   selector:
     app.kubernetes.io/name: smallstep
