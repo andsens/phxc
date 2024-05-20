@@ -14,7 +14,7 @@ alias_machine() {
 }
 
 generate_shellcheck_settings() {
-  printf "#!/usr/bin/env bash\n%s" "$(generate_settings)" >"${PKGROOT:?}/lib/settings.shellcheck.sh"
+  printf "#!/usr/bin/env bash\n# shellcheck disable=SC2016\n%s" "$(generate_settings)" >"${PKGROOT:?}/lib/settings.shellcheck.sh"
 }
 
 generate_settings() {
@@ -28,7 +28,7 @@ generate_settings() {
       else "export \($var)='\(.)'" end
     end
 EOS
-  )" "${PKGROOT:?}/home-cluster.yaml"
+  )" "${PKGROOT:?}/settings.yaml"
 }
 
 if [[ ${#BASH_SOURCE[@]} -gt 1 ]]; then

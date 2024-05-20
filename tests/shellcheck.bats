@@ -5,9 +5,9 @@ set -Eeo pipefail; shopt -s inherit_errexit
 @test 'shellcheck tooling' {
   type shellcheck &>/dev/null || skip 'shellcheck not installed'
   shellcheck -x \
-    "$BATS_TEST_DIRNAME/../bin"/* \
-    "$BATS_TEST_DIRNAME/../lib"/**/* \
-    "$BATS_TEST_DIRNAME/../tools"/*
+    "$BATS_TEST_DIRNAME"/../bin/* \
+    "$BATS_TEST_DIRNAME"/../workloads/*/commands/* \
+    "$BATS_TEST_DIRNAME"/../lib/*
 }
 
 # bats file_tags=shellcheck

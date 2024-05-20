@@ -2,9 +2,10 @@
 # shellcheck source-path=..
 
 is_machine_id() {
-  local machine expected_machine_ids=()
+  local machine machine_uuid_var expected_machine_ids=()
   for machine in "$@"; do
-    expected_machine_ids+=("$(get_setting "machines[\"$machine\"].uuid")")
+    machine_uuid_var=MACHINES_${machine^^}_UUID
+    expected_machine_ids+=("${!machine_uuid_var}")
   done
   if contains_element "$(cat /etc/machine-id)" "${expected_machine_ids[@]}"; then
     return 0

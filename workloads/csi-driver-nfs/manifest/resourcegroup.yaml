@@ -1,7 +1,7 @@
 apiVersion: kpt.dev/v1alpha1
 kind: ResourceGroup
 metadata:
-  name: inventory-csi-driver-nfs
+  name: csi-driver-nfs
   namespace: kube-system
   labels:
     cli-utils.sigs.k8s.io/inventory-id: d3dfe37ddeb8045ab080f475e999e804499f5c3b-1710015303559721914

@@ -4,6 +4,7 @@ set -Eeo pipefail; shopt -s inherit_errexit
 source "$PKGROOT/lib/common.sh"
 set -x
 
+debconf-set-selections <<<"openssh-server  openssh-server/password-authentication  boolean false"
 apt-install openssh-server
 
 cp-tpl /etc/ssh/sshd_config.d/10-no-root-login.conf

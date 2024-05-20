@@ -1,8 +1,4 @@
-ARG IMAGE
-FROM $IMAGE
-ARG MACHINE
-
-RUN setup-base
+RUN setup-node
 RUN setup-admin
 RUN setup-network
 RUN setup-sshd

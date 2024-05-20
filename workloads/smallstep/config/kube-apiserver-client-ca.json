@@ -21,7 +21,7 @@
         },
         "options": {
           "x509": {
-            "templateFile": "/var/lib/home-cluster/config/smallstep/templates/kube-apiserver-client-cert.tpl"
+            "templateFile": "/var/lib/home-cluster/workloads/smallstep/config/templates/kube-apiserver-client-cert.tpl"
           }
         }
       }

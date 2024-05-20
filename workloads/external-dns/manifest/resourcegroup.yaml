@@ -1,6 +1,6 @@
 apiVersion: kpt.dev/v1alpha1
 kind: ResourceGroup
 metadata:
-  name: inventory-external-dns
+  name: external-dns
   labels:
     cli-utils.sigs.k8s.io/inventory-id: 65acd1293550aeeae8be4ce7dc20bfee3290659b-1712001921228806903

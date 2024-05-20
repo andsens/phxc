@@ -1,4 +1,3 @@
----
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -20,13 +19,13 @@ spec:
       - name: kaniko
         image: gcr.io/kaniko-project/executor:latest
         args:
-        - --context=/var/lib/home-cluster/workloads/smallstep/containers/step-ca-bootstrap
+        - --context=/workspace/workloads/smallstep/containers/step-ca-bootstrap
         - --destination=distribution.docker-registry.svc.cluster.local/step-ca-bootstrap:latest
         - --insecure-registry=distribution.docker-registry.svc.cluster.local
         - --skip-tls-verify
         volumeMounts:
         - name: home-cluster
-          mountPath: /var/lib/home-cluster
+          mountPath: /workspace
           readOnly: true
         - name: kaniko-docker-config
           mountPath: /kaniko/.docker

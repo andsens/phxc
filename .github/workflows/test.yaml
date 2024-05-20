@@ -1,10 +1,8 @@
 name: Test
-
 on:
   push:
-    branches: [ '*' ]
-    tags: [ '*' ]
-
+    branches: ['*']
+    tags: ['*']
 jobs:
   lint:
     runs-on: ubuntu-latest

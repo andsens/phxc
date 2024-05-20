@@ -3,8 +3,6 @@
 # shellcheck disable=SC2016
 set -Eeo pipefail; shopt -s inherit_errexit
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../..")
-apk add -q kubectl
-
 source "$PKGROOT/lib/common.sh"
 
 main() {

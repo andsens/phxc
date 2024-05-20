@@ -1,6 +1,7 @@
 /.upkg
 /.pyenv
 /home-cluster.yaml
+/settings.yaml
 /images
 /mnt
 /deploy-key

@@ -54,6 +54,7 @@ done;if declare -p var_MANIFEST >/dev/null 2>&1; then eval $p'MANIFEST=("${var'\
       cert-manager
       cert-manager-issuers
       smallstep
+      bootstrap
     )
   fi
   local manifest_name manifest_data

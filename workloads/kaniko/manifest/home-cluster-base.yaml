@@ -1,0 +1,40 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  namespace: kaniko
+  name: build-home-cluster-base
+  labels:
+    app.kubernetes.io/name: kaniko
+    app.kubernetes.io/component: home-cluster-base
+spec:
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: kaniko
+        app.kubernetes.io/component: home-cluster-base
+        cluster.local/allow-internet-egress: "true"
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+        - --dockerfile=workloads/kaniko/containers/home-cluster-base/Dockerfile
+        - --destination=distribution.docker-registry.svc.cluster.local/home-cluster-base:latest
+        - --insecure-registry=distribution.docker-registry.svc.cluster.local
+        - --skip-tls-verify
+        volumeMounts:
+        - name: home-cluster
+          mountPath: /workspace
+          readOnly: true
+        - name: kaniko-docker-config
+          mountPath: /kaniko/.docker
+      volumes:
+      - name: home-cluster
+        nfs:
+          server: nfsShares.homeCluster.addr
+          path: nfsShares.homeCluster.path
+          readOnly: true
+      - name: kaniko-docker-config
+        secret:
+          secretName: kaniko-docker-config

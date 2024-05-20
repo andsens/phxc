@@ -28,7 +28,7 @@ main() {
   K3S_USERNAME=$k3s_username K3S_PASSWORD=$k3s_password \
   KANIKO_USERNAME=$kaniko_username KANIKO_PASSWORD=$kaniko_password \
   envsubst '$K3S_USERNAME $K3S_PASSWORD $KANIKO_USERNAME $KANIKO_PASSWORD' \
-    </var/lib/home-cluster/config/docker/auth.yaml >/config/auth_config.yml
+    </var/lib/home-cluster/workloads/docker-registry/config/auth.yaml >/config/auth_config.yml
 }
 
 main "$@"

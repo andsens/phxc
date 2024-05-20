@@ -45,21 +45,32 @@ for ((;docopt_i>0;docopt_i--)); do for varname in "${varnames[@]}"; do declare \
 }
 
 bootstrap() {
-  local machine=$1 format=raw layer previous_layer
-  alias_machine "$machine"
-  for layer in $MACHINE_LAYERS; do
-    [[ $layer != hyperv ]] || format=vhdx
-    if [[ -n $previous_layer ]]; then
-      docker build \
-        --build-arg "IMAGE=cr.$CLUSTER_DOMAIN/$previous_layer" --build-arg "MACHINE=$machine" --build-arg "CACHEBUST=$RANDOM" \
-        --file "$PKGROOT/workloads/bootstrap/containers/$layer/Dockerfile" --tag "cr.$CLUSTER_DOMAIN/$layer:${machine,,}" "$PKGROOT"
-      previous_layer=$layer:${machine,,}
-    else
-      previous_layer=$layer
-    fi
-  done
-  docker tag "cr.$CLUSTER_DOMAIN/$previous_layer" "cr.$CLUSTER_DOMAIN/${machine,,}:latest"
-  "$PKGROOT/workloads/bootstrap/commands/boot-convert.sh" --format $format "cr.$CLUSTER_DOMAIN/${machine,,}:latest"
+  local machine=$1
+  "$PKGROOT/workloads/bootstrap/commands/create-dockerfile.sh" "$machine"
+  docker run --rm \
+    -v "$PKGROOT:/workspace:rw" \
+    -v "$PKGROOT/images:/workspace/images:rw" \
+    gcr.io/kaniko-project/executor:latest \
+    --build-arg "MACHINE=$machine" \
+    --destination "distribution.docker-registry.svc.cluster.local/${machine,,}" \
+    --insecure-registry=distribution.docker-registry.svc.cluster.local \
+    --skip-tls-verify \
+    --tar-path "/workspace/images/$machine.tar" \
+    --no-push \
+    --dockerfile "images/$MACHINE.Dockerfile"
+  docker build \
+    --file "$PKGROOT/workloads/bootstrap/containers/create-boot-image/Dockerfile" \
+    --tag pki.$CLUSTER_DOMAIN/create-boot-image \
+    "$PKGROOT"
+  # shellcheck disable=SC2154
+  docker run --rm \
+    -v "$PKGROOT:/var/lib/home-cluster:ro" \
+    -v "$PKGROOT/images:/var/lib/home-cluster/images:rw" \
+    --cap-add SYS_ADMIN \
+    --device /dev/loop5:/dev/loop5 \
+    --device /dev/loop6:/dev/loop6 \
+    --device /dev/loop-control:/dev/loop-control \
+    pki.$CLUSTER_DOMAIN/create-boot-image "/var/lib/home-cluster/images/$machine.tar"
 }
 
 main "$@"

@@ -1,4 +1,3 @@
----
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
@@ -164,9 +163,9 @@ rules:
   resourceNames: [stepissuers.certmanager.step.sm/*, stepclusterissuers.certmanager.step.sm/*]
   resources: [signers]
   verbs: [approve]
-- apiGroups: [ coordination.k8s.io ]
-  resources: [ leases ]
-  verbs: [ create, get, list, update ]
+- apiGroups: [coordination.k8s.io]
+  resources: [leases]
+  verbs: [create, get, list, update]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole

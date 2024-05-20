@@ -35,8 +35,9 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 
 confirm_container_build() {
   if [[ -f /proc/1/cgroup ]]; then
-    [[ "$(</proc/1/cgroup)" != *:cpuset:/docker/* ]]  || return 0
+    [[ "$(</proc/1/cgroup)" != *:cpuset:/docker/* ]] || return 0
   fi
+  [[ ! -e /kaniko ]] || return 0
   error "This script is intended to be run on during the container build phase"
   printf "Do you want to continue regardless? [y/N]" >&2
   if ${HOME_CLUSTER_IGNORE_CONTAINER_BUILD:-false}; then

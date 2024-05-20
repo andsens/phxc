@@ -1,6 +1,6 @@
 apiVersion: kpt.dev/v1alpha1
 kind: ResourceGroup
 metadata:
-  name: inventory-coredns
+  name: coredns
   labels:
     cli-utils.sigs.k8s.io/inventory-id: ce1993628294896a6e0f434ae340f32b0a1656c8-1715438920288606613

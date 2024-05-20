@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ../../settings
+- credentials.yaml
+- k8s-master.yaml
+- namespace.yaml
+- Kptfile
+- resourcegroup.yaml
+replacements:
+- source: {fieldPath: data.nfsShares.homeCluster.addr, kind: ConfigMap, name: settings}
+  targets:
+  - select: {group: batch, kind: Job}
+    fieldPaths: ["spec.template.spec.volumes.[name=home-cluster].nfs.server"]
+- source: {fieldPath: data.nfsShares.homeCluster.path, kind: ConfigMap, name: settings}
+  targets:
+  - select: {group: batch, kind: Job}
+    fieldPaths: ["spec.template.spec.volumes.[name=home-cluster].nfs.path"]

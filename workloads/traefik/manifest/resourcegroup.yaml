@@ -1,7 +1,7 @@
 apiVersion: kpt.dev/v1alpha1
 kind: ResourceGroup
 metadata:
-  name: inventory-traefik
+  name: traefik
   namespace: traefik
   labels:
     cli-utils.sigs.k8s.io/inventory-id: 31a314d0593eda36d4c57bafd6b45a7c104607d0-1713218017890877611

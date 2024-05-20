@@ -1,0 +1,88 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  namespace: bootstrap
+  name: build-k8s-master
+  labels:
+    app.kubernetes.io/name: bootstrap
+    app.kubernetes.io/component: smallstep
+spec:
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: bootstrap
+        app.kubernetes.io/component: smallstep
+        cluster.local/allow-internet-egress: "true"
+    spec:
+      restartPolicy: Never
+      initContainers:
+      - name: create-dockerfile
+        image: distribution.docker-registry.svc.cluster.local/home-cluster-base:latest
+        command: [/var/lib/home-cluster/workloads/bootstrap/commands/create-dockerfile.sh]
+        args: [k8sMaster]
+        volumeMounts:
+        - name: home-cluster
+          mountPath: /var/lib/home-cluster
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+        - --build-arg
+        - MACHINE=$(MACHINE)
+        - --destination
+        - distribution.docker-registry.svc.cluster.local/non-existent
+        - --tar-path
+        - /workspace/images/$machine.tar
+        - --no-push
+        - --dockerfile
+        - images/$(MACHINE).Dockerfile
+        env:
+        - name: MACHINE
+          value: k8sMaster
+        volumeMounts:
+        - name: home-cluster
+          mountPath: /workspace
+          readOnly: true
+        - name: home-cluster
+          mountPath: /workspace/images
+          subPath: images
+        - name: kaniko-docker-config
+          mountPath: /kaniko/.docker
+      containers:
+      - name: create-boot-image
+        image: distribution.docker-registry.svc.cluster.local/create-boot-image:latest
+        args: ["/var/lib/home-cluster/images/$(MACHINE).tar"]
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            add:
+            - SYS_ADMIN
+            drop:
+            - all
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - name: home-cluster
+          mountPath: /workspace
+          readOnly: true
+        - name: home-cluster
+          mountPath: /workspace/images
+          subPath: images
+        - name: efi
+          mountPath: /dev/loop5
+        - name: root
+          mountPath: /dev/loop6
+      volumes:
+      - name: home-cluster
+        nfs:
+          server: nfsShares.homeCluster.addr
+          path: nfsShares.homeCluster.path
+      - name: kaniko-docker-config
+        secret:
+          secretName: kaniko-docker-config
+      - name: efi
+        hostPath:
+          path: /dev/loop5
+          type: BlockDevice
+      - name: root
+        hostPath:
+          path: /dev/loop6
+          type: BlockDevice
