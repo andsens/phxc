@@ -1,0 +1,7 @@
+[generic]
+  user = nbd
+  group = nbd
+
+[export]
+  exportname = /srv/ltsp/images/k8sHyperv.raw
+  readonly = true

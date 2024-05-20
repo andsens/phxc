@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-# shellcheck source-path=../../../ disable=2034,2154
-NIC_1=eth0

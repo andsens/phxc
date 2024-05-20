@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# shellcheck source-path=../../../
+set -Eeo pipefail; shopt -s inherit_errexit
+source "$PKGROOT/lib/common.sh"
+set -x
+
+apt-install systemd locales curl
+
+rm /etc/locale.gen
+dpkg-reconfigure --frontend noninteractive locales
+
+systemctl disable apt-daily.timer
+systemctl disable apt-daily-upgrade.timer
+systemctl mask apt-daily.service
+
+cp-tpl /etc/systemd/system/var-lib-home\\x2dcluster.mount
+systemctl enable var-lib-home\\x2dcluster.mount

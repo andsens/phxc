@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# shellcheck source-path=../../../
+set -Eeo pipefail; shopt -s inherit_errexit
+source "$PKGROOT/lib/common.sh"
+set -x
+
+curl -sfL https://get.k3s.io | \
+  INSTALL_K3S_SKIP_START=true \
+  K3S_TOKEN=$CLUSTER_K3STOKEN \
+  K3S_URL=$MACHINES_K8SMASTER_HOSTNAME:6443 \
+  $ROOTCMD sh -
+
+# /etc/rancher/k3s is created on master nodes but not on agents for some reason
+mkdir -p /etc/rancher/k3s

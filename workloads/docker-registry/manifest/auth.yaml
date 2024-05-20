@@ -1,0 +1,186 @@
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: docker-auth
+  labels:
+    app.kubernetes.io/name: docker-registry
+    app.kubernetes.io/component: auth
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: docker-registry
+      app.kubernetes.io/component: auth
+  ingress:
+  - toPorts:
+    - ports:
+      - port: "5001"
+        protocol: TCP
+    fromEntities:
+    - all
+  egress:
+  - toPorts:
+    - ports:
+      - port: "6379"
+    toEndpoints:
+    - matchLabels:
+        "k8s:io.kubernetes.pod.namespace": redis
+        app.kubernetes.io/name: redis
+        app.kubernetes.io/component: redis
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: docker-auth
+  labels:
+    app.kubernetes.io/name: docker-registry
+    app.kubernetes.io/component: auth
+  annotations:
+    cert-manager.io/issuer: cluster.acmeProvider.issuer
+    cert-manager.io/issuer-kind: cluster.acmeProvider.kind
+    cert-manager.io/issuer-group: cluster.acmeProvider.group
+spec:
+  tls:
+  - hosts: [cr.DOMAIN]
+    secretName: cr-tls
+  rules:
+  - host: cr.DOMAIN
+    http:
+      paths:
+      - path: /login
+        pathType: Prefix
+        backend:
+          service:
+            name: docker-auth
+            port:
+              name: web
+      - path: /auth
+        pathType: Prefix
+        backend:
+          service:
+            name: docker-auth
+            port:
+              name: web
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: docker-auth
+  labels:
+    app.kubernetes.io/name: docker-registry
+    app.kubernetes.io/component: auth
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kaniko-credentials
+  annotations:
+    secret-generator.v1.mittwald.de/autogenerate: password
+data:
+  username: a2FuaWtv # kaniko
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: docker-auth
+  namespace: docker-registry
+  labels:
+    app.kubernetes.io/name: docker-registry
+    app.kubernetes.io/component: auth
+spec:
+  selector:
+    app.kubernetes.io/name: docker-registry
+    app.kubernetes.io/component: auth
+  ports:
+  - name: web
+    port: 5001
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: docker-auth
+  namespace: docker-registry
+  labels:
+    app.kubernetes.io/name: docker-registry
+    app.kubernetes.io/component: auth
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: docker-registry
+      app.kubernetes.io/component: auth
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: docker-registry
+        app.kubernetes.io/component: auth
+        cluster.local/allow-apiserver-egress: "true"
+        cluster.local/allow-internet-egress: "true"
+    spec:
+      serviceAccountName: docker-auth
+      initContainers:
+      - name: setup-docker-auth-config
+        image: alpine
+        command: [sh, -c, 'apk add -q bash; bash /var/lib/home-cluster/workloads/docker-registry/commands/setup-docker-auth-config.sh']
+        volumeMounts:
+        - name: home-cluster
+          mountPath: /var/lib/home-cluster
+          readOnly: true
+        - name: k3s-registry-config
+          mountPath: /etc/rancher/k3s/registries.yaml
+          readOnly: true
+        - name: kaniko-credentials
+          mountPath: /kaniko-credentials
+          readOnly: true
+        - name: config
+          mountPath: /config
+      containers:
+      - name: docker-auth
+        image: cesanta/docker_auth:1.12.0
+        command: [/var/lib/home-cluster/workloads/docker-registry/commands/init-docker-auth.sh]
+        args: ['-alsologtostderr', '/config/auth_config.yml']
+        ports:
+        - name: web
+          containerPort: 5001
+        resources:
+          requests:
+            cpu: 50m
+            memory: 32Mi
+          limits:
+            memory: 256Mi
+        volumeMounts:
+        - name: home-cluster
+          mountPath: /var/lib/home-cluster
+          readOnly: true
+        - name: config
+          mountPath: /config
+        - name: jwt-cert
+          mountPath: /config/certs/jwt
+        - name: kube-apiserver-client-ca
+          mountPath: /config/certs/kube_apiserver_client_ca.crt
+          subPath: tls.crt
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: home-cluster
+        nfs:
+          server: nfsShares.homeCluster.addr
+          path: nfsShares.homeCluster.path
+          readOnly: true
+      - name: config
+        emptyDir:
+          medium: Memory
+      - name: k3s-registry-config
+        hostPath:
+          path: /etc/rancher/k3s/registries.yaml
+          type: File
+      - name: kaniko-credentials
+        secret:
+          secretName: kaniko-credentials
+      - name: kube-apiserver-client-ca
+        secret:
+          secretName: kube-apiserver-client-ca
+      - name: jwt-cert
+        secret:
+          secretName: distribution-jwt-cert
+      - name: tmp
+        emptyDir: {}

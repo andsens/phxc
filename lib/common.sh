@@ -7,9 +7,12 @@ STEP_PKI_CONTEXT=home-cluster-pki
 KUBE_CONTEXT=home-cluster
 KUBE_CLUSTER=home-cluster
 DOCKER_CRED_HELPER=home-cluster
+export DOCKER_CLI_HINTS=false
 
 PATH=$("$PKGROOT/.upkg/.bin/path_prepend" "$PKGROOT/.upkg/.bin")
 
 source "$PKGROOT/.upkg/records.sh/records.sh"
 source "$PKGROOT/.upkg/collections.sh/collections.sh"
+source "$PKGROOT/lib/machine-id.sh"
+# shellcheck source=lib/settings.shellcheck.sh
 source "$PKGROOT/lib/settings.sh"

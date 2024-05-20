@@ -1,0 +1,6 @@
+apiVersion: kpt.dev/v1alpha1
+kind: ResourceGroup
+metadata:
+  name: inventory-tftpd
+  labels:
+    cli-utils.sigs.k8s.io/inventory-id: 04ba6e7c69698eb09e690a801b6cd4e688ae3d0d-1714942150855033213

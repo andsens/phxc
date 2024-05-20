@@ -1,0 +1,5 @@
+ARG IMAGE
+FROM $IMAGE
+ARG MACHINE
+
+RUN setup-k8s-node

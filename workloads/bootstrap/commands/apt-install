@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -Eeo pipefail
+apt-get -y update
+apt-get -y install --no-install-recommends "$@"
+rm -rf /var/cache/apt/lists/*

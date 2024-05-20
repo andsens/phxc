@@ -1,8 +1,0 @@
-#!/usr/bin/env bash
-# shellcheck disable=2034
-release=bookworm
-apt_cdn=http://deb.debian.org
-security_cdn=http://security.debian.org
-secsuite=$release-security
-FAI_DEBOOTSTRAP="$release http://deb.debian.org/debian $PKGROOT/lib/debootstrap-script.sh"
-FAI_DEBOOTSTRAP_OPTS="--exclude=info --include=locales --unpack-tarball=$CACHEPATH/debootstrap/$release.tar"

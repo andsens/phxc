@@ -1,0 +1,82 @@
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: ltsp
+  labels:
+    app.kubernetes.io/name: ltsp
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ltsp
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ltsp
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: machines.k8sMaster.hostname
+      hostNetwork: true
+      initContainers:
+      - name: bootstrap
+        image: distribution.docker-registry.svc.cluster.local/ltsp:latest
+        command: [ltsp-bootstrap]
+        volumeMounts:
+      containers:
+      - name: tftpd
+        image: distribution.docker-registry.svc.cluster.local/ltsp:latest
+        command: ["/usr/sbin/in.tftpd", "-L", "-u", "tftp", "-a", ":69", "-s", "/srv/tftp"]
+        securityContext:
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: [ALL]
+            add:
+            - NET_BIND_SERVICE
+            - SETUID
+            - SETGID
+            - SYS_CHROOT
+        ports:
+        - name: tftp
+          port: 69
+      - name: nbd-server
+        image: distribution.docker-registry.svc.cluster.local/ltsp:latest
+        command: [nbd-server-foreground]
+        securityContext:
+          capabilities:
+            drop: [ALL]
+            add:
+            - NET_BIND_SERVICE
+            - SETUID
+            - SETGID
+        volumeMounts:
+        - name: ltsp
+          mountPath: /etc/nbd-server
+          subPath: nbd-config
+          readOnly: true
+        - name: ltsp
+          mountPath: /srv/ltsp/images
+          subPath: images
+          readOnly: true
+        ports:
+        - name: nbd
+          port: 10809
+      volumes:
+      - name: ltsp-config
+        configMap:
+          name: ltsp-config
+      - name: nbd-config
+        configMap:
+          name: nbd-config
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ltsp
+  labels:
+    app.kubernetes.io/name: ltsp
+spec:
+  storageClassName: nas-nfs-workloads
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 1Mi

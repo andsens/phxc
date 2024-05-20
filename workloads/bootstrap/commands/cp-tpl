@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# shellcheck source-path=../../../
+set -Eeo pipefail; shopt -s inherit_errexit
+PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../..")
+
+main() {
+  source "$PKGROOT/lib/common.sh"
+
+  DOC="cp-tpl - Render a template and save it at the corresponding container path
+Usage:
+  cp-tpl [options] TPLPATH
+
+Options
+  -d --destination PATH  Override the destination path
+"
+# docopt parser below, refresh this parser with `docopt.sh cp-tpl`
+# shellcheck disable=2016,2086,2317,1090,1091,2034
+docopt() { source "$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh" '2.0.0a3' || {
+ret=$?;printf -- "exit %d\n" "$ret";exit "$ret";};set -e
+trimmed_doc=${DOC:0:172};usage=${DOC:75:33};digest=8431e;options=();node_0(){
+value TPLPATH a;};cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2
+printf "%s\n" "${DOC:75:33}" >&2;exit 1;}';local varnames=(TPLPATH) varname
+for varname in "${varnames[@]}"; do unset "var_$varname";done;parse 0 "$@"
+local p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset \
+"$p$varname";done;eval $p'TPLPATH=${var_TPLPATH:-};';local docopt_i=1;[[ \
+$BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for \
+varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
+# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh"' cp-tpl`
+  eval "$(docopt "$@")"
+  confirm_container_build
+
+  mkdir -p "$(dirname "${__destination:-$TPLPATH}")"
+  envsubst <"$PKGROOT/workloads/bootstrap/assets/${TPLPATH#/}" >"${__destination:-$TPLPATH}"
+}
+
+confirm_container_build() {
+  if [[ -f /proc/1/cgroup ]]; then
+    [[ "$(</proc/1/cgroup)" != *:cpuset:/docker/* ]]  || return 0
+  fi
+  error "This script is intended to be run on during the container build phase"
+  printf "Do you want to continue regardless? [y/N]" >&2
+  if ${HOME_CLUSTER_IGNORE_CONTAINER_BUILD:-false}; then
+    return 0
+  elif [[ ! -t 1 ]]; then
+    printf " stdin is not a tty and HOME_CLUSTER_IGNORE_CONTAINER_BUILD!=true, aborting...\n" >&2
+    return 1
+  else
+    local continue
+    read -r continue
+    [[ $continue =~ [Yy] ]] || fatal "User aborted operation"
+    return 0
+  fi
+}
+
+main "$@"

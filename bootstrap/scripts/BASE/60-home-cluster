@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-
-error=0; trap 'error=$(($?>$error?$?:$error))' ERR # save maximum error code
-
-mkdir "${target:?}/var/lib/home-cluster"
-fcopy -SM /etc/systemd/system/var-lib-home\\x2dcluster.mount
-$ROOTCMD systemctl enable var-lib-home\\x2dcluster.mount
-
-exit $error

@@ -1,0 +1,191 @@
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: step-ca
+  labels:
+    app.kubernetes.io/name: smallstep
+    app.kubernetes.io/component: certificates
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: smallstep
+      app.kubernetes.io/component: certificates
+  ingress:
+  - toPorts:
+    - ports:
+      - port: "9000"
+    fromEntities:
+    - all
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: step-ca-external
+  labels:
+    app.kubernetes.io/name: smallstep
+    app.kubernetes.io/component: certificates
+  annotations:
+    io.cilium/lb-ipam-ips: "cluster.smallstep.fixedIPv4,cluster.smallstep.fixedIPv6"
+    external-dns.alpha.kubernetes.io/hostname: pki.DOMAIN.
+spec:
+  type: LoadBalancer
+  ipFamilies: [IPv4, IPv6]
+  ipFamilyPolicy: RequireDualStack
+  selector:
+    app.kubernetes.io/name: smallstep
+    app.kubernetes.io/component: certificates
+  ports:
+  - name: api
+    port: 9000
+    targetPort: api
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: step-ca
+  labels:
+    app.kubernetes.io/name: smallstep
+    app.kubernetes.io/component: certificates
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: smallstep
+    app.kubernetes.io/component: certificates
+  ports:
+  - name: api
+    port: 9000
+    targetPort: api
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: step-ca
+  labels:
+    app.kubernetes.io/name: smallstep
+    app.kubernetes.io/component: certificates
+spec:
+  serviceName: step-ca
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: smallstep
+      app.kubernetes.io/component: certificates
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: smallstep
+        app.kubernetes.io/component: certificates
+        cluster.local/allow-internet-egress: "true"
+    spec:
+      initContainers:
+      - name: setup-step-ca-config
+        image: distribution.docker-registry.svc.cluster.local/step-ca-bootstrap:latest
+        command: [/var/lib/home-cluster/workloads/smallstep/commands/setup-step-ca-config.sh]
+        securityContext:
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - name: home-cluster
+          mountPath: /var/lib/home-cluster
+          readOnly: true
+        - name: step-issuer-provisioner
+          mountPath: /home/step/step-issuer-provisioner
+          readOnly: true
+        - name: step-issuer-provisioner-password
+          mountPath: /home/step/step-issuer-provisioner-password
+          subPath: password
+          readOnly: true
+        - name: ssh-host-provisioner
+          mountPath: /home/step/ssh-host-provisioner
+          readOnly: true
+        - name: ssh-host-provisioner-password
+          mountPath: /home/step/ssh-host-provisioner-password
+          subPath: password
+          readOnly: true
+        - name: kube-apiserver-client-ca-cert
+          mountPath: /home/step/certs/kube_apiserver_client_ca.crt
+          subPath: tls.crt
+          readOnly: true
+        - name: config-rw
+          mountPath: /home/step/config
+      containers:
+      - name: step-certificates
+        image: cr.step.sm/smallstep/step-ca:0.26.1
+        command: [/usr/local/bin/step-ca]
+        args: [/home/step/config/ca.json]
+        securityContext:
+          readOnlyRootFilesystem: true
+        ports:
+        - name: api
+          containerPort: 9000
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: api
+            scheme: HTTPS
+          initialDelaySeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: api
+            scheme: HTTPS
+          initialDelaySeconds: 5
+        volumeMounts:
+        - name: root-cert
+          mountPath: /home/step/certs/root_ca.crt
+          subPath: tls.crt
+          readOnly: true
+        - name: intermediate
+          mountPath: /home/step/certs/intermediate_ca.crt
+          subPath: tls.crt
+          readOnly: true
+        - name: intermediate
+          mountPath: /home/step/certs/intermediate_ca_key
+          subPath: tls.key
+          readOnly: true
+        - name: config-rw
+          mountPath: /home/step/config
+          readOnly: true
+        - name: database
+          mountPath: /home/step/db
+          readOnly: false
+      volumes:
+      - name: home-cluster
+        nfs:
+          server: nfsShares.homeCluster.addr
+          path: nfsShares.homeCluster.path
+          readOnly: true
+      - name: step-issuer-provisioner
+        secret:
+          secretName: step-issuer-provisioner
+      - name: step-issuer-provisioner-password
+        secret:
+          secretName: step-issuer-provisioner-password
+      - name: ssh-host-provisioner
+        secret:
+          secretName: ssh-host-provisioner
+      - name: ssh-host-provisioner-password
+        secret:
+          secretName: ssh-host-provisioner-password
+      - name: root-cert
+        secret:
+          secretName: smallstep-root
+      - name: intermediate
+        secret:
+          secretName: smallstep-intermediate
+      - name: kube-apiserver-client-ca-cert
+        secret:
+          secretName: kube-apiserver-client-ca
+      - name: config-rw
+        emptyDir: {}
+  volumeClaimTemplates:
+  - metadata:
+      name: database
+      labels:
+        app.kubernetes.io/name: smallstep
+        app.kubernetes.io/component: certificates
+    spec:
+      storageClassName: nas-nfs-workloads
+      accessModes: [ReadWriteOnce]
+      resources:
+        requests:
+          storage: 1Gi

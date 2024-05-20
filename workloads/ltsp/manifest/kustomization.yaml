@@ -1,0 +1,31 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: tftpd
+resources:
+- ../settings
+- tftpd.yaml
+- namespace.yaml
+- Kptfile
+- resourcegroup.yaml
+configMapGenerator:
+- files:
+  - config/ltsp.conf
+  name: ltsp-config
+- files:
+  - config=config/nbd-server.conf
+  name: nbd-config
+replacements:
+- source: {fieldPath: data.machines.k8sMaster.hostname, kind: ConfigMap, name: settings}
+  targets:
+  - select: {group: apps, kind: Deployment, name: tftpd}
+    fieldPaths: [spec.template.spec.nodeSelector.kubernetes\.io/hostname]
+- source: {fieldPath: data.cluster.tftpd.fixedIPv4, kind: ConfigMap, name: settings}
+  targets:
+  - select: {kind: Service, name: tftpd}
+    fieldPaths: [metadata.annotations.io\.cilium/lb-ipam-ips]
+    options: {delimiter: ',', index: 0}
+- source: {fieldPath: data.cluster.tftpd.fixedIPv6, kind: ConfigMap, name: settings}
+  targets:
+  - select: {kind: Service, name: tftpd}
+    fieldPaths: [metadata.annotations.io\.cilium/lb-ipam-ips]
+    options: {delimiter: ',', index: 1}

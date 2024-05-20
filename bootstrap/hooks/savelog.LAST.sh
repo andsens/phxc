@@ -1,1 +1,0 @@
-/usr/share/doc/fai-doc/examples/simple/hooks/savelog.LAST.sh

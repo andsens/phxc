@@ -1,4 +1,0 @@
-#!/usr/bin/env bash
-
-echo "Acquire::http::Proxy \"http://localhost:3142\";" > "${target:?}/etc/apt/apt.conf.d/02proxy"
-echo force-unsafe-io > "${target:?}/etc/dpkg/dpkg.cfg.d/unsafe-io"

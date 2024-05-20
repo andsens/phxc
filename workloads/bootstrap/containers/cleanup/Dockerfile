@@ -1,0 +1,7 @@
+ARG IMAGE
+FROM $IMAGE
+ARG MACHINE
+
+RUN rm -rf /var/lib/home-cluster
+ENV PATH=$OLD_PATH
+ENV PKGROOT=

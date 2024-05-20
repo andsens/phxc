@@ -1,0 +1,11 @@
+[Unit]
+Description=Mount /home/${ADMIN_USERNAME}
+After=network-online.target
+
+[Install]
+WantedBy=multi-user.target
+
+[Mount]
+What=${NFS_SHARES_ADMIN_HOME_ADDR}:${NFS_SHARES_ADMIN_HOME_PATH}
+Where=/home/${ADMIN_USERNAME}
+Type=nfs

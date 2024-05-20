@@ -1,5 +1,0 @@
-PACKAGES install-norec
-zstd
-util-linux
-systemd-boot
-${kernelname}

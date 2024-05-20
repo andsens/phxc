@@ -1,4 +1,0 @@
-#!/usr/bin/env bash
-# shellcheck disable=2034
-
-kernelname=linux-image-${arch_suffix:?}

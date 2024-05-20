@@ -1,0 +1,33 @@
+---
+apiVersion: cilium.io/v2alpha1
+kind: CiliumBGPPeeringPolicy
+metadata:
+ name: router
+spec:
+  nodeSelector:
+    matchLabels:
+      kubernetes.io/hostname: machines.k8sMaster.hostname
+  virtualRouters:
+  # Hardcoded because kustomize always replaces with strings and cilium needs this to be a number
+  # If you change it here, also change it in bin/usg
+  - localASN: 65000
+    # If the router is not informed about the CIDR it will not be able to route response from outgoing IPv6 connections
+    # IPv4 is NAT'ed through the host and does not have that problem
+    podIPPoolSelector:
+      matchExpressions:
+      - {key: somekey, operator: NotIn, values: ['never-used-value']}
+    exportPodCIDR: true
+    serviceSelector:
+      matchExpressions:
+      - {key: somekey, operator: NotIn, values: ['never-used-value']}
+    neighbors:
+    - peerAddress: cluster.router.fixedIPv4/32
+      peerASN: 64512
+      families:
+      - afi: ipv4
+        safi: unicast
+    - peerAddress: cluster.router.fixedIPv6/128
+      peerASN: 64512
+      families:
+      - afi: ipv6
+        safi: unicast

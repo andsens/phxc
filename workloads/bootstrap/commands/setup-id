@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# shellcheck source-path=../../../
+set -Eeo pipefail; shopt -s inherit_errexit
+source "$PKGROOT/lib/common.sh"
+set -x
+
+cp-tpl /etc/hostname
+cp-tpl /var/lib/dbus/machine-id
+cp-tpl /etc/machine-id

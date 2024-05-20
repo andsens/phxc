@@ -1,0 +1,236 @@
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: distribution
+  labels:
+    app.kubernetes.io/name: docker-registry
+    app.kubernetes.io/component: distribution
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: docker-registry
+      app.kubernetes.io/component: distribution
+  ingress:
+  - toPorts:
+    - ports:
+      - port: "5000"
+    fromEntities:
+    - all
+  egress:
+  - toPorts:
+    - ports:
+      - port: "6379"
+    toEndpoints:
+    - matchLabels:
+        "k8s:io.kubernetes.pod.namespace": redis
+        app.kubernetes.io/name: redis
+        app.kubernetes.io/component: redis
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: distribution
+  labels:
+    app.kubernetes.io/name: docker-registry
+    app.kubernetes.io/component: distribution
+  annotations:
+    app.kubernetes.io/name: docker-registry
+    cert-manager.io/issuer: cluster.acmeProvider.issuer
+    cert-manager.io/issuer-kind: cluster.acmeProvider.kind
+    cert-manager.io/issuer-group: cluster.acmeProvider.group
+spec:
+  tls:
+  - hosts: [cr.DOMAIN]
+    secretName: cr-tls
+  rules:
+  - host: cr.DOMAIN
+    http:
+      paths:
+      - path: /v2
+        pathType: Prefix
+        backend:
+          service:
+            name: distribution
+            port:
+              name: web
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: distribution
+  labels:
+    app.kubernetes.io/name: docker-registry
+    app.kubernetes.io/component: distribution
+spec:
+  selector:
+    app.kubernetes.io/name: docker-registry
+    app.kubernetes.io/component: distribution
+  ports:
+  - name: web
+    port: 80
+    targetPort: 5000
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: distribution-jwt
+spec:
+  secretName: distribution-jwt-cert
+  commonName: distribution.local
+  issuerRef:
+    group: certmanager.step.sm
+    kind: StepClusterIssuer
+    name: step-issuer
+  usages: [any]
+---
+apiVersion: secretgenerator.mittwald.de/v1alpha1
+kind: StringSecret
+metadata:
+  name: distribution-http-secret
+spec:
+  fields:
+  - fieldName: http-secret
+    length: "32"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: distribution
+  labels:
+    app.kubernetes.io/name: docker-registry
+    app.kubernetes.io/component: distribution
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: docker-registry
+      app.kubernetes.io/component: distribution
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: docker-registry
+        app.kubernetes.io/component: distribution
+    spec:
+      containers:
+      - name: distribution
+        image: distribution/distribution:2.8.3
+        securityContext:
+          readOnlyRootFilesystem: true
+        env:
+        - name: REGISTRY_HTTP_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: distribution-http-secret
+              key: http-secret
+        - name: DOMAIN
+          value: cr.DOMAIN
+        - name: REGISTRY_AUTH_TOKEN_REALM
+          value: https://$(DOMAIN)/auth
+        ports:
+        - name: web
+          containerPort: 5000
+        livenessProbe:
+          httpGet:
+            path: /
+            port: web
+          failureThreshold: 20
+          periodSeconds: 30
+          successThreshold: 1
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /
+            port: web
+          failureThreshold: 20
+          periodSeconds: 30
+          successThreshold: 1
+          timeoutSeconds: 5
+        resources:
+          requests:
+            cpu: 100m
+            memory: 368Mi
+          limits:
+            memory: 768Mi
+        volumeMounts:
+        - name: home-cluster
+          mountPath: /etc/docker/registry/config.yml
+          subPath: workloads/docker-registry/config/distribution.yaml
+          readOnly: true
+        - name: jwt-cert
+          mountPath: /etc/docker/auth/jwt.crt
+          subPath: tls.crt
+        - name: images
+          mountPath: /var/lib/registry
+      securityContext:
+        fsGroup: 1000
+        runAsUser: 1000
+      volumes:
+      - name: home-cluster
+        nfs:
+          server: nfsShares.homeCluster.addr
+          path: nfsShares.homeCluster.path
+          readOnly: true
+      - name: jwt-cert
+        secret:
+          secretName: distribution-jwt-cert
+      - name: images
+        persistentVolumeClaim:
+          claimName: images
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: garbage-collection
+  labels:
+    app.kubernetes.io/name: docker-registry
+    app.kubernetes.io/component: distribution
+spec:
+  schedule: "30 4 * * *"
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: docker-registry
+            app.kubernetes.io/component: distribution
+        spec:
+          restartPolicy: Never
+          containers:
+          - name: distribution
+            image: distribution/distribution:2.8.3
+            args: [garbage-collect, /etc/docker/registry/config.yml]
+            securityContext:
+              readOnlyRootFilesystem: true
+            volumeMounts:
+            - name: home-cluster
+              mountPath: /etc/docker/registry/config.yml
+              subPath: workloads/docker/config/distribution.yaml
+              readOnly: true
+            - name: images
+              mountPath: /var/lib/registry
+          securityContext:
+            fsGroup: 1000
+            runAsUser: 1000
+          volumes:
+          - name: home-cluster
+            nfs:
+              server: nfsShares.homeCluster.addr
+              path: nfsShares.homeCluster.path
+              readOnly: true
+          - name: images
+            persistentVolumeClaim:
+              claimName: images
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: images
+  labels:
+    app.kubernetes.io/name: docker-registry
+    app.kubernetes.io/component: distribution
+spec:
+  storageClassName: nas-nfs-workloads
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 5Gi

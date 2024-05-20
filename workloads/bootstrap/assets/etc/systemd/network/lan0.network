@@ -1,0 +1,5 @@
+[Match]
+Name=${MACHINE_NIC_LAN0}
+
+[Network]
+DHCP=yes

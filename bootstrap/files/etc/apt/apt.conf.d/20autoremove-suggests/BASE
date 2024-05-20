@@ -1,2 +1,0 @@
-# Source https://github.com/andsens/bootstrap-vz/blob/fcdc6993f59e521567fb101302b02312e741b88c/bootstrapvz/plugins/minimize_size/assets/apt-autoremove-suggests
-Apt::AutoRemove::SuggestsImportant "false";

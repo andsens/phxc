@@ -1,9 +1,7 @@
 /.upkg
 /.pyenv
-/cache
+/home-cluster.yaml
 /images
-/logs
 /mnt
-/bootstrap.args.sh
 /deploy-key
 /deploy-key.pub

@@ -1,7 +1,0 @@
-# config for a disk image for a VM
-#
-# p=<partlabel> <mountpoint> <size>   <fs type> <mount options> <misc options>
-
-disk_config disk1 fstabkey:uuid align-at:1M
-
-p=root /         0-  ext4  rw,discard,barrier=0,noatime,errors=remount-ro tuneopts="-c 0 -i 0"

@@ -1,51 +1,39 @@
 #!/usr/bin/env bash
 # shellcheck source-path=..
 
-get_setting() {
-  local path=$1 parent key
-  parent=${path%'.'*}
-  key=${path##*'.'}
-  if yq -re ".$parent | has(\"$key\")" "$PKGROOT/config/home-cluster.yaml" >/dev/null; then
-    yq -re ".$path // empty" "$PKGROOT/config/home-cluster.yaml"
-  else
-    fatal "Unable to find setting path '%s' in %s" "$path" "$PKGROOT/config/home-cluster.yaml"
-    return 1
-  fi
+eval_settings() {
+  eval "$(generate_settings)"
+  [[ -z $MACHINE ]] || alias_machine "$MACHINE"
 }
 
-is_machine_id() {
-  local machine expected_machine_ids=()
-  for machine in "$@"; do
-    expected_machine_ids+=("$(get_setting "machines[\"$machine\"].uuid")")
+alias_machine() {
+  local machine=$1 key
+  for key in $(env | cut -d = -f 1 | grep "^MACHINES_${machine^^}_"); do
+    eval "export ${key/#"MACHINES_${machine^^}"/MACHINE}='${!key}'"
   done
-  if contains_element "$(cat /etc/machine-id)" "${expected_machine_ids[@]}"; then
-    return 0
-  else
-    return 1
-  fi
 }
 
-get_machine() {
-  # shellcheck disable=2016
-  yq -re --arg machine_id "$1" '.machines | to_entries[] | select(.value.uuid==$machine_id) | .key' "$PKGROOT/config/home-cluster.yaml"
+generate_shellcheck_settings() {
+  printf "#!/usr/bin/env bash\n%s" "$(generate_settings)" >"${PKGROOT:?}/lib/settings.shellcheck.sh"
 }
 
-confirm_machine_id() {
-  if ! is_machine_id "$@"; then
-    error "This script is intended to be run on %s" "$(join_by , "$@")"
-    printf "Do you want to continue regardless? [y/N]" >&2
-    if ${HOME_CLUSTER_IGNORE_MACHINE_ID:-false}; then
-      printf " HOME_CLUSTER_IGNORE_MACHINE_ID=true, continuing...\n" >&2
-      return 0
-    elif [[ ! -t 1 ]]; then
-      printf " stdin is not a tty and HOME_CLUSTER_IGNORE_MACHINE_ID!=true, aborting...\n" >&2
-      return 1
+generate_settings() {
+  yq -r "$(cat <<'EOS'
+    . as $root | paths |
+    . as $path | join("_") | ascii_upcase as $var |
+    $root | getpath($path) |
+    if type == "object" then empty
     else
-      local continue
-      read -r continue
-      [[ $continue =~ [Yy] ]] || fatal "User aborted operation"
-      return 0
-    fi
-  fi
-  return 0
+      if type == "array" then "export \($var)='\(. | join("\n"))'"
+      else "export \($var)='\(.)'" end
+    end
+EOS
+  )" "${PKGROOT:?}/home-cluster.yaml"
 }
+
+if [[ ${#BASH_SOURCE[@]} -gt 1 ]]; then
+  eval_settings
+else
+  PKGROOT=$(realpath "$(dirname "${BASH_SOURCE[0]}")/..")
+  generate_shellcheck_settings
+fi

@@ -1,9 +1,0 @@
-[wsl2]
-networkingMode = mirrored
-[boot]
-systemd = true
-[interop]
-appendWindowsPath = false
-[network]
-hostname = {%FQDN%}
-generateHosts = false

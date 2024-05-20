@@ -1,5 +1,0 @@
-[Match]
-Name={%NIC_1%}
-
-[Network]
-DHCP=yes

@@ -59,7 +59,7 @@ done;if declare -p var_MANIFEST >/dev/null 2>&1; then eval $p'MANIFEST=("${var'\
   local manifest_name manifest_data
   # shellcheck disable=2153
   for manifest_name in "${MANIFEST[@]}"; do
-    manifest_data=$(kustomize build --enable-alpha-plugins --enable-exec "$PKGROOT/manifests/$manifest_name")
+    manifest_data=$(kustomize build --enable-alpha-plugins --enable-exec "$PKGROOT/workloads/$manifest_name/manifest")
     # shellcheck disable=2154
     if $apply; then
       kpt live apply - "${kptargs[@]}" <<<"$manifest_data"
