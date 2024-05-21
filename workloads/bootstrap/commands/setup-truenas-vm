@@ -14,3 +14,5 @@ printf "/dev/vdb  /var/lib/persistent   ext4    defaults,x-systemd.makefs,x-syst
 
 cp-tpl /etc/systemd/system/link-k3s-data.service
 systemctl enable link-k3s-data.service
+
+apt-install linux-image-amd64
