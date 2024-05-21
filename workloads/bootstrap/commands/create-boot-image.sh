@@ -30,62 +30,73 @@ varnames=(__format TARPATH) varname;for varname in "${varnames[@]}"; do unset \
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh"' create-boot-image.sh`
   eval "$(docopt "$@")"
 
-  local tar=$1 efi_size=64 disk_size_mib tar_size_b image
+  local tar=$1 efi_size=64 disk_size_mib tar_size_b sectors_per_mib image
+  sectors_per_mib=$(( 1024 * 1024 / 512 ))
+  secondary_gpt_sectors=33
   tar_size_b=$(stat -c %s "$tar")
   # Disk size = 5 * Tar size
   disk_size_mib=$((tar_size_b * 5 / 1024 / 1024))
   image=$(dirname "$TARPATH")/$(basename "$TARPATH" .tar).raw
-
-  EFI_LOOP=/dev/loop5
-  ROOT_LOOP=/dev/loop6
+  # SD_GPT_ESP=c12a7328-f81f-11d2-ba4b-00a0c93ec93b
+  # SD_GPT_ROOT_X86_64=4f68bce3-e8cd-4db1-96e7-fbcaf984b709
 
   truncate --size ${disk_size_mib}M "$image"
 
-  parted -s -a optimal "$image" mklabel gpt mkpart primary fat32 1MiB $(( 1 + efi_size ))MiB set 1 esp on
-  parted -s -a optimal "$image" mkpart primary ext4 $(( 1 + efi_size ))MiB $(( disk_size_mib - 1 ))MiB
+  sfdisk "$image" <<EOF
+label: gpt
+label-id: $(uuidgen)
 
-  trap 'set +e; unmount_all; detach_all; rm -rf "$TMP"' EXIT
+start=$(( 1 * sectors_per_mib )), size=$(( efi_size * sectors_per_mib )), type=U, bootable
+start=$(( ( 1 + efi_size ) * sectors_per_mib )), size=$(( ( disk_size_mib - ( 1 + efi_size ) ) * sectors_per_mib - secondary_gpt_sectors )), type=L
+EOF
 
-  losetup -b 4K -o 1MiB --sizelimit ${efi_size}MiB $EFI_LOOP "$image"
-  losetup -b 4K -o $(( 1 + efi_size ))MiB --sizelimit $(( disk_size_mib - 1 - efi_size - 1 ))MiB $ROOT_LOOP "$image"
-  mkfs.vfat $EFI_LOOP
-  mkfs.ext4 $ROOT_LOOP
-  tune2fs -c 0 -i 0 $ROOT_LOOP
+  LOOP=$(losetup --find --partscan --show "$image")
+  trap 'set +e; unmount_all; detach' EXIT
+
+  local efi_dev=${LOOP}p1 root_dev=${LOOP}p2
+
+  mkfs.vfat "$efi_dev"
+  mkfs.ext4 "$root_dev"
+  tune2fs -c 0 -i 0 "$root_dev"
 
   mkdir /mnt/image
-  mount -t auto $ROOT_LOOP /mnt/image
+  mount -t auto "$root_dev" /mnt/image
 
   local layer
   for layer in $(jq -r '.[0].Layers[]' <(tar -xOf "$tar" manifest.json)); do
     tar -xOf "$tar" "$layer" | tar -xz -C /mnt/image
   done
 
+
   mount --bind /dev /mnt/image/dev
   mount -t devpts none /mnt/image/dev/pts
   mount -t proc none /mnt/image/proc
   mount -t sysfs none /mnt/image/sys
 
+  local root_uuid efi_uuid
+  # It should be possible to use https://uapi-group.org/specifications/specs/discoverable_partitions_specification/
+  # with https://manpages.debian.org/bookworm/systemd/systemd-gpt-auto-generator.8.en.html
+  # in order to be able to completely omit both /etc/fstab and the kernel root param
+  # root_uuid=$(chroot /mnt/image systemd-id128 -u --app-specific=$SD_GPT_ROOT_X86_64 machine-id)
+  # sfdisk --part-uuid "$image" 2 "$root_uuid"
+  efi_uuid=$(blkid -s UUID -o value "${LOOP}p1")
+  root_uuid=$(blkid -s UUID -o value "${LOOP}p2")
+
   mkdir /mnt/image/boot/efi
-  mount -t auto $EFI_LOOP /mnt/image/boot/efi
+  mount -t auto "$efi_dev" /mnt/image/boot/efi
 
-  mkdir -p /dev/disk/by-uuid
-  ln -s "../../$(basename $EFI_LOOP)" "/mnt/image/dev/disk/by-uuid/$(blkid -s UUID -o value $EFI_LOOP)"
-  ln -s "../../$(basename $ROOT_LOOP)" "/mnt/image/dev/disk/by-uuid/$(blkid -s UUID -o value $ROOT_LOOP)"
-  printf "root=UUID=%s\n" "$(blkid -s UUID -o value $ROOT_LOOP)" >/mnt/image/etc/kernel/cmdline
-  printf '# /etc/fstab: static file system information.
-#
-# <file sys>    <mount point>   <type>  <options>       <dump>  <pass>
-%-15s /               ext4    rw,discard,barrier=0,noatime,errors=remount-ro  0       1
+  printf "root=UUID=%s\n" "$root_uuid" >/mnt/image/etc/kernel/cmdline
+  printf '%-15s /               ext4    rw,discard,barrier=0,noatime,errors=remount-ro  0       1
 %-15s /boot/efi       vfat    defaults        0       2
-' "UUID=$(blkid -s UUID -o value $ROOT_LOOP)" "UUID=$(blkid -s UUID -o value $EFI_LOOP)" >/mnt/image/etc/fstab
+' "UUID=$root_uuid" "UUID=$efi_uuid" >>/mnt/image/etc/fstab
+# ' "UUID=$root_uuid" "UUID=$SD_GPT_ESP" >/mnt/image/etc/fstab
 
-  chroot /mnt/image bootctl install
+  chroot /mnt/image bootctl --no-variables install
   chroot /mnt/image update-initramfs -u -k all
   unmount_all
-  trap 'detach_all; rm -rf "$TMP"' EXIT
-  zerofree $ROOT_LOOP
-  detach_all
-  trap 'rm -rf "$TMP"' EXIT
+  trap 'detach' EXIT
+  zerofree "$root_dev"
+  detach
 
   # shellcheck disable=SC2154
   if [[ $__format != raw ]]; then
@@ -105,9 +116,8 @@ unmount_all() {
   umount -q /mnt/image
 }
 
-detach_all() {
-  losetup --detach "$EFI_LOOP"
-  losetup --detach "$ROOT_LOOP"
+detach() {
+  losetup --detach "$LOOP"
 }
 
 main "$@"

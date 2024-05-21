@@ -31,7 +31,7 @@ spec:
         - --destination
         - distribution.docker-registry.svc.cluster.local/non-existent
         - --tar-path
-        - /workspace/images/$machine.tar
+        - /workspace/images/$(MACHINE).tar
         - --no-push
         - --dockerfile
         - images/$(MACHINE).Dockerfile
@@ -51,25 +51,20 @@ spec:
       - name: create-boot-image
         image: distribution.docker-registry.svc.cluster.local/create-boot-image:latest
         args: ["/var/lib/home-cluster/images/$(MACHINE).tar"]
+        env:
+        - name: MACHINE
+          value: k8sMaster
         securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            add:
-            - SYS_ADMIN
-            drop:
-            - all
-          readOnlyRootFilesystem: true
+          privileged: true
         volumeMounts:
         - name: home-cluster
-          mountPath: /workspace
+          mountPath: /var/lib/home-cluster
           readOnly: true
         - name: home-cluster
-          mountPath: /workspace/images
+          mountPath: /var/lib/home-cluster/images
           subPath: images
-        - name: efi
-          mountPath: /dev/loop5
-        - name: root
-          mountPath: /dev/loop6
+        - name: dev
+          mountPath: /dev
       volumes:
       - name: home-cluster
         nfs:
@@ -78,11 +73,6 @@ spec:
       - name: kaniko-docker-config
         secret:
           secretName: kaniko-docker-config
-      - name: efi
+      - name: dev
         hostPath:
-          path: /dev/loop5
-          type: BlockDevice
-      - name: root
-        hostPath:
-          path: /dev/loop6
-          type: BlockDevice
+          path: /dev

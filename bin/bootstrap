@@ -66,10 +66,8 @@ bootstrap() {
   docker run --rm \
     -v "$PKGROOT:/var/lib/home-cluster:ro" \
     -v "$PKGROOT/images:/var/lib/home-cluster/images:rw" \
-    --cap-add SYS_ADMIN \
-    --device /dev/loop5:/dev/loop5 \
-    --device /dev/loop6:/dev/loop6 \
-    --device /dev/loop-control:/dev/loop-control \
+    --privileged \
+    --volume /dev:/dev \
     pki.$CLUSTER_DOMAIN/create-boot-image "/var/lib/home-cluster/images/$machine.tar"
 }
 
