@@ -3,16 +3,16 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   namespace: bootstrap
-  name: build-k8s-master
+  name: build-k8s-hyper-v
   labels:
     app.kubernetes.io/name: bootstrap
-    app.kubernetes.io/component: build-k8s-master
+    app.kubernetes.io/component: build-k8s-hyper-v
 spec:
   template:
     metadata:
       labels:
         app.kubernetes.io/name: bootstrap
-        app.kubernetes.io/component: build-k8s-master
+        app.kubernetes.io/component: build-k8s-hyper-v
         cluster.local/allow-internet-egress: "true"
     spec:
       restartPolicy: Never
@@ -21,11 +21,10 @@ spec:
         image: distribution.docker-registry.svc.cluster.local/home-cluster-base:latest
         imagePullPolicy: Always
         command: [/var/lib/home-cluster/workloads/bootstrap/commands/create-dockerfile.sh]
-        args: [k8sMaster]
+        args: [k8sHyperV]
         volumeMounts:
         - name: home-cluster
           mountPath: /var/lib/home-cluster
-          readOnly: true
         - name: images
           mountPath: /images/dockerfiles
           subPath: dockerfiles
@@ -43,11 +42,10 @@ spec:
         - images/dockerfiles/$(MACHINE).Dockerfile
         env:
         - name: MACHINE
-          value: k8sMaster
+          value: k8sHyperV
         volumeMounts:
         - name: home-cluster
           mountPath: /workspace
-          readOnly: true
         - name: images
           mountPath: /workspace/images/dockerfiles
           subPath: dockerfiles
@@ -58,26 +56,26 @@ spec:
         - name: kaniko-docker-config
           mountPath: /kaniko/.docker
       containers:
-      - name: create-uefi-boot-image
-        image: distribution.docker-registry.svc.cluster.local/create-uefi-boot-image:latest
+      - name: create-pxe-boot-image
+        image: distribution.docker-registry.svc.cluster.local/create-pxe-boot-image:latest
         imagePullPolicy: Always
         args: ["$(MACHINE)"]
         env:
         - name: MACHINE
-          value: k8sMaster
-        securityContext:
-          privileged: true
+          value: k8sHyperV
         volumeMounts:
         - name: home-cluster
           mountPath: /var/lib/home-cluster
-          readOnly: true
         - name: images
-          mountPath: /workspace/images/snapshots
+          mountPath: /images/snapshots
           subPath: snapshots
           readOnly: true
         - name: images
-          mountPath: /workspace/images/raw
-          subPath: raw
+          mountPath: /images/squashfs
+          subPath: squashfs
+        - name: images
+          mountPath: /images/kernels
+          subPath: kernels
         - name: dev
           mountPath: /dev
       volumes:
@@ -85,6 +83,7 @@ spec:
         nfs:
           server: nfsShares.homeCluster.addr
           path: nfsShares.homeCluster.path
+          readOnly: true
       - name: images
         nfs:
           server: nfsShares.images.addr

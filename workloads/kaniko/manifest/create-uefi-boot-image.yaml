@@ -2,16 +2,16 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   namespace: kaniko
-  name: build-create-boot-image
+  name: build-create-uefi-boot-image
   labels:
     app.kubernetes.io/name: kaniko
-    app.kubernetes.io/component: create-boot-image
+    app.kubernetes.io/component: create-uefi-boot-image
 spec:
   template:
     metadata:
       labels:
         app.kubernetes.io/name: kaniko
-        app.kubernetes.io/component: create-boot-image
+        app.kubernetes.io/component: create-uefi-boot-image
         cluster.local/allow-internet-egress: "true"
     spec:
       restartPolicy: Never
@@ -19,14 +19,13 @@ spec:
       - name: kaniko
         image: gcr.io/kaniko-project/executor:latest
         args:
-        - --dockerfile=workloads/bootstrap/containers/create-boot-image/Dockerfile
-        - --destination=distribution.docker-registry.svc.cluster.local/create-boot-image:latest
+        - --dockerfile=workloads/bootstrap/containers/create-uefi-boot-image/Dockerfile
+        - --destination=distribution.docker-registry.svc.cluster.local/create-uefi-boot-image:latest
         - --insecure-registry=distribution.docker-registry.svc.cluster.local
         - --skip-tls-verify
         volumeMounts:
         - name: home-cluster
           mountPath: /workspace
-          readOnly: true
         - name: kaniko-docker-config
           mountPath: /kaniko/.docker
       volumes:

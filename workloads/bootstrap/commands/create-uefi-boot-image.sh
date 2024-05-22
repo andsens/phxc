@@ -5,28 +5,28 @@ PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../..")
 
 main() {
   source "$PKGROOT/lib/common.sh"
-  DOC="create-boot-image - Build an image for a machine by layering container images
+  DOC="create-uefi-boot-image - Create an UEFI boot image from a container tar export
 Usage:
-  create-boot-image [options] MACHINE
+  create-uefi-boot-image [options] MACHINE
 
 Options:
   -f --format FORMAT  The desired image format [default: raw]
 "
-# docopt parser below, refresh this parser with `docopt.sh create-boot-image.sh`
+# docopt parser below, refresh this parser with `docopt.sh create-uefi-boot-image.sh`
 # shellcheck disable=2016,2086,2317,1090,1091,2034
 docopt() { source "$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh" '2.0.0a3' || {
 ret=$?;printf -- "exit %d\n" "$ret";exit "$ret";};set -e
-trimmed_doc=${DOC:0:194};usage=${DOC:78:44};digest=31ece;options=('-f --format'\
-' 1');node_0(){ value __format 0;};node_1(){ value TARPATH a;};node_2(){
+trimmed_doc=${DOC:0:200};usage=${DOC:79:49};digest=1bbcb;options=('-f --format'\
+' 1');node_0(){ value __format 0;};node_1(){ value MACHINE a;};node_2(){
 optional 0;};node_3(){ sequence 2 1;};cat <<<' docopt_exit() { [[ -n $1 ]] && \
-printf "%s\n" "$1" >&2;printf "%s\n" "${DOC:78:44}" >&2;exit 1;}';local \
-varnames=(__format TARPATH) varname;for varname in "${varnames[@]}"; do unset \
+printf "%s\n" "$1" >&2;printf "%s\n" "${DOC:79:49}" >&2;exit 1;}';local \
+varnames=(__format MACHINE) varname;for varname in "${varnames[@]}"; do unset \
 "var_$varname";done;parse 3 "$@";local p=${DOCOPT_PREFIX:-''};for varname in \
 "${varnames[@]}"; do unset "$p$varname";done;eval $p'__format=${var___format:-'\
-'raw};'$p'TARPATH=${var_TARPATH:-};';local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 \
+'raw};'$p'MACHINE=${var_MACHINE:-};';local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 \
 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for varname in \
 "${varnames[@]}"; do declare -p "$p$varname";done;done;}
-# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh"' create-boot-image.sh`
+# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh"' create-uefi-boot-image.sh`
   eval "$(docopt "$@")"
 
   # shellcheck disable=SC2153
@@ -34,8 +34,9 @@ varnames=(__format TARPATH) varname;for varname in "${varnames[@]}"; do unset \
 
   local \
     tar=/images/snapshots/$MACHINE.tar \
-    squashfs_image=/images/squashfs/$MACHINE.img \
+    image=/images/raw/$MACHINE.raw \
     efi_size=64 disk_size_mib tar_size_b sectors_per_mib
+
 
   tar_size_b=$(stat -c %s "$tar")
   sectors_per_mib=$(( 1024 * 1024 / 512 ))
@@ -43,15 +44,12 @@ varnames=(__format TARPATH) varname;for varname in "${varnames[@]}"; do unset \
   # Disk size = 5 * Tar size
   disk_size_mib=$((tar_size_b * 5 / 1024 / 1024))
 
-  RAW_IMAGE=$(mktemp --suffix .raw)
-  trap_append 'rm $RAW_IMAGE' EXIT
-
   # SD_GPT_ESP=c12a7328-f81f-11d2-ba4b-00a0c93ec93b
   # SD_GPT_ROOT_X86_64=4f68bce3-e8cd-4db1-96e7-fbcaf984b709
 
-  truncate --size ${disk_size_mib}M "$RAW_IMAGE"
+  truncate --size ${disk_size_mib}M "$image"
 
-  sfdisk "$RAW_IMAGE" <<EOF
+  sfdisk "$image" <<EOF
 label: gpt
 label-id: $(uuidgen)
 
@@ -59,7 +57,7 @@ start=$(( 1 * sectors_per_mib )), size=$(( efi_size * sectors_per_mib )), type=U
 start=$(( ( 1 + efi_size ) * sectors_per_mib )), size=$(( ( disk_size_mib - ( 1 + efi_size ) ) * sectors_per_mib - secondary_gpt_sectors )), type=L
 EOF
 
-  LOOP=$(losetup --find --partscan --show "$RAW_IMAGE")
+  LOOP=$(losetup --find --partscan --show "$image")
   trap_append detach EXIT
   local detach_trap=$TRAP_POINTER
 
@@ -120,15 +118,15 @@ EOF
 
   # shellcheck disable=SC2154
   if [[ $__format != raw ]]; then
-    local old_image=$RAW_IMAGE
-    RAW_IMAGE=$(basename "$image" .raw).$__format
-    qemu-img convert -p -f raw -O "$__format" -o subformat=dynamic "$old_image" "$RAW_IMAGE"
+    local old_image=$image
+    image=$(basename "$image" .raw).$__format
+    qemu-img convert -p -f raw -O "$__format" -o subformat=dynamic "$old_image" "$image"
     rm -f "$old_image"
   fi
 }
 
 unmount_all() {
-  local i
+  local indices i
     # shellcheck disable=SC2206
   for ((i=${#MOUNTS[@]} - 1; i >= 0; i--)) ; do
     umount -q "${MOUNTS[i]}"

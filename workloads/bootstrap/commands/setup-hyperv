@@ -4,4 +4,4 @@ set -Eeo pipefail; shopt -s inherit_errexit
 source "$PKGROOT/lib/common.sh"
 set -x
 
-apt-install hyperv-daemons
+apt-install hyperv-daemons linux-image-amd64

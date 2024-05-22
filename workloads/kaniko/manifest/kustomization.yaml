@@ -4,7 +4,8 @@ resources:
 - ../../settings/manifests
 - credentials.yaml
 - smallstep.yaml
-- create-boot-image.yaml
+- create-uefi-boot-image.yaml
+- create-pxe-boot-image.yaml
 - home-cluster-base.yaml
 - namespace.yaml
 - networkpolicy.yaml
