@@ -24,9 +24,12 @@ setup_kube_config() {
   mkdir -p "$(dirname "$kube_config_path")"
   username=$(get_kube_username "$step_profile")
   info "Setting up kubernetes config"
+  kubectl config --kubeconfig "$kube_config_path" delete-user "$username@$kube_cluster"
   kubectl config --kubeconfig "$kube_config_path" set-credentials "$username@$kube_cluster" \
-    --client-certificate="$(get_kube_crt_path "$step_profile")" \
-    --client-key="$(get_kube_key_path "$step_profile")"
+    --exec-api-version="client.authentication.k8s.io/v1beta1" \
+    --exec-command="$PKGROOT/workloads/auth/commands/kubectl-certs.sh"
+    # --exec-interactive-mode=Never \
+    # --exec-provide-cluster-info=false
   kubectl config --kubeconfig "$kube_config_path" set-context "$kube_context" \
     --cluster "$kube_cluster" --user "$username@$kube_cluster"
   export KUBECONFIG="$kube_config_path:$KUBECONFIG"
@@ -86,7 +89,7 @@ sign_ssh_client_keys() {
 
 renew_client_cert() {
   local step_context=$1
-    step ca renew --context "$step_context" --force "$(get_kube_crt_path "$step_context")" "$(get_kube_key_path "$step_context")"
+    step ca renew --context "$step_context" --force "$(get_client_crt_path "$step_context")" "$(get_client_key_path "$step_context")"
 }
 
 get_kube_config_path() {
@@ -94,13 +97,13 @@ get_kube_config_path() {
   printf "%s/.kube/%s.yaml" "$HOME" "$kube_context"
 }
 
-get_kube_crt_path() {
+get_client_crt_path() {
   local step_profile=$1 step_path
   step_path=$(step path --profile "$step_profile")
   jq -r '.["x5c-cert"]' "$step_path/config/defaults.json"
 }
 
-get_kube_key_path() {
+get_client_key_path() {
   local step_profile=$1 step_path
   step_path=$(step path --profile "$step_profile")
   jq -r '.["x5c-key"]' "$step_path/config/defaults.json"
@@ -108,7 +111,7 @@ get_kube_key_path() {
 
 get_kube_username() {
   local step_profile=$1
-  step certificate inspect "$(get_kube_crt_path "$step_profile")" --format json | jq -r '.subject.common_name[0]'
+  step certificate inspect "$(get_client_crt_path "$step_profile")" --format json | jq -r '.subject.common_name[0]'
 }
 
 get_smallstep_certs_path() {

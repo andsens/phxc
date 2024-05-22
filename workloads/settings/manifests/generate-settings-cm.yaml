@@ -5,5 +5,5 @@ metadata:
   annotations:
     config.kubernetes.io/function: |
       exec:
-        path: ./generate-settings-cm.sh
+        path: ../commands/generate-settings-cm.sh
 spec: {}
