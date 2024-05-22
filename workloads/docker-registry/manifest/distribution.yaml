@@ -154,7 +154,6 @@ spec:
         - name: home-cluster
           mountPath: /etc/docker/registry/config.yml
           subPath: workloads/docker-registry/config/distribution.yaml
-          readOnly: true
         - name: jwt-cert
           mountPath: /etc/docker/auth/jwt.crt
           subPath: tls.crt
@@ -203,8 +202,7 @@ spec:
             volumeMounts:
             - name: home-cluster
               mountPath: /etc/docker/registry/config.yml
-              subPath: workloads/docker/config/distribution.yaml
-              readOnly: true
+              subPath: workloads/docker-registry/config/distribution.yaml
             - name: images
               mountPath: /var/lib/registry
           securityContext:

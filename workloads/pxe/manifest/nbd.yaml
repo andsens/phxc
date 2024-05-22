@@ -33,11 +33,9 @@ spec:
         - name: home-cluster
           mountPath: /etc/nbd.conf
           subPath: workloads/pxe/config/nbd-server
-          readOnly: true
         - name: images
           mountPath: /images
           subPath: nbd
-          readOnly: true
         ports:
         - name: nbd
           port: 10809

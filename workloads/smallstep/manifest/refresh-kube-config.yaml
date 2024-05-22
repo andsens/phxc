@@ -30,10 +30,8 @@ spec:
             volumeMounts:
             - name: home-cluster
               mountPath: /var/lib/home-cluster
-              readOnly: true
             - name: certs
               mountPath: /home/step/certs
-              readOnly: false
             - name: kube-apiserver-client-ca-cert
               mountPath: /home/step/certs/kube_apiserver_client_ca.crt
               readOnly: true
@@ -42,7 +40,6 @@ spec:
               readOnly: true
             - name: persistent-certs
               mountPath: /home/step/persistent-certs
-              readOnly: false
           volumes:
           - name: home-cluster
             nfs:

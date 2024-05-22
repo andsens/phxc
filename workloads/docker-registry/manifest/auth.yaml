@@ -123,7 +123,6 @@ spec:
         volumeMounts:
         - name: home-cluster
           mountPath: /var/lib/home-cluster
-          readOnly: true
         - name: k3s-registry-config
           mountPath: /etc/rancher/k3s/registries.yaml
           readOnly: true
@@ -149,7 +148,6 @@ spec:
         volumeMounts:
         - name: home-cluster
           mountPath: /var/lib/home-cluster
-          readOnly: true
         - name: config
           mountPath: /config
         - name: jwt-cert

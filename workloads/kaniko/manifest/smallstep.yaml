@@ -26,7 +26,6 @@ spec:
         volumeMounts:
         - name: home-cluster
           mountPath: /workspace
-          readOnly: true
         - name: kaniko-docker-config
           mountPath: /kaniko/.docker
       volumes:

@@ -73,7 +73,6 @@ spec:
         volumeMounts:
         - name: home-cluster
           mountPath: /var/lib/home-cluster
-          readOnly: true
         - name: kube-apiserver-client-ca-cert
           mountPath: /certs/kube_apiserver_client_ca.crt
           readOnly: true

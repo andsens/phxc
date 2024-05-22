@@ -86,7 +86,6 @@ spec:
         volumeMounts:
         - name: home-cluster
           mountPath: /var/lib/home-cluster
-          readOnly: true
         - name: step-issuer-provisioner
           mountPath: /home/step/step-issuer-provisioner
           readOnly: true
@@ -133,21 +132,16 @@ spec:
         - name: root-cert
           mountPath: /home/step/certs/root_ca.crt
           subPath: tls.crt
-          readOnly: true
         - name: intermediate
           mountPath: /home/step/certs/intermediate_ca.crt
           subPath: tls.crt
-          readOnly: true
         - name: intermediate
           mountPath: /home/step/certs/intermediate_ca_key
           subPath: tls.key
-          readOnly: true
         - name: config-rw
           mountPath: /home/step/config
-          readOnly: true
         - name: database
           mountPath: /home/step/db
-          readOnly: false
       volumes:
       - name: home-cluster
         nfs:

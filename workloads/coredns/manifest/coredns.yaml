@@ -239,10 +239,10 @@ spec:
         volumeMounts:
         - name: config
           mountPath: /etc/coredns
-          readOnly: true
+          subPath: /workloads/coredns/config
       volumes:
       - name: config
         nfs:
           server: nfsShares.homeCluster.addr
-          path: nfsShares.homeCluster.path/workloads/coredns/config
+          path: nfsShares.homeCluster.path
           readOnly: true
