@@ -115,6 +115,7 @@ spec:
       containers:
       - name: bootstrap
         image: distribution.docker-registry.svc.cluster.local/step-ca-bootstrap:latest
+        imagePullPolicy: Always
         command: [/var/lib/home-cluster/workloads/smallstep/commands/bootstrap.sh]
         securityContext:
           readOnlyRootFilesystem: true

@@ -64,6 +64,7 @@ spec:
       initContainers:
       - name: setup-kube-apiserver-client-ca-config
         image: distribution.docker-registry.svc.cluster.local/step-ca-bootstrap:latest
+        imagePullPolicy: Always
         command: [/var/lib/home-cluster/workloads/smallstep/commands/setup-kube-apiserver-client-ca-config.sh]
         securityContext:
           readOnlyRootFilesystem: true

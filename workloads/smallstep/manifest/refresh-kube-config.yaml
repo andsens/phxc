@@ -22,6 +22,7 @@ spec:
           containers:
           - name: refresh-kube-config
             image: distribution.docker-registry.svc.cluster.local/step-ca-bootstrap:latest
+            imagePullPolicy: Always
             command: [/var/lib/home-cluster/workloads/smallstep/commands/create-kube-config.sh]
             args: ['system:admin', 'system:masters']
             securityContext:

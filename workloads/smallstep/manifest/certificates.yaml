@@ -79,6 +79,7 @@ spec:
       initContainers:
       - name: setup-step-ca-config
         image: distribution.docker-registry.svc.cluster.local/step-ca-bootstrap:latest
+        imagePullPolicy: Always
         command: [/var/lib/home-cluster/workloads/smallstep/commands/setup-step-ca-config.sh]
         securityContext:
           readOnlyRootFilesystem: true

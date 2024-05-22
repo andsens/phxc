@@ -18,6 +18,7 @@ spec:
       initContainers:
       - name: create-dockerfile
         image: distribution.docker-registry.svc.cluster.local/home-cluster-base:latest
+        imagePullPolicy: Always
         command: [/var/lib/home-cluster/workloads/bootstrap/commands/create-dockerfile.sh]
         args: [k8sMaster]
         volumeMounts:
@@ -50,6 +51,7 @@ spec:
       containers:
       - name: create-boot-image
         image: distribution.docker-registry.svc.cluster.local/create-boot-image:latest
+        imagePullPolicy: Always
         args: ["/var/lib/home-cluster/images/$(MACHINE).tar"]
         env:
         - name: MACHINE
