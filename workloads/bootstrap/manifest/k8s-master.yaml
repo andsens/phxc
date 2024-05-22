@@ -22,8 +22,8 @@ spec:
         command: [/var/lib/home-cluster/workloads/bootstrap/commands/create-dockerfile.sh]
         args: [k8sMaster]
         volumeMounts:
-        - name: home-cluster
-          mountPath: /var/lib/home-cluster
+        - name: images
+          mountPath: /images
       - name: kaniko
         image: gcr.io/kaniko-project/executor:latest
         args:
@@ -43,16 +43,15 @@ spec:
         - name: home-cluster
           mountPath: /workspace
           readOnly: true
-        - name: home-cluster
+        - name: images
           mountPath: /workspace/images
-          subPath: images
         - name: kaniko-docker-config
           mountPath: /kaniko/.docker
       containers:
       - name: create-boot-image
         image: distribution.docker-registry.svc.cluster.local/create-boot-image:latest
         imagePullPolicy: Always
-        args: ["/var/lib/home-cluster/images/$(MACHINE).tar"]
+        args: ["/images/$(MACHINE).tar"]
         env:
         - name: MACHINE
           value: k8sMaster
@@ -62,9 +61,8 @@ spec:
         - name: home-cluster
           mountPath: /var/lib/home-cluster
           readOnly: true
-        - name: home-cluster
-          mountPath: /var/lib/home-cluster/images
-          subPath: images
+        - name: images
+          mountPath: /images
         - name: dev
           mountPath: /dev
       volumes:
@@ -72,6 +70,10 @@ spec:
         nfs:
           server: nfsShares.homeCluster.addr
           path: nfsShares.homeCluster.path
+      - name: images
+        nfs:
+          server: nfsShares.images.addr
+          path: nfsShares.images.path
       - name: kaniko-docker-config
         secret:
           secretName: kaniko-docker-config

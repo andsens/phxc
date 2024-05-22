@@ -13,6 +13,7 @@ PATH=$("$PKGROOT/.upkg/.bin/path_prepend" "$PKGROOT/.upkg/.bin")
 
 source "$PKGROOT/.upkg/records.sh/records.sh"
 source "$PKGROOT/.upkg/collections.sh/collections.sh"
+source "$PKGROOT/.upkg/trap.sh/trap.sh"
 source "$PKGROOT/lib/machine-id.sh"
 # shellcheck source=workloads/settings/lib/generate-settings-env.shellcheck.sh
 source "$PKGROOT/workloads/settings/lib/generate-settings-env.sh"

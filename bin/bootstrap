@@ -47,9 +47,13 @@ for ((;docopt_i>0;docopt_i--)); do for varname in "${varnames[@]}"; do declare \
 bootstrap() {
   local machine=$1
   "$PKGROOT/workloads/bootstrap/commands/create-dockerfile.sh" "$machine"
+  mkdir -p \
+    "$PKGROOT/images/snapshots" \
+    "$PKGROOT/images/squashfs" \
+    "$PKGROOT/images/pxe"
   docker run --rm \
     -v "$PKGROOT:/workspace:rw" \
-    -v "$PKGROOT/images:/workspace/images:rw" \
+    -v "$PKGROOT/images/snapshots:/workspace/images:rw" \
     gcr.io/kaniko-project/executor:latest \
     --build-arg "MACHINE=$machine" \
     --destination "distribution.docker-registry.svc.cluster.local/${machine,,}" \
@@ -65,10 +69,12 @@ bootstrap() {
   # shellcheck disable=SC2154
   docker run --rm \
     -v "$PKGROOT:/var/lib/home-cluster:ro" \
-    -v "$PKGROOT/images:/var/lib/home-cluster/images:rw" \
+    -v "$PKGROOT/images/snapshots:/images/snapshots:rw" \
+    -v "$PKGROOT/images/pxe:/images/pxe:rw" \
+    -v "$PKGROOT/images/pxe:/images/tftp:rw" \
     --privileged \
     --volume /dev:/dev \
-    pki.$CLUSTER_DOMAIN/create-boot-image "/var/lib/home-cluster/images/$machine.tar"
+    pki.$CLUSTER_DOMAIN/create-boot-image "$machine"
 }
 
 main "$@"

@@ -1,14 +1,13 @@
 #!/usr/bin/env bash
-# shellcheck source-path=../../..
-# No -E, we have an EXIT trap in main() and a different one in create_boot_image
-set -eo pipefail; shopt -s inherit_errexit
+# shellcheck source-path=../../.. disable=SC2016
+set -Eeo pipefail; shopt -s inherit_errexit
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../..")
 
 main() {
   source "$PKGROOT/lib/common.sh"
   DOC="create-boot-image - Build an image for a machine by layering container images
 Usage:
-  create-boot-image [options] TARPATH
+  create-boot-image [options] MACHINE
 
 Options:
   -f --format FORMAT  The desired image format [default: raw]
@@ -30,19 +29,29 @@ varnames=(__format TARPATH) varname;for varname in "${varnames[@]}"; do unset \
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh"' create-boot-image.sh`
   eval "$(docopt "$@")"
 
-  local tar=$1 efi_size=64 disk_size_mib tar_size_b sectors_per_mib image
+  # shellcheck disable=SC2153
+  alias_machine "$MACHINE"
+
+  local \
+    tar=/images/snapshots/$MACHINE.tar \
+    squashfs_image=/images/squashfs/$MACHINE.img \
+    efi_size=64 disk_size_mib tar_size_b sectors_per_mib
+
+  tar_size_b=$(stat -c %s "$tar")
   sectors_per_mib=$(( 1024 * 1024 / 512 ))
   secondary_gpt_sectors=33
-  tar_size_b=$(stat -c %s "$tar")
   # Disk size = 5 * Tar size
   disk_size_mib=$((tar_size_b * 5 / 1024 / 1024))
-  image=$(dirname "$TARPATH")/$(basename "$TARPATH" .tar).raw
+
+  RAW_IMAGE=$(mktemp --suffix .raw)
+  trap_append 'rm $RAW_IMAGE' EXIT
+
   # SD_GPT_ESP=c12a7328-f81f-11d2-ba4b-00a0c93ec93b
   # SD_GPT_ROOT_X86_64=4f68bce3-e8cd-4db1-96e7-fbcaf984b709
 
-  truncate --size ${disk_size_mib}M "$image"
+  truncate --size ${disk_size_mib}M "$RAW_IMAGE"
 
-  sfdisk "$image" <<EOF
+  sfdisk "$RAW_IMAGE" <<EOF
 label: gpt
 label-id: $(uuidgen)
 
@@ -50,8 +59,9 @@ start=$(( 1 * sectors_per_mib )), size=$(( efi_size * sectors_per_mib )), type=U
 start=$(( ( 1 + efi_size ) * sectors_per_mib )), size=$(( ( disk_size_mib - ( 1 + efi_size ) ) * sectors_per_mib - secondary_gpt_sectors )), type=L
 EOF
 
-  LOOP=$(losetup --find --partscan --show "$image")
-  trap 'set +e; unmount_all; detach' EXIT
+  LOOP=$(losetup --find --partscan --show "$RAW_IMAGE")
+  trap_append detach EXIT
+  local detach_trap=$TRAP_POINTER
 
   local efi_dev=${LOOP}p1 root_dev=${LOOP}p2
 
@@ -61,6 +71,9 @@ EOF
 
   mkdir /mnt/image
   mount -t auto "$root_dev" /mnt/image
+  MOUNTS+=("$root_dev")
+  trap_prepend 'unmount_all' EXIT
+  local umount_trap=$TRAP_POINTER
 
   local layer
   for layer in $(jq -r '.[0].Layers[]' <(tar -xOf "$tar" manifest.json)); do
@@ -69,9 +82,13 @@ EOF
 
 
   mount --bind /dev /mnt/image/dev
+  MOUNTS+=(/mnt/image/dev)
   mount -t devpts none /mnt/image/dev/pts
+  MOUNTS+=(/mnt/image/dev/pts)
   mount -t proc none /mnt/image/proc
+  MOUNTS+=(/mnt/image/dev/proc)
   mount -t sysfs none /mnt/image/sys
+  MOUNTS+=(/mnt/image/sys)
 
   local root_uuid efi_uuid
   # It should be possible to use https://uapi-group.org/specifications/specs/discoverable_partitions_specification/
@@ -84,6 +101,8 @@ EOF
 
   mkdir /mnt/image/boot/efi
   mount -t auto "$efi_dev" /mnt/image/boot/efi
+  MOUNTS+=(/mnt/image/boot/efi)
+  trap_prepend 'umount -q /mnt/image/boot/efi' EXIT
 
   printf "root=UUID=%s\n" "$root_uuid" >/mnt/image/etc/kernel/cmdline
   printf '%-15s /               ext4    rw,discard,barrier=0,noatime,errors=remount-ro  0       1
@@ -93,27 +112,27 @@ EOF
 
   chroot /mnt/image bootctl --no-variables install
   chroot /mnt/image update-initramfs -u -k all
+  trap_remove "$umount_trap"
   unmount_all
-  trap 'detach' EXIT
   zerofree "$root_dev"
+  trap_remove "$detach_trap"
   detach
 
   # shellcheck disable=SC2154
   if [[ $__format != raw ]]; then
-    local old_image=$image
-    image=$(basename "$image" .raw).$__format
-    qemu-img convert -p -f raw -O "$__format" -o subformat=dynamic "$old_image" "$image"
+    local old_image=$RAW_IMAGE
+    RAW_IMAGE=$(basename "$image" .raw).$__format
+    qemu-img convert -p -f raw -O "$__format" -o subformat=dynamic "$old_image" "$RAW_IMAGE"
     rm -f "$old_image"
   fi
 }
 
 unmount_all() {
-  umount -q /mnt/image/sys
-  umount -q /mnt/image/proc
-  umount -q /mnt/image/dev/pts
-  umount -q /mnt/image/dev
-  umount -q /mnt/image/boot/efi
-  umount -q /mnt/image
+  local i
+    # shellcheck disable=SC2206
+  for ((i=${#MOUNTS[@]} - 1; i >= 0; i--)) ; do
+    umount -q "${MOUNTS[i]}"
+  done
 }
 
 detach() {

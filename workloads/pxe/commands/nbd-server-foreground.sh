@@ -2,7 +2,7 @@
 set -Eeo pipefail; shopt -s inherit_errexit
 
 main() {
-  nbd-server -r -C /src/nbd.conf -p /var/run/nbd-server.pid
+  nbd-server -r -C /etc/nbd.conf -p /var/run/nbd-server.pid
   local max_wait=50 wait_left=50
   until [[ -e /var/run/nbd-server.pid ]]; do
     sleep .1
