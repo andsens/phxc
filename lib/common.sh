@@ -11,8 +11,11 @@ export DOCKER_CLI_HINTS=false
 
 PATH=$("$PKGROOT/.upkg/.bin/path_prepend" "$PKGROOT/.upkg/.bin")
 
+# shellcheck disable=SC1091
 source "$PKGROOT/.upkg/records.sh/records.sh"
+# shellcheck disable=SC1091
 source "$PKGROOT/.upkg/collections.sh/collections.sh"
+# shellcheck disable=SC1091
 source "$PKGROOT/.upkg/trap.sh/trap.sh"
 source "$PKGROOT/lib/machine-id.sh"
 # shellcheck source=workloads/settings/lib/generate-settings-env.shellcheck.sh
