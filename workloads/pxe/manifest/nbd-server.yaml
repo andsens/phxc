@@ -1,5 +1,40 @@
 ---
-apiVersion: extensions/v1beta1
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: nbd-server
+  labels:
+    app.kubernetes.io/name: pxe
+    app.kubernetes.io/component: nbd-server
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: pxe
+      app.kubernetes.io/component: nbd-server
+  ingress:
+  - toPorts:
+    - ports:
+      - port: "10809"
+    fromEntities:
+    - all
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nbd-server
+  labels:
+    app.kubernetes.io/name: pxe
+    app.kubernetes.io/component: nbd-server
+spec:
+  selector:
+    app.kubernetes.io/name: pxe
+    app.kubernetes.io/component: nbd-server
+  ports:
+  - name: nbd
+    port: 10809
+    targetPort: 10809
+---
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: nbd-server
@@ -17,11 +52,10 @@ spec:
         app.kubernetes.io/name: pxe
         app.kubernetes.io/component: nbd-server
     spec:
-      nodeSelector:
-        kubernetes.io/hostname: machines.k8sMaster.hostname
       containers:
       - name: nbd-server
         image: distribution.docker-registry.svc.cluster.local/nbd-server:latest
+        imagePullPolicy: Always
         securityContext:
           capabilities:
             drop: [ALL]
@@ -31,14 +65,13 @@ spec:
             - SETGID
         volumeMounts:
         - name: home-cluster
-          mountPath: /etc/nbd.conf
-          subPath: workloads/pxe/config/nbd-server
+          mountPath: /var/lib/home-cluster
         - name: images
-          mountPath: /images
-          subPath: nbd
+          mountPath: /images/squashfs
+          subPath: squashfs
         ports:
         - name: nbd
-          port: 10809
+          containerPort: 10809
       volumes:
       - name: home-cluster
         nfs:
@@ -50,17 +83,3 @@ spec:
           server: nfsShares.images.addr
           path: nfsShares.images.path
           readOnly: true
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: tftp
-  labels:
-    app.kubernetes.io/name: pxe
-    app.kubernetes.io/component: nbd-server
-spec:
-  storageClassName: nas-nfs-workloads
-  accessModes: [ReadWriteOnce]
-  resources:
-    requests:
-      storage: 1Mi

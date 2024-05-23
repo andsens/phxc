@@ -1,5 +1,5 @@
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: tftpd
@@ -7,6 +7,10 @@ metadata:
     app.kubernetes.io/name: pxe
     app.kubernetes.io/component: tftpd
 spec:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: pxe
@@ -23,6 +27,7 @@ spec:
       containers:
       - name: tftpd
         image: distribution.docker-registry.svc.cluster.local/tftpd:latest
+        imagePullPolicy: Always
         securityContext:
           readOnlyRootFilesystem: true
           capabilities:
@@ -34,10 +39,12 @@ spec:
             - SYS_CHROOT
         ports:
         - name: tftp
-          port: 69
+          containerPort: 69
+          hostPort: 69
         volumeMounts:
-        - name: tftp
-          mountPath: /var/lib/tftp
+        - name: images
+          mountPath: /images/kernels
+          subPath: kernels
           readOnly: true
       volumes:
       - name: images

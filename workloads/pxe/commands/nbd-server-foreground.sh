@@ -1,23 +1,25 @@
 #!/bin/bash
+# shellcheck source-path=../../../
 set -Eeo pipefail; shopt -s inherit_errexit
+PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../..")
 
 main() {
-  nbd-server -r -C /etc/nbd.conf -p /var/run/nbd-server.pid
+  source "$PKGROOT/lib/common.sh"
+  nbd-server -C /var/lib/home-cluster/workloads/pxe/config/nbd-server.conf -p /var/run/nbd-server.pid
   local max_wait=50 wait_left=50
-  until [[ -e /var/run/nbd-server.pid ]]; do
+  until PID=$(cat /var/run/nbd-server.pid 2>/dev/null); do
     sleep .1
     ((--wait_left > 0)) || fatal "Timed out after %d seconds waiting nbd-server to become ready." "$((max_wait / 10))"
   done
-  PID=$(cat /var/run/nbd-server.pid)
-  # shellcheck disable=SC2064,SC2086
-  if ps -o pid= -p $PID 2>/dev/null; then
-    printf "nbd-server running\n" >&2
-    trap "kill $PID" INT HUP TERM EXIT
-    tail -f --pid "$PID" /dev/null & wait $!
-  else
-    printf "nbd-server crashed during startup\n" >&2
-    return 1
-  fi
+  info "nbd-server started"
+  # shellcheck disable=SC2064
+  trap 'set +e; info "Shutting down"; kill $PID; exit 0' INT HUP TERM EXIT
+  local interval=0
+  while [[ -e /proc/$PID ]]; do
+    sleep $interval
+    [[ $interval -ge 60 ]] || interval=$(( interval + 5 ))
+  done
+  info "nbd-server crashed"
 }
 
 main "$@"
