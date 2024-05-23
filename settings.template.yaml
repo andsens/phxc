@@ -4,7 +4,7 @@
 
 # The admin user is set up on all bootstrapped machines
 admin:
-  # If you are using the directory as home dir on TrueNAS, make sure the UID matches
+  # If you are reusing your home directory on your TrueNAS, make sure the UID matches
   uid: 3000
   username: admin
   shell: /bin/bash
@@ -20,35 +20,31 @@ admin:
 ### Machine settings ###
 ########################
 machines:
+  # Fixed name
   truenas:
     # Used to ensure scripts are run on the correct machine
     uuid: '755fd095cad346249ea190511773fc49'
+  # Fixed name
   workstation:
     # Used to avoid confirmation prompts
-    uuid: '6406bb5c97082152279f3e4265ad32c0'
-  bootstrapper:
-    # The hostname is broadcast with avahi-daemon
-    hostname: bootstrapper.local
-    # Generate with dbus-uuidgen
-    uuid: 'b41befa0c64f0f2adfa18784660920f5'
-    # The FAI classes to apply when bootstrapping this machine
-    faiClasses: [BASE, DEBIAN, AUTHN, TRUENAS, KVM, AMD64, BOOTSTRAPPER]
-    # Size of the root disk
-    diskSize: 2G
-    # Name of the VM in TrueNAS
-    vm: Bootstrapper
-    # Path to the root disk in TrueNAS
-    disk: /dev/zvol/cluster/Bootstrapper
-    # Addresses for the host bridge NIC
-    hostBridgeAddrs: [10.186.223.2/24, 'fd25:9998:d0e7:e351:1a01:be9:4d9a:157e/48']
+    uuid: 'b435c0fc89f261bfc95c4d63664ee2e0'
+  # Fixed name
   k8sMaster:
     hostname: k8s-nas.local
-    faiClasses: [BASE, DEBIAN, AUTHN, TRUENAS, KVM, AMD64, K8S, K8SMASTER]
-    diskSize: 3G
-    uuid: '4b9dfd99a0884df18dd13324beb7e3d3'
+    layers: [base, node, k8s-master, truenas-vm, id, cleanup]
+    arch: amd64
+    uuid: '13d1132678d0c9013118fa11664ee2e4'
     vm: Kubernetes
     disk: /dev/zvol/cluster/Kubernetes
     hostBridgeAddrs: [10.186.223.3/24, 'fd25:9998:d0e7:e351:1a01:be9:4d9a:157f/48']
+    fixedIPv4: '10.186.223.168'
+    fixedIPv6: 'fd73:9867:6b4d:0:2a0:98ff:fe06:4044'
+  # Customizable names
+  k8sHyperV:
+    hostname: k8s-hyperv.local
+    layers: [base, node, k8s-node, hyperv, id, cleanup]
+    arch: amd64
+    uuid: '604d788acd2f4140d7b0cabd664ee2e9'
 ##################
 ### NFS Shares ###
 ##################
@@ -57,16 +53,16 @@ nfsShares:
   homeCluster:
     addr: '[fd25:9998:d0e7:e351:1a01:be9:4d9a:157d]'
     path: /mnt/cluster/home-cluster
-  # Where the bootstrapper should place images
+  # Location of UEFI and PXE boot images and intermediates.
+  # Make sure to `mkdir dockerfiles initrd kernels raw snapshot squashfs`
+  # in the mount you are not specifying the home-cluster/images subdir
   images:
     addr: '[fd25:9998:d0e7:e351:1a01:be9:4d9a:157d]'
     path: /mnt/cluster/images
-  # NFS CSI driver mount
+  # NFS CSI driver mounts
   workloads:
     addr: '[fd25:9998:d0e7:e351:1a01:be9:4d9a:157d]'
     path: /mnt/cluster/workloads
-    # Required for kubernetes network policies
-    cidr: 'fd25:9998:d0e7:e351:1a01:be9:4d9a:157d/128'
   # Will be mounted to the admin user home directory, leave empty to not mount anything
   adminHome:
     addr: '[fd25:9998:d0e7:e351:1a01:be9:4d9a:157d]'
@@ -78,11 +74,14 @@ cluster:
   # Top-level domain name of your cluster
   domain: example.org
   # Name of the acme provider to use
-  acmeProvider: "letsencrypt-staging"
+  acmeProvider:
+    group: certmanager.step.sm
+    kind: StepClusterIssuer
+    issuer: step-issuer
   # IP to use for overriding external A record queries
   wanIPv4: '1.2.3.4'
   # Name of the PKI root & intermediate
-  pkiName: 'The Hub'
+  pkiName: 'Elysium'
   # CIDRs for the Kubernetes cluster
   # The IPv6 subnet can be a prefix delegated one from your ISP
   cidrs:
@@ -92,16 +91,26 @@ cluster:
     svcIPv6: 'fd73:9867:6b4d:cafe:0000:33::/112'
     lbIPv4: '10.34.0.0/16'
     lbIPv6: 'fd73:9867:6b4d:cafe:0000:34::/112'
+  cilium:
+    k8sServiceHost: 'fd73:9867:6b4d:0:2a0:98ff:fe06:4044'
   # Used for BGP
   router:
     fixedIPv4: '192.168.1.1'
     fixedIPv6: 'fd73:9867:6b4d:0:feec:daff:fe04:a9ec'
   # CoreDNS setup
   coredns:
-    # The domain name under which the cluster is reachable
-    # Fixed IP from the load balancer subnet above for port forwarding
-    fixedIPv4: '10.34.0.1'
-    fixedIPv6: 'fd73:9867:6b4d:cafe:0000:34::1'
+    svc:
+      # Fixed IP from the load balancer subnet above for port forwarding
+      fixedIPv4: '10.33.0.10'
+      fixedIPv6: 'fd73:9867:6b4d:cafe:0000:34::1'
+    lb:
+      # Fixed IP from the load balancer subnet above for port forwarding
+      fixedIPv4: '10.34.0.2'
+      fixedIPv6: 'fd73:9867:6b4d:cafe:0:34::2'
+  # Fixed etcd IP address for coredns, note that this is from the svc pool and not the lb pool
+  etcd:
+    fixedIPv4: '10.33.0.2'
+    fixedIPv6: 'fd73:9867:6b4d:cafe:0:33:0:2'
   # Traefik setup
   traefik:
     fixedIPv4: '10.34.0.2'
@@ -110,6 +119,12 @@ cluster:
   smallstep:
     fixedIPv4: '10.34.0.3'
     fixedIPv6: 'fd73:9867:6b4d:cafe:0000:34::3'
+  kubeAPIServerClientCA:
+    fixedIPv4: '10.34.0.5'
+    fixedIPv6: 'fd73:9867:6b4d:cafe:0:34::5'
+  tftpd:
+    fixedIPv4: '10.34.0.6'
+    fixedIPv6: 'fd73:9867:6b4d:cafe:0:34::6'
 unifi:
   usg_ssh_address: 'admin@192.168.1.1'
   cloudkey_ssh_address: 'ubnt@192.168.1.3'
