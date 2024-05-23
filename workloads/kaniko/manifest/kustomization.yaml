@@ -3,10 +3,12 @@ kind: Kustomization
 resources:
 - ../../settings/manifests
 - credentials.yaml
-- smallstep.yaml
-- create-uefi-boot-image.yaml
-- create-pxe-boot-image.yaml
-- home-cluster-base.yaml
+- image-jobs/smallstep.yaml
+- image-jobs/create-uefi-boot-image.yaml
+- image-jobs/create-pxe-boot-image.yaml
+- image-jobs/home-cluster-base.yaml
+- image-jobs/tftpd.yaml
+- image-jobs/nbd-server.yaml
 - namespace.yaml
 - networkpolicy.yaml
 - Kptfile

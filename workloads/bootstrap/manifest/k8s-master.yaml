@@ -18,7 +18,7 @@ spec:
       restartPolicy: Never
       initContainers:
       - name: create-dockerfile
-        image: distribution.docker-registry.svc.cluster.local/home-cluster-base:latest
+        image: distribution.docker-registry.svc.cluster.local/home-cluster-base:alpine
         imagePullPolicy: Always
         command: [/var/lib/home-cluster/workloads/bootstrap/commands/create-dockerfile.sh]
         args: [k8sMaster]

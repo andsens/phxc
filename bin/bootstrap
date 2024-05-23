@@ -81,13 +81,13 @@ create_dockerfile() {
   local machine=$1
   mkdir -p "$PKGROOT/images/dockerfile"
   docker build \
-    --file "$PKGROOT/workloads/kaniko/containers/home-cluster-base/Dockerfile" \
-    --tag cr.$CLUSTER_DOMAIN/home-cluster-base \
+    --file "$PKGROOT/workloads/kaniko/containers/home-cluster-base/alpine.Dockerfile" \
+    --tag distribution.docker-registry.svc.cluster.local/home-cluster-base:alpine \
     "$PKGROOT"
   docker run --rm -ti \
     -v "$PKGROOT:/var/lib/home-cluster:ro" \
     -v "$PKGROOT/images/dockerfiles:/images/dockerfiles:rw" \
-    cr.$CLUSTER_DOMAIN/home-cluster-base \
+    distribution.docker-registry.svc.cluster.local/home-cluster-base:alpine \
     /var/lib/home-cluster/workloads/bootstrap/commands/create-dockerfile.sh "$machine"
 }
 
@@ -110,7 +110,7 @@ bootstrap() {
 uefi() {
   docker build \
     --file "$PKGROOT/workloads/bootstrap/containers/create-uefi-boot-image/Dockerfile" \
-    --tag cr.$CLUSTER_DOMAIN/create-uefi-boot-image \
+    --tag distribution.docker-registry.svc.cluster.local/create-uefi-boot-image \
     "$PKGROOT"
   mkdir -p "$PKGROOT/images/raw"
   docker run --rm -ti \
@@ -119,13 +119,13 @@ uefi() {
     -v "$PKGROOT/images/raw:/images/raw:rw" \
     --privileged \
     --volume /dev:/dev \
-    cr.$CLUSTER_DOMAIN/create-uefi-boot-image "$machine"
+    distribution.docker-registry.svc.cluster.local/create-uefi-boot-image "$machine"
 }
 
 pxe() {
   docker build \
     --file "$PKGROOT/workloads/bootstrap/containers/create-pxe-boot-image/Dockerfile" \
-    --tag cr.$CLUSTER_DOMAIN/create-pxe-boot-image \
+    --tag distribution.docker-registry.svc.cluster.local/create-pxe-boot-image \
     "$PKGROOT"
   mkdir -p "$PKGROOT/images/squashfs" "$PKGROOT/images/kernels"
   docker run --rm -ti \
@@ -133,7 +133,7 @@ pxe() {
     -v "$PKGROOT/images/snapshots:/images/snapshots:rw" \
     -v "$PKGROOT/images/squashfs:/images/squashfs:rw" \
     -v "$PKGROOT/images/kernels:/images/kernels:rw" \
-    cr.$CLUSTER_DOMAIN/create-pxe-boot-image "$machine"
+    distribution.docker-registry.svc.cluster.local/create-pxe-boot-image "$machine"
 }
 
 main "$@"

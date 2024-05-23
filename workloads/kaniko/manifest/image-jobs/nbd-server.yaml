@@ -2,16 +2,16 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   namespace: kaniko
-  name: build-home-cluster-base
+  name: build-nbd-server
   labels:
     app.kubernetes.io/name: kaniko
-    app.kubernetes.io/component: home-cluster-base
+    app.kubernetes.io/component: nbd-server
 spec:
   template:
     metadata:
       labels:
         app.kubernetes.io/name: kaniko
-        app.kubernetes.io/component: home-cluster-base
+        app.kubernetes.io/component: nbd-server
         cluster.local/allow-internet-egress: "true"
     spec:
       restartPolicy: Never
@@ -19,8 +19,8 @@ spec:
       - name: kaniko
         image: gcr.io/kaniko-project/executor:latest
         args:
-        - --dockerfile=workloads/kaniko/containers/home-cluster-base/Dockerfile
-        - --destination=distribution.docker-registry.svc.cluster.local/home-cluster-base:latest
+        - --dockerfile=workloads/pxe/containers/nbd-server/Dockerfile
+        - --destination=distribution.docker-registry.svc.cluster.local/nbd-server:latest
         - --insecure-registry=distribution.docker-registry.svc.cluster.local
         - --skip-tls-verify
         volumeMounts:

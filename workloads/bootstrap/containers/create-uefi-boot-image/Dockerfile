@@ -1,8 +1,6 @@
-FROM debian:bookworm
-SHELL ["/usr/bin/bash", "-Eeo", "pipefail", "-c"]
+FROM distribution.docker-registry.svc.cluster.local/home-cluster-base:debian
 
 RUN apt-get -y update; apt-get -y install --no-install-recommends \
-  gettext jq yq \
   fdisk uuid-runtime e2fsprogs dosfstools systemd-boot udev zerofree \
   ; rm -rf /var/cache/apt/lists/*
 

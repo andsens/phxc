@@ -1,0 +1,39 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  namespace: kaniko
+  name: build-tftpd
+  labels:
+    app.kubernetes.io/name: kaniko
+    app.kubernetes.io/component: tftpd
+spec:
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: kaniko
+        app.kubernetes.io/component: tftpd
+        cluster.local/allow-internet-egress: "true"
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+        - --dockerfile=workloads/pxe/containers/tftpd/Dockerfile
+        - --destination=distribution.docker-registry.svc.cluster.local/tftpd:latest
+        - --insecure-registry=distribution.docker-registry.svc.cluster.local
+        - --skip-tls-verify
+        volumeMounts:
+        - name: home-cluster
+          mountPath: /workspace
+        - name: kaniko-docker-config
+          mountPath: /kaniko/.docker
+      volumes:
+      - name: home-cluster
+        nfs:
+          server: nfsShares.homeCluster.addr
+          path: nfsShares.homeCluster.path
+          readOnly: true
+      - name: kaniko-docker-config
+        secret:
+          secretName: kaniko-docker-config
