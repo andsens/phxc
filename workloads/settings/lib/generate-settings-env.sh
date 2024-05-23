@@ -2,7 +2,7 @@
 # shellcheck source-path=..
 
 eval_settings() {
-  eval "$(generate_settings)"
+  eval "$(generate_settings "${PKGROOT:?}/settings.yaml")"
   [[ -z $MACHINE ]] || alias_machine "$MACHINE"
 }
 
@@ -14,10 +14,11 @@ alias_machine() {
 }
 
 generate_shellcheck_settings() {
-  printf "#!/usr/bin/env bash\n# shellcheck disable=SC2016\n%s" "$(generate_settings)" >"${PKGROOT:?}/lib/settings.shellcheck.sh"
+  printf "#!/usr/bin/env bash\n# shellcheck disable=SC2016\n%s" "$(generate_settings "${PKGROOT:?}/settings.template.yaml")" >"${PKGROOT:?}/lib/settings.shellcheck.sh"
 }
 
 generate_settings() {
+  local settings=$1
   yq -r "$(cat <<'EOS'
     . as $root | paths |
     . as $path | join("_") | ascii_upcase as $var |
@@ -28,7 +29,7 @@ generate_settings() {
       else "export \($var)='\(.)'" end
     end
 EOS
-  )" "${PKGROOT:?}/settings.yaml"
+  )" "$settings"
 }
 
 if [[ ${#BASH_SOURCE[@]} -gt 1 ]]; then
