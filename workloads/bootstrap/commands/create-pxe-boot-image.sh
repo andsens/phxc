@@ -30,7 +30,7 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   local \
     tar=/images/snapshots/$MACHINE.tar \
     squashfs=/images/squashfs/$MACHINE.img \
-    kernel=/images/kernels/$machine
+    kernel=/images/kernels/$MACHINE
 
   TMPROOT=$(mktemp -d)
   trap_append 'rm -rf "$TMPROOT"' EXIT
