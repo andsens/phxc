@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# shellcheck source-path=../../
+# shellcheck source-path=../../..
 set -Eeo pipefail; shopt -s inherit_errexit
-until [[ -e $PKGROOT/upkg.json || $PKGROOT = '/' ]]; do PKGROOT=$(dirname "${PKGROOT:-$(realpath "${BASH_SOURCE[0]}")}"); done
+PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../..")
 
 main() {
-  source "$PKGROOT/.upkg/records.sh/records.sh"
+  source "$PKGROOT/lib/common.sh"
 
   DOC="generate-settings-cm.sh - Generate a ConfigMap from /settings.yaml
 Usage:

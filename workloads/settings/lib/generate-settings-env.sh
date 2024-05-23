@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# shellcheck source-path=..
+# shellcheck source-path=../..
 
 eval_settings() {
   eval "$(generate_settings "${PKGROOT:?}/settings.yaml")"
@@ -11,10 +11,6 @@ alias_machine() {
   for key in $(env | cut -d = -f 1 | grep "^MACHINES_${machine^^}_"); do
     eval "export ${key/#"MACHINES_${machine^^}"/MACHINE}='${!key}'"
   done
-}
-
-generate_shellcheck_settings() {
-  printf "#!/usr/bin/env bash\n# shellcheck disable=SC2016\n%s" "$(generate_settings "${PKGROOT:?}/settings.template.yaml")" >"${PKGROOT:?}/lib/settings.shellcheck.sh"
 }
 
 generate_settings() {
@@ -31,10 +27,3 @@ generate_settings() {
 EOS
   )" "$settings"
 }
-
-if [[ ${#BASH_SOURCE[@]} -gt 1 ]]; then
-  eval_settings
-else
-  PKGROOT=$(realpath "$(dirname "${BASH_SOURCE[0]}")/..")
-  generate_shellcheck_settings
-fi
