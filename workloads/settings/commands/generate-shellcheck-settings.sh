@@ -4,7 +4,10 @@ set -Eeo pipefail; shopt -s inherit_errexit
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../..")
 
 main() {
-  source "$PKGROOT/lib/common.sh"
+  # shellcheck disable=SC1091
+  source "$PKGROOT/.upkg/records.sh/records.sh"
+  # shellcheck source=workloads/settings/lib/settings.shellcheck.sh
+  source "$PKGROOT/workloads/settings/lib/generate-settings-env.sh"
 
   DOC="generate-shellcheck-settings.sh - Generate a settings file for shellcheck
 Usage:
@@ -28,7 +31,6 @@ do declare -p "$p$varname";done;done;}
   printf "#!/usr/bin/env bash\n# shellcheck disable=SC2016\n%s" \
     "$(generate_settings "$PKGROOT/settings.template.yaml")" \
     >"$PKGROOT/workloads/settings/lib/settings.shellcheck.sh"
-
 }
 
 main "$@"

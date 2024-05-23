@@ -9,6 +9,21 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
+    - name: Cache the right yq
+      uses: actions/cache@v4
+      with:
+        path: ${{ github.workspace }}/yq
+        key: yq
+    - name: Install the right yq
+      run: |
+        yqpath=$(realpath "${{ github.workspace }}/yq")
+        if [[ ! -e ${{ github.workspace }}/yq ]]; then
+          sudo apt-get install virtualenv
+          sudo virtualenv "${{ github.workspace }}/yq"
+          sudo "${{ github.workspace }}/yq/bin/pip3" install yq
+        fi
+        sudo rm /usr/bin/yq
+        sudo ln -s "${{ github.workspace }}/yq/bin/yq" /usr/local/bin/yq
     - uses: orbit-online/upkg-install@v1
     - name: Generate settings.sh for shellcheck
       run: workloads/settings/commands/generate-shellcheck-settings.sh
@@ -19,6 +34,7 @@ jobs:
       with:
         ignore_paths: >-
           .upkg
+          yq
   test:
     runs-on: ubuntu-latest
     steps:
