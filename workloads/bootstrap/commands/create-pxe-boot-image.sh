@@ -40,10 +40,12 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   for layer in $(jq -r '.[0].Layers[]' <(tar -xOf "$tar" manifest.json)); do
     tar -xOf "$tar" "$layer" | tar -xz -C "$TMPROOT"
   done
+
   info "Creating squashfs image"
-  mksquashfs "$TMPROOT" "$squashfs" -noappend
+  mksquashfs "$TMPROOT" "$squashfs" -noappend -quiet
   mkdir -p "$kernel"
+
+  info "Extracting kernel image"
   cp -L "$TMPROOT/vmlinuz" "$TMPROOT/initrd.img" "$kernel"
 }
-
 main "$@"
