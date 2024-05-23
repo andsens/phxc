@@ -45,8 +45,8 @@ spec:
         - name: home-cluster
           mountPath: /var/lib/home-cluster
         - name: home-cluster
-          mountPath: /tftp/cluster.ipxe
-          subPath: workloads/pxe/config/cluster.ipxe
+          mountPath: /tftp/autoexec.ipxe
+          subPath: workloads/pxe/config/autoexec.ipxe
         - name: images
           mountPath: /tftp/kernels
           subPath: kernels

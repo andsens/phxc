@@ -1,0 +1,19 @@
+#!ipxe
+
+isset ${proxydhcp/dhcp-server} && set srv ${proxydhcp/dhcp-server} || set srv ${next-server}
+
+goto boot
+
+:boot
+kernel /kernels/k8sHyperV/vmlinuz initrd=initrd.img root=/dev/nbd0 nbdroot=10.34.0.6:/images/squashfs/k8sHyperV.img loop.max_part=9
+initrd /kernels/k8sHyperV/initrd.img
+boot || goto failed
+
+:exit
+# Exit with error, to fall back to the next boot option
+# http://forum.ipxe.org/showthread.php?tid=6775
+exit 1
+
+:failed
+echo Booting failed, dropping to shell
+goto shell

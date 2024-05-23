@@ -1,12 +1,7 @@
-FROM distribution.docker-registry.svc.cluster.local/home-cluster-base:debian as pxe-donor
-
-RUN apt-get update && apt-get install --no-install-recommends -y \
-  ipxe \
-  && rm -rf /var/cache/apt/lists/*
-
 FROM distribution.docker-registry.svc.cluster.local/home-cluster-base:alpine
 
-RUN apk add tftp-hpa; mkdir -p /tftp/pxe; adduser -DH tftp
-COPY --from=pxe-donor /usr/lib/ipxe/snponly.efi /usr/lib/ipxe/undionly.kpxe /tftp/pxe
+RUN apk add tftp-hpa perl-utils; adduser -DH tftp; mkdir /tftp; \
+  wget -qO/tftp/ipxe.efi http://boot.ipxe.org/ipxe.efi; \
+  shasum -a 256 -c <(echo '89c58b5967969ad2e414c0c7479b1ccbc53ae5b44d46c55919b7ab051a44aae8  /tftp/ipxe.efi')
 
 ENTRYPOINT ["/var/lib/home-cluster/workloads/pxe/commands/tftpd.sh"]
