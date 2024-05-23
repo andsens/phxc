@@ -9,6 +9,9 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
+    - uses: orbit-online/upkg-install@v1
+    - name: Generate settings.sh for shellcheck
+      run: workloads/settings/commands/generate-shellcheck-settings.sh
     - name: Run ShellCheck
       uses: ludeeus/action-shellcheck@master
       env:
