@@ -42,11 +42,21 @@ spec:
           containerPort: 69
           hostPort: 69
         volumeMounts:
+        - name: home-cluster
+          mountPath: /var/lib/home-cluster
+        - name: home-cluster
+          mountPath: /tftp/cluster.ipxe
+          subPath: workloads/pxe/config/cluster.ipxe
         - name: images
-          mountPath: /images/kernels
+          mountPath: /tftp/kernels
           subPath: kernels
           readOnly: true
       volumes:
+      - name: home-cluster
+        nfs:
+          server: nfsShares.homeCluster.addr
+          path: nfsShares.homeCluster.path
+          readOnly: true
       - name: images
         nfs:
           server: nfsShares.images.addr

@@ -1,0 +1,3 @@
+# Map the PXE bootloaders
+re ^/snponly.efi /tftp/pxe/snponly.efi
+re ^/undionly.kpxe /tftp/pxe/undionly.kpxe

@@ -60,6 +60,7 @@ spec:
           capabilities:
             drop: [ALL]
             add:
+            - KILL
             - NET_BIND_SERVICE
             - SETUID
             - SETGID
@@ -72,6 +73,12 @@ spec:
         ports:
         - name: nbd
           containerPort: 10809
+        readinessProbe:
+          tcpSocket:
+            port: nbd
+        livenessProbe:
+          tcpSocket:
+            port: nbd
       volumes:
       - name: home-cluster
         nfs:
