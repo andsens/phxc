@@ -14,3 +14,13 @@ replacements:
   targets:
   - select: {group: apps, kind: Deployment, name: tftpd}
     fieldPaths: [spec.template.spec.nodeSelector.kubernetes\.io/hostname]
+- source: {fieldPath: data.cluster.nbdServer.fixedIPv4, kind: ConfigMap, name: settings}
+  targets:
+  - select: {kind: Service, name: nbd-server}
+    fieldPaths: [metadata.annotations.io\.cilium/lb-ipam-ips]
+    options: {delimiter: ',', index: 0}
+- source: {fieldPath: data.cluster.nbdServer.fixedIPv6, kind: ConfigMap, name: settings}
+  targets:
+  - select: {kind: Service, name: nbd-server}
+    fieldPaths: [metadata.annotations.io\.cilium/lb-ipam-ips]
+    options: {delimiter: ',', index: 1}

@@ -25,7 +25,12 @@ metadata:
   labels:
     app.kubernetes.io/name: pxe
     app.kubernetes.io/component: nbd-server
+  annotations:
+    io.cilium/lb-ipam-ips: "cluster.nbdServer.fixedIPv4,cluster.nbdServer.fixedIPv6"
 spec:
+  type: LoadBalancer
+  ipFamilies: [IPv4, IPv6]
+  ipFamilyPolicy: RequireDualStack
   selector:
     app.kubernetes.io/name: pxe
     app.kubernetes.io/component: nbd-server
