@@ -10,7 +10,8 @@ locales locales/locales_to_be_generated multiselect     en_US.UTF-8 UTF-8
 locales locales/default_environment_locale      select  en_US.UTF-8
 ucf ucf/changeprompt select keep_current"
 
-apt-install systemd locales curl
+# busybox is needed by scripts in initramfs
+apt-install systemd busybox locales curl
 
 rm /etc/locale.gen
 dpkg-reconfigure --frontend noninteractive locales tzdata

@@ -4,5 +4,6 @@ set -Eeo pipefail; shopt -s inherit_errexit
 source "$PKGROOT/lib/common.sh"
 set -x
 
-apt-install nbd-client
+apt-install nbd-client overlayroot
 printf "squashfs\n" >>/etc/initramfs-tools/modules
+cp-tpl /etc/overlayroot.conf
