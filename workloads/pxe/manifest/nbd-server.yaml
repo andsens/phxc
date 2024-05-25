@@ -69,12 +69,6 @@ spec:
             - NET_BIND_SERVICE
             - SETUID
             - SETGID
-        volumeMounts:
-        - name: home-cluster
-          mountPath: /var/lib/home-cluster
-        - name: images
-          mountPath: /images/squashfs
-          subPath: squashfs
         ports:
         - name: nbd
           containerPort: 10809
@@ -84,6 +78,15 @@ spec:
         livenessProbe:
           tcpSocket:
             port: nbd
+        volumeMounts:
+        - name: home-cluster
+          mountPath: /var/lib/home-cluster
+        - name: images
+          mountPath: /images/squashfs
+          subPath: squashfs
+          readOnly: true
+        - name: config
+          mountPath: /etc/nbd-server
       volumes:
       - name: home-cluster
         persistentVolumeClaim:
