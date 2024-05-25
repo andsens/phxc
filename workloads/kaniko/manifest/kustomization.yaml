@@ -1,7 +1,7 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-- ../../settings/manifests
+- ../../mounts/manifests
 - credentials.yaml
 - image-jobs/smallstep.yaml
 - image-jobs/create-uefi-boot-image.yaml
@@ -13,12 +13,13 @@ resources:
 - networkpolicy.yaml
 - Kptfile
 - resourcegroup.yaml
-replacements:
-- source: {fieldPath: data.nfsShares.homeCluster.addr, kind: ConfigMap, name: settings}
-  targets:
-  - select: {group: batch, kind: Job}
-    fieldPaths: ["spec.template.spec.volumes.[name=home-cluster].nfs.server"]
-- source: {fieldPath: data.nfsShares.homeCluster.path, kind: ConfigMap, name: settings}
-  targets:
-  - select: {group: batch, kind: Job}
-    fieldPaths: ["spec.template.spec.volumes.[name=home-cluster].nfs.path"]
+patches:
+- patch: |-
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata: {name: home-cluster, namespace: kaniko}
+- patch: |-
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata: {name: images, namespace: kaniko}
+

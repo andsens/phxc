@@ -144,10 +144,8 @@ spec:
           mountPath: /home/step/db
       volumes:
       - name: home-cluster
-        nfs:
-          server: nfsShares.homeCluster.addr
-          path: nfsShares.homeCluster.path
-          readOnly: true
+        persistentVolumeClaim:
+          claimName: home-cluster
       - name: step-issuer-provisioner
         secret:
           secretName: step-issuer-provisioner
@@ -178,8 +176,6 @@ spec:
         app.kubernetes.io/name: smallstep
         app.kubernetes.io/component: certificates
     spec:
-      storageClassName: nas-nfs-workloads
+      storageClassName: workloads
       accessModes: [ReadWriteOnce]
-      resources:
-        requests:
-          storage: 1Gi
+      resources: {requests: {storage: 1Mi}}

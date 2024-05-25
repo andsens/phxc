@@ -81,12 +81,8 @@ spec:
             port: nbd
       volumes:
       - name: home-cluster
-        nfs:
-          server: nfsShares.homeCluster.addr
-          path: nfsShares.homeCluster.path
-          readOnly: true
+        persistentVolumeClaim:
+          claimName: home-cluster
       - name: images
-        nfs:
-          server: nfsShares.images.addr
-          path: nfsShares.images.path
-          readOnly: true
+        persistentVolumeClaim:
+          claimName: images

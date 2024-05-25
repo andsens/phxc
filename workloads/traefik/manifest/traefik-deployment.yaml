@@ -180,9 +180,7 @@ spec:
           name: tmp
       volumes:
       - name: home-cluster
-        nfs:
-          server: nfsShares.homeCluster.addr
-          path: nfsShares.homeCluster.path
-          readOnly: true
+        persistentVolumeClaim:
+          claimName: home-cluster
       - name: tmp
         emptyDir: {}

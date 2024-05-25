@@ -103,7 +103,7 @@ spec:
   - metadata:
       name: data
     spec:
-      storageClassName: nas-nfs-workloads
+      storageClassName: workloads
       accessModes: [ReadWriteOnce]
       resources:
         requests:

@@ -165,10 +165,8 @@ spec:
         runAsUser: 1000
       volumes:
       - name: home-cluster
-        nfs:
-          server: nfsShares.homeCluster.addr
-          path: nfsShares.homeCluster.path
-          readOnly: true
+        persistentVolumeClaim:
+          claimName: home-cluster
       - name: jwt-cert
         secret:
           secretName: distribution-jwt-cert
@@ -204,31 +202,27 @@ spec:
             - name: home-cluster
               mountPath: /etc/docker/registry/config.yml
               subPath: workloads/docker-registry/config/distribution.yaml
-            - name: images
+            - name: registry
               mountPath: /var/lib/registry
           securityContext:
             fsGroup: 1000
             runAsUser: 1000
           volumes:
-          - name: home-cluster
-            nfs:
-              server: nfsShares.homeCluster.addr
-              path: nfsShares.homeCluster.path
-              readOnly: true
-          - name: images
+          - name: registry
             persistentVolumeClaim:
-              claimName: images
+              claimName: registry
+          - name: home-cluster
+            persistentVolumeClaim:
+              claimName: home-cluster
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: images
+  name: registry
   labels:
     app.kubernetes.io/name: docker-registry
     app.kubernetes.io/component: distribution
 spec:
-  storageClassName: nas-nfs-workloads
-  accessModes: [ReadWriteOnce]
-  resources:
-    requests:
-      storage: 5Gi
+  storageClassName: workloads
+  accessModes: [ReadWriteMany]
+  resources: {requests: {storage: 1Mi}}

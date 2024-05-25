@@ -147,10 +147,8 @@ spec:
           readOnly: false
       volumes:
       - name: home-cluster
-        nfs:
-          server: nfsShares.homeCluster.addr
-          path: nfsShares.homeCluster.path
-          readOnly: true
+        persistentVolumeClaim:
+          claimName: home-cluster
       - name: step-issuer-provisioner-password
         secret:
           secretName: step-issuer-provisioner-password
@@ -180,8 +178,6 @@ metadata:
     app.kubernetes.io/name: smallstep
     app.kubernetes.io/component: bootstrap
 spec:
-  storageClassName: nas-nfs-workloads
+  storageClassName: workloads
   accessModes: [ReadWriteOnce]
-  resources:
-    requests:
-      storage: 1Mi
+  resources: {requests: {storage: 1Mi}}

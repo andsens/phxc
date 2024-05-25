@@ -82,13 +82,11 @@ spec:
           mountPath: /dev
       volumes:
       - name: home-cluster
-        nfs:
-          server: nfsShares.homeCluster.addr
-          path: nfsShares.homeCluster.path
+        persistentVolumeClaim:
+          claimName: home-cluster
       - name: images
-        nfs:
-          server: nfsShares.images.addr
-          path: nfsShares.images.path
+        persistentVolumeClaim:
+          claimName: images
       - name: kaniko-docker-config
         secret:
           secretName: kaniko-docker-config

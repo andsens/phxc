@@ -3,6 +3,7 @@ kind: Kustomization
 namespace: kube-system
 resources:
 - ../../settings/manifests
+- ../../mounts/manifests
 - coredns.yaml
 - Kptfile
 - resourcegroup.yaml
@@ -56,12 +57,3 @@ replacements:
   targets:
   - select: {group: apps, kind: Deployment, name: coredns}
     fieldPaths: ["spec.template.spec.containers.[name=coredns].env.[name=ETCD_IPV6].value"]
-- source: {fieldPath: data.nfsShares.homeCluster.addr, kind: ConfigMap, name: settings}
-  targets:
-  - select: {group: apps, kind: Deployment, name: coredns}
-    fieldPaths: ["spec.template.spec.volumes.[name=config].nfs.server"]
-- source: {fieldPath: data.nfsShares.homeCluster.path, kind: ConfigMap, name: settings}
-  targets:
-  - select: {group: apps, kind: Deployment, name: coredns}
-    fieldPaths: ["spec.template.spec.volumes.[name=config].nfs.path"]
-    options: {delimiter: /, index: 0}

@@ -3,6 +3,7 @@ kind: Kustomization
 namespace: smallstep
 resources:
 - ../../settings/manifests
+- ../../mounts/manifests
 - https://raw.githubusercontent.com/smallstep/helm-charts/v0.22.0/step-issuer/crds/certmanager.step.sm_stepclusterissuers.yaml
 - https://raw.githubusercontent.com/smallstep/helm-charts/v0.22.0/step-issuer/crds/certmanager.step.sm_stepissuers.yaml
 - bootstrap.yaml
@@ -50,19 +51,3 @@ replacements:
     fieldPaths: [spec.template.spec.nodeSelector.kubernetes\.io/hostname]
   - select: {group: batch, kind: CronJob, name: refresh-kube-config}
     fieldPaths: [spec.jobTemplate.spec.template.spec.nodeSelector.kubernetes\.io/hostname]
-- source: {fieldPath: data.nfsShares.homeCluster.addr, kind: ConfigMap, name: settings}
-  targets:
-  - select: {group: batch, kind: Job}
-    fieldPaths: ["spec.template.spec.volumes.[name=home-cluster].nfs.server"]
-  - select: {group: batch, kind: CronJob}
-    fieldPaths: ["spec.jobTemplate.spec.template.spec.volumes.[name=home-cluster].nfs.server"]
-  - select: {group: apps, kind: StatefulSet}
-    fieldPaths: ["spec.template.spec.volumes.[name=home-cluster].nfs.server"]
-- source: {fieldPath: data.nfsShares.homeCluster.path, kind: ConfigMap, name: settings}
-  targets:
-  - select: {group: batch, kind: Job}
-    fieldPaths: ["spec.template.spec.volumes.[name=home-cluster].nfs.path"]
-  - select: {group: batch, kind: CronJob}
-    fieldPaths: ["spec.jobTemplate.spec.template.spec.volumes.[name=home-cluster].nfs.path"]
-  - select: {group: apps, kind: StatefulSet}
-    fieldPaths: ["spec.template.spec.volumes.[name=home-cluster].nfs.path"]

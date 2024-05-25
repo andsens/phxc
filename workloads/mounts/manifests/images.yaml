@@ -1,0 +1,9 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: images
+spec:
+  storageClassName: images
+  accessModes: [ReadWriteOnce]
+  resources: {requests: {storage: 1Mi}}

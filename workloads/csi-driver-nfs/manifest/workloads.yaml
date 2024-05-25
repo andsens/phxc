@@ -1,7 +1,7 @@
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: nas-nfs-workloads
+  name: workloads
 provisioner: nfs.csi.k8s.io
 parameters:
   server: nfsShares.workloads.addr
@@ -9,4 +9,4 @@ parameters:
   subDir: '${pvc.metadata.namespace}/${pvc.metadata.name}'
 reclaimPolicy: Retain
 volumeBindingMode: Immediate
-mountOptions: [nfsvers=4.1]
+mountOptions: [hard, nfsvers=4.1]

@@ -237,12 +237,10 @@ spec:
           successThreshold: 1
           failureThreshold: 3
         volumeMounts:
-        - name: config
+        - name: home-cluster
           mountPath: /etc/coredns
           subPath: /workloads/coredns/config
       volumes:
-      - name: config
-        nfs:
-          server: nfsShares.homeCluster.addr
-          path: nfsShares.homeCluster.path
-          readOnly: true
+      - name: home-cluster
+        persistentVolumeClaim:
+          claimName: home-cluster

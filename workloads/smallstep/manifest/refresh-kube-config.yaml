@@ -42,10 +42,8 @@ spec:
               mountPath: /home/step/persistent-certs
           volumes:
           - name: home-cluster
-            nfs:
-              server: nfsShares.homeCluster.addr
-              path: nfsShares.homeCluster.path
-              readOnly: true
+            persistentVolumeClaim:
+              claimName: home-cluster
           - name: kube-apiserver-client-ca-cert
             hostPath:
               path: /var/lib/persistent/lib-rancher/k3s/server/tls/client-ca.crt

@@ -3,6 +3,7 @@ kind: Kustomization
 namespace: traefik
 resources:
 - ../../settings/manifests
+- ../../mounts/manifests
 - https://github.com/traefik/traefik-helm-chart.git//traefik/crds?ref=v27.0.2
 - namespace.yaml
 - traefik-deployment.yaml
@@ -41,11 +42,3 @@ replacements:
   - select: {kind: Service, name: traefik-frontend}
     fieldPaths: [metadata.annotations.io\.cilium/lb-ipam-ips]
     options: {delimiter: ',', index: 1}
-- source: {fieldPath: data.nfsShares.homeCluster.addr, kind: ConfigMap, name: settings}
-  targets:
-  - select: {group: apps}
-    fieldPaths: ["spec.template.spec.volumes.[name=home-cluster].nfs.server"]
-- source: {fieldPath: data.nfsShares.homeCluster.path, kind: ConfigMap, name: settings}
-  targets:
-  - select: {group: apps}
-    fieldPaths: ["spec.template.spec.volumes.[name=home-cluster].nfs.path"]
