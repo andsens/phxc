@@ -180,7 +180,7 @@ metadata:
   name: garbage-collection
   labels:
     app.kubernetes.io/name: docker-registry
-    app.kubernetes.io/component: distribution
+    app.kubernetes.io/component: distribution-garbage-collect
 spec:
   schedule: "30 4 * * *"
   jobTemplate:
@@ -189,7 +189,7 @@ spec:
         metadata:
           labels:
             app.kubernetes.io/name: docker-registry
-            app.kubernetes.io/component: distribution
+            app.kubernetes.io/component: distribution-garbage-collect
         spec:
           restartPolicy: Never
           containers:
