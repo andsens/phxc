@@ -79,7 +79,7 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 
 create_dockerfile() {
   local machine=$1
-  mkdir -p "$PKGROOT/images/dockerfile"
+  mkdir -p "$PKGROOT/images/dockerfiles"
   docker build \
     --file "$PKGROOT/workloads/kaniko/containers/home-cluster-base/alpine.Dockerfile" \
     --tag distribution.docker-registry.svc.cluster.local/home-cluster-base:alpine \
@@ -89,22 +89,31 @@ create_dockerfile() {
     -v "$PKGROOT/images/dockerfiles:/images/dockerfiles:rw" \
     distribution.docker-registry.svc.cluster.local/home-cluster-base:alpine \
     /var/lib/home-cluster/workloads/bootstrap/commands/create-dockerfile.sh "$machine"
+  # Prepend the home-cluster-base Dockerfile
+  cat \
+    "$PKGROOT/workloads/kaniko/containers/home-cluster-base/debian.Dockerfile" \
+    <(tail -n+2 "$PKGROOT/images/dockerfiles/$machine.Dockerfile") \
+    >"$PKGROOT/images/dockerfiles/$machine.local.Dockerfile"
 }
 
 bootstrap() {
   local machine=$1
   mkdir -p "$PKGROOT/images/snapshots"
+  docker build \
+    --file "$PKGROOT/workloads/kaniko/containers/home-cluster-base/debian.Dockerfile" \
+    --tag distribution.docker-registry.svc.cluster.local/home-cluster-base:debian \
+    "$PKGROOT"
   docker run --rm -ti \
     -v "$PKGROOT:/workspace:ro" \
     -v "$PKGROOT/images:/workspace/images:rw" \
     gcr.io/kaniko-project/executor:latest \
     --build-arg "MACHINE=$machine" \
-    --destination "distribution.docker-registry.svc.cluster.local/${machine,,}" \
+    --destination distribution.docker-registry.svc.cluster.local/non-existent \
     --insecure-registry=distribution.docker-registry.svc.cluster.local \
     --skip-tls-verify \
     --tar-path "/workspace/images/snapshots/$machine.tar" \
     --no-push \
-    --dockerfile "images/dockerfiles/$machine.Dockerfile"
+    --dockerfile "images/dockerfiles/$machine.local.Dockerfile"
 }
 
 uefi() {
