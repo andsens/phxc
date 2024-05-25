@@ -86,3 +86,5 @@ spec:
       - name: images
         persistentVolumeClaim:
           claimName: images
+      - name: config
+        emptyDir: {}
