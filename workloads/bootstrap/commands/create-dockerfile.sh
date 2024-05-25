@@ -27,7 +27,11 @@ done;eval $p'MACHINE=${var_MACHINE:-};';local docopt_i=1;[[ $BASH_VERSION =~ \
 
   # shellcheck disable=SC2153
   alias_machine "$MACHINE"
-  printf "%s\n" "$(for layer in $MACHINE_LAYERS; do cat "$PKGROOT/workloads/bootstrap/containers/$layer/Dockerfile"; done)" > "/images/dockerfiles/$MACHINE.Dockerfile"
+  printf "%s\n" "$(
+    for layer in $MACHINE_LAYERS; do
+      cat "$PKGROOT/workloads/bootstrap/containers/$layer/Dockerfile"
+    done
+  )" > "/images/dockerfiles/$MACHINE.Dockerfile"
 }
 
 main "$@"

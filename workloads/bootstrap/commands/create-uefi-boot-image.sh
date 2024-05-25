@@ -32,9 +32,11 @@ varnames=(__format MACHINE) varname;for varname in "${varnames[@]}"; do unset \
   # shellcheck disable=SC2153
   alias_machine "$MACHINE"
 
+  # shellcheck disable=SC2154
   local \
     tar=/images/snapshots/$MACHINE.tar \
-    image=/images/raw/$MACHINE.raw \
+    image_tmp=/images/raw/$MACHINE.tmp.raw \
+    image_dest=/images/raw/$MACHINE.$__format \
     efi_size=64 disk_size_mib tar_size_b sectors_per_mib
 
 
@@ -47,9 +49,10 @@ varnames=(__format MACHINE) varname;for varname in "${varnames[@]}"; do unset \
   # SD_GPT_ESP=c12a7328-f81f-11d2-ba4b-00a0c93ec93b
   # SD_GPT_ROOT_X86_64=4f68bce3-e8cd-4db1-96e7-fbcaf984b709
 
-  truncate --size ${disk_size_mib}M "$image"
+  rm -f "$image_tmp"
+  truncate --size ${disk_size_mib}M "$image_tmp"
 
-  sfdisk "$image" <<EOF
+  sfdisk "$image_tmp" <<EOF
 label: gpt
 label-id: $(uuidgen)
 
@@ -57,7 +60,7 @@ start=$(( 1 * sectors_per_mib )), size=$(( efi_size * sectors_per_mib )), type=U
 start=$(( ( 1 + efi_size ) * sectors_per_mib )), size=$(( ( disk_size_mib - ( 1 + efi_size ) ) * sectors_per_mib - secondary_gpt_sectors )), type=L
 EOF
 
-  LOOP=$(losetup --find --partscan --show "$image")
+  LOOP=$(losetup --find --partscan --show "$image_tmp")
   trap_append detach EXIT
   local detach_trap=$TRAP_POINTER
 
@@ -69,7 +72,7 @@ EOF
 
   mkdir /mnt/image
   mount -t auto "$root_dev" /mnt/image
-  MOUNTS+=("$root_dev")
+  MOUNTS+=(/mnt/image)
   trap_prepend 'unmount_all' EXIT
   local umount_trap=$TRAP_POINTER
 
@@ -84,7 +87,7 @@ EOF
   mount -t devpts none /mnt/image/dev/pts
   MOUNTS+=(/mnt/image/dev/pts)
   mount -t proc none /mnt/image/proc
-  MOUNTS+=(/mnt/image/dev/proc)
+  MOUNTS+=(/mnt/image/proc)
   mount -t sysfs none /mnt/image/sys
   MOUNTS+=(/mnt/image/sys)
 
@@ -93,14 +96,13 @@ EOF
   # with https://manpages.debian.org/bookworm/systemd/systemd-gpt-auto-generator.8.en.html
   # in order to be able to completely omit both /etc/fstab and the kernel root param
   # root_uuid=$(chroot /mnt/image systemd-id128 -u --app-specific=$SD_GPT_ROOT_X86_64 machine-id)
-  # sfdisk --part-uuid "$image" 2 "$root_uuid"
+  # sfdisk --part-uuid "$image_tmp" 2 "$root_uuid"
   efi_uuid=$(blkid -s UUID -o value "${LOOP}p1")
   root_uuid=$(blkid -s UUID -o value "${LOOP}p2")
 
   mkdir /mnt/image/boot/efi
   mount -t auto "$efi_dev" /mnt/image/boot/efi
   MOUNTS+=(/mnt/image/boot/efi)
-  trap_prepend 'umount -q /mnt/image/boot/efi' EXIT
 
   printf "root=UUID=%s\n" "$root_uuid" >/mnt/image/etc/kernel/cmdline
   printf '%-15s /               ext4    rw,discard,barrier=0,noatime,errors=remount-ro  0       1
@@ -110,19 +112,25 @@ EOF
 
   chroot /mnt/image bootctl --no-variables install
   chroot /mnt/image update-initramfs -u -k all
+
   trap_remove "$umount_trap"
   unmount_all
   zerofree "$root_dev"
+
   trap_remove "$detach_trap"
   detach
 
   # shellcheck disable=SC2154
   if [[ $__format != raw ]]; then
-    local old_image=$image
-    image=$(basename "$image" .raw).$__format
-    qemu-img convert -p -f raw -O "$__format" -o subformat=dynamic "$old_image" "$image"
-    rm -f "$old_image"
+    local image_raw=$image_tmp
+    image_tmp=${image_tmp%.raw}.$__format
+    case $format in
+      vhdx) qemu-img convert -p -f raw -O "$__format" -o subformat=dynamic "$image_raw" "$image_tmp" ;;
+      *) qemu-img convert -p -f raw -O "$__format" "$image_raw" "$image_tmp" ;;
+    esac
+    rm -f "$image_raw"
   fi
+  mv "$image_tmp" "$image_dest"
 }
 
 unmount_all() {

@@ -5,19 +5,19 @@
       "sha256": "efab2d2d7efb1e4eae76fd77eea7a0fb524ab7cd441e3b33159ee55ec57d243e"
     },
     {
-      "tar": "https://github.com/orbit-online/trap.sh/releases/latest/download/trap.sh.tar.gz",
-      "sha256": "2e6c66bea773f47ffffbc92f81b52abb6503e887a6b715be679d60e8a950f0f2"
+      "tar": "https://github.com/orbit-online/trap.sh/releases/download/v1.1.1/trap.sh.tar.gz",
+      "sha256": "bdc50e863a44866a6d92c11570d8e255f95d65747128e6f262985452e7359bb4"
     },
     {
-      "tar": "https://github.com/orbit-online/records.sh/releases/latest/download/records.sh.tar.gz",
+      "tar": "https://github.com/orbit-online/records.sh/releases/download/v1.0.0/records.sh.tar.gz",
       "sha256": "0469f15f5b689cb29b30f2a3b233c61856eb209fc50c74ef141120bbf70697f1"
     },
     {
-      "tar": "https://github.com/orbit-online/path-tools/releases/latest/download/path-tools.tar.gz",
+      "tar": "https://github.com/orbit-online/path-tools/releases/download/v1.0.0/path-tools.tar.gz",
       "sha256": "2ae2a98714aa81e2142b749dac9ecdb61e050e66bf8bd33aef0fccb2ce66c84b"
     },
     {
-      "tar": "https://github.com/orbit-online/collections.sh/releases/latest/download/collections.sh.tar.gz",
+      "tar": "https://github.com/orbit-online/collections.sh/releases/download/v1.0.0/collections.sh.tar.gz",
       "sha256": "ca741323c2bd77f547fa9aea41050d85dfc5f1ce3ff42f73b7a12f7c90b9be2e"
     }
   ]
