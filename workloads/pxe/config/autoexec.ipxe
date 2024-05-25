@@ -1,12 +1,11 @@
 #!ipxe
 
-isset ${proxydhcp/dhcp-server} && set srv ${proxydhcp/dhcp-server} || set srv ${next-server}
-
 goto boot
 
 :boot
-kernel /kernels/k8sHyperV/vmlinuz initrd=initrd.img root=/dev/nbd0 nbdroot=10.34.0.6:/images/squashfs/k8sHyperV.img loop.max_part=9
-initrd /kernels/k8sHyperV/initrd.img
+dhcp
+kernel http://${CLUSTER_KERNELSERVER_FIXEDIPV4}/k8sHyperV/vmlinuz initrd=initrd.img root=/dev/nbd0 nbdroot=${CLUSTER_NBDSERVER_FIXEDIPV4},k8sHyperV, noresume
+initrd http://${CLUSTER_KERNELSERVER_FIXEDIPV4}/k8sHyperV/initrd.img
 boot || goto failed
 
 :exit
@@ -16,4 +15,8 @@ exit 1
 
 :failed
 echo Booting failed, dropping to shell
-goto shell
+goto _shell
+
+:_shell
+echo Dropping to shell
+shell

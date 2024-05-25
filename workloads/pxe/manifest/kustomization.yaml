@@ -5,6 +5,7 @@ resources:
 - ../../settings/manifests
 - ../../mounts/manifests
 - tftpd.yaml
+- nginx.yaml
 - nbd-server.yaml
 - namespace.yaml
 - Kptfile
@@ -14,6 +15,16 @@ replacements:
   targets:
   - select: {group: apps, kind: Deployment, name: tftpd}
     fieldPaths: [spec.template.spec.nodeSelector.kubernetes\.io/hostname]
+- source: {fieldPath: data.cluster.kernelServer.fixedIPv4, kind: ConfigMap, name: settings}
+  targets:
+  - select: {kind: Service, name: nginx}
+    fieldPaths: [metadata.annotations.io\.cilium/lb-ipam-ips]
+    options: {delimiter: ',', index: 0}
+- source: {fieldPath: data.cluster.kernelServer.fixedIPv6, kind: ConfigMap, name: settings}
+  targets:
+  - select: {kind: Service, name: nginx}
+    fieldPaths: [metadata.annotations.io\.cilium/lb-ipam-ips]
+    options: {delimiter: ',', index: 1}
 - source: {fieldPath: data.cluster.nbdServer.fixedIPv4, kind: ConfigMap, name: settings}
   targets:
   - select: {kind: Service, name: nbd-server}

@@ -44,17 +44,11 @@ spec:
         volumeMounts:
         - name: home-cluster
           mountPath: /var/lib/home-cluster
-        - name: home-cluster
-          mountPath: /tftp/autoexec.ipxe
-          subPath: workloads/pxe/config/autoexec.ipxe
-        - name: images
-          mountPath: /tftp/kernels
-          subPath: kernels
-          readOnly: true
+        - name: config
+          mountPath: /tftp/config
       volumes:
       - name: home-cluster
         persistentVolumeClaim:
           claimName: home-cluster
-      - name: images
-        persistentVolumeClaim:
-          claimName: images
+      - name: config
+        emptyDir: {}
