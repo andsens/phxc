@@ -5,3 +5,4 @@ source "$PKGROOT/lib/common.sh"
 set -x
 
 apt-install nbd-client
+printf "squashfs\n" >>/etc/initramfs-tools/modules
