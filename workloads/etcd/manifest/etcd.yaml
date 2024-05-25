@@ -19,10 +19,6 @@ spec:
         "k8s:io.kubernetes.pod.namespace": kube-system
         k8s-app: kube-dns
     - matchLabels:
-        "k8s:io.kubernetes.pod.namespace": coredns
-        app.kubernetes.io/name: coredns
-        app.kubernetes.io/component: coredns
-    - matchLabels:
         "k8s:io.kubernetes.pod.namespace": external-dns
         app.kubernetes.io/name: external-dns
         app.kubernetes.io/component: external-dns
