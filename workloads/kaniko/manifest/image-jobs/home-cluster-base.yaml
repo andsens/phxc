@@ -1,7 +1,6 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  namespace: kaniko
   name: build-home-cluster-base
   labels:
     app.kubernetes.io/name: kaniko

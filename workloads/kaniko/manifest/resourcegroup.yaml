@@ -1,7 +1,6 @@
 apiVersion: kpt.dev/v1alpha1
 kind: ResourceGroup
 metadata:
-  namespace: kaniko
   name: kaniko
   labels:
     cli-utils.sigs.k8s.io/inventory-id: ad19f452a8ff5b1c59d8f5f206564b08e5fa93a7-1715422394200553792

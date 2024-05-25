@@ -14,12 +14,31 @@ resources:
 - Kptfile
 - resourcegroup.yaml
 patches:
-- patch: |-
-    apiVersion: v1
-    kind: PersistentVolumeClaim
-    metadata: {name: home-cluster, namespace: kaniko}
-- patch: |-
-    apiVersion: v1
-    kind: PersistentVolumeClaim
-    metadata: {name: images, namespace: kaniko}
-
+- target:
+    group: rbac.authorization.k8s.io
+    kind: Role
+    name: read-kaniko-credentials
+    version: v1
+  patch: |-
+    - op: replace
+      path: /metadata/namespace
+      value:
+        docker-registry
+- target:
+    group: rbac.authorization.k8s.io
+    kind: RoleBinding
+    name: kaniko-read-kaniko-credentials
+    version: v1
+  patch: |-
+    - op: replace
+      path: /metadata/namespace
+      value:
+        docker-registry
+transformers:
+- |-
+  apiVersion: builtin
+  kind: NamespaceTransformer
+  metadata:
+    name: (everything)
+    namespace: kaniko
+  unsetOnly: true

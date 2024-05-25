@@ -1,7 +1,6 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  namespace: kaniko
   name: build-smallstep
   labels:
     app.kubernetes.io/name: kaniko
