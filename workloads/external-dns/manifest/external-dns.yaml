@@ -39,10 +39,3 @@ spec:
         env:
         - name: ETCD_URLS
           value: http://etcd.etcd:2379
-        resources:
-          requests:
-            memory: 40Mi
-            cpu: 10m
-          limits:
-            memory: 250Mi
-            cpu: 100m
