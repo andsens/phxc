@@ -1,5 +1,5 @@
 [Match]
-Name=${MACHINE_NIC_LAN0}
+Name=${MACHINE_NIC_LAN0_NAME}
 
 [Network]
 DHCP=yes

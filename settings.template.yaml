@@ -32,17 +32,25 @@ machines:
   k8sMaster:
     hostname: k8s-nas.local
     layers: [base, node, k8s-master, truenas-vm, id, cleanup]
+    nic:
+      lan0:
+        name: ens3
+      host:
+        name: ens4
+        addrs: [10.186.223.3/24, 'fd25:9998:d0e7:e351:1a01:be9:4d9a:157f/48']
     arch: amd64
     uuid: '13d1132678d0c9013118fa11664ee2e4'
     vm: Kubernetes
     disk: /dev/zvol/cluster/Kubernetes
-    hostBridgeAddrs: [10.186.223.3/24, 'fd25:9998:d0e7:e351:1a01:be9:4d9a:157f/48']
     fixedIPv4: '10.186.223.168'
     fixedIPv6: 'fd73:9867:6b4d:0:2a0:98ff:fe06:4044'
   # Customizable names
   k8sHyperV:
     hostname: k8s-hyperv.local
-    layers: [base, node, k8s-node, hyperv, id, cleanup]
+    layers: [base, node, k8s-node, pxe, hyperv, id, cleanup]
+    nic:
+      lan0:
+        name: eth0
     arch: amd64
     uuid: '604d788acd2f4140d7b0cabd664ee2e9'
 ##################
@@ -97,33 +105,39 @@ cluster:
   router:
     fixedIPv4: '192.168.1.1'
     fixedIPv6: 'fd73:9867:6b4d:0:feec:daff:fe04:a9ec'
-  # CoreDNS setup
+  # CoreDNS, the central DNS server for the entire cluster
   coredns:
     svc:
-      # Fixed IP from the load balancer subnet above for port forwarding
+      # Fixed IP from the service subnet above for port forwarding
       fixedIPv4: '10.33.0.10'
       fixedIPv6: 'fd73:9867:6b4d:cafe:0000:34::1'
     lb:
       # Fixed IP from the load balancer subnet above for port forwarding
       fixedIPv4: '10.34.0.2'
       fixedIPv6: 'fd73:9867:6b4d:cafe:0:34::2'
-  # Fixed etcd IP address for coredns, note that this is from the svc pool and not the lb pool
   etcd:
+    # Fixed etcd IP address for coredns, note that this is from the svc pool and not the lb pool
     fixedIPv4: '10.33.0.2'
     fixedIPv6: 'fd73:9867:6b4d:cafe:0:33:0:2'
-  # Traefik setup
+  # Traefik reverse-proxy
   traefik:
     fixedIPv4: '10.34.0.2'
     fixedIPv6: 'fd73:9867:6b4d:cafe:0000:34::2'
-  # Smallstep PKI setup
+  # Smallstep PKI
   smallstep:
     fixedIPv4: '10.34.0.3'
     fixedIPv6: 'fd73:9867:6b4d:cafe:0000:34::3'
+  # Smallstep Kubernetes CA for renewing kubernetes client certs
   kubeAPIServerClientCA:
     fixedIPv4: '10.34.0.5'
     fixedIPv6: 'fd73:9867:6b4d:cafe:0:34::5'
-  tftpd:
+  # HTTP server that distributes kernels for PXE booted machines
+  kernelServer:
     fixedIPv4: '10.34.0.6'
+    fixedIPv6: 'fd73:9867:6b4d:cafe:0:34::6'
+  # NBD server that hosts root images for PXE booted machines
+  nbdServer:
+    fixedIPv4: '10.34.0.7'
     fixedIPv6: 'fd73:9867:6b4d:cafe:0:34::6'
 unifi:
   usg_ssh_address: 'admin@192.168.1.1'

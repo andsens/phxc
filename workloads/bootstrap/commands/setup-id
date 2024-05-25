@@ -4,6 +4,7 @@ set -Eeo pipefail; shopt -s inherit_errexit
 source "$PKGROOT/lib/common.sh"
 set -x
 
+: "${MACHINE_HOSTNAME:?}" "${MACHINE_UUID:?}"
 cp-tpl /etc/hostname
 cp-tpl /var/lib/dbus/machine-id
 cp-tpl /etc/machine-id

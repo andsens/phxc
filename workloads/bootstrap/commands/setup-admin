@@ -13,7 +13,7 @@ adduser "$ADMIN_USERNAME" sudo
 userdir=$(getent passwd "$ADMIN_USERNAME" | cut -d: -f6 )
 
 mkdir "$userdir/.ssh"
-[[ -z $ADMIN_AUTH_KEYS ]] || ainsl -a "$userdir/.ssh/authorized_keys" "$ADMIN_AUTH_KEYS"
+[[ -z $ADMIN_AUTHORIZED_KEYS ]] || printf "%s\n" "$ADMIN_AUTHORIZED_KEYS" "$userdir/.ssh/authorized_keys"
 chown -R "$ADMIN_USERNAME:$ADMIN_USERNAME" "$userdir/.ssh"
 chmod -R u=rwX,go=rX "$userdir/.ssh"
 

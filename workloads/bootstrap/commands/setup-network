@@ -9,6 +9,7 @@ apt-install \
   avahi-daemon libnss-mdns wget ca-certificates nfs-common
 systemctl enable systemd-networkd
 
+: "${MACHINE_NIC_LAN0_NAME:?}"
 cp-tpl /etc/systemd/network/lan0.network
 
 cp-tpl /etc/systemd/system/setup-cluster-dns.service
