@@ -21,17 +21,8 @@ admin:
 ########################
 machines:
   # Fixed name
-  truenas:
-    # Used to ensure scripts are run on the correct machine
-    uuid: '755fd095cad346249ea190511773fc49'
-  # Fixed name
-  workstation:
-    # Used to avoid confirmation prompts
-    uuid: 'b435c0fc89f261bfc95c4d63664ee2e0'
-  # Fixed name
   k8sMaster:
     hostname: k8s-nas.local
-    layers: [base, node, k8s-master, truenas-vm, id, cleanup]
     nic:
       lan0:
         name: ens3
@@ -39,7 +30,6 @@ machines:
         name: ens4
         addrs: [10.186.223.3/24, 'fd25:9998:d0e7:e351:1a01:be9:4d9a:157f/48']
     arch: amd64
-    uuid: '13d1132678d0c9013118fa11664ee2e4'
     vm: Kubernetes
     disk: /dev/zvol/cluster/Kubernetes
     fixedIPv4: '10.186.223.168'
@@ -47,12 +37,10 @@ machines:
   # Customizable names
   k8sHyperV:
     hostname: k8s-hyperv.local
-    layers: [base, node, k8s-node, pxe, hyperv, id, cleanup]
     nic:
       lan0:
         name: eth0
     arch: amd64
-    uuid: '604d788acd2f4140d7b0cabd664ee2e9'
 ##################
 ### NFS Shares ###
 ##################

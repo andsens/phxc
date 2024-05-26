@@ -22,10 +22,9 @@ k8s_master() {
     "--tls-san=api.${CLUSTER_DOMAIN}"
   )
 
-  # systemctl daemon-reload fails because dbus is not started. Ignore. It's the last action in the install script
   INSTALL_K3S_SKIP_START=true \
   INSTALL_K3S_EXEC="${k3s_exec_flags[*]}" \
-  bash <(wget -qO- https://get.k3s.io) || true
+  bash <(wget -qO- https://get.k3s.io) || true # systemctl daemon-reload fails because dbus is not started. Ignore. It's the last action in the install script
 
   cp_tpl /etc/systemd/system/create-k3s-registry-config.service
   systemctl enable create-k3s-registry-config.service

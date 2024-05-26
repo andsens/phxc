@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-PACKAGES+=("$(basename "${ADMIN_SHELL:?}")")
+PACKAGES+=(sudo "$(basename "${ADMIN_SHELL:?}")")
 
 admin() {
   usermod -L root
