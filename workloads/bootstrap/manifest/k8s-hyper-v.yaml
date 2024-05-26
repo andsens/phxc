@@ -16,17 +16,6 @@ spec:
     spec:
       restartPolicy: Never
       initContainers:
-      - name: create-dockerfile
-        image: distribution.docker-registry.svc.cluster.local/home-cluster-base:alpine
-        imagePullPolicy: Always
-        command: [/var/lib/home-cluster/workloads/bootstrap/commands/create-dockerfile.sh]
-        args: [k8sHyperV]
-        volumeMounts:
-        - name: home-cluster
-          mountPath: /var/lib/home-cluster
-        - name: images
-          mountPath: /images/dockerfiles
-          subPath: dockerfiles
       - name: kaniko
         image: gcr.io/kaniko-project/executor:latest
         args:
@@ -38,16 +27,13 @@ spec:
         - /workspace/images/snapshots/$(MACHINE).tar
         - --no-push
         - --dockerfile
-        - images/dockerfiles/$(MACHINE).Dockerfile
+        - workloads/bootstrap/containers/node.Dockerfile
         env:
         - name: MACHINE
           value: k8sHyperV
         volumeMounts:
         - name: home-cluster
           mountPath: /workspace
-        - name: images
-          mountPath: /workspace/images/dockerfiles
-          subPath: dockerfiles
           readOnly: true
         - name: images
           mountPath: /workspace/images/snapshots

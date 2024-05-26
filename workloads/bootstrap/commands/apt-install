@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-set -Eeo pipefail
-apt-get -y install --no-install-recommends "$@"

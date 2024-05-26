@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-# shellcheck source-path=../../../
-set -Eeo pipefail; shopt -s inherit_errexit
-source "$PKGROOT/lib/common.sh"
-set -x
-
-printf "squashfs\n" >>/etc/initramfs-tools/modules
-cp-tpl --raw --chmod=0755 /etc/initramfs-tools/hooks/download-rootimg
-cp-tpl --raw --chmod=0755 /etc/initramfs-tools/scripts/local-premount/download-rootimg

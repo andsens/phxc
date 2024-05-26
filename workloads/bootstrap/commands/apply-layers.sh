@@ -1,11 +1,70 @@
 #!/usr/bin/env bash
-# shellcheck source-path=../../../
+# shellcheck source-path=../../..
 set -Eeo pipefail; shopt -s inherit_errexit
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../..")
 
 main() {
-  source "$PKGROOT/lib/common.sh"
+  confirm_container_build
 
+  export DEBIAN_FRONTEND=noninteractive
+
+  apt-get update -qq
+  apt-get -qq install --no-install-recommends apt-utils gettext jq yq >/dev/null
+
+  source "$PKGROOT/lib/common.sh"
+  # shellcheck disable=SC2153
+  alias_machine "$MACHINE"
+
+  PACKAGES=()
+  local layer layer_file layer_files=()
+  for layer in $MACHINE_LAYERS; do
+    if layer_file=$(compgen -G "$PKGROOT/workloads/bootstrap/layers/??-$layer.sh"); then
+      # shellcheck disable=SC1090
+      source "$layer_file"
+      layer_files+=("$layer_file")
+    fi
+  done
+  readarray -t -d $'\n' layer_files < <(printf "%s\n" "${layer_files[@]}" | sort)
+
+  readarray -t -d $'\n' PACKAGES < <(printf "%s\n" "${PACKAGES[@]}" | sort -u)
+  info "Installing packages: %s" "${PACKAGES[*]}"
+  apt-get -qq install --no-install-recommends "${PACKAGES[@]}" >/dev/null
+  rm -rf /var/cache/apt/lists/*
+
+  for layerfile in "${layer_files[@]}"; do
+    layer=$(basename "$layerfile" .sh)
+    layer=${layer#[0-9][0-9]-}
+    layer=${layer//[^a-z0-9_]/_}
+    if [[ $(type "$layer" 2>/dev/null) = "$layer is a function"* ]]; then
+      info "Applying layer '%s'" "$layer"
+      eval "$layer"
+    fi
+  done
+
+  update-initramfs -u -k all
+}
+
+confirm_container_build() {
+  if [[ -f /proc/1/cgroup ]]; then
+    [[ "$(</proc/1/cgroup)" != *:cpuset:/docker/* ]] || return 0
+  fi
+  [[ ! -e /kaniko ]] || return 0
+  error "This script is intended to be run on during the container build phase"
+  printf "Do you want to continue regardless? [y/N]" >&2
+  if ${HOME_CLUSTER_IGNORE_CONTAINER_BUILD:-false}; then
+    printf " \$HOME_CLUSTER_IGNORE_CONTAINER_BUILD=true, continuing..."
+  elif [[ ! -t 1 ]]; then
+    printf "stdin is not a tty and HOME_CLUSTER_IGNORE_CONTAINER_BUILD!=true, aborting...\n" >&2
+    return 1
+  else
+    local continue
+    read -r continue
+    [[ $continue =~ [Yy] ]] || fatal "User aborted operation"
+    return 0
+  fi
+}
+
+cp_tpl() {
   DOC="cp-tpl - Render a template and save it at the corresponding container path
 Usage:
   cp-tpl [options] TPLPATH
@@ -33,7 +92,6 @@ done;eval $p'__destination=${var___destination:-};'$p'__raw=${var___raw:-false'\
 for varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh"' cp-tpl`
   eval "$(docopt "$@")"
-  confirm_container_build
 
   local dest="${__destination:-$TPLPATH}"
   mkdir -p "$(dirname "$dest")"
@@ -44,26 +102,6 @@ for varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
     envsubst <"$PKGROOT/workloads/bootstrap/assets/${TPLPATH#/}" >"$dest"
   fi
   [[ -z $__chmod ]] || chmod "$__chmod" "$dest"
-}
-
-confirm_container_build() {
-  if [[ -f /proc/1/cgroup ]]; then
-    [[ "$(</proc/1/cgroup)" != *:cpuset:/docker/* ]] || return 0
-  fi
-  [[ ! -e /kaniko ]] || return 0
-  error "This script is intended to be run on during the container build phase"
-  printf "Do you want to continue regardless? [y/N]" >&2
-  if ${HOME_CLUSTER_IGNORE_CONTAINER_BUILD:-false}; then
-    return 0
-  elif [[ ! -t 1 ]]; then
-    printf "stdin is not a tty and HOME_CLUSTER_IGNORE_CONTAINER_BUILD!=true, aborting...\n" >&2
-    return 1
-  else
-    local continue
-    read -r continue
-    [[ $continue =~ [Yy] ]] || fatal "User aborted operation"
-    return 0
-  fi
 }
 
 main "$@"

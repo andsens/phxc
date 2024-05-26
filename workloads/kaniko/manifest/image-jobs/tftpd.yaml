@@ -18,7 +18,7 @@ spec:
       - name: kaniko
         image: gcr.io/kaniko-project/executor:latest
         args:
-        - --dockerfile=workloads/pxe/containers/tftpd/Dockerfile
+        - --dockerfile=workloads/pxe/containers/tftpd.Dockerfile
         - --destination=distribution.docker-registry.svc.cluster.local/tftpd:latest
         - --insecure-registry=distribution.docker-registry.svc.cluster.local
         - --skip-tls-verify

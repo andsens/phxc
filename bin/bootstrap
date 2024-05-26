@@ -34,7 +34,6 @@ for varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   eval "$(docopt "$@")"
 
   # shellcheck disable=SC2153
-  create_dockerfile "$MACHINE"
   bootstrap "$MACHINE"
   # shellcheck disable=SC2154
   if $uefi; then
@@ -44,36 +43,16 @@ for varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   fi
 }
 
-create_dockerfile() {
-  local machine=$1
-  mkdir -p "$PKGROOT/images/dockerfiles"
-  docker build \
-    --file "$PKGROOT/workloads/kaniko/containers/home-cluster-base/alpine.Dockerfile" \
-    --tag distribution.docker-registry.svc.cluster.local/home-cluster-base:alpine \
-    "$PKGROOT"
-  docker run --rm -ti \
-    -v "$PKGROOT:/var/lib/home-cluster:ro" \
-    -v "$PKGROOT/images/dockerfiles:/images/dockerfiles:rw" \
-    distribution.docker-registry.svc.cluster.local/home-cluster-base:alpine \
-    /var/lib/home-cluster/workloads/bootstrap/commands/create-dockerfile.sh "$machine"
-  # Prepend the home-cluster-base Dockerfile
-  cat \
-    "$PKGROOT/workloads/kaniko/containers/home-cluster-base/debian.Dockerfile" \
-    <(tail -n+2 "$PKGROOT/images/dockerfiles/$machine.Dockerfile") \
-    >"$PKGROOT/images/dockerfiles/$machine.local.Dockerfile"
-}
-
 bootstrap() {
   local machine=$1
   mkdir -p "$PKGROOT/images/snapshots"
   docker build \
-    --file "$PKGROOT/workloads/kaniko/containers/home-cluster-base/debian.Dockerfile" \
+    --file "$PKGROOT/workloads/kaniko/containers/home-cluster-base.debian.Dockerfile" \
     --tag distribution.docker-registry.svc.cluster.local/home-cluster-base:debian \
     "$PKGROOT"
   docker run --rm -ti \
     -v "$PKGROOT:/workspace:ro" \
     -v "$PKGROOT/images/snapshots:/workspace/images/snapshots:rw" \
-    -v "$PKGROOT/images/dockerfiles:/workspace/images/dockerfiles:rw" \
     gcr.io/kaniko-project/executor:latest \
     --build-arg "MACHINE=$machine" \
     --destination distribution.docker-registry.svc.cluster.local/non-existent \
@@ -81,13 +60,13 @@ bootstrap() {
     --skip-tls-verify \
     --tar-path "/workspace/images/snapshots/$machine.tar" \
     --no-push \
-    --dockerfile "images/dockerfiles/$machine.local.Dockerfile"
+    --dockerfile "workloads/bootstrap/containers/node.Dockerfile"
 }
 
 uefi() {
   local machine=$1 format=$2
   docker build \
-    --file "$PKGROOT/workloads/bootstrap/containers/create-uefi-boot-image/Dockerfile" \
+    --file "$PKGROOT/workloads/bootstrap/containers/create-uefi-boot-image.Dockerfile" \
     --tag distribution.docker-registry.svc.cluster.local/create-uefi-boot-image \
     "$PKGROOT"
   mkdir -p "$PKGROOT/images/uefi"
@@ -103,7 +82,7 @@ uefi() {
 pxe() {
   local machine=$1
   docker build \
-    --file "$PKGROOT/workloads/bootstrap/containers/create-pxe-boot-image/Dockerfile" \
+    --file "$PKGROOT/workloads/bootstrap/containers/create-pxe-boot-image.Dockerfile" \
     --tag distribution.docker-registry.svc.cluster.local/create-pxe-boot-image \
     "$PKGROOT"
   mkdir -p "$PKGROOT/images/pxe"

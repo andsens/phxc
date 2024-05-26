@@ -1,8 +1,0 @@
-#!/usr/bin/env bash
-# shellcheck source-path=../../../
-set -Eeo pipefail; shopt -s inherit_errexit
-source "$PKGROOT/lib/common.sh"
-set -x
-
-# busybox is needed by scripts in initramfs
-apt-install busybox systemd-sysv systemd-boot zstd util-linux initramfs-tools
