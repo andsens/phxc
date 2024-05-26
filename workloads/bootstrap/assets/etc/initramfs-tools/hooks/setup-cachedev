@@ -1,0 +1,13 @@
+#!/bin/sh
+
+# We don't have any prerequirements
+case $1 in
+prereqs)
+  exit 0
+  ;;
+esac
+
+# shellcheck disable=SC1091
+. /usr/share/initramfs-tools/hook-functions
+
+copy_exec /usr/bin/jq /bin

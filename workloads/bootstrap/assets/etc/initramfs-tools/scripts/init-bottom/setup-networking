@@ -33,7 +33,6 @@ DHCP=yes"
   fi
   # shellcheck disable=SC2154
   printf "%s\n" "$net_conf" >"$rootmnt/etc/systemd/network/$network.network"
-  cat "$rootmnt/etc/systemd/network/$network.network"
   log_end_msg
 done
 

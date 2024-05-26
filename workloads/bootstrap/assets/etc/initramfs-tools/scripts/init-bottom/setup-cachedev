@@ -1,0 +1,30 @@
+#!/bin/sh
+set -e
+# Download the settings first and make sure we can write to the fstab
+PREREQS="download-settings overlayroot"
+case $1 in
+	prereqs) echo "${PREREQS}"; exit 0;;
+esac
+
+# shellcheck disable=SC1091
+. /scripts/functions
+
+settings_path=/run/initramfs/node-settings.json
+if [ ! -e "$settings_path" ]; then
+  log_warning_msg "Skipping networking setup. $settings_path does not exist"
+  exit 0
+fi
+node_name=$(jq -r '.name // "node"' "$settings_path")
+
+if ! cachedev=$(jq -re '.cacheDev' "$settings_path"); then
+  log_failure_msg "$node_name has no cache device defined, skipping"
+  exit 0
+fi
+
+wipefs --all --backup "$cachedev"
+log_success_msg "Wiped $cachedev (backup saved in ~/wipefs-$(basename "$cachedev")-0.bak)"
+# https://www.freedesktop.org/software/systemd/man/latest/systemd.mount.html#x-systemd.makefs
+# The mkfs and growfs options are not available when specifying this mount as a systemd mount unit, so we use fstab
+# shellcheck disable=SC2154
+printf "%s  /var/lib/rancher/k3s/agent/containerd   ext4    defaults,x-systemd.makefs,x-systemd.growfs\n" "$cachedev" >>"$rootmnt/etc/fstab"
+log_success_msg "Set up $cachedev as cache device"
