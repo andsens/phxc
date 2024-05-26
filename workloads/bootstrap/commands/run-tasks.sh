@@ -69,7 +69,7 @@ Options:
   --raw                  Don't replace any variables, copy directly
   --chmod MODE           chmod the destination
 "
-# docopt parser below, refresh this parser with `docopt.sh cp-tpl`
+# docopt parser below, refresh this parser with `docopt.sh run-tasks.sh`
 # shellcheck disable=2016,2086,2317,1090,1091,2034
 docopt() { source "$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh" '2.0.0' || {
 ret=$?;printf -- "exit %d\n" "$ret";exit "$ret";};set -e
@@ -85,7 +85,7 @@ done;eval $p'__destination=${var___destination:-};'$p'__raw=${var___raw:-false'\
 '};'$p'__chmod=${var___chmod:-};'$p'TPLPATH=${var_TPLPATH:-};';local docopt_i=1
 [[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do
 for varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
-# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh"' cp-tpl`
+# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh"' run-tasks.sh`
   eval "$(docopt "$@")"
 
   local dest="${__destination:-$TPLPATH}"

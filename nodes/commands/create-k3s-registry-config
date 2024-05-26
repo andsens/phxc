@@ -19,7 +19,7 @@ Note:
 "
 # docopt parser below, refresh this parser with `docopt.sh create-k3s-registry-config`
 # shellcheck disable=2016,2086,2317,1090,1091,2034
-docopt() { source "$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh" '2.0.0a3' || {
+docopt() { source "$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh" '2.0.0' || {
 ret=$?;printf -- "exit %d\n" "$ret";exit "$ret";};set -e
 trimmed_doc=${DOC:0:331};usage=${DOC:63:45};digest=14687;options=('-u --userna'\
 'me 1' '-p --password 1');node_0(){ value __username 0;};node_1(){ value \

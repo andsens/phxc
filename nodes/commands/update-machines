@@ -13,7 +13,7 @@ Usage:
 "
 # docopt parser below, refresh this parser with `docopt.sh update-machines`
 # shellcheck disable=2016,2086,2317,1090,1091,2034,2154
-docopt() { source "$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh" '2.0.0a3' || {
+docopt() { source "$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh" '2.0.0' || {
 ret=$?;printf -- "exit %d\n" "$ret";exit "$ret";};set -e
 trimmed_doc=${DOC:0:107};usage=${DOC:70:37};digest=5cf82;options=();node_0(){
 value MACHINE a true;};node_1(){ repeatable 0;};node_2(){ optional 1;};cat \
