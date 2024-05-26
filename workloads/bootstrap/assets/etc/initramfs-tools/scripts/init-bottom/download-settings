@@ -31,12 +31,21 @@ boot_server=${boot_server#'//'} # double slash not guaranteed, hence the separat
 boot_server=${boot_server%%\/*}
 
 # Get the NIC MAC we use to contact the boot server
-main_if=$(ip -o route get to "$boot_server" | grep -Eo 'dev [^ ]+' | cut -d ' ' -f2)
-mac=$(ip link show "$main_if" | tail -n1 | grep -Eo '([a-f0-9]{2}:){5}[a-f0-9]{2}' | head -n1)
+if ! link=$(ip -o route get to "$boot_server" | grep -Eo 'dev [^ ]+' | cut -d ' ' -f2); then
+  log_failure_msg "Unable to determine interface used to contact $boot_server, aborting node-settings.json download"
+  exit 1
+fi
+if ! mac=$(ip link show "$link" | tail -n1 | grep -Eo '([a-f0-9]{2}:){5}[a-f0-9]{2}' | head -n1); then
+  log_failure_msg "Unable to determine the MAC address of the interface $link, aborting node-settings.json download"
+  exit 1
+fi
 
 settings_path=/run/initramfs/node-settings.json
 settings_url=$boot_proto://$boot_server/$mac.json
 
-log_begin_msg "Retrieving settings from $settings_url"
-wget -qO"$settings_path" "$settings_url"
+log_begin_msg "Downloading settings from $settings_url"
+if ! wget -qO"$settings_path" "$settings_url"; then
+  log_failure "Failed to download."
+  exit 1
+fi
 log_end_msg

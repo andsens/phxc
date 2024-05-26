@@ -15,10 +15,14 @@ if [ ! -e "$settings_path" ]; then
   exit 0
 fi
 
-for network in $(jq -r '.networks | keys[]' "$settings_path"); do
+node_name=$(jq -r '.name // "node"' "$settings_path")
+
+for network in $(jq -r '(.networks // []) | keys[]' "$settings_path"); do
   log_begin_msg "Configuring network $network"
-  net_conf=$(printf '[Match]\nName=%s\n\n[Network]' \
-    "$(jq -r --arg network "$network" '.networks[$network].nic' "$settings_path")")
+  if ! nic_name=$(jq -re --arg network "$network" '.networks[$network].nic' "$settings_path"); then
+    log_failure_msg "$network has no nic defined, skipping"
+  fi
+  net_conf=$(printf '[Match]\nName=%s\n\n[Network]' "$nic_name")
   addrs=$(jq -r --arg network "$network" '(.networks[$network].addrs // [])[]' "$settings_path")
   if [ -n "$addrs" ]; then
     # shellcheck disable=SC2086
@@ -33,6 +37,9 @@ DHCP=yes"
   log_end_msg
 done
 
-hostname=$(jq -r '.hostname' "$settings_path")
-printf "%s\n" "$hostname" >"$rootmnt/etc/hostname"
-log_success_msg "Configure hostname as $hostname"
+if hostname=$(jq -re '.hostname' "$settings_path"); then
+  printf "%s\n" "$hostname" >"$rootmnt/etc/hostname"
+  log_success_msg "Configured hostname for $node_name as $hostname"
+else
+  log_failure_msg "$node_name has no hostname defined, skipping"
+fi
