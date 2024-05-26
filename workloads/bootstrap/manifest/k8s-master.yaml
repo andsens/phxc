@@ -75,8 +75,8 @@ spec:
           subPath: snapshots
           readOnly: true
         - name: images
-          mountPath: /workspace/images/raw
-          subPath: raw
+          mountPath: /workspace/images/uefi
+          subPath: uefi
         - name: dev
           mountPath: /dev
       volumes:

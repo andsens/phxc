@@ -35,8 +35,8 @@ varnames=(__format MACHINE) varname;for varname in "${varnames[@]}"; do unset \
   # shellcheck disable=SC2154
   local \
     tar=/images/snapshots/$MACHINE.tar \
-    image_tmp=/images/raw/$MACHINE.tmp.raw \
-    image_dest=/images/raw/$MACHINE.$__format \
+    image_tmp=/images/uefi/$MACHINE.tmp.raw \
+    image_dest=/images/uefi/$MACHINE.$__format \
     efi_size=64 disk_size_mib tar_size_b sectors_per_mib
 
 

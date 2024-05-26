@@ -72,7 +72,8 @@ bootstrap() {
     "$PKGROOT"
   docker run --rm -ti \
     -v "$PKGROOT:/workspace:ro" \
-    -v "$PKGROOT/images:/workspace/images:rw" \
+    -v "$PKGROOT/images/snapshots:/workspace/images/snapshots:rw" \
+    -v "$PKGROOT/images/dockerfiles:/workspace/images/dockerfiles:rw" \
     gcr.io/kaniko-project/executor:latest \
     --build-arg "MACHINE=$machine" \
     --destination distribution.docker-registry.svc.cluster.local/non-existent \
@@ -89,11 +90,11 @@ uefi() {
     --file "$PKGROOT/workloads/bootstrap/containers/create-uefi-boot-image/Dockerfile" \
     --tag distribution.docker-registry.svc.cluster.local/create-uefi-boot-image \
     "$PKGROOT"
-  mkdir -p "$PKGROOT/images/raw"
+  mkdir -p "$PKGROOT/images/uefi"
   docker run --rm -ti \
     -v "$PKGROOT:/var/lib/home-cluster:ro" \
     -v "$PKGROOT/images/snapshots:/images/snapshots:rw" \
-    -v "$PKGROOT/images/raw:/images/raw:rw" \
+    -v "$PKGROOT/images/uefi:/images/uefi:rw" \
     --privileged \
     --volume /dev:/dev \
     distribution.docker-registry.svc.cluster.local/create-uefi-boot-image "$machine" --format "$format"
@@ -105,12 +106,11 @@ pxe() {
     --file "$PKGROOT/workloads/bootstrap/containers/create-pxe-boot-image/Dockerfile" \
     --tag distribution.docker-registry.svc.cluster.local/create-pxe-boot-image \
     "$PKGROOT"
-  mkdir -p "$PKGROOT/images/squashfs" "$PKGROOT/images/kernels"
+  mkdir -p "$PKGROOT/images/pxe"
   docker run --rm -ti \
     -v "$PKGROOT:/var/lib/home-cluster:ro" \
     -v "$PKGROOT/images/snapshots:/images/snapshots:rw" \
-    -v "$PKGROOT/images/squashfs:/images/squashfs:rw" \
-    -v "$PKGROOT/images/kernels:/images/kernels:rw" \
+    -v "$PKGROOT/images/pxe:/images/pxe:rw" \
     distribution.docker-registry.svc.cluster.local/create-pxe-boot-image "$machine"
 }
 

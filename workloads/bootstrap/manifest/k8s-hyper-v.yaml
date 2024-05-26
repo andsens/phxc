@@ -70,11 +70,8 @@ spec:
           subPath: snapshots
           readOnly: true
         - name: images
-          mountPath: /images/squashfs
-          subPath: squashfs
-        - name: images
-          mountPath: /images/kernels
-          subPath: kernels
+          mountPath: /images/pxe
+          subPath: pxe
         - name: dev
           mountPath: /dev
       volumes:

@@ -69,10 +69,10 @@ spec:
         volumeMounts:
         - name: home-cluster
           mountPath: /etc/nginx/nginx.conf
-          subPath: workloads/pxe/config/kernels.conf
+          subPath: workloads/pxe/config/pxe-vhost.conf
         - name: images
-          mountPath: /images/kernels
-          subPath: kernels
+          mountPath: /images/pxe
+          subPath: pxe
           readOnly: true
         - name: nginx-cache
           mountPath: /var/cache/nginx

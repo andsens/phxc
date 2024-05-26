@@ -29,8 +29,7 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 
   local \
     tar=/images/snapshots/$MACHINE.tar \
-    squashfs=/images/squashfs/$MACHINE.img \
-    kernel=/images/kernels/$MACHINE
+    pxedir=/images/pxe/$MACHINE
 
   TMPROOT=$(mktemp -d)
   trap_append 'rm -rf "$TMPROOT"' EXIT
@@ -41,11 +40,17 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
     tar -xOf "$tar" "$layer" | tar -xz -C "$TMPROOT"
   done
 
+  mkdir -p "$pxedir"
+
   info "Creating squashfs image"
-  mksquashfs "$TMPROOT" "$squashfs" -noappend -quiet
-  mkdir -p "$kernel"
+  mksquashfs "$TMPROOT" "$pxedir/root.tmp.img" -noappend -quiet
 
   info "Extracting kernel image"
-  cp -L "$TMPROOT/vmlinuz" "$TMPROOT/initrd.img" "$kernel"
+  cp -L "$TMPROOT/vmlinuz" "$pxedir/vmlinuz.tmp"
+  cp -L "$TMPROOT/initrd.img" "$pxedir/initrd.img.tmp"
+
+  mv "$pxedir/root.tmp.img" "$pxedir/root.img"
+  mv "$pxedir/vmlinuz.tmp" "$pxedir/vmlinuz"
+  mv "$pxedir/initrd.img.tmp" "$pxedir/initrd.img"
 }
 main "$@"
