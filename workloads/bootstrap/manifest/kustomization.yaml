@@ -3,8 +3,7 @@ kind: Kustomization
 resources:
 - ../../mounts/manifests
 - credentials.yaml
-- k8s-master.yaml
-- k8s-hyper-v.yaml
+- amd64.yaml
 - networkpolicies.yaml
 - namespace.yaml
 - Kptfile
