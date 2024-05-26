@@ -31,7 +31,6 @@ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for \
 varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh"' replace-disk`
   eval "$(docopt "$@")"
-  confirm_machine_id truenas
 
   cache_all_vms
 

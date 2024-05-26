@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 
-PACKAGES+=(linux-image-amd64)
-
 truenas_vm() {
-  cp_tpl /etc/systemd/network/host.network
-
   mkdir /var/lib/persistent
 
   # https://www.freedesktop.org/software/systemd/man/latest/systemd.mount.html#x-systemd.makefs

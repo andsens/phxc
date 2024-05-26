@@ -2,15 +2,15 @@
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: nginx
+  name: boot-server
   labels:
     app.kubernetes.io/name: pxe
-    app.kubernetes.io/component: nginx
+    app.kubernetes.io/component: boot-server
 spec:
   endpointSelector:
     matchLabels:
       app.kubernetes.io/name: pxe
-      app.kubernetes.io/component: nginx
+      app.kubernetes.io/component: boot-server
   ingress:
   - toPorts:
     - ports:
@@ -21,19 +21,19 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: nginx
+  name: boot-server
   labels:
     app.kubernetes.io/name: pxe
-    app.kubernetes.io/component: nginx
+    app.kubernetes.io/component: boot-server
   annotations:
-    io.cilium/lb-ipam-ips: "cluster.nginx.fixedIPv4,cluster.nginx.fixedIPv6"
+    io.cilium/lb-ipam-ips: "cluster.bootServer.fixedIPv4,cluster.bootServer.fixedIPv6"
 spec:
   type: LoadBalancer
   ipFamilies: [IPv4, IPv6]
   ipFamilyPolicy: RequireDualStack
   selector:
     app.kubernetes.io/name: pxe
-    app.kubernetes.io/component: nginx
+    app.kubernetes.io/component: boot-server
   ports:
   - name: http
     port: 80
@@ -42,24 +42,24 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: nginx
+  name: boot-server
   labels:
     app.kubernetes.io/name: pxe
-    app.kubernetes.io/component: nginx
+    app.kubernetes.io/component: boot-server
 spec:
   selector:
     matchLabels:
       app.kubernetes.io/name: pxe
-      app.kubernetes.io/component: nginx
+      app.kubernetes.io/component: boot-server
   template:
     metadata:
       labels:
         app.kubernetes.io/name: pxe
-        app.kubernetes.io/component: nginx
+        app.kubernetes.io/component: boot-server
     spec:
       containers:
       - name: nginx
-        image: nginx:1.26.0
+        image: distribution.docker-registry.svc.cluster.local/boot-server:latest
         imagePullPolicy: Always
         securityContext:
           readOnlyRootFilesystem: true
@@ -68,14 +68,20 @@ spec:
           containerPort: 80
         volumeMounts:
         - name: home-cluster
+          mountPath: /var/lib/home-cluster
+        - name: home-cluster
           mountPath: /etc/nginx/nginx.conf
-          subPath: workloads/pxe/config/boot-vhost.conf
+          subPath: workloads/pxe/config/boot-server.conf
         - name: images
           mountPath: /images/pxe
           subPath: pxe
           readOnly: true
-        - name: nginx-cache
-          mountPath: /var/cache/nginx
+        - name: pxe-manifests
+          mountPath: /pxe-manifests
+        - name: nginx-lib
+          mountPath: /var/lib/nginx
+        - name: tmp
+          mountPath: /tmp
       volumes:
       - name: home-cluster
         persistentVolumeClaim:
@@ -83,5 +89,9 @@ spec:
       - name: images
         persistentVolumeClaim:
           claimName: images
-      - name: nginx-cache
+      - name: pxe-manifests
+        emptyDir: {}
+      - name: nginx-lib
+        emptyDir: {}
+      - name: tmp
         emptyDir: {}

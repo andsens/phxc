@@ -24,7 +24,6 @@ done;eval ;local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
 "$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh"' install-cilium`
   eval "$(docopt "$@")"
-  confirm_machine_id k8sMaster
 
   info "Waiting for k3s to become ready"
   local max_wait=300 wait_left=300

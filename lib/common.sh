@@ -17,7 +17,6 @@ source "$PKGROOT/.upkg/records.sh/records.sh"
 source "$PKGROOT/.upkg/collections.sh/collections.sh"
 # shellcheck disable=SC1091
 source "$PKGROOT/.upkg/trap.sh/trap.sh"
-source "$PKGROOT/lib/machine-id.sh"
-# shellcheck source=workloads/settings/lib/settings.shellcheck.sh
-source "$PKGROOT/workloads/settings/lib/generate-settings-env.sh"
+# shellcheck source=workloads/settings/lib/settings-env.shellcheck.sh
+source "$PKGROOT/workloads/settings/lib/settings-env.sh"
 eval_settings

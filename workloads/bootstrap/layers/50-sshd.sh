@@ -12,7 +12,7 @@ sshd() {
   cp_tpl /etc/systemd/system/generate-ssh-host-keys.service
   systemctl enable generate-ssh-host-keys.service
 
-  wget -qO- "https://dl.smallstep.com/gh-release/cli/gh-release-header/v0.26.0/step_linux_0.26.0_${MACHINE_ARCH:?}.tar.gz" | \
+  wget -qO- "https://dl.smallstep.com/gh-release/cli/gh-release-header/v0.26.0/step_linux_0.26.0_${ARCH:?}.tar.gz" | \
     tar xzC /usr/local/bin --strip-components 2 step_0.26.0/bin/step
   chmod +x /usr/local/bin/step
 

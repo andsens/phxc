@@ -1,0 +1,38 @@
+#!/bin/sh
+set -e
+# Download the settings first and make sure we can write the networking config
+PREREQS="download-settings overlayroot"
+case $1 in
+	prereqs) echo "${PREREQS}"; exit 0;;
+esac
+
+# shellcheck disable=SC1091
+. /scripts/functions
+
+settings_path=/run/initramfs/machine-settings.json
+if [ ! -e "$settings_path" ]; then
+  log_warning_msg "Skipping networking setup. $settings_path does not exist"
+  exit 0
+fi
+
+for network in $(jq -r '.networks | keys[]' "$settings_path"); do
+  log_begin_msg "Configuring network $network"
+  net_conf=$(printf '[Match]\nName=%s\n\n[Network]' \
+    "$(jq -r --arg network "$network" '.networks[$network].nic' "$settings_path")")
+  addrs=$(jq -r --arg network "$network" '(.networks[$network].addrs // [])[]' "$settings_path")
+  if [ -n "$addrs" ]; then
+    # shellcheck disable=SC2086
+    net_conf="${net_conf}$(printf "\nAddress=%s" $addrs)"
+  else
+    net_conf="${net_conf}
+DHCP=yes"
+  fi
+  # shellcheck disable=SC2154
+  printf "%s\n" "$net_conf" >"$rootmnt/etc/systemd/network/$network.network"
+  cat "$rootmnt/etc/systemd/network/$network.network"
+  log_end_msg
+done
+
+hostname=$(jq -r '.hostname' "$settings_path")
+printf "%s\n" "$hostname" >"$rootmnt/etc/hostname"
+log_success_msg "Configure hostname as $hostname"

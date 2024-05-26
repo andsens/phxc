@@ -12,26 +12,21 @@ main() {
   apt-get -qq install --no-install-recommends apt-utils gettext jq yq >/dev/null
 
   source "$PKGROOT/lib/common.sh"
-  # shellcheck disable=SC2153
-  alias_machine "$MACHINE"
 
   PACKAGES=()
-  local layer layer_file layer_files=()
-  for layer in $MACHINE_LAYERS; do
-    if layer_file=$(compgen -G "$PKGROOT/workloads/bootstrap/layers/??-$layer.sh"); then
-      # shellcheck disable=SC1090
-      source "$layer_file"
-      layer_files+=("$layer_file")
-    fi
+  local layerfile
+  for layerfile in "$PKGROOT/workloads/bootstrap/layers/"??-*.sh; do
+    # shellcheck disable=SC1090
+    source "$layerfile"
   done
-  readarray -t -d $'\n' layer_files < <(printf "%s\n" "${layer_files[@]}" | sort)
 
   readarray -t -d $'\n' PACKAGES < <(printf "%s\n" "${PACKAGES[@]}" | sort -u)
   info "Installing packages: %s" "${PACKAGES[*]}"
   apt-get -qq install --no-install-recommends "${PACKAGES[@]}" >/dev/null
   rm -rf /var/cache/apt/lists/*
 
-  for layerfile in "${layer_files[@]}"; do
+  local layer
+  for layerfile in "$PKGROOT/workloads/bootstrap/layers/"??-*.sh; do
     layer=$(basename "$layerfile" .sh)
     layer=${layer#[0-9][0-9]-}
     layer=${layer//[^a-z0-9_]/_}
@@ -97,8 +92,10 @@ for varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   mkdir -p "$(dirname "$dest")"
   # shellcheck disable=SC2154
   if $__raw; then
+    info "Copying template %s to %s" "${TPLPATH#/}" "$dest"
     cp "$PKGROOT/workloads/bootstrap/assets/${TPLPATH#/}" "$dest"
   else
+    info "Rendering template %s to %s" "${TPLPATH#/}" "$dest"
     envsubst <"$PKGROOT/workloads/bootstrap/assets/${TPLPATH#/}" >"$dest"
   fi
   [[ -z $__chmod ]] || chmod "$__chmod" "$dest"

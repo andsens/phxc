@@ -34,17 +34,17 @@ k8s_master() {
   (
     set -e
     cd "/tmp"
-    curl -sL --fail --remote-name-all "https://github.com/cilium/cilium-cli/releases/download/${CILIUM_CLI_VERSION}/cilium-linux-${MACHINE_ARCH?}.tar.gz"{,.sha256sum}
-    sha256sum --check "cilium-linux-$MACHINE_ARCH.tar.gz.sha256sum"
-    tar xzvfC "cilium-linux-$MACHINE_ARCH.tar.gz" "/usr/local/bin"
-    rm "cilium-linux-$MACHINE_ARCH.tar.gz"{,.sha256sum}
+    curl -sL --fail --remote-name-all "https://github.com/cilium/cilium-cli/releases/download/${CILIUM_CLI_VERSION}/cilium-linux-${ARCH?}.tar.gz"{,.sha256sum}
+    sha256sum --check "cilium-linux-$ARCH.tar.gz.sha256sum"
+    tar xzvfC "cilium-linux-$ARCH.tar.gz" "/usr/local/bin"
+    rm "cilium-linux-$ARCH.tar.gz"{,.sha256sum}
   )
   cp_tpl /etc/systemd/system/install-cilium.service
   systemctl enable install-cilium.service
 
-  wget -qO/usr/local/bin/kpt "https://github.com/kptdev/kpt/releases/download/v1.0.0-beta.49/kpt_linux_$MACHINE_ARCH"
+  wget -qO/usr/local/bin/kpt "https://github.com/kptdev/kpt/releases/download/v1.0.0-beta.49/kpt_linux_$ARCH"
   chmod +x /usr/local/bin/kpt
-  wget -qO- "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.3.0/kustomize_v5.3.0_linux_$MACHINE_ARCH.tar.gz" | tar xzC /usr/local/bin/ kustomize
+  wget -qO- "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.3.0/kustomize_v5.3.0_linux_$ARCH.tar.gz" | tar xzC /usr/local/bin/ kustomize
   chmod +x /usr/local/bin/kustomize
 
   cp_tpl /etc/systemd/system/apply-all-manifests.service

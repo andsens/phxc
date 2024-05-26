@@ -8,6 +8,7 @@ resources:
 - image-jobs/create-pxe-boot-image.yaml
 - image-jobs/home-cluster-base.yaml
 - image-jobs/tftpd.yaml
+- image-jobs/boot-server.yaml
 - namespace.yaml
 - networkpolicy.yaml
 - Kptfile

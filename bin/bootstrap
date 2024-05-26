@@ -8,43 +8,45 @@ main() {
 
   DOC="bootstrap - Bootstrap images
 Usage:
-  bootstrap uefi [-f FORMAT] MACHINE
-  bootstrap pxe MACHINE
+  bootstrap uefi [-a ARCH -f FORMAT]
+  bootstrap pxe [-a ARCH]
 
 Options:
-  -f --format FORMAT  The desired image format [default: raw]
+  -a --arch ARCH      Processor architecture of the image [default: amd64]
+  -f --format FORMAT  Desired image format [default: raw]
 "
 # docopt parser below, refresh this parser with `docopt.sh bootstrap`
 # shellcheck disable=2016,2086,2317,1090,1091,2034
 docopt() { source "$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh" '2.0.0' || {
 ret=$?;printf -- "exit %d\n" "$ret";exit "$ret";};set -e
-trimmed_doc=${DOC:0:168};usage=${DOC:29:67};digest=2ceb1;options=('-f --format'\
-' 1');node_0(){ value __format 0;};node_1(){ value MACHINE a;};node_2(){
-switch uefi a:uefi;};node_3(){ switch pxe a:pxe;};node_4(){ sequence 2 5 1;}
-node_5(){ optional 0;};node_6(){ sequence 3 1;};node_7(){ choice 4 6;};cat \
-<<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2;printf "%s\n" \
-"${DOC:29:67}" >&2;exit 1;}';local varnames=(__format MACHINE uefi pxe) varname
-for varname in "${varnames[@]}"; do unset "var_$varname";done;parse 7 "$@"
-local p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset \
-"$p$varname";done;eval $p'__format=${var___format:-raw};'$p'MACHINE=${var_MACH'\
-'INE:-};'$p'uefi=${var_uefi:-false};'$p'pxe=${var_pxe:-false};';local docopt_i=1
-[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do
-for varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
+trimmed_doc=${DOC:0:241};usage=${DOC:29:69};digest=41bff;options=('-a --arch 1'\
+ '-f --format 1');node_0(){ value __arch 0;};node_1(){ value __format 1;}
+node_2(){ switch uefi a:uefi;};node_3(){ switch pxe a:pxe;};node_4(){ sequence \
+2 5;};node_5(){ optional 0 1;};node_6(){ sequence 3 7;};node_7(){ optional 0;}
+node_8(){ choice 4 6;};cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" \
+"$1" >&2;printf "%s\n" "${DOC:29:69}" >&2;exit 1;}';local varnames=(__arch \
+__format uefi pxe) varname;for varname in "${varnames[@]}"; do unset \
+"var_$varname";done;parse 8 "$@";local p=${DOCOPT_PREFIX:-''};for varname in \
+"${varnames[@]}"; do unset "$p$varname";done;eval $p'__arch=${var___arch:-amd6'\
+'4};'$p'__format=${var___format:-raw};'$p'uefi=${var_uefi:-false};'$p'pxe=${va'\
+'r_pxe:-false};';local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2
+for ((;docopt_i>0;docopt_i--)); do for varname in "${varnames[@]}"; do declare \
+-p "$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh"' bootstrap`
   eval "$(docopt "$@")"
 
-  # shellcheck disable=SC2153
-  bootstrap "$MACHINE"
+  # shellcheck disable=SC2154
+  bootstrap "$__arch"
   # shellcheck disable=SC2154
   if $uefi; then
-    uefi "$MACHINE" "$__format"
+    uefi "$__arch" "$__format"
   else
-    pxe "$MACHINE"
+    pxe "$__arch"
   fi
 }
 
 bootstrap() {
-  local machine=$1
+  local arch=$1
   mkdir -p "$PKGROOT/images/snapshots"
   docker build \
     --file "$PKGROOT/workloads/kaniko/containers/home-cluster-base.debian.Dockerfile" \
@@ -54,17 +56,18 @@ bootstrap() {
     -v "$PKGROOT:/workspace:ro" \
     -v "$PKGROOT/images/snapshots:/workspace/images/snapshots:rw" \
     gcr.io/kaniko-project/executor:latest \
-    --build-arg "MACHINE=$machine" \
+    --build-arg "ARCH=$arch" \
+    --custom-platform="linux/$arch" \
     --destination distribution.docker-registry.svc.cluster.local/non-existent \
     --insecure-registry=distribution.docker-registry.svc.cluster.local \
     --skip-tls-verify \
-    --tar-path "/workspace/images/snapshots/$machine.tar" \
+    --tar-path "/workspace/images/snapshots/$arch.tar" \
     --no-push \
     --dockerfile "workloads/bootstrap/containers/node.Dockerfile"
 }
 
 uefi() {
-  local machine=$1 format=$2
+  local arch=$1 format=$2
   docker build \
     --file "$PKGROOT/workloads/bootstrap/containers/create-uefi-boot-image.Dockerfile" \
     --tag distribution.docker-registry.svc.cluster.local/create-uefi-boot-image \
@@ -76,11 +79,11 @@ uefi() {
     -v "$PKGROOT/images/uefi:/images/uefi:rw" \
     --privileged \
     --volume /dev:/dev \
-    distribution.docker-registry.svc.cluster.local/create-uefi-boot-image "$machine" --format "$format"
+    distribution.docker-registry.svc.cluster.local/create-uefi-boot-image --arch "$arch" --format "$format"
 }
 
 pxe() {
-  local machine=$1
+  local arch=$1
   docker build \
     --file "$PKGROOT/workloads/bootstrap/containers/create-pxe-boot-image.Dockerfile" \
     --tag distribution.docker-registry.svc.cluster.local/create-pxe-boot-image \
@@ -90,7 +93,7 @@ pxe() {
     -v "$PKGROOT:/var/lib/home-cluster:ro" \
     -v "$PKGROOT/images/snapshots:/images/snapshots:rw" \
     -v "$PKGROOT/images/pxe:/images/pxe:rw" \
-    distribution.docker-registry.svc.cluster.local/create-pxe-boot-image "$machine"
+    distribution.docker-registry.svc.cluster.local/create-pxe-boot-image --arch "$arch"
 }
 
 main "$@"

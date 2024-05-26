@@ -5,7 +5,7 @@ resources:
 - ../../settings/manifests
 - ../../mounts/manifests
 - tftpd.yaml
-- nginx.yaml
+- boot-server.yaml
 - namespace.yaml
 - Kptfile
 - resourcegroup.yaml
@@ -16,11 +16,11 @@ replacements:
     fieldPaths: [spec.template.spec.nodeSelector.kubernetes\.io/hostname]
 - source: {fieldPath: data.cluster.bootServer.fixedIPv4, kind: ConfigMap, name: settings}
   targets:
-  - select: {kind: Service, name: nginx}
+  - select: {kind: Service, name: boot-server}
     fieldPaths: [metadata.annotations.io\.cilium/lb-ipam-ips]
     options: {delimiter: ',', index: 0}
 - source: {fieldPath: data.cluster.bootServer.fixedIPv6, kind: ConfigMap, name: settings}
   targets:
-  - select: {kind: Service, name: nginx}
+  - select: {kind: Service, name: boot-server}
     fieldPaths: [metadata.annotations.io\.cilium/lb-ipam-ips]
     options: {delimiter: ',', index: 1}

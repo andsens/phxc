@@ -9,7 +9,8 @@ CONFIG=/tftp/config/autoexec.ipxe
 main() {
   source "$PKGROOT/lib/common.sh"
 
-  envsubst <$CONFIG_TPL >$CONFIG
+  # shellcheck disable=SC2016
+  envsubst '${CLUSTER_BOOTSERVER_FIXEDIPV4}' <$CONFIG_TPL >$CONFIG
   info "Starting tftpd"
   exec /usr/sbin/in.tftpd --foreground \
   --user tftp \
