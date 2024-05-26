@@ -14,10 +14,10 @@ main() {
   source "$PKGROOT/lib/common.sh"
 
   PACKAGES=()
-  local layerfile
-  for layerfile in "$PKGROOT/workloads/bootstrap/layers/"??-*.sh; do
+  local taskfile
+  for taskfile in "$PKGROOT/workloads/bootstrap/task.d/"??-*.sh; do
     # shellcheck disable=SC1090
-    source "$layerfile"
+    source "$taskfile"
   done
 
   readarray -t -d $'\n' PACKAGES < <(printf "%s\n" "${PACKAGES[@]}" | sort -u)
@@ -25,14 +25,14 @@ main() {
   apt-get -qq install --no-install-recommends "${PACKAGES[@]}" >/dev/null
   rm -rf /var/cache/apt/lists/*
 
-  local layer
-  for layerfile in "$PKGROOT/workloads/bootstrap/layers/"??-*.sh; do
-    layer=$(basename "$layerfile" .sh)
-    layer=${layer#[0-9][0-9]-}
-    layer=${layer//[^a-z0-9_]/_}
-    if [[ $(type "$layer" 2>/dev/null) = "$layer is a function"* ]]; then
-      info "Applying layer '%s'" "$layer"
-      eval "$layer"
+  local task
+  for taskfile in "$PKGROOT/workloads/bootstrap/task.d/"??-*.sh; do
+    task=$(basename "$taskfile" .sh)
+    task=${task#[0-9][0-9]-}
+    task=${task//[^a-z0-9_]/_}
+    if [[ $(type "$task" 2>/dev/null) = "$task is a function"* ]]; then
+      info "Applying task '%s'" "$task"
+      eval "$task"
     fi
   done
 

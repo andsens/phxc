@@ -6,7 +6,7 @@ k8s_node() {
   # shellcheck disable=2054
   k3s_exec_flags=(
     --disable-apiserver-lb
-    --snapshotter=native
+    --snapshotter=stargz
   )
 
   INSTALL_K3S_SKIP_START=true \
