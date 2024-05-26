@@ -18,7 +18,7 @@ spec:
       - name: alpine
         image: gcr.io/kaniko-project/executor:latest
         args:
-        - --dockerfile=workloads/kaniko/containers/home-cluster-base/alpine.Dockerfile
+        - --dockerfile=workloads/kaniko/containers/home-cluster-base.alpine.Dockerfile
         - --destination=distribution.docker-registry.svc.cluster.local/home-cluster-base:alpine
         - --insecure-registry=distribution.docker-registry.svc.cluster.local
         - --skip-tls-verify
@@ -30,7 +30,7 @@ spec:
       - name: debian
         image: gcr.io/kaniko-project/executor:latest
         args:
-        - --dockerfile=workloads/kaniko/containers/home-cluster-base/debian.Dockerfile
+        - --dockerfile=workloads/kaniko/containers/home-cluster-base.debian.Dockerfile
         - --destination=distribution.docker-registry.svc.cluster.local/home-cluster-base:debian
         - --insecure-registry=distribution.docker-registry.svc.cluster.local
         - --skip-tls-verify

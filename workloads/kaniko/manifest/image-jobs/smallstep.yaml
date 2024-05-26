@@ -18,7 +18,7 @@ spec:
       - name: kaniko
         image: gcr.io/kaniko-project/executor:latest
         args:
-        - --context=/workspace/workloads/smallstep/containers/step-ca-bootstrap
+        - --dockerfile=/workloads/smallstep/containers/step-ca-bootstrap.Dockerfile
         - --destination=distribution.docker-registry.svc.cluster.local/step-ca-bootstrap:latest
         - --insecure-registry=distribution.docker-registry.svc.cluster.local
         - --skip-tls-verify
