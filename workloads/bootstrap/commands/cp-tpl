@@ -43,7 +43,7 @@ confirm_container_build() {
   if ${HOME_CLUSTER_IGNORE_CONTAINER_BUILD:-false}; then
     return 0
   elif [[ ! -t 1 ]]; then
-    printf " stdin is not a tty and HOME_CLUSTER_IGNORE_CONTAINER_BUILD!=true, aborting...\n" >&2
+    printf "stdin is not a tty and HOME_CLUSTER_IGNORE_CONTAINER_BUILD!=true, aborting...\n" >&2
     return 1
   else
     local continue

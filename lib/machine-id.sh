@@ -27,7 +27,7 @@ confirm_machine_id() {
       printf " HOME_CLUSTER_IGNORE_MACHINE_ID=true, continuing...\n" >&2
       return 0
     elif [[ ! -t 1 ]]; then
-      printf " stdin is not a tty and HOME_CLUSTER_IGNORE_MACHINE_ID!=true, aborting...\n" >&2
+      printf "stdin is not a tty and HOME_CLUSTER_IGNORE_MACHINE_ID!=true, aborting...\n" >&2
       return 1
     else
       local continue
