@@ -4,7 +4,7 @@ goto boot
 
 :boot
 dhcp
-kernel http://${CLUSTER_KERNELSERVER_FIXEDIPV4}/k8sHyperV/vmlinuz initrd=initrd.img root=/dev/nbd0 nbdroot=${CLUSTER_NBDSERVER_FIXEDIPV4},k8sHyperV, noresume
+kernel http://${CLUSTER_KERNELSERVER_FIXEDIPV4}/k8sHyperV/vmlinuz initrd=initrd.img root=/run/initramfs/rootfs/root.img rootimg.addr=http://${CLUSTER_KERNELSERVER_FIXEDIPV4}/k8sHyperV/root.img debug=all noresume
 initrd http://${CLUSTER_KERNELSERVER_FIXEDIPV4}/k8sHyperV/initrd.img
 boot || goto failed
 

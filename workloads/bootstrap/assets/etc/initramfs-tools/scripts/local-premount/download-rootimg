@@ -1,0 +1,27 @@
+#!/bin/sh
+
+# We don't have any prerequirements
+case $1 in
+prereqs)
+  exit 0
+  ;;
+esac
+
+. /scripts/functions
+for x in $(cat /proc/cmdline); do
+  case $x in
+  rootimg.addr=*)
+    img_addr=${x#rootimg.addr=}
+    ;;
+  esac
+done
+if [ -z "${img_addr}" ]; then
+  log_warning_msg "Skipping download of root image. Boot argument rootimg.addr= not specified"
+  exit 0
+fi
+
+configure_networking
+tmpfs=/run/initramfs/rootfs
+mkdir -p "$tmpfs"
+mount -t tmpfs -o mode=0755 tmpfs "$tmpfs"
+wget -qO"$tmpfs/root.img" "$img_addr"

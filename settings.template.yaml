@@ -131,13 +131,9 @@ cluster:
   kubeAPIServerClientCA:
     fixedIPv4: '10.34.0.5'
     fixedIPv6: 'fd73:9867:6b4d:cafe:0:34::5'
-  # HTTP server that distributes kernels for PXE booted machines
-  kernelServer:
+  # HTTP server that distributes kernels and root images for PXE booted machines
+  bootServer:
     fixedIPv4: '10.34.0.6'
-    fixedIPv6: 'fd73:9867:6b4d:cafe:0:34::6'
-  # NBD server that hosts root images for PXE booted machines
-  nbdServer:
-    fixedIPv4: '10.34.0.7'
     fixedIPv6: 'fd73:9867:6b4d:cafe:0:34::6'
 unifi:
   usg_ssh_address: 'admin@192.168.1.1'

@@ -1,2 +1,3 @@
+RUN cleanup
 ENV PATH=$OLD_PATH
 ENV PKGROOT=

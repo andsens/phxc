@@ -10,15 +10,7 @@ locales locales/locales_to_be_generated multiselect     en_US.UTF-8 UTF-8
 locales locales/default_environment_locale      select  en_US.UTF-8
 ucf ucf/changeprompt select keep_current"
 
-# busybox is needed by scripts in initramfs
-apt-install systemd busybox locales curl
+apt-install locales
 
 rm /etc/locale.gen
 dpkg-reconfigure --frontend noninteractive locales tzdata
-
-systemctl disable apt-daily.timer
-systemctl disable apt-daily-upgrade.timer
-systemctl mask apt-daily.service
-
-cp-tpl /etc/systemd/system/var-lib-home\\x2dcluster.mount
-systemctl enable var-lib-home\\x2dcluster.mount

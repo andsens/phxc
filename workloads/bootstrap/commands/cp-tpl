@@ -10,27 +10,40 @@ main() {
 Usage:
   cp-tpl [options] TPLPATH
 
-Options
+Options:
   -d --destination PATH  Override the destination path
+  --raw                  Don't replace any variables, copy directly
+  --chmod MODE           chmod the destination
 "
 # docopt parser below, refresh this parser with `docopt.sh cp-tpl`
 # shellcheck disable=2016,2086,2317,1090,1091,2034
-docopt() { source "$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh" '2.0.0a3' || {
+docopt() { source "$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh" '2.0.0' || {
 ret=$?;printf -- "exit %d\n" "$ret";exit "$ret";};set -e
-trimmed_doc=${DOC:0:172};usage=${DOC:75:33};digest=8431e;options=();node_0(){
-value TPLPATH a;};cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2
-printf "%s\n" "${DOC:75:33}" >&2;exit 1;}';local varnames=(TPLPATH) varname
-for varname in "${varnames[@]}"; do unset "var_$varname";done;parse 0 "$@"
-local p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset \
-"$p$varname";done;eval $p'TPLPATH=${var_TPLPATH:-};';local docopt_i=1;[[ \
-$BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for \
-varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
+trimmed_doc=${DOC:0:288};usage=${DOC:75:33};digest=d0b8e;options=('-d --destin'\
+'ation 1' ' --raw 0' ' --chmod 1');node_0(){ value __destination 0;};node_1(){
+switch __raw 1;};node_2(){ value __chmod 2;};node_3(){ value TPLPATH a;}
+node_4(){ optional 0 1 2;};node_5(){ sequence 4 3;};cat <<<' docopt_exit() {
+[[ -n $1 ]] && printf "%s\n" "$1" >&2;printf "%s\n" "${DOC:75:33}" >&2;exit 1;}'
+local varnames=(__destination __raw __chmod TPLPATH) varname;for varname in \
+"${varnames[@]}"; do unset "var_$varname";done;parse 5 "$@";local \
+p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset "$p$varname"
+done;eval $p'__destination=${var___destination:-};'$p'__raw=${var___raw:-false'\
+'};'$p'__chmod=${var___chmod:-};'$p'TPLPATH=${var_TPLPATH:-};';local docopt_i=1
+[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do
+for varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh"' cp-tpl`
   eval "$(docopt "$@")"
   confirm_container_build
 
-  mkdir -p "$(dirname "${__destination:-$TPLPATH}")"
-  envsubst <"$PKGROOT/workloads/bootstrap/assets/${TPLPATH#/}" >"${__destination:-$TPLPATH}"
+  local dest="${__destination:-$TPLPATH}"
+  mkdir -p "$(dirname "$dest")"
+  # shellcheck disable=SC2154
+  if $__raw; then
+    cp "$PKGROOT/workloads/bootstrap/assets/${TPLPATH#/}" "$dest"
+  else
+    envsubst <"$PKGROOT/workloads/bootstrap/assets/${TPLPATH#/}" >"$dest"
+  fi
+  [[ -z $__chmod ]] || chmod "$__chmod" "$dest"
 }
 
 confirm_container_build() {

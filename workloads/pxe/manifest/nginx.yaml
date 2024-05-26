@@ -69,7 +69,7 @@ spec:
         volumeMounts:
         - name: home-cluster
           mountPath: /etc/nginx/nginx.conf
-          subPath: workloads/pxe/config/pxe-vhost.conf
+          subPath: workloads/pxe/config/boot-vhost.conf
         - name: images
           mountPath: /images/pxe
           subPath: pxe

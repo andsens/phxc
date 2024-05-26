@@ -1,5 +1,9 @@
-RUN setup-node
+RUN setup-deps
+RUN setup-os
+RUN setup-locales
+RUN setup-root
 RUN setup-admin
 RUN setup-network
 RUN setup-sshd
 RUN setup-boot
+RUN setup-home-cluster

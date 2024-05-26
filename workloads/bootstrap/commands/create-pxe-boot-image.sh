@@ -25,8 +25,6 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   eval "$(docopt "$@")"
 
   # shellcheck disable=SC2153
-  alias_machine "$MACHINE"
-
   local \
     tar=/images/snapshots/$MACHINE.tar \
     pxedir=/images/pxe/$MACHINE

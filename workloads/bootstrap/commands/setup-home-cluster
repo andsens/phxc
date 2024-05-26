@@ -4,5 +4,5 @@ set -Eeo pipefail; shopt -s inherit_errexit
 source "$PKGROOT/lib/common.sh"
 set -x
 
-# busybox is needed by scripts in initramfs
-apt-install busybox systemd-sysv systemd-boot zstd util-linux initramfs-tools
+cp-tpl /etc/systemd/system/var-lib-home\\x2dcluster.mount
+systemctl enable var-lib-home\\x2dcluster.mount
