@@ -22,7 +22,7 @@ spec:
         app.kubernetes.io/component: tftpd
     spec:
       nodeSelector:
-        kubernetes.io/hostname: machines.k8sMaster.hostname
+        kubernetes.io/hostname: nodes.k8sMaster.hostname
       hostNetwork: true
       containers:
       - name: tftpd

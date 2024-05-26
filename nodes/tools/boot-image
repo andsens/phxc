@@ -8,27 +8,27 @@ main() {
 
   DOC="boot-image - Boot images
 Usage:
-  boot-image MACHINE
+  boot-image IMAGE
 "
 # docopt parser below, refresh this parser with `docopt.sh boot-image`
 # shellcheck disable=2016,2086,2317,1090,1091,2034
-docopt() { source "$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh" '2.0.0a3' || {
-ret=$?;printf -- "exit %d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:52}
-usage=${DOC:25:27};digest=26f02;options=();node_0(){ value MACHINE a;};cat \
-<<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2;printf "%s\n" \
-"${DOC:25:27}" >&2;exit 1;}';local varnames=(MACHINE) varname;for varname in \
+docopt() { source "$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh" '2.0.0' || {
+ret=$?;printf -- "exit %d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:50}
+usage=${DOC:25:25};digest=12381;options=();node_0(){ value IMAGE a;};cat <<<' \
+docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2;printf "%s\n" \
+"${DOC:25:25}" >&2;exit 1;}';local varnames=(IMAGE) varname;for varname in \
 "${varnames[@]}"; do unset "var_$varname";done;parse 0 "$@";local \
 p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset "$p$varname"
-done;eval $p'MACHINE=${var_MACHINE:-};';local docopt_i=1;[[ $BASH_VERSION =~ \
-^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for varname in \
+done;eval $p'IMAGE=${var_IMAGE:-};';local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 \
+]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for varname in \
 "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh"' boot-image`
   eval "$(docopt "$@")"
 
   # shellcheck disable=SC2153
-  local imgpath=$PKGROOT/images/$MACHINE.raw
+  local imgpath=$IMAGE
   kvm -bios /usr/share/ovmf/OVMF.fd \
-    -k en-us -smp 2 -cpu host -m 2000 -name "$MACHINE" \
+    -k en-us -smp 2 -cpu host -m 2000 -name "$(basename "$IMAGE")" \
     -boot order=c -device virtio-net-pci,netdev=net0 -netdev user,id=net0 \
     -drive "file=$imgpath,if=none,format=raw,id=nvme1" -device nvme,serial=SN123450001,drive=nvme1
 }

@@ -43,7 +43,7 @@ replacements:
   - select: {kind: Service, name: kube-apiserver-client-ca-external}
     fieldPaths: [metadata.annotations.external-dns\.alpha\.kubernetes\.io/hostname]
     options: {delimiter: '.', index: 1}
-- source: {fieldPath: data.machines.k8sMaster.hostname, kind: ConfigMap, name: settings}
+- source: {fieldPath: data.nodes.k8sMaster.hostname, kind: ConfigMap, name: settings}
   targets:
   - select: {group: batch, kind: Job, name: bootstrap}
     fieldPaths: [spec.template.spec.nodeSelector.kubernetes\.io/hostname]

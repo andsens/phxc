@@ -46,7 +46,7 @@ replacements:
     fieldPaths: [metadata.annotations.cert-manager\.io/issuer]
   - select: {group: networking.k8s.io, kind: Ingress, name: docker-auth}
     fieldPaths: [metadata.annotations.cert-manager\.io/issuer]
-- source: {fieldPath: data.machines.k8sMaster.hostname, kind: ConfigMap, name: settings}
+- source: {fieldPath: data.nodes.k8sMaster.hostname, kind: ConfigMap, name: settings}
   targets:
   - select: {group: batch, kind: Job, name: create-kube-apiserver-client-ca-secret}
     fieldPaths: [spec.template.spec.nodeSelector.kubernetes\.io/hostname]

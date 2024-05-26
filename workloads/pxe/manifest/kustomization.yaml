@@ -10,7 +10,7 @@ resources:
 - Kptfile
 - resourcegroup.yaml
 replacements:
-- source: {fieldPath: data.machines.k8sMaster.hostname, kind: ConfigMap, name: settings}
+- source: {fieldPath: data.nodes.k8sMaster.hostname, kind: ConfigMap, name: settings}
   targets:
   - select: {group: apps, kind: Deployment, name: tftpd}
     fieldPaths: [spec.template.spec.nodeSelector.kubernetes\.io/hostname]

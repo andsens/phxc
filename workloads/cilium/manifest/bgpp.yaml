@@ -5,7 +5,7 @@ metadata:
 spec:
   nodeSelector:
     matchLabels:
-      kubernetes.io/hostname: machines.k8sMaster.hostname
+      kubernetes.io/hostname: nodes.k8sMaster.hostname
   virtualRouters:
   # Hardcoded because kustomize always replaces with strings and cilium needs this to be a number
   # If you change it here, also change it in bin/usg

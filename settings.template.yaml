@@ -2,7 +2,7 @@
 ### Admin user ###
 ##################
 
-# The admin user is set up on all bootstrapped machines
+# The admin user is set up on all bootstrapped nodes
 admin:
   # If you are reusing your home directory on your TrueNAS, make sure the UID matches
   uid: 3000
@@ -17,9 +17,9 @@ admin:
   - ssh-rsa ...
   - ssh-rsa ...
 ########################
-### Machine settings ###
+### Node settings ###
 ########################
-machines:
+nodes:
   # Fixed name
   k8sMaster:
     hostname: k8s-nas.local
@@ -119,7 +119,7 @@ cluster:
   kubeAPIServerClientCA:
     fixedIPv4: '10.34.0.5'
     fixedIPv6: 'fd73:9867:6b4d:cafe:0:34::5'
-  # HTTP server that distributes kernels and root images for PXE booted machines
+  # HTTP server that distributes kernels and root images for PXE booted nodes
   bootServer:
     fixedIPv4: '10.34.0.6'
     fixedIPv6: 'fd73:9867:6b4d:cafe:0:34::6'

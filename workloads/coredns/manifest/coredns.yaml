@@ -190,9 +190,9 @@ spec:
         - name: DOMAIN
           value: cluster.domain
         - name: K8SMASTER_IPV4
-          value: machines.k8sMaster.fixedIPv4
+          value: nodes.k8sMaster.fixedIPv4
         - name: K8SMASTER_IPV6
-          value: machines.k8sMaster.fixedIPv6
+          value: nodes.k8sMaster.fixedIPv6
         - name: ETCD_IPV4
           value: cluster.etcd.fixedIPv4
         - name: ETCD_IPV6

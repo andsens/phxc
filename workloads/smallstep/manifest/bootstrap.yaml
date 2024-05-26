@@ -109,7 +109,7 @@ spec:
         cluster.local/allow-apiserver-egress: "true"
     spec:
       nodeSelector:
-        kubernetes.io/hostname: machines.k8sMaster.hostname
+        kubernetes.io/hostname: nodes.k8sMaster.hostname
       restartPolicy: Never
       serviceAccountName: bootstrap
       containers:

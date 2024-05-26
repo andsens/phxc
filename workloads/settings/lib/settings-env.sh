@@ -3,14 +3,6 @@
 
 eval_settings() {
   eval "$(generate_settings "${PKGROOT:?}/settings.yaml")"
-  [[ -z $MACHINE ]] || alias_machine "$MACHINE"
-}
-
-alias_machine() {
-  local machine=$1 key
-  for key in $(env | cut -d = -f 1 | grep "^MACHINES_${machine^^}_"); do
-    eval "export ${key/#"MACHINES_${machine^^}"/MACHINE}='${!key}'"
-  done
 }
 
 generate_settings() {

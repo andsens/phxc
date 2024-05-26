@@ -7,7 +7,7 @@ main() {
   source "$PKGROOT/lib/common.sh"
   DOC="create-uefi-boot-image - Create an UEFI boot image from a container tar export
 Usage:
-  create-uefi-boot-image [-a ARCH -f FORMAT] MACHINE
+  create-uefi-boot-image [-a ARCH -f FORMAT]
 
 Options:
   -a --arch ARCH      Processor architecture of the image [default: amd64]
@@ -17,17 +17,16 @@ Options:
 # shellcheck disable=2016,2086,2317,1090,1091,2034
 docopt() { source "$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh" '2.0.0' || {
 ret=$?;printf -- "exit %d\n" "$ret";exit "$ret";};set -e
-trimmed_doc=${DOC:0:285};usage=${DOC:79:59};digest=5f2c0;options=('-a --arch 1'\
+trimmed_doc=${DOC:0:277};usage=${DOC:79:51};digest=b1638;options=('-a --arch 1'\
  '-f --format 1');node_0(){ value __arch 0;};node_1(){ value __format 1;}
-node_2(){ value MACHINE a;};node_3(){ optional 0 1;};node_4(){ sequence 3 2;}
-cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2;printf "%s\n" \
-"${DOC:79:59}" >&2;exit 1;}';local varnames=(__arch __format MACHINE) varname
-for varname in "${varnames[@]}"; do unset "var_$varname";done;parse 4 "$@"
-local p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset \
-"$p$varname";done;eval $p'__arch=${var___arch:-amd64};'$p'__format=${var___for'\
-'mat:-raw};'$p'MACHINE=${var_MACHINE:-};';local docopt_i=1;[[ $BASH_VERSION =~ \
-^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for varname in \
-"${varnames[@]}"; do declare -p "$p$varname";done;done;}
+node_2(){ optional 0 1;};cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" \
+"$1" >&2;printf "%s\n" "${DOC:79:51}" >&2;exit 1;}';local varnames=(__arch \
+__format) varname;for varname in "${varnames[@]}"; do unset "var_$varname";done
+parse 2 "$@";local p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do
+unset "$p$varname";done;eval $p'__arch=${var___arch:-amd64};'$p'__format=${var'\
+'___format:-raw};';local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2
+for ((;docopt_i>0;docopt_i--)); do for varname in "${varnames[@]}"; do declare \
+-p "$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh"' create-uefi-boot-image.sh`
   eval "$(docopt "$@")"
 

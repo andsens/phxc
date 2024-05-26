@@ -31,15 +31,15 @@ monitor_settings() {
 }
 
 generate_pxe_manifests() {
-  local mac machine
+  local mac node
   info "Generating manifests"
   rm -f "$MANIFESTS"/*.json
   # shellcheck disable=SC2016
-  for machine in $(yq -r '.machines | keys[]' "$SETTINGS"); do
-    if mac=$(yq -re --arg machine "$machine" '.machines[$machine].mac' "$SETTINGS"); then
-      yq --arg machine "$machine" '{
-        hostname: .machines[$machine].hostname,
-        networks: .machines[$machine].networks
+  for node in $(yq -r '.nodes | keys[]' "$SETTINGS"); do
+    if mac=$(yq -re --arg node "$node" '.nodes[$node].mac' "$SETTINGS"); then
+      yq --arg node "$node" '{
+        hostname: .nodes[$node].hostname,
+        networks: .nodes[$node].networks
       }' "$SETTINGS" >"$MANIFESTS/${mac,,}.json"
     fi
   done

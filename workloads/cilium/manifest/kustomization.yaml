@@ -15,7 +15,7 @@ replacements:
   targets:
   - select: {group: cilium.io, kind: CiliumLoadBalancerIPPool, name: lan-addresses}
     fieldPaths: [spec.blocks.1.cidr]
-- source: {fieldPath: data.machines.k8sMaster.hostname, kind: ConfigMap, name: settings}
+- source: {fieldPath: data.nodes.k8sMaster.hostname, kind: ConfigMap, name: settings}
   targets:
   - select: {group: cilium.io, kind: CiliumBGPPeeringPolicy, name: router}
     fieldPaths: [spec.nodeSelector.matchLabels.kubernetes\.io/hostname]

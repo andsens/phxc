@@ -43,7 +43,7 @@ main() {
 
   kubectl config --kubeconfig "$new_kube_config_path" set-cluster $KUBE_CLUSTER \
     --embed-certs \
-    --server="https://$MACHINES_K8SMASTER_HOSTNAME:6443" \
+    --server="https://$NODES_K8SMASTER_HOSTNAME:6443" \
     --certificate-authority="/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
   kubectl config --kubeconfig "$new_kube_config_path" set-credentials "$username@$KUBE_CLUSTER" \
     --embed-certs \

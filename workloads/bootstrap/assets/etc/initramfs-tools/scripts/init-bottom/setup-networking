@@ -9,7 +9,7 @@ esac
 # shellcheck disable=SC1091
 . /scripts/functions
 
-settings_path=/run/initramfs/machine-settings.json
+settings_path=/run/initramfs/node-settings.json
 if [ ! -e "$settings_path" ]; then
   log_warning_msg "Skipping networking setup. $settings_path does not exist"
   exit 0
