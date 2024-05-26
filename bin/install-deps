@@ -4,10 +4,7 @@ set -Eeo pipefail; shopt -s inherit_errexit
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
 
 main() {
-  if ! sudo apt-get install -qq --no-install-recommends wget ca-certificates git jq yq; then
-    printf "install-deps.sh: Unable to install dependencies through apt-get. You will need to install %s manually some other way\n" "$dep" >&2
-    return 1
-  fi
+  sudo apt-get install -qq --no-install-recommends wget ca-certificates git jq yq
   if ! type upkg >/dev/null 2>&1; then
 # Read the fully documented version on github.com/orbit-online/upkg
 bash -ec 'P=${INSTALL_PREFIX:-$([[ $EUID = 0 ]]&&echo /usr/local||echo "$HOME/.local")};\
