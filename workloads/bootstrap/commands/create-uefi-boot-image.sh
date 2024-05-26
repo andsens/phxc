@@ -14,7 +14,7 @@ Options:
 "
 # docopt parser below, refresh this parser with `docopt.sh create-uefi-boot-image.sh`
 # shellcheck disable=2016,2086,2317,1090,1091,2034
-docopt() { source "$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh" '2.0.0a3' || {
+docopt() { source "$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh" '2.0.0' || {
 ret=$?;printf -- "exit %d\n" "$ret";exit "$ret";};set -e
 trimmed_doc=${DOC:0:200};usage=${DOC:79:49};digest=1bbcb;options=('-f --format'\
 ' 1');node_0(){ value __format 0;};node_1(){ value MACHINE a;};node_2(){

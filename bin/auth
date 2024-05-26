@@ -30,7 +30,7 @@ renew:
 "
 # docopt parser below, refresh this parser with `docopt.sh auth`
 # shellcheck disable=2016,2086,2317,1090,1091,2034
-docopt() { source "$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh" '2.0.0a3' || {
+docopt() { source "$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh" '2.0.0' || {
 ret=$?;printf -- "exit %d\n" "$ret";exit "$ret";};set -e
 trimmed_doc=${DOC:0:708};usage=${DOC:37:39};digest=9b984;options=();node_0(){
 value CONFIG a;};node_1(){ switch setup a:setup;};node_2(){ switch renew a:renew

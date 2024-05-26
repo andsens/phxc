@@ -11,7 +11,7 @@ Usage:
 "
 # docopt parser below, refresh this parser with `docopt.sh create-pxe-boot-image.sh`
 # shellcheck disable=2016,2086,2317,1090,1091,2034
-docopt() { source "$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh" '2.0.0a3' || {
+docopt() { source "$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh" '2.0.0' || {
 ret=$?;printf -- "exit %d\n" "$ret";exit "$ret";};set -e
 trimmed_doc=${DOC:0:124};usage=${DOC:76:48};digest=9dc03;options=();node_0(){
 value MACHINE a;};cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2
