@@ -22,6 +22,9 @@ spec:
         - --destination=distribution.docker-registry.svc.cluster.local/home-cluster-base:alpine
         - --insecure-registry=distribution.docker-registry.svc.cluster.local
         - --skip-tls-verify
+        env:
+        - name: GGCR_EXPERIMENT_ESTARGZ
+          value: "1"
         volumeMounts:
         - name: home-cluster
           mountPath: /workspace
@@ -34,6 +37,9 @@ spec:
         - --destination=distribution.docker-registry.svc.cluster.local/home-cluster-base:debian
         - --insecure-registry=distribution.docker-registry.svc.cluster.local
         - --skip-tls-verify
+        env:
+        - name: GGCR_EXPERIMENT_ESTARGZ
+          value: "1"
         volumeMounts:
         - name: home-cluster
           mountPath: /workspace
