@@ -37,14 +37,9 @@ generate_pxe_manifests() {
   # shellcheck disable=SC2016
   for node in $(yq -r '.nodes | keys[]' "$SETTINGS"); do
     if mac=$(yq -re --arg node "$node" '.nodes[$node].mac' "$SETTINGS"); then
-      yq --arg node "$node" '{
-        hostname: .nodes[$node].hostname,
-        networks: .nodes[$node].networks
-      }' "$SETTINGS" >"$MANIFESTS/${mac,,}.json"
+      yq --arg node "$node" '.nodes[$node] | .name=$node' "$SETTINGS" >"$MANIFESTS/${mac,,}.json"
     fi
   done
 }
 
 main "$@"
-
-# $ cat /sys/class/net/$(ip route show default | awk '/default/ {print $5}')/address
