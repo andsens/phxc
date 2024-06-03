@@ -1,0 +1,8 @@
+apiVersion: cluster.local
+kind: SettingsFileConfigMapGenerator
+metadata:
+  name: tasks
+  annotations:
+    config.kubernetes.io/function: |
+      exec:
+        path: ./generate-settings-file-cm.sh

@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+# shellcheck source-path=../../..
+set -Eeo pipefail; shopt -s inherit_errexit
+PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../..")
+export DOCKER_CLI_HINTS=false
+
+main() {
+  # shellcheck disable=SC1091
+  source "$PKGROOT/.upkg/records.sh/records.sh"
+
+  DOC="bootstrap - Bootstrap images
+Usage:
+  bootstrap [-a ARCH]
+
+Options:
+  -a --arch ARCH  Processor architecture of the image [default: amd64]
+"
+# docopt parser below, refresh this parser with `docopt.sh bootstrap`
+# shellcheck disable=2016,2086,2317,1090,1091,2034
+docopt() { local v='2.0.1'; source \
+"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:138};usage=${DOC:29:28}
+digest=00c86;options=('-a --arch 1');node_0(){ value __arch 0;};node_1(){
+optional 0;};cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2
+printf "%s\n" "${DOC:29:28}" >&2;exit 1;}';local varnames=(__arch) varname;for \
+varname in "${varnames[@]}"; do unset "var_$varname";done;parse 1 "$@";local \
+p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset "$p$varname"
+done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
+=~ ^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for varname in \
+"${varnames[@]}"; do declare -p "$p$varname";done;done;}
+# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' bootstrap`
+  eval "$(docopt "$@")"
+
+  mkdir -p "$PKGROOT/images/snapshots"
+  # shellcheck disable=SC2154
+  docker run --rm -ti \
+    -v "$PKGROOT/workloads/common:/workspace/common-context:ro" \
+    -v "$PKGROOT/settings.yaml:/workspace/settings.yaml:ro" \
+    -v "$PKGROOT/workloads/bootstrap/containers/node/Dockerfile:/workspace/context/Dockerfile:ro" \
+    -v "$PKGROOT/workloads/bootstrap/containers/node/run-tasks.sh:/workspace/context/run-tasks.sh:ro" \
+    -v "$PKGROOT/workloads/bootstrap/containers/node/tasks.d:/workspace/context/tasks.d:ro" \
+    -v "$PKGROOT/workloads/bootstrap/containers/node/assets:/workspace/context/assets:ro" \
+    -v "$PKGROOT/images/snapshots:/workspace/images/snapshots:rw" \
+    gcr.io/kaniko-project/executor:latest \
+    --dockerfile context/Dockerfile \
+    --build-arg "CRI=docker" \
+    --build-arg "ARCH=$__arch" \
+    --custom-platform="linux/$__arch" \
+    --destination cluster.local/node:amd64 \
+    --insecure-registry=cluster.local \
+    --skip-tls-verify \
+    --tar-path "/workspace/images/snapshots/$__arch.tar" \
+    --no-push
+
+  docker run --rm -ti \
+    -v "$PKGROOT/workloads/common:/workspace/common-context:ro" \
+    -v "$PKGROOT/workloads/bootstrap/containers/create-boot-images:/workspace/context:ro" \
+    -v "$PKGROOT/images/snapshots:/workspace/images/snapshots:rw" \
+    gcr.io/kaniko-project/executor:latest \
+    --dockerfile context/Dockerfile \
+    --destination cluster.local/create-boot-images:latest \
+    --skip-tls-verify \
+    --tar-path "/workspace/images/snapshots/create-boot-images:latest.tar" \
+    --no-push
+  docker load -i "$PKGROOT/images/snapshots/create-boot-images:latest.tar"
+
+  mkdir -p "$PKGROOT/images/pxe" "$PKGROOT/images/uefi"
+  docker run --rm -ti \
+    -v "$PKGROOT/settings.yaml:/settings.yaml:ro" \
+    -v "$PKGROOT/workloads/bootstrap/containers/create-boot-images/create-boot-images.sh:/usr/local/bin/create-boot-images.sh:ro" \
+    -v "$PKGROOT/workloads/bootstrap/containers/create-boot-images/assets:/assets:ro" \
+    -v "$PKGROOT/images/snapshots:/images/snapshots:ro" \
+    -v "$PKGROOT/images/pxe:/images/pxe:rw" \
+    -v "$PKGROOT/images/uefi:/images/uefi:rw" \
+    -eCLUSTER_BOOTSERVER_FIXEDIPV4 \
+    cluster.local/create-boot-images:latest --arch "$__arch"
+}
+
+main "$@"

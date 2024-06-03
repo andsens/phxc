@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+# shellcheck source-path=../../../../../../../..
+set -Eeo pipefail; shopt -s inherit_errexit
+PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../../../../../../..")
+PKGROOT=${PKGROOT:-/usr/local/lib/upkg}
+
+main() {
+  # shellcheck disable=SC1091
+  source "$PKGROOT/.upkg/records.sh/records.sh"
+
+  DOC="apply-manifest - Manage manifests
+Usage:
+  manifest apply (all|MANIFEST...) [-- kptargs...]
+  manifest build (all|MANIFEST...)
+
+Note:
+  MANIFEST is a path relative to /manifests e.g. cert-manager
+"
+# docopt parser below, refresh this parser with `docopt.sh manifest`
+# shellcheck disable=2016,2086,2317,1090,1091,2034,2154
+docopt() { local v='2.0.1'; source \
+"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:195};usage=${DOC:34:92}
+digest=0c1c9;options=();node_0(){ value MANIFEST a true;};node_1(){ switch \
+apply a:apply;};node_2(){ switch all a:all;};node_3(){ switch kptargs \
+a:kptargs true;};node_4(){ switch build a:build;};node_5(){ switch __ a:--;}
+node_6(){ sequence 1 7 9;};node_7(){ choice 2 8;};node_8(){ repeatable 0;}
+node_9(){ optional 5 10;};node_10(){ repeatable 3;};node_11(){ sequence 4 7;}
+node_12(){ choice 6 11;};cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" \
+"$1" >&2;printf "%s\n" "${DOC:34:92}" >&2;exit 1;}';local varnames=(MANIFEST \
+apply all kptargs build __) varname;for varname in "${varnames[@]}"; do unset \
+"var_$varname";done;parse 12 "$@";local p=${DOCOPT_PREFIX:-''};for varname in \
+"${varnames[@]}"; do unset "$p$varname";done;if declare -p var_MANIFEST \
+>/dev/null 2>&1; then eval $p'MANIFEST=("${var_MANIFEST[@]}")';else eval $p'MA'\
+'NIFEST=()';fi;eval $p'apply=${var_apply:-false};'$p'all=${var_all:-false};'\
+$p'kptargs=${var_kptargs:-0};'$p'build=${var_build:-false};'$p'__=${var___:-fa'\
+'lse};';local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
+((;docopt_i>0;docopt_i--)); do for varname in "${varnames[@]}"; do declare -p \
+"$p$varname";done;done;}
+# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' manifest`
+  eval "$(docopt "$@")"
+
+  # shellcheck disable=2154
+  if $all; then
+    MANIFEST=(
+      cilium
+      networkpolicies
+      csi-driver-nfs
+      etcd
+      coredns
+      traefik
+      external-dns
+      kubernetes-secret-generator
+      redis
+      docker-registry
+      kaniko
+      cert-manager
+      cert-manager-issuers
+      smallstep
+      bootstrap
+    )
+  fi
+  local manifest_name manifest_data
+  # shellcheck disable=2153
+  for manifest_name in "${MANIFEST[@]}"; do
+    manifest_data=$(kustomize build --enable-alpha-plugins --enable-exec "$PKGROOT/workloads/$manifest_name")
+    # shellcheck disable=2154
+    if $apply; then
+      kpt live apply - "${kptargs[@]}" <<<"$manifest_data"
+    elif $build; then
+      printf "%s\n" "$manifest_data"
+    fi
+  done
+}
+
+main "$@"

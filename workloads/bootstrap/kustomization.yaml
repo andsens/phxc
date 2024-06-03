@@ -1,0 +1,39 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ../mounts
+- credentials.yaml
+- create-uefi-boot-image.yaml
+- create-pxe-boot-image.yaml
+- amd64.yaml
+- networkpolicies.yaml
+- namespace.yaml
+- Kptfile
+- resourcegroup.yaml
+configMapGenerator:
+- files:
+  - containers/create-pxe-boot-image/create-pxe-boot-image.sh
+  - containers/create-pxe-boot-image/Dockerfile
+  name: create-pxe-boot-image
+- files:
+  - containers/create-uefi-boot-image/create-uefi-boot-image.sh
+  - containers/create-uefi-boot-image/Dockerfile
+  name: cleanup
+- files:
+  - containers/cleanup.sh
+  name: create-uefi-boot-image
+- files:
+  - containers/node/run-tasks.sh
+  - containers/node/Dockerfile
+  name: node
+generators:
+- generate-assets.yaml
+- generate-tasks.yaml
+transformers:
+- |-
+  apiVersion: builtin
+  kind: NamespaceTransformer
+  metadata:
+    name: (everything without an explicit namespace)
+    namespace: bootstrap
+  unsetOnly: true

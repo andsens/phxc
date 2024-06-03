@@ -1,0 +1,11 @@
+[Unit]
+Description=Re-sign SSH host keys every 24h
+
+[Timer]
+OnCalendar=*-*-* 00:00:00
+RandomizedDelaySec=86399
+FixedRandomDelay=true
+Persistent=true
+
+[Install]
+WantedBy=k3s@server.target k3s@agent.target

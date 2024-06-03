@@ -1,8 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # shellcheck source-path=../../..
 set -Eeo pipefail; shopt -s inherit_errexit
-PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../..")
-source "$PKGROOT/lib/common.sh"
+PKGROOT=/usr/local/lib/upkg
+# shellcheck disable=SC1091
+source "$PKGROOT/.upkg/records.sh/records.sh"
 source "$PKGROOT/workloads/smallstep/commands/paths.sh"
 
 main() {

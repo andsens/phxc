@@ -1,7 +1,7 @@
 #!ipxe
 
 dhcp
-kernel http://${CLUSTER_BOOTSERVER_FIXEDIPV4}/${buildarch}/vmlinuz initrd=initrd.img root=/run/initramfs/rootfs/root.img rootimg.addr=http://${CLUSTER_BOOTSERVER_FIXEDIPV4}/${buildarch}/root.img noresume || goto failed
+kernel http://${CLUSTER_BOOTSERVER_FIXEDIPV4}/${buildarch}/vmlinuz initrd=initrd.img root=/run/initramfs/rootfs/root.img bootserver=${CLUSTER_BOOTSERVER_FIXEDIPV4} noresume || goto failed
 initrd http://${CLUSTER_BOOTSERVER_FIXEDIPV4}/${buildarch}/initrd.img || goto failed
 boot || goto failed
 

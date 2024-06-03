@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: bootstrap
+resources:
+- amd64.yaml
+- ../../../settings/file
+configMapGenerator:
+- files:
+  - run-tasks.sh
+  - Dockerfile
+  name: node
+generators:
+- generate-assets.yaml
+- generate-tasks.yaml

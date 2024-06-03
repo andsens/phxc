@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+# shellcheck source-path=../
+set -Eeo pipefail; shopt -s inherit_errexit
+PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
+if ! type upkg >/dev/null 2>&1; then
+  printf "μpkg is not installed. Get it from https://github.com/orbit-online/upkg and install the dependencies by running 'upkg install' in the root of the repo\n" >&2
+  exit 1
+fi
+
+main() {
+  # shellcheck disable=SC1091
+  source "$PKGROOT/.upkg/records.sh/records.sh"
+  PATH=$(path_prepend "$PKGROOT/.upkg/.bin")
+
+  DOC="home-cluster - Perform various home-cluster tasks
+Usage:
+  home-cluster auth [--help|ARGS...]
+  home-cluster bootstrap [--help|ARGS...]
+  home-cluster manifest [--help|ARGS...]
+"
+# docopt parser below, refresh this parser with `docopt.sh home-cluster`
+# shellcheck disable=2016,2086,2317,1090,1091,2034,2154
+docopt() { local v='2.0.1'; source \
+"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:176};usage=${DOC:50:126}
+digest=5639f;options=(' --help 0');node_0(){ switch __help 0;};node_1(){ value \
+ARGS a true;};node_2(){ switch auth a:auth;};node_3(){ switch bootstrap \
+a:bootstrap;};node_4(){ switch manifest a:manifest;};node_5(){ sequence 2 6;}
+node_6(){ optional 7;};node_7(){ choice 0 8;};node_8(){ repeatable 1;};node_9(){
+sequence 3 6;};node_10(){ sequence 4 6;};node_11(){ choice 5 9 10;};cat <<<' \
+docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2;printf "%s\n" \
+"${DOC:50:126}" >&2;exit 1;}';local varnames=(__help ARGS auth bootstrap \
+manifest) varname;for varname in "${varnames[@]}"; do unset "var_$varname";done
+parse 11 "$@";local p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do
+unset "$p$varname";done;if declare -p var_ARGS >/dev/null 2>&1; then eval $p'A'\
+'RGS=("${var_ARGS[@]}")';else eval $p'ARGS=()';fi;eval $p'__help=${var___help:'\
+'-false};'$p'auth=${var_auth:-false};'$p'bootstrap=${var_bootstrap:-false};'\
+$p'manifest=${var_manifest:-false};';local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 \
+]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for varname in \
+"${varnames[@]}"; do declare -p "$p$varname";done;done;}
+# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' home-cluster`
+  # shellcheck disable=SC2034
+  DOCOPT_ADD_HELP=false
+  # shellcheck disable=SC2034
+  DOCOPT_OPTIONS_FIRST=true
+  eval "$(docopt "$@")"
+  shift
+  # shellcheck disable=SC2154
+  if $auth; then
+    exec workloads/auth/bin/auth.sh "$@"
+  elif $bootstrap; then
+    exec workloads/bootstrap/bin/bootstrap "$@"
+  elif $manifest; then
+    exec workloads/bootstrap/containers/node/assets/usr/local/bin/manifest "$@"
+  fi
+}
+
+main "$@"

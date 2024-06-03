@@ -1,0 +1,10 @@
+[Unit]
+Description=Setup Cluster DNS
+After=k3s@server.service k3s@agent.service apply-all-manifests.service
+
+[Install]
+WantedBy=k3s@server.target k3s@agent.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/setup-cluster-dns

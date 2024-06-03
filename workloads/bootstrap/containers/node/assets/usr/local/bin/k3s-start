@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+set -Eeo pipefail; shopt -s inherit_errexit
+PKGROOT=/usr/local/lib/upkg
+
+main() {
+  # shellcheck disable=SC1091
+  source "$PKGROOT/.upkg/records.sh/records.sh"
+
+  DOC="start-k3s - Start k3s
+Usage:
+  start-k3s
+
+Symlinks config.yaml to either agent.yaml or server.yaml depending on whether
+the node-role.cluster.local/control-plane node label is set and copies
+node-label from node settings to
+/etc/rancher/k3s/config.yaml.d/node-labels.yaml, then it starts either k3s.
+"
+# docopt parser below, refresh this parser with `docopt.sh k3s-start`
+# shellcheck disable=2016,2086,2317,1090,1091,2034
+docopt() { local v='2.0.1'; source \
+"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:299};usage=${DOC:22:18}
+digest=45a79;options=();node_0(){ return 0;};cat <<<' docopt_exit() { [[ -n $1 \
+]] && printf "%s\n" "$1" >&2;printf "%s\n" "${DOC:22:18}" >&2;exit 1;}';local \
+varnames=() varname;for varname in "${varnames[@]}"; do unset "var_$varname"
+done;parse 0 "$@";return 0;local p=${DOCOPT_PREFIX:-''};for varname in \
+"${varnames[@]}"; do unset "$p$varname";done;eval ;local docopt_i=1;[[ \
+$BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for \
+varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
+# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' k3s-start`
+  eval "$(docopt "$@")"
+
+  local k3s_type=agent label label_config="node-label: []"
+  for label in $(jq -r '(.["node-label"] // [])[]' /run/initramfs/node-settings.json); do
+    [[ $label != 'node-role.cluster.local/control-plane' ]] || k3s_type=server
+    # shellcheck disable=SC2016
+    label_config=$(yq -y --arg l "$label" '.["node-label"]+=[$l]' <<<"$label_config")
+  done
+  printf '%s\n' "$label_config" >/etc/rancher/k3s/config.yaml.d/node-labels.yaml
+  ln -sTf ${k3s_type}.yaml /etc/rancher/k3s/config.yaml
+  systemctl start k3s@${k3s_type}.target
+}
+
+main "$@"

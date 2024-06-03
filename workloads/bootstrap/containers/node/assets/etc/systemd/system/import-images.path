@@ -1,0 +1,8 @@
+[Unit]
+Description=Watch for new images to import to Spegel
+
+[Install]
+WantedBy=k3s@server.target k3s@agent.target
+
+[Path]
+PathExistsGlob=/var/lib/home-cluster/images/snapshots/*.

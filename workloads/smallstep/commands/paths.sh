@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # shellcheck source-path=../../..
 # shellcheck disable=SC2034
 

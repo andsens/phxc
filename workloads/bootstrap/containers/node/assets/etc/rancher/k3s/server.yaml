@@ -1,0 +1,19 @@
+flannel-backend: none
+egress-selector-mode: disabled
+disable-network-policy: true
+disable-kube-proxy: true
+disable-helm-controller: true
+embedded-registry: true
+disable:
+- coredns
+- traefik
+- metrics-server
+- servicelb
+- local-storage
+kube-controller-manager-arg=node-cidr-mask-size-ipv4: 24
+kube-controller-manager-arg=node-cidr-mask-size-ipv6: 112
+cluster-cidr: ${CLUSTER_CIDRS_PODIPV4},${CLUSTER_CIDRS_PODIPV6}
+service-cidr: ${CLUSTER_CIDRS_SVCIPV4},${CLUSTER_CIDRS_SVCIPV6}
+tls-san:
+- api.${CLUSTER_DOMAIN}
+

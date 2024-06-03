@@ -2,20 +2,22 @@
 # shellcheck source-path=../..
 
 eval_settings() {
-  eval "$(generate_settings "${PKGROOT:?}/settings.yaml")"
+  local settings_path=$1 settings
+  settings=$(generate_settings "$settings_path")
+  eval "$settings"
 }
 
 generate_settings() {
-  local settings=$1
-  yq -r "$(cat <<'EOS'
+  local settings_path=$1 script
+  script=$(cat <<'EOS'
     . as $root | paths |
-    . as $path | join("_") | ascii_upcase as $var |
+    . as $path | join("_") | gsub("-"; "_") | ascii_upcase as $var |
     $root | getpath($path) |
-    if type == "object" then empty
+    if type == "object" or type == "array" then empty
     else
-      if type == "array" then "export \($var)='\(. | join("\n"))'"
-      else "export \($var)='\(.)'" end
+      "export \($var)='\(.)'"
     end
 EOS
-  )" "$settings"
+  )
+  yq -r "$script" "$settings_path"
 }

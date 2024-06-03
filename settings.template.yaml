@@ -15,32 +15,29 @@ admin:
   # Each item is a line in the .ssh/authorized_keys file
   authorized_keys:
   - ssh-rsa ...
-  - ssh-rsa ...
+  - ssh-ed25519 ...
 ########################
 ### Node settings ###
 ########################
 nodes:
-  # Fixed name
-  k8sMaster:
-    hostname: k8s-nas.local
-    nic:
-      lan0:
-        name: ens3
-      host:
-        name: ens4
-        addrs: [10.186.223.3/24, 'fd25:9998:d0e7:e351:1a01:be9:4d9a:157f/48']
-    arch: amd64
-    vm: Kubernetes
-    disk: /dev/zvol/cluster/Kubernetes
-    fixedIPv4: '10.186.223.168'
-    fixedIPv6: 'fd73:9867:6b4d:0:2a0:98ff:fe06:4044'
+- hostname: k8s-nas.local
+  nic:
+    lan0:
+      name: ens3
+    host:
+      name: ens4
+      addrs: [10.186.223.3/24, 'fd25:9998:d0e7:e351:1a01:be9:4d9a:157f/48']
+  arch: amd64
+  vm: Kubernetes
+  disk: /dev/zvol/cluster/Kubernetes
+  fixedIPv4: '10.186.223.168'
+  fixedIPv6: 'fd73:9867:6b4d:0:2a0:98ff:fe06:4044'
   # Customizable names
-  k8sHyperV:
-    hostname: k8s-hyperv.local
-    nic:
-      lan0:
-        name: eth0
-    arch: amd64
+- hostname: k8s-hyperv.local
+  nic:
+    lan0:
+      name: eth0
+  arch: amd64
 ##################
 ### NFS Shares ###
 ##################

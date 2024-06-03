@@ -1,0 +1,6 @@
+[Unit]
+Description=Import new images to Spegel
+
+[Service]
+Type=oneshot
+ExecStart=ctr -n k8s.io image import --snapshotter stargz

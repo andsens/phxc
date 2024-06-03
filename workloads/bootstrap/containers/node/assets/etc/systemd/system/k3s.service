@@ -1,0 +1,9 @@
+[Unit]
+Description=Starts either k3s server or agent depending on the labels in node settings
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/k3s-start

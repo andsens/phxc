@@ -1,0 +1,39 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: build-create-boot-images
+  labels:
+    app.kubernetes.io/name: kaniko
+    app.kubernetes.io/component: create-boot-images
+spec:
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: kaniko
+        app.kubernetes.io/component: create-boot-images
+        cluster.local/allow-internet-egress: "true"
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+        - --dockerfile=context/Dockerfile
+        - --destination=cluster.local/create-boot-images:latest
+        - --insecure-registry=cluster.local
+        - --skip-tls-verify
+        env:
+        - name: GGCR_EXPERIMENT_ESTARGZ
+          value: "1"
+        volumeMounts:
+        - name: context
+          mountPath: /workspace/context
+        - name: kaniko-docker-config
+          mountPath: /kaniko/.docker
+      volumes:
+      - name: context
+        configMap:
+          name: create-boot-images
+      - name: kaniko-docker-config
+        secret:
+          secretName: kaniko-docker-config

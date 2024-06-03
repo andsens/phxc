@@ -1,0 +1,12 @@
+apiVersion: cluster.local
+kind: ConfigMapFromDirGenerator
+metadata:
+  name: tasks
+  annotations:
+    config.kubernetes.io/local-config: "true"
+    config.kubernetes.io/function: |
+      exec:
+        path: ./cm-from-dir.sh
+spec:
+  name: tasks
+  path: tasks.d

@@ -1,0 +1,13 @@
+[Unit]
+Description=Sign SSH host keys
+After=k3s@server.service k3s@agent.service apply-all-manifests.service
+Before=sign-ssh-host-keys.service
+
+[Install]
+WantedBy=k3s@server.target k3s@agent.target
+
+[Service]
+Type=oneshot
+Environment=KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+ExecStart=/usr/local/bin/ssh-keys download-ca /etc/ssh/user_ca_keys
+TimeoutSec=1200
