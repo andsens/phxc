@@ -30,13 +30,9 @@ spec:
         volumeMounts:
         - name: context
           mountPath: /workspace/context
-        - name: settings
-          mountPath: /workspace/context/settings.yaml
-          subPath: settings.yaml
-        - name: tasks
-          mountPath: /workspace/context/tasks.d
-        - name: assets
-          mountPath: /workspace/context/assets
+        - name: bundle
+          mountPath: /workspace/context/home-cluster.tar.gz
+          subPath: home-cluster.tar.gz
         - name: images
           mountPath: /images/snapshots
           subPath: snapshots
@@ -50,6 +46,9 @@ spec:
         - name: ARCH
           value: amd64
         volumeMounts:
+        - name: node-settings
+          mountPath: /node-settings
+          readOnly: true
         - name: images
           mountPath: /images/snapshots
           subPath: snapshots
@@ -64,15 +63,9 @@ spec:
       - name: context
         configMap:
           name: node
-      - name: settings
+      - name: node-settings
         configMap:
-          name: settings-yaml
-      - name: tasks
-        configMap:
-          name: tasks
-      - name: assets
-        configMap:
-          name: assets
+          name: node-settings
       - name: kaniko-docker-config
         secret:
           secretName: kaniko-docker-config

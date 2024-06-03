@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
+# shellcheck source-path=../../../..
 set -Eeo pipefail; shopt -s inherit_errexit
-PKGROOT=/usr/local/lib/upkg
+PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../../..")
 # shellcheck disable=SC1091
 source "$PKGROOT/.upkg/records.sh/records.sh"
 # shellcheck source=../../../settings/lib/settings-env.shellcheck.sh
-source /workspace/settings-context/settings-env.sh
-eval_settings /workspace/settings.yaml
+source "$PKGROOT/workloads/settings/lib/settings-env.sh"
+eval_settings
 
 main() {
   confirm_container_build
@@ -17,7 +18,7 @@ main() {
 
   PACKAGES=()
   local taskfile
-  for taskfile in "/workspace/context/tasks.d/"??-*.sh; do
+  for taskfile in "$PKGROOT/workloads/bootstrap/containers/node/tasks.d/"??-*.sh; do
     # shellcheck disable=SC1090
     source "$taskfile"
   done
@@ -28,7 +29,7 @@ main() {
   rm -rf /var/cache/apt/lists/*
 
   local task
-  for taskfile in "/workspace/context/tasks.d/"??-*.sh; do
+  for taskfile in "$PKGROOT/workloads/bootstrap/containers/node/tasks.d/"??-*.sh; do
     task=$(basename "$taskfile" .sh)
     task=${task#[0-9][0-9]-}
     task=${task//[^a-z0-9_]/_}
@@ -94,8 +95,7 @@ unset "$p$varname";done;eval $p'__destination=${var___destination:-};'$p'__raw'\
   eval "$(docopt "$@")"
 
   TPLPATH=${TPLPATH#'/'}
-  local dest="${__destination:-$TPLPATH}" cm_path=$TPLPATH
-  [[ $CRI = 'docker' ]] || cm_path=${TPLPATH//'/'/'$'}
+  local dest="${__destination:-"/$TPLPATH"}"
   mkdir -p "$(dirname "$dest")"
   # shellcheck disable=SC2154
   if $__raw; then
@@ -104,14 +104,14 @@ unset "$p$varname";done;eval $p'__destination=${var___destination:-};'$p'__raw'\
     else
       info "Copying template %s" "$TPLPATH"
     fi
-    cp "/workspace/context/assets/$cm_path" "$dest"
+    cp "$PKGROOT/workloads/bootstrap/containers/node/assets/$TPLPATH" "$dest"
   else
     if [[ -n $__destination ]]; then
       info "Rendering template %s to %s" "$TPLPATH" "$dest"
     else
       info "Rendering template %s" "$TPLPATH"
     fi
-    envsubst <"/workspace/context/assets/$cm_path" >"$dest"
+    envsubst <"$PKGROOT/workloads/bootstrap/containers/node/assets/$TPLPATH" >"$dest"
   fi
   [[ -z $__chmod ]] || chmod "$__chmod" "$dest"
 }

@@ -10,6 +10,8 @@ fi
 main() {
   # shellcheck disable=SC1091
   source "$PKGROOT/.upkg/records.sh/records.sh"
+  # shellcheck disable=SC1091
+  source "$PKGROOT/.upkg/path-tools/path-tools.sh"
   PATH=$(path_prepend "$PKGROOT/.upkg/.bin")
 
   DOC="home-cluster - Perform various home-cluster tasks

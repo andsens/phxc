@@ -9,7 +9,7 @@ main() {
   source "$PKGROOT/workloads/auth/lib/auth.sh"
   # shellcheck source=workloads/settings/lib/settings-env.shellcheck.sh
   source "$PKGROOT/workloads/settings/lib/settings-env.sh"
-  eval_settings "$PKGROOT/settings.yaml"
+  eval_settings
 
   DOC="auth - Manage cluster authentication
 Usage:

@@ -59,39 +59,33 @@ spec:
     spec:
       containers:
       - name: nginx
-        image: distribution.docker-registry.svc.cluster.local/boot-server:latest
-        imagePullPolicy: Always
+        image: nginx:1.27.0
         securityContext:
           readOnlyRootFilesystem: true
         ports:
         - name: http
           containerPort: 80
         volumeMounts:
-        - name: home-cluster
-          mountPath: /var/lib/home-cluster
-        - name: home-cluster
+        - name: node-settings
+          mountPath: /node-settings
+        - name: config
           mountPath: /etc/nginx/nginx.conf
-          subPath: workloads/pxe/config/boot-server.conf
+          subPath: boot-server.conf
         - name: images
           mountPath: /images/pxe
           subPath: pxe
           readOnly: true
-        - name: pxe-manifests
-          mountPath: /pxe-manifests
-        - name: nginx-lib
-          mountPath: /var/lib/nginx
         - name: tmp
           mountPath: /tmp
       volumes:
-      - name: home-cluster
-        persistentVolumeClaim:
-          claimName: home-cluster
+      - name: config
+        configMap:
+          name: nginx
+      - name: node-settings
+        configMap:
+          name: node-settings
       - name: images
         persistentVolumeClaim:
           claimName: images
-      - name: pxe-manifests
-        emptyDir: {}
-      - name: nginx-lib
-        emptyDir: {}
       - name: tmp
         emptyDir: {}

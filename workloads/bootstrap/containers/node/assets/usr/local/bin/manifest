@@ -52,7 +52,6 @@ $p'kptargs=${var_kptargs:-0};'$p'build=${var_build:-false};'$p'__=${var___:-fa'\
       external-dns
       kubernetes-secret-generator
       redis
-      docker-registry
       kaniko
       cert-manager
       cert-manager-issuers

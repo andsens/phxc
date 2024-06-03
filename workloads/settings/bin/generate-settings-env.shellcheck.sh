@@ -30,7 +30,7 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 
   printf "#!/usr/bin/env bash\n# shellcheck disable=SC2016\n%s" \
     "$(generate_settings "$PKGROOT/settings.template.yaml")" \
-    >"$PKGROOT/common/settings-env.shellcheck.sh"
+    >"$PKGROOT/workloads/settings/lib/settings-env.shellcheck.sh"
 }
 
 main "$@"

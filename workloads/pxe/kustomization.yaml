@@ -3,12 +3,17 @@ kind: Kustomization
 namespace: pxe
 resources:
 - ../../settings/replacements
+- ../../settings/node-settings
 - ../../mounts/manifests
 - tftpd.yaml
 - boot-server.yaml
 - namespace.yaml
 - Kptfile
 - resourcegroup.yaml
+configMapGenerator:
+- files:
+  - config/boot-server.conf
+  name: nginx
 replacements:
 - source: {fieldPath: data.cluster.bootServer.fixedIPv4, kind: ConfigMap, name: settings}
   targets:

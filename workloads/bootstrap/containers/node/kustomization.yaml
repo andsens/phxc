@@ -3,12 +3,10 @@ kind: Kustomization
 namespace: bootstrap
 resources:
 - amd64.yaml
-- ../../../settings/file
+- ../../../settings/node-settings
 configMapGenerator:
 - files:
-  - run-tasks.sh
   - Dockerfile
   name: node
 generators:
-- generate-assets.yaml
-- generate-tasks.yaml
+- generate-bundle-cm.yaml

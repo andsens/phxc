@@ -2,7 +2,7 @@
 # shellcheck source-path=../..
 
 eval_settings() {
-  local settings_path=$1 settings
+  local settings_path=${1:-"${PKGROOT:?}/settings.yaml"} settings
   settings=$(generate_settings "$settings_path")
   eval "$settings"
 }

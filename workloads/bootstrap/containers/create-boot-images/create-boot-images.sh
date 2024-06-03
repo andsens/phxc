@@ -66,11 +66,10 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
 
   info "Generate node settings"
   mkdir "$WORKDIR/node-settings"
-  generate-node-settings.sh /settings.yaml "$WORKDIR/node-settings"
   local file node_settings_size_b=0
-  for file in "$WORKDIR/node-settings"/*; do
+  for file in /node-settings/*; do
     node_settings_size_b=$(( node_settings_size_b + $(stat -c %s "$file") ))
-    mv "$file" "$WORKDIR/node-settings/$(basename "$file" | sed s/:/-/g)"
+    cp "$file" "$WORKDIR/node-settings/$(basename "$file" | sed s/:/-/g)"
   done
 
   envsubst </assets/home-cluster-latest.conf >"$WORKDIR/home-cluster-latest.conf"

@@ -1,0 +1,8 @@
+apiVersion: cluster.local
+kind: BundleConfigMapGenerator
+metadata:
+  name: generate-bundle-cm
+  annotations:
+    config.kubernetes.io/function: |
+      exec:
+        path: ./generate-bundle-cm.sh
