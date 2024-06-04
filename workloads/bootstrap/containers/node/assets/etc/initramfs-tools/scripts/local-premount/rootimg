@@ -25,14 +25,19 @@ if [ -z "${bootserver}" ]; then
   dl_failed=true
 else
   set +e; configure_networking; set -e
-  img_addr=http://${bootserver}/$(uname -m)/root.img
-  log_begin_msg "Downloading root image to RAM from $img_addr"
-  if ! wget -qO$rootimg_path "$img_addr"; then
-    log_failure_msg "Failed downloading root.img"
-    dl_failed=true
+  if ( wget -qOtest "http://${bootserver}/" & w=$!; sleep .5; kill -0 $w 2>/dev/null || exit 0; kill -TERM $w; exit 1 ); then
+    img_addr=http://${bootserver}/$(uname -m)/root.img
+    log_begin_msg "Downloading root image to RAM from $img_addr"
+    if ! wget -qO$rootimg_path "$img_addr"; then
+      log_failure_msg "Failed downloading root.img"
+      dl_failed=true
+    else
+      log_end_msg
+      exit 0
+    fi
   else
-    log_end_msg
-    exit 0
+    log_failure_msg "Bootserver is unavailable"
+    dl_failed=true
   fi
 fi
 

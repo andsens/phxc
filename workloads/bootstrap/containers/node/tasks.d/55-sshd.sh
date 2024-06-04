@@ -16,7 +16,6 @@ sshd() {
     tar xzC /usr/local/bin --strip-components 2 step_0.26.0/bin/step
   chmod +x /usr/local/bin/step
 
-  cp_tpl --raw --chmod=0755 /usr/local/bin/ssh-keys
   for unit in download-ssh-user-ca-keys.service sign-ssh-host-keys.service sign-ssh-host-keys.timer; do
     cp_tpl /etc/systemd/system/$unit
     systemctl enable $unit

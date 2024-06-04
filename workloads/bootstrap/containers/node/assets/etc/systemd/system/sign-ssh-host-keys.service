@@ -8,5 +8,5 @@ WantedBy=k3s@server.target k3s@client.target
 [Service]
 Type=oneshot
 Environment=KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-ExecStart=/usr/local/bin/ssh-keys sign-host
+ExecStart=/usr/local/lib/upkg/.upkg/home-cluster/workloads/smallstep/bin/ssh-keys sign-host
 TimeoutSec=1200

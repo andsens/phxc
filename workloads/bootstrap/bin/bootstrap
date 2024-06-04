@@ -61,17 +61,19 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
     --tar-path "/workspace/images/snapshots/$__arch.tar" \
     --no-push
 
-  docker run --rm -ti \
-    -v "$PKGROOT/workloads/common:/workspace/common-context:ro" \
-    -v "$PKGROOT/workloads/bootstrap/containers/create-boot-images:/workspace/context:ro" \
-    -v "$PKGROOT/images/snapshots:/workspace/images/snapshots:rw" \
-    gcr.io/kaniko-project/executor:latest \
-    --dockerfile context/Dockerfile \
-    --destination cluster.local/create-boot-images:latest \
-    --skip-tls-verify \
-    --tar-path "/workspace/images/snapshots/create-boot-images:latest.tar" \
-    --no-push
-  docker load -i "$PKGROOT/images/snapshots/create-boot-images:latest.tar"
+  if find "$PKGROOT/workloads/bootstrap/containers/create-boot-images" -newer "$PKGROOT/images/snapshots/create-boot-images:latest.tar" | grep -q .; then
+    docker run --rm -ti \
+      -v "$PKGROOT/workloads/common:/workspace/common-context:ro" \
+      -v "$PKGROOT/workloads/bootstrap/containers/create-boot-images:/workspace/context:ro" \
+      -v "$PKGROOT/images/snapshots:/workspace/images/snapshots:rw" \
+      gcr.io/kaniko-project/executor:latest \
+      --dockerfile context/Dockerfile \
+      --destination cluster.local/create-boot-images:latest \
+      --skip-tls-verify \
+      --tar-path "/workspace/images/snapshots/create-boot-images:latest.tar" \
+      --no-push
+    docker load -i "$PKGROOT/images/snapshots/create-boot-images:latest.tar"
+  fi
 
   local node_settings
   node_settings=$(mktemp -d)

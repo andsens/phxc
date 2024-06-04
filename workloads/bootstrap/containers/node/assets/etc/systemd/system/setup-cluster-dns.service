@@ -7,4 +7,4 @@ WantedBy=k3s@server.target k3s@agent.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/bin/setup-cluster-dns
+ExecStart=/usr/local/lib/upkg/.upkg/home-cluster/workloads/coredns/bin/setup-cluster-dns

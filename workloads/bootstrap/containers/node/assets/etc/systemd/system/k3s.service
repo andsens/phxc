@@ -1,9 +1,9 @@
 [Unit]
-Description=Starts either k3s server or agent depending on the labels in node settings
+Description=Initializes k3s as either server or agent depending on the labels in node settings
 
 [Install]
 WantedBy=multi-user.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/bin/k3s-start
+ExecStart=/usr/local/lib/upkg/.upkg/home-cluster/workloads/bootstrap/bin/k3s-init

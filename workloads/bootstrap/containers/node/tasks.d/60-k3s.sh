@@ -17,7 +17,6 @@ k3s() {
 
   CILIUM_CLI_VERSION=$(wget -qO- https://raw.githubusercontent.com/cilium/cilium-cli/main/stable.txt)
   wget -qO>(tar xzC /usr/local/bin) "https://github.com/cilium/cilium-cli/releases/download/${CILIUM_CLI_VERSION}/cilium-linux-${ARCH?}.tar.gz"
-  cp_tpl --raw --chmod=0755 /usr/local/bin/install-cilium
   cp_tpl /etc/systemd/system/install-cilium.service
   systemctl enable install-cilium.service
 
@@ -27,7 +26,6 @@ k3s() {
   cp_tpl /etc/systemd/system/apply-all-manifests.service
   systemctl enable apply-all-manifests.service
 
-  cp_tpl --raw --chmod=0755 /usr/local/bin/k3s-start
   cp_tpl /etc/systemd/system/k3s.service
   cp_tpl /etc/systemd/system/k3s.service
   systemctl enable k3s.service

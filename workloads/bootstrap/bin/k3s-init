@@ -6,28 +6,28 @@ main() {
   # shellcheck disable=SC1091
   source "$PKGROOT/.upkg/records.sh/records.sh"
 
-  DOC="start-k3s - Start k3s
+  DOC="k3s-init - Initialize k3s
 Usage:
-  start-k3s
+  k3s-init
 
 Symlinks config.yaml to either agent.yaml or server.yaml depending on whether
 the node-role.cluster.local/control-plane node label is set and copies
 node-label from node settings to
-/etc/rancher/k3s/config.yaml.d/node-labels.yaml, then it starts either k3s.
+/etc/rancher/k3s/config.yaml.d/node-labels.yaml, then it starts k3s.
 "
-# docopt parser below, refresh this parser with `docopt.sh k3s-start`
+# docopt parser below, refresh this parser with `docopt.sh k3s-init`
 # shellcheck disable=2016,2086,2317,1090,1091,2034
 docopt() { local v='2.0.1'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
-%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:299};usage=${DOC:22:18}
-digest=45a79;options=();node_0(){ return 0;};cat <<<' docopt_exit() { [[ -n $1 \
-]] && printf "%s\n" "$1" >&2;printf "%s\n" "${DOC:22:18}" >&2;exit 1;}';local \
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:295};usage=${DOC:26:17}
+digest=b6858;options=();node_0(){ return 0;};cat <<<' docopt_exit() { [[ -n $1 \
+]] && printf "%s\n" "$1" >&2;printf "%s\n" "${DOC:26:17}" >&2;exit 1;}';local \
 varnames=() varname;for varname in "${varnames[@]}"; do unset "var_$varname"
 done;parse 0 "$@";return 0;local p=${DOCOPT_PREFIX:-''};for varname in \
 "${varnames[@]}"; do unset "$p$varname";done;eval ;local docopt_i=1;[[ \
 $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for \
 varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
-# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' k3s-start`
+# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' k3s-init`
   eval "$(docopt "$@")"
 
   local k3s_type=agent label label_config="node-label: []"

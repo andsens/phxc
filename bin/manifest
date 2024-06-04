@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
-# shellcheck source-path=../../../../../../../..
+# shellcheck source-path=..
 set -Eeo pipefail; shopt -s inherit_errexit
-PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../../../../../../..")
-PKGROOT=${PKGROOT:-/usr/local/lib/upkg}
+PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
 
 main() {
   # shellcheck disable=SC1091
@@ -70,6 +69,9 @@ $p'kptargs=${var_kptargs:-0};'$p'build=${var_build:-false};'$p'__=${var___:-fa'\
       printf "%s\n" "$manifest_data"
     fi
   done
+  if $all; then
+    kubectl -n default create configmap home-cluster-manifest --from-literal "last-all-applied=$(date --iso-8601=seconds)"
+  fi
 }
 
 main "$@"

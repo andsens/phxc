@@ -10,3 +10,9 @@ esac
 . /usr/share/initramfs-tools/hook-functions
 
 copy_exec /sbin/blkid /bin
+copy_exec /usr/bin/wget /bin
+copy_exec /usr/bin/jq /bin
+copy_exec /usr/bin/basename /bin
+copy_exec /usr/bin/readlink /bin
+copy_exec /usr/bin/cp /bin
+copy_exec /usr/bin/mount /bin

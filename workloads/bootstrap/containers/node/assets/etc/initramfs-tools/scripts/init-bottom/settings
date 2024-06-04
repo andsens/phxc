@@ -37,12 +37,16 @@ fi
 settings_path=/run/initramfs/node-settings.json
 settings_url=http://$bootserver/$mac.json
 
-log_begin_msg "Downloading settings from $settings_url"
-if wget -qO"$settings_path" "$settings_url"; then
-  log_end_msg
-  exit 0
+if ( wget -qOtest "http://${bootserver}/" & w=$!; sleep .5; kill -0 $w 2>/dev/null || exit 0; kill -TERM $w; exit 1 ); then
+  log_begin_msg "Downloading settings from $settings_url"
+  if wget -qO"$settings_path" "$settings_url"; then
+    log_end_msg
+    exit 0
+  else
+    log_failure_msg "Failed to download settings"
+  fi
 else
-  log_failure_msg "Failed to download settings."
+  log_failure_msg "Bootserver is unavailable"
 fi
 
 esp=/run/initramfs/efi

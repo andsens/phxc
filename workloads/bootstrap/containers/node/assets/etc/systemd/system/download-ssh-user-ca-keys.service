@@ -9,5 +9,5 @@ WantedBy=k3s@server.target k3s@agent.target
 [Service]
 Type=oneshot
 Environment=KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-ExecStart=/usr/local/bin/ssh-keys download-ca /etc/ssh/user_ca_keys
+ExecStart=/usr/local/lib/upkg/.upkg/home-cluster/workloads/smallstep/bin/ssh-keys download-ca /etc/ssh/user_ca_keys
 TimeoutSec=1200
