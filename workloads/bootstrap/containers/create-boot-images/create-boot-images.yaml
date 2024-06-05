@@ -3,13 +3,13 @@ kind: Job
 metadata:
   name: build-create-boot-images
   labels:
-    app.kubernetes.io/name: kaniko
+    app.kubernetes.io/name: bootstrap
     app.kubernetes.io/component: create-boot-images
 spec:
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: kaniko
+        app.kubernetes.io/name: bootstrap
         app.kubernetes.io/component: create-boot-images
         cluster.local/allow-internet-egress: "true"
     spec:
@@ -20,18 +20,27 @@ spec:
         args:
         - --dockerfile=context/Dockerfile
         - --destination=cluster.local/create-boot-images:latest
+        - --tar-path=/workspace/images/create-boot-images.tar
+        - --no-push
         env:
         - name: GGCR_EXPERIMENT_ESTARGZ
           value: "1"
         volumeMounts:
         - name: context
           mountPath: /workspace/context
-        - name: kaniko-docker-config
-          mountPath: /kaniko/.docker
+        - name: common-context
+          mountPath: /workspace/common-context
+        - name: images
+          mountPath: /workspace/images
       volumes:
       - name: context
         configMap:
           name: create-boot-images
-      - name: kaniko-docker-config
-        secret:
-          secretName: kaniko-docker-config
+      - name: common-context
+        configMap:
+          name: common-context
+          defaultMode: 0755
+      - name: images
+        hostPath:
+          path: /var/cache/container-images
+          type: DirectoryOrCreate

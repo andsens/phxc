@@ -73,7 +73,6 @@ docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
       smallstep
       bootstrap
       traefik
-      kaniko
     )
   fi
   local manifest_name manifest_data

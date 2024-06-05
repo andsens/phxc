@@ -1,0 +1,11 @@
+[Unit]
+Description=Create cache directories on the cache disk
+Requires=var-cache-disk.mount
+After=var-cache-disk.mount
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=mkdir /var/cache/containerd

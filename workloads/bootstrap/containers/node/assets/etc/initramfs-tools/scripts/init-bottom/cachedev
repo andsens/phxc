@@ -21,10 +21,10 @@ if ! cachedev=$(jq -re '.cacheDev' "$settings_path"); then
   exit 0
 fi
 
-wipefs --all --backup "$cachedev"
-log_success_msg "Wiped $cachedev (backup saved in ~/wipefs-$(basename "$cachedev")-0.bak)"
+wipefs --all "$cachedev"
+log_success_msg "Wiped $cachedev"
 # https://www.freedesktop.org/software/systemd/man/latest/systemd.mount.html#x-systemd.makefs
 # The mkfs and growfs options are not available when specifying this mount as a systemd mount unit, so we use fstab
 # shellcheck disable=SC2154
-printf "%s  /var/lib/rancher/k3s/agent/containerd   ext4    defaults,x-systemd.makefs,x-systemd.growfs\n" "$cachedev" >>"$rootmnt/etc/fstab"
+printf "%s  /var/cache/disk   ext4    defaults,x-systemd.makefs,x-systemd.growfs\n" "$cachedev" >>"$rootmnt/etc/fstab"
 log_success_msg "Set up $cachedev as cache device"

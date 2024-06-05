@@ -42,5 +42,5 @@ spec:
           defaultMode: 0755
       - name: images
         hostPath:
-          path: /var/lib/home-cluster/images
+          path: /var/cache/container-images
           type: DirectoryOrCreate
