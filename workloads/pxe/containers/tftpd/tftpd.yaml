@@ -3,13 +3,13 @@ kind: Job
 metadata:
   name: build-tftpd
   labels:
-    app.kubernetes.io/name: kaniko
+    app.kubernetes.io/name: pxe
     app.kubernetes.io/component: tftpd
 spec:
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: kaniko
+        app.kubernetes.io/name: pxe
         app.kubernetes.io/component: tftpd
         cluster.local/allow-internet-egress: "true"
     spec:
@@ -18,22 +18,29 @@ spec:
       - name: kaniko
         image: gcr.io/kaniko-project/executor:latest
         args:
-        - --dockerfile=workloads/pxe/containers/tftpd.Dockerfile
-        - --destination=distribution.docker-registry.svc.cluster.local/tftpd:latest
-        - --insecure-registry=distribution.docker-registry.svc.cluster.local
-        - --skip-tls-verify
+        - --dockerfile=context/Dockerfile
+        - --destination=cluster.local/tftpd:latest
+        - --tar-path=/workspace/images/tftpd.tar
+        - --no-push
         env:
         - name: GGCR_EXPERIMENT_ESTARGZ
           value: "1"
         volumeMounts:
-        - name: home-cluster
-          mountPath: /workspace
-        - name: kaniko-docker-config
-          mountPath: /kaniko/.docker
+        - name: context
+          mountPath: /workspace/context
+        - name: common-context
+          mountPath: /workspace/common-context
+        - name: images
+          mountPath: /workspace/images
       volumes:
-      - name: home-cluster
-        persistentVolumeClaim:
-          claimName: home-cluster
-      - name: kaniko-docker-config
-        secret:
-          secretName: kaniko-docker-config
+      - name: context
+        configMap:
+          name: tftpd
+      - name: common-context
+        configMap:
+          name: common-context
+          defaultMode: 0755
+      - name: images
+        hostPath:
+          path: /var/lib/persistent/container-images
+          type: DirectoryOrCreate

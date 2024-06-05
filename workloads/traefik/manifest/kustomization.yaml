@@ -3,7 +3,6 @@ kind: Kustomization
 namespace: traefik
 resources:
 - ../settings/replacements
-- ../../mounts/manifests
 - https://github.com/traefik/traefik-helm-chart.git//traefik/crds?ref=v27.0.2
 - namespace.yaml
 - traefik-deployment.yaml

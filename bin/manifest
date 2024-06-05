@@ -72,6 +72,7 @@ docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
       kubernetes-secret-generator
       smallstep
       bootstrap
+      pxe
       traefik
     )
   fi

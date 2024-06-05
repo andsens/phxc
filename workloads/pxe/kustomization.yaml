@@ -4,7 +4,6 @@ namespace: pxe
 resources:
 - ../settings/replacements
 - ../settings/node-settings
-- ../../mounts/manifests
 - tftpd.yaml
 - boot-server.yaml
 - namespace.yaml

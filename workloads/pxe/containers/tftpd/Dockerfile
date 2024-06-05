@@ -1,5 +1,5 @@
 FROM alpine
-RUN apk add bash gettext jq kubectl py3-virtualenv
+RUN apk add bash
 SHELL ["/bin/bash", "-Eeo", "pipefail", "-c"]
 
 RUN /workspace/common-context/setup-alpine.sh
@@ -12,4 +12,4 @@ RUN apk add tftp-hpa perl-utils; adduser -DH tftp; mkdir /tftp; \
   wget -qO/tftp/undionly.kpxe http://boot.ipxe.org/undionly.kpxe; \
   shasum -a 256 -c <(echo '24d303cf88c32167253deb6a12580b9bbb04d695bce08ba4933380f7435e30ff  /tftp/undionly.kpxe')
 
-ENTRYPOINT ["/var/lib/home-cluster/workloads/pxe/commands/tftpd.sh"]
+ENTRYPOINT ["/tftpd.sh"]

@@ -1,9 +1,0 @@
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: home-cluster
-spec:
-  storageClassName: home-cluster
-  accessModes: [ReadWriteOnce]
-  resources: {requests: {storage: 1Mi}}
