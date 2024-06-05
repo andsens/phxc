@@ -1,0 +1,11 @@
+[Unit]
+Description=Create data directories on the persistent disk
+Requires=var-lib-persistent.mount
+After=var-lib-persistent.mount
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=mkdir -p /var/lib/persistent/containerd

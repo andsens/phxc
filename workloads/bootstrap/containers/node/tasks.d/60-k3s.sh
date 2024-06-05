@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-PACKAGES+=(wget ca-certificates)
+PACKAGES+=(wget ca-certificates git)
 
 k3s() {
   local cmd

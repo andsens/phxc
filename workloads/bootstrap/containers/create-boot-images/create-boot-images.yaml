@@ -42,5 +42,5 @@ spec:
           defaultMode: 0755
       - name: images
         hostPath:
-          path: /var/cache/container-images
+          path: /var/lib/persistent/container-images
           type: DirectoryOrCreate

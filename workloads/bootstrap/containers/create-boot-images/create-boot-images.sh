@@ -56,8 +56,9 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
   mkdir -p "$pxedir"
 
   info "Extracting kernel image"
-  mv "$WORKDIR/root/$(readlink "$WORKDIR/root/vmlinuz")" "$pxedir/vmlinuz.tmp"
-  mv "$WORKDIR/root/$(readlink "$WORKDIR/root/initrd.img")" "$pxedir/initrd.img.tmp"
+  mv "$WORKDIR/root/boot/vmlinuz" "$pxedir/vmlinuz.tmp"
+  mv "$WORKDIR/root/boot/initrd.img" "$pxedir/initrd.img.tmp"
+  mv "$WORKDIR/root/boot/vmlinuz.unsigned.efi" "$pxedir/vmlinuz.unsigned.efi.tmp"
 
   info "Creating squashfs image"
   mksquashfs "$WORKDIR/root" "$pxedir/root.img.tmp" -noappend -quiet
@@ -72,7 +73,6 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
     cp "$file" "$WORKDIR/node-settings/$(basename "$file" | sed s/:/-/g)"
   done
 
-  envsubst </assets/home-cluster-latest.conf >"$WORKDIR/home-cluster-latest.conf"
   dd if=/dev/random bs=32 count=1 >"$WORKDIR/random-seed"
 
   local sector_size_b=512 gpt_size_b fs_table_size_b partition_offset_b partition_size_b disk_size_kib
@@ -88,9 +88,7 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
       fs_table_size_b +
       config_size_b +
       node_settings_size_b +
-      $(stat -c %s "$WORKDIR/root/usr/lib/systemd/boot/efi/systemd-bootx64.efi") * 2 +
-      $(stat -c %s "$pxedir/vmlinuz.tmp") +
-      $(stat -c %s "$pxedir/initrd.img.tmp") +
+      $(stat -c %s "$pxedir/vmlinuz.unsigned.efi.tmp") +
       $(stat -c %s "$pxedir/root.img.tmp") +
       (sector_size_b - 1)
     ) / sector_size_b * sector_size_b
@@ -121,26 +119,13 @@ mkfs vfat /dev/sda1
 mount /dev/sda1 /
 
 mkdir-p /EFI/BOOT
-copy-in "$WORKDIR/root/usr/lib/systemd/boot/efi/systemd-bootx64.efi" /EFI/BOOT/
-mv /EFI/BOOT/systemd-bootx64.efi /EFI/BOOT/BOOTX64.EFI
-mkdir-p /EFI/systemd
-copy-in "$WORKDIR/root/usr/lib/systemd/boot/efi/systemd-bootx64.efi" /EFI/systemd/
-mkdir-p /EFI/Linux
+copy-in "$pxedir/vmlinuz.unsigned.efi.tmp" /EFI/BOOT/
+mv /EFI/BOOT/vmlinuz.unsigned.efi.tmp /EFI/BOOT/BOOTX64.EFI
 
-mkdir-p /home-cluster/latest
-copy-in "$pxedir/vmlinuz.tmp" /home-cluster/latest/
-mv /home-cluster/latest/vmlinuz.tmp /home-cluster/latest/vmlinuz
-copy-in "$pxedir/initrd.img.tmp" /home-cluster/latest/
-mv /home-cluster/latest/initrd.img.tmp /home-cluster/latest/initrd.img
-copy-in "$pxedir/root.img.tmp" /home-cluster/latest/
-mv /home-cluster/latest/root.img.tmp /home-cluster/latest/root.img
-copy-in "$WORKDIR/node-settings" /home-cluster/latest/
-
-mkdir-p /loader/entries
-copy-in "$WORKDIR/home-cluster-latest.conf" /loader/entries/
-copy-in /assets/loader.conf /loader/
-copy-in /assets/entries.srel /loader/
-copy-in "$WORKDIR/random-seed" /loader/
+mkdir-p /home-cluster
+copy-in "$pxedir/root.img.tmp" /home-cluster/
+mv /home-cluster/root.img.tmp /home-cluster/root.img
+copy-in "$WORKDIR/node-settings" /home-cluster/
 EOF
 
   ### Finish up by moving everything to the right place
@@ -149,6 +134,7 @@ EOF
   mv "$pxedir/root.img.tmp" "$pxedir/root.img"
   mv "$pxedir/vmlinuz.tmp" "$pxedir/vmlinuz"
   mv "$pxedir/initrd.img.tmp" "$pxedir/initrd.img"
+  mv "$pxedir/vmlinuz.unsigned.efi.tmp" "$pxedir/vmlinuz.unsigned.efi"
 }
 
 

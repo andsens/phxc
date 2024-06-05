@@ -14,6 +14,8 @@ spec:
         app.kubernetes.io/component: amd64
         cluster.local/allow-internet-egress: "true"
     spec:
+      nodeSelector:
+        node-role.cluster.local/tftpd: "true"
       restartPolicy: Never
       initContainers:
       - name: kaniko
@@ -67,5 +69,5 @@ spec:
           name: node-settings
       - name: images
         hostPath:
-          path: /var/cache/host-images
+          path: /var/lib/persistent/host-images
           type: DirectoryOrCreate

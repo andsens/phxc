@@ -1,13 +1,14 @@
 [Unit]
 Description=/var/lib/rancher/k3s/agent/containerd
-Requires=var-cache-disk.mount mk-cache-dirs.service
-After=var-cache-disk.mount mk-cache-dirs.service
+Requires=var-lib-persistent.mount mk-data-dirs.service
+After=var-lib-persistent.mount mk-data-dirs.service
 Before=k3s@agent.service k3s@server.service
 
 [Install]
-WantedBy=k3s.target
+WantedBy=k3s@agent.target k3s@server.target
 
 [Mount]
-What=/var/cache/disk/containerd
+What=/var/lib/persistent/containerd
 Where=/var/lib/rancher/k3s/agent/containerd
-Type=bind
+Type=none
+Options=bind

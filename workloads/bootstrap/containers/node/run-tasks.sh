@@ -13,6 +13,8 @@ main() {
 
   export DEBIAN_FRONTEND=noninteractive
 
+  sed -i 's/Suites: bookworm bookworm-updates/Suites: bookworm bookworm-updates bookworm-backports/' /etc/apt/sources.list.d/debian.sources
+
   apt-get update -qq
   apt-get -qq install --no-install-recommends apt-utils gettext jq yq >/dev/null
 
@@ -25,7 +27,7 @@ main() {
 
   readarray -t -d $'\n' PACKAGES < <(printf "%s\n" "${PACKAGES[@]}" | sort -u)
   info "Installing packages: %s" "${PACKAGES[*]}"
-  apt-get -qq install --no-install-recommends "${PACKAGES[@]}" >/dev/null
+  apt-get -qq install -t bookworm-backports --no-install-recommends "${PACKAGES[@]}" >/dev/null
   rm -rf /var/cache/apt/lists/*
 
   local task
@@ -40,8 +42,6 @@ main() {
       warning "%s had no task named %s" "$(basename "$taskfile")" "$task"
     fi
   done
-
-  update-initramfs -u -k all
 }
 
 confirm_container_build() {

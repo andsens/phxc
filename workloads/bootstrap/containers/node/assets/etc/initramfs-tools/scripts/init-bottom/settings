@@ -52,7 +52,7 @@ fi
 esp=/run/initramfs/efi
 if [ -e $esp ]; then
   log_begin_msg "Falling back to copying settings from ESP mount instead"
-  if cp "/run/initramfs/efi/home-cluster/latest/node-settings/$(printf "%s" "$mac" | sed s/:/-/g).json" "$settings_path"; then
+  if cp "/run/initramfs/efi/home-cluster/node-settings/$(printf "%s" "$mac" | sed s/:/-/g).json" "$settings_path"; then
     log_end_msg
     exit 0
   else

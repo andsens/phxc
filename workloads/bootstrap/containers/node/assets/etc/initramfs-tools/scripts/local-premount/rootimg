@@ -43,9 +43,9 @@ fi
 
 if $dl_failed; then
   esp=/run/initramfs/efi
-  if [ -e $esp/home-cluster/latest/root.img ]; then
+  if [ -e $esp/home-cluster/root.img ]; then
     log_begin_msg "Falling back to copying root.img from ESP to RAM"
-    if cp "$esp/home-cluster/latest/root.img" $rootimg_path; then
+    if cp "$esp/home-cluster/root.img" $rootimg_path; then
       log_end_msg
       exit 0
     fi

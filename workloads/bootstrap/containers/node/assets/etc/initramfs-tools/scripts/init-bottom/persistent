@@ -16,15 +16,13 @@ if [ ! -e "$settings_path" ]; then
 fi
 node_name=$(jq -r '.name // "node"' "$settings_path")
 
-if ! cachedev=$(jq -re '.cacheDev' "$settings_path"); then
-  log_failure_msg "$node_name has no cache device defined, skipping"
+if ! persistentdev=$(jq -re '.data' "$settings_path"); then
+  log_failure_msg "$node_name has no data device defined, skipping"
   exit 0
 fi
 
-wipefs --all "$cachedev"
-log_success_msg "Wiped $cachedev"
 # https://www.freedesktop.org/software/systemd/man/latest/systemd.mount.html#x-systemd.makefs
 # The mkfs and growfs options are not available when specifying this mount as a systemd mount unit, so we use fstab
 # shellcheck disable=SC2154
-printf "%s  /var/cache/disk   ext4    defaults,x-systemd.makefs,x-systemd.growfs\n" "$cachedev" >>"$rootmnt/etc/fstab"
-log_success_msg "Set up $cachedev as cache device"
+printf "%s  /var/lib/persistent  ext4  defaults,x-systemd.makefs,x-systemd.growfs\n" "$persistentdev" >>"$rootmnt/etc/fstab"
+log_success_msg "Set up $persistentdev as persistent disk"
