@@ -2,8 +2,8 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: smallstep
 resources:
-- ../../settings/replacements
-- ../../mounts/manifests
+- ../settings/replacements
+- containers/step-ca-bootstrap
 - https://raw.githubusercontent.com/smallstep/helm-charts/v0.22.0/step-issuer/crds/certmanager.step.sm_stepclusterissuers.yaml
 - https://raw.githubusercontent.com/smallstep/helm-charts/v0.22.0/step-issuer/crds/certmanager.step.sm_stepissuers.yaml
 - bootstrap.yaml
@@ -14,6 +14,18 @@ resources:
 - namespace.yaml
 - Kptfile
 - resourcegroup.yaml
+configMapGenerator:
+- files:
+  - scripts/bootstrap.sh
+  - scripts/create-kube-config.sh
+  - scripts/setup-kube-apiserver-client-ca-config.sh
+  - scripts/setup-step-ca-config.sh
+  name: scripts
+- files:
+  - config/ca.json
+  - config/kube-apiserver-client-ca.json
+  - config/templates/kube-apiserver-client-cert.tpl
+  name: config
 replacements:
 - source: {fieldPath: data.cluster.smallstep.fixedIPv4, kind: ConfigMap, name: settings}
   targets:
@@ -43,3 +55,10 @@ replacements:
   - select: {kind: Service, name: kube-apiserver-client-ca-external}
     fieldPaths: [metadata.annotations.external-dns\.alpha\.kubernetes\.io/hostname]
     options: {delimiter: '.', index: 1}
+- source: {fieldPath: data.admin.uid, kind: ConfigMap, name: settings}
+  targets:
+  - select: {group: batch, kind: Job, name: bootstrap}
+    fieldPaths: ["spec.template.spec.containers.[name=bootstrap].env.[name=ADMIN_UID].value"]
+
+  - select: {group: batch, kind: CronJob, name: refresh-kube-config}
+    fieldPaths: ["spec.jobTemplate.spec.template.spec.containers.[name=refresh-kube-config].env.[name=ADMIN_UID].value"]

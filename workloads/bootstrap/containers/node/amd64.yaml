@@ -41,6 +41,7 @@ spec:
       containers:
       - name: create-boot-images
         image: cluster.local/create-boot-images:latest
+        imagePullPolicy: Never
         args: ["$(ARCH)"]
         env:
         - name: ARCH

@@ -1,6 +1,0 @@
-apiVersion: kpt.dev/v1alpha1
-kind: ResourceGroup
-metadata:
-  name: redis
-  labels:
-    cli-utils.sigs.k8s.io/inventory-id: 30c836cbb200140c719caadc9784de5340c8e709-1710061241417085017

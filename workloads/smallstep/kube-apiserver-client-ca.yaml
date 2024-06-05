@@ -63,14 +63,16 @@ spec:
         node-role.kubernetes.io/control-plane: "true"
       initContainers:
       - name: setup-kube-apiserver-client-ca-config
-        image: distribution.docker-registry.svc.cluster.local/step-ca-bootstrap:latest
-        imagePullPolicy: Always
-        command: [/var/lib/home-cluster/workloads/smallstep/commands/setup-kube-apiserver-client-ca-config.sh]
+        image: cluster.local/step-ca-bootstrap:latest
+        imagePullPolicy: Never
+        command: [/home/step/scripts/setup-kube-apiserver-client-ca-config.sh]
         securityContext:
           readOnlyRootFilesystem: true
         volumeMounts:
-        - name: home-cluster
-          mountPath: /var/lib/home-cluster
+        - name: scripts
+          mountPath: /home/step/scripts
+        - name: config
+          mountPath: /home/step/config-ro
         - name: kube-apiserver-client-ca-cert
           mountPath: /home/step/certs/kube_apiserver_client_ca.crt
           readOnly: true
@@ -113,19 +115,23 @@ spec:
           mountPath: /home/step/db
           readOnly: false
       volumes:
-      - name: home-cluster
-        persistentVolumeClaim:
-          claimName: home-cluster
+      - name: scripts
+        configMap:
+          name: scripts
+          defaultMode: 0755
+      - name: config
+        configMap:
+          name: config
       - name: certs
         emptyDir:
           medium: Memory
       - name: kube-apiserver-client-ca-cert
         hostPath:
-          path: /var/lib/persistent/lib-rancher/k3s/server/tls/client-ca.crt
+          path: /var/lib/rancher/k3s/server/tls/client-ca.crt
           type: File
       - name: kube-apiserver-client-ca-key
         hostPath:
-          path: /var/lib/persistent/lib-rancher/k3s/server/tls/client-ca.key
+          path: /var/lib/rancher/k3s/server/tls/client-ca.key
           type: File
       - name: config-rw
         emptyDir: {}

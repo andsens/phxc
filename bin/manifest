@@ -11,6 +11,7 @@ main() {
 Usage:
   manifest apply (all|MANIFEST...) [-- kptargs...]
   manifest build (all|MANIFEST...)
+  manifest latest-applied-all
 
 Note:
   MANIFEST is a path relative to /manifests e.g. cert-manager
@@ -19,25 +20,43 @@ Note:
 # shellcheck disable=2016,2086,2317,1090,1091,2034,2154
 docopt() { local v='2.0.1'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
-%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:195};usage=${DOC:34:92}
-digest=0c1c9;options=();node_0(){ value MANIFEST a true;};node_1(){ switch \
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:225};usage=${DOC:34:122}
+digest=4aad2;options=();node_0(){ value MANIFEST a true;};node_1(){ switch \
 apply a:apply;};node_2(){ switch all a:all;};node_3(){ switch kptargs \
-a:kptargs true;};node_4(){ switch build a:build;};node_5(){ switch __ a:--;}
-node_6(){ sequence 1 7 9;};node_7(){ choice 2 8;};node_8(){ repeatable 0;}
-node_9(){ optional 5 10;};node_10(){ repeatable 3;};node_11(){ sequence 4 7;}
-node_12(){ choice 6 11;};cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" \
-"$1" >&2;printf "%s\n" "${DOC:34:92}" >&2;exit 1;}';local varnames=(MANIFEST \
-apply all kptargs build __) varname;for varname in "${varnames[@]}"; do unset \
-"var_$varname";done;parse 12 "$@";local p=${DOCOPT_PREFIX:-''};for varname in \
-"${varnames[@]}"; do unset "$p$varname";done;if declare -p var_MANIFEST \
->/dev/null 2>&1; then eval $p'MANIFEST=("${var_MANIFEST[@]}")';else eval $p'MA'\
-'NIFEST=()';fi;eval $p'apply=${var_apply:-false};'$p'all=${var_all:-false};'\
-$p'kptargs=${var_kptargs:-0};'$p'build=${var_build:-false};'$p'__=${var___:-fa'\
-'lse};';local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
+a:kptargs true;};node_4(){ switch build a:build;};node_5(){ switch \
+latest_applied_all a:latest-applied-all;};node_6(){ switch __ a:--;};node_7(){
+sequence 1 8 10;};node_8(){ choice 2 9;};node_9(){ repeatable 0;};node_10(){
+optional 6 11;};node_11(){ repeatable 3;};node_12(){ sequence 4 8;};node_13(){
+choice 7 12 5;};cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2
+printf "%s\n" "${DOC:34:122}" >&2;exit 1;}';local varnames=(MANIFEST apply all \
+kptargs build latest_applied_all __) varname;for varname in "${varnames[@]}"; do
+unset "var_$varname";done;parse 13 "$@";local p=${DOCOPT_PREFIX:-''};for \
+varname in "${varnames[@]}"; do unset "$p$varname";done;if declare -p \
+var_MANIFEST >/dev/null 2>&1; then eval $p'MANIFEST=("${var_MANIFEST[@]}")';else
+eval $p'MANIFEST=()';fi;eval $p'apply=${var_apply:-false};'$p'all=${var_all:-f'\
+'alse};'$p'kptargs=${var_kptargs:-0};'$p'build=${var_build:-false};'$p'latest_'\
+'applied_all=${var_latest_applied_all:-false};'$p'__=${var___:-false};';local \
+docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
 ((;docopt_i>0;docopt_i--)); do for varname in "${varnames[@]}"; do declare -p \
 "$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' manifest`
   eval "$(docopt "$@")"
+
+  if ! kubectl -n default get svc kubernetes -o jsonpath='{.status}' >/dev/null; then
+    fatal "Unable to connect to the cluster"
+  fi
+
+  if $latest_applied_all; then
+    local latest_applied_all
+    latest_applied_all=$(kubectl -n default get configmap home-cluster-manifest -o jsonpath='{.data.latest-applied-all}' 2>/dev/null) || true
+    if [[ -n $latest_applied_all ]]; then
+      printf "%s\n" "$latest_applied_all"
+      return 0
+    else
+      info "All manifests have never been successfully applied"
+      return 1
+    fi
+  fi
 
   # shellcheck disable=2154
   if $all; then
@@ -47,15 +66,14 @@ $p'kptargs=${var_kptargs:-0};'$p'build=${var_build:-false};'$p'__=${var___:-fa'\
       csi-driver-nfs
       etcd
       coredns
-      traefik
       external-dns
-      kubernetes-secret-generator
-      redis
-      kaniko
       cert-manager
       cert-manager-issuers
+      kubernetes-secret-generator
       smallstep
       bootstrap
+      traefik
+      kaniko
     )
   fi
   local manifest_name manifest_data
@@ -70,7 +88,8 @@ $p'kptargs=${var_kptargs:-0};'$p'build=${var_build:-false};'$p'__=${var___:-fa'\
     fi
   done
   if $all; then
-    kubectl -n default create configmap home-cluster-manifest --from-literal "last-all-applied=$(date --iso-8601=seconds)"
+    kubectl -n default delete configmap home-cluster-manifest
+    kubectl -n default create configmap home-cluster-manifest --from-literal "latest-applied-all=$(date --iso-8601=seconds)"
   fi
 }
 

@@ -21,15 +21,18 @@ spec:
           restartPolicy: Never
           containers:
           - name: refresh-kube-config
-            image: distribution.docker-registry.svc.cluster.local/step-ca-bootstrap:latest
-            imagePullPolicy: Always
-            command: [/var/lib/home-cluster/workloads/smallstep/commands/create-kube-config.sh]
+            image: cluster.local/step-ca-bootstrap:latest
+            imagePullPolicy: Never
+            command: [/home/step/scripts/create-kube-config.sh]
             args: ['system:admin', 'system:masters']
+            env:
+            - name: ADMIN_UID
+              value: admin.uid
             securityContext:
               readOnlyRootFilesystem: true
             volumeMounts:
-            - name: home-cluster
-              mountPath: /var/lib/home-cluster
+            - name: scripts
+              mountPath: /home/scripts
             - name: certs
               mountPath: /home/step/certs
             - name: kube-apiserver-client-ca-cert
@@ -41,16 +44,17 @@ spec:
             - name: persistent-certs
               mountPath: /home/step/persistent-certs
           volumes:
-          - name: home-cluster
-            persistentVolumeClaim:
-              claimName: home-cluster
+          - name: scripts
+            configMap:
+              name: scripts
+              defaultMode: 0755
           - name: kube-apiserver-client-ca-cert
             hostPath:
-              path: /var/lib/persistent/lib-rancher/k3s/server/tls/client-ca.crt
+              path: /var/lib/rancher/k3s/server/tls/client-ca.crt
               type: File
           - name: kube-apiserver-client-ca-key
             hostPath:
-              path: /var/lib/persistent/lib-rancher/k3s/server/tls/client-ca.key
+              path: /var/lib/rancher/k3s/server/tls/client-ca.key
               type: File
           - name: certs
             emptyDir:

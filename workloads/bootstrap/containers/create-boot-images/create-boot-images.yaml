@@ -20,8 +20,6 @@ spec:
         args:
         - --dockerfile=context/Dockerfile
         - --destination=cluster.local/create-boot-images:latest
-        - --insecure-registry=cluster.local
-        - --skip-tls-verify
         env:
         - name: GGCR_EXPERIMENT_ESTARGZ
           value: "1"

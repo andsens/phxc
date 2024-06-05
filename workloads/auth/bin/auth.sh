@@ -56,14 +56,14 @@ varname;for varname in "${varnames[@]}"; do unset "var_$varname";done;parse 4 \
     OLD_KUBECONFIG=$KUBECONFIG
     [[ -r "$CONFIG" ]] || fatal "The file %s does not exist or is not readable" "$CONFIG"
 
-    extract_kube_config_to_smallstep "$STEP_KUBE_API_CONTEXT" "$CONFIG"
-    setup_kube_config "$STEP_KUBE_API_CONTEXT" "$KUBE_CONTEXT" "$KUBE_CLUSTER"
-    setup_smallstep_context "$STEP_PKI_CONTEXT" "$KUBE_CONTEXT" "pki.$CLUSTER_DOMAIN:9000" smallstep smallstep-root
-    setup_smallstep_context "$STEP_KUBE_API_CONTEXT" "$KUBE_CONTEXT" "pki-kube.$CLUSTER_DOMAIN:9001" smallstep kube-apiserver-client-ca
+    extract_kube_config_to_smallstep home-cluster-kube-api "$CONFIG"
+    setup_kube_config home-cluster-kube-api home-cluster home-cluster
+    setup_smallstep_context home-cluster-pki home-cluster "pki.$CLUSTER_DOMAIN:9000" smallstep smallstep-root
+    setup_smallstep_context home-cluster-kube-api home-cluster "pki-kube.$CLUSTER_DOMAIN:9001" smallstep kube-apiserver-client-ca
     setup_docker_cred_helper "cr.$CLUSTER_DOMAIN" "$DOCKER_CRED_HELPER" "$HOME/.docker/config.json"
-    setup_ssh_host_cert_trust "$STEP_PKI_CONTEXT" "*.local" "$HOME/.ssh/known_hosts"
-    sign_ssh_client_keys "$STEP_PKI_CONTEXT" "$ADMIN_USERNAME"
-    renew_client_cert "$STEP_KUBE_API_CONTEXT"
+    setup_ssh_host_cert_trust home-cluster-pki "*.local" "$HOME/.ssh/known_hosts"
+    sign_ssh_client_keys home-cluster-pki "$ADMIN_USERNAME"
+    renew_client_cert home-cluster-kube-api
 
     if [[ $CONFIG != "$HOME/.kube/home-cluster.yaml" ]]; then
       info "Removing %s" "$CONFIG"
@@ -73,7 +73,7 @@ varname;for varname in "${varnames[@]}"; do unset "var_$varname";done;parse 4 \
       warning "Remember to add the new client config to your \$KUBECONFIG with KUBECONFIG=\$KUBECONFIG:\$HOME/.kube/home-cluster.yaml"
     fi
   elif $renew; then
-    renew_client_cert "$STEP_KUBE_API_CONTEXT"
+    renew_client_cert home-cluster-kube-api
   fi
 }
 

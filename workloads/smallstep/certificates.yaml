@@ -78,14 +78,16 @@ spec:
     spec:
       initContainers:
       - name: setup-step-ca-config
-        image: distribution.docker-registry.svc.cluster.local/step-ca-bootstrap:latest
-        imagePullPolicy: Always
-        command: [/var/lib/home-cluster/workloads/smallstep/commands/setup-step-ca-config.sh]
+        image: cluster.local/step-ca-bootstrap:latest
+        imagePullPolicy: Never
+        command: [/home/step/scripts/setup-step-ca-config.sh]
         securityContext:
           readOnlyRootFilesystem: true
         volumeMounts:
-        - name: home-cluster
-          mountPath: /var/lib/home-cluster
+        - name: scripts
+          mountPath: /home/step/scripts
+        - name: config
+          mountPath: /home/step/config-ro
         - name: step-issuer-provisioner
           mountPath: /home/step/step-issuer-provisioner
           readOnly: true
@@ -143,9 +145,13 @@ spec:
         - name: database
           mountPath: /home/step/db
       volumes:
-      - name: home-cluster
-        persistentVolumeClaim:
-          claimName: home-cluster
+      - name: scripts
+        configMap:
+          name: scripts
+          defaultMode: 0755
+      - name: config
+        configMap:
+          name: config
       - name: step-issuer-provisioner
         secret:
           secretName: step-issuer-provisioner

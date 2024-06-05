@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
-# shellcheck source-path=../../..
 set -Eeo pipefail; shopt -s inherit_errexit
-PKGROOT=/usr/local/lib/upkg
 # shellcheck disable=SC1091
-source "$PKGROOT/.upkg/records.sh/records.sh"
-source "$PKGROOT/workloads/smallstep/commands/paths.sh"
+source /usr/local/lib/upkg/.upkg/records.sh/records.sh
+
+KUBE_CLIENT_CA_CRT_PATH=$STEPPATH/certs/kube_apiserver_client_ca.crt
 
 main() {
   local \
@@ -12,7 +11,7 @@ main() {
     ssh_host_dir=$STEPPATH/ssh-host-provisioner
 
   local config
-  config=$(jq --arg domain "pki.$CLUSTER_DOMAIN" '.dnsNames+=[$domain]' "/var/lib/home-cluster/workloads/smallstep/config/ca.json")
+  config=$(jq --arg domain "pki.$CLUSTER_DOMAIN" '.dnsNames+=[$domain]' "$STEPPATH/config-ro/ca.json")
 
   local name provisioner_names=(step-issuer ssh-host kube-apiserver-client-ca)
 

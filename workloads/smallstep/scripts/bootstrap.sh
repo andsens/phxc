@@ -1,18 +1,21 @@
 #!/usr/bin/env bash
-# shellcheck source-path=../../..
 set -Eeo pipefail; shopt -s inherit_errexit
-PKGROOT=/usr/local/lib/upkg
 # shellcheck disable=SC1091
-source "$PKGROOT/.upkg/records.sh/records.sh"
-source "$PKGROOT/workloads/smallstep/commands/paths.sh"
+source /usr/local/lib/upkg/.upkg/records.sh/records.sh
+
+ROOT_KEY_PATH=$STEPPATH/persistent-certs/root_ca_key
+ROOT_CRT_PATH=$STEPPATH/persistent-certs/root_ca.crt
+
+INTERMEDIATE_KEY_PATH=$STEPPATH/persistent-certs/intermediate_ca_key
+INTERMEDIATE_CRT_PATH=$STEPPATH/persistent-certs/intermediate_ca.crt
 
 main() {
   create_ca_certificates
   create_ca_secrets
   create_step_issuer_provisioner
   create_ssh_host_provisioner
-  "$PKGROOT/workloads/smallstep/commands/create-kube-apiserver-client-ca-secret.sh" /home/step/certs/kube_apiserver_client_ca.crt
-  "$PKGROOT/workloads/smallstep/commands/create-kube-config.sh" system:admin system:masters
+  create_kube_apiserver_client_ca_secret
+  "$STEPPATH/scripts/create-kube-config.sh" system:admin system:masters
 }
 
 create_ca_certificates() {
@@ -125,6 +128,18 @@ create_ssh_host_provisioner() {
       --from-file="$ssh_host_dir/priv.json"
   else
     info "ssh-host provisioner validation succeeded"
+  fi
+}
+
+create_kube_apiserver_client_ca_secret() {
+  local cert_path=/home/step/certs/kube_apiserver_client_ca.crt
+  cert=$(cat $cert_path)
+  if [[ $(kubectl get -n "$NAMESPACE" secret kube-apiserver-client-ca -o jsonpath='{.data.tls\.crt}' | base64 -d) != "$cert" ]]; then
+    info "kube-apiserver client CA secret validation failed, (re-)creating now"
+    kubectl delete -n "$NAMESPACE" secret kube-apiserver-client-ca 2>/dev/null || true
+    kubectl create -n "$NAMESPACE" secret generic kube-apiserver-client-ca --from-file=tls.crt=$cert_path
+  else
+    info "kube-apiserver client CA secret validation succeeded"
   fi
 }
 

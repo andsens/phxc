@@ -114,9 +114,9 @@ spec:
       serviceAccountName: bootstrap
       containers:
       - name: bootstrap
-        image: distribution.docker-registry.svc.cluster.local/step-ca-bootstrap:latest
-        imagePullPolicy: Always
-        command: [/var/lib/home-cluster/workloads/smallstep/commands/bootstrap.sh]
+        image: cluster.local/step-ca-bootstrap:latest
+        imagePullPolicy: Never
+        command: [/home/step/scripts/bootstrap.sh]
         securityContext:
           readOnlyRootFilesystem: true
         env:
@@ -124,9 +124,11 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
+        - name: ADMIN_UID
+          value: admin.uid
         volumeMounts:
-        - name: home-cluster
-          mountPath: /var/lib/home-cluster
+        - name: scripts
+          mountPath: /home/step/scripts
         - name: step-issuer-provisioner-password
           mountPath: /home/step/step-issuer-provisioner-password
           readOnly: true
@@ -146,9 +148,10 @@ spec:
           mountPath: /home/step/persistent-certs
           readOnly: false
       volumes:
-      - name: home-cluster
-        persistentVolumeClaim:
-          claimName: home-cluster
+      - name: scripts
+        configMap:
+          name: scripts
+          defaultMode: 0755
       - name: step-issuer-provisioner-password
         secret:
           secretName: step-issuer-provisioner-password
@@ -160,11 +163,11 @@ spec:
           medium: Memory
       - name: kube-apiserver-client-ca-cert
         hostPath:
-          path: /var/lib/persistent/lib-rancher/k3s/server/tls/client-ca.crt
+          path: /var/lib/rancher/k3s/server/tls/client-ca.crt
           type: File
       - name: kube-apiserver-client-ca-key
         hostPath:
-          path: /var/lib/persistent/lib-rancher/k3s/server/tls/client-ca.key
+          path: /var/lib/rancher/k3s/server/tls/client-ca.key
           type: File
       - name: persistent-certs
         persistentVolumeClaim:

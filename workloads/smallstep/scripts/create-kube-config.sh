@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# shellcheck source-path=../../..
 set -Eeo pipefail; shopt -s inherit_errexit
-PKGROOT=/usr/local/lib/upkg
 # shellcheck disable=SC1091
-source "$PKGROOT/.upkg/records.sh/records.sh"
-source "$PKGROOT/workloads/smallstep/commands/paths.sh"
+source /usr/local/lib/upkg/.upkg/records.sh/records.sh
+
+KUBE_CLIENT_CA_KEY_PATH=$STEPPATH/certs/kube_apiserver_client_ca_key
+KUBE_CLIENT_CA_CRT_PATH=$STEPPATH/certs/kube_apiserver_client_ca.crt
 
 main() {
   local username=${1:?}; shift; local groups=("$@")
@@ -42,17 +42,17 @@ main() {
     info "Kube admin client cert validation succeeded"
   fi
 
-  kubectl config --kubeconfig "$new_kube_config_path" set-cluster $KUBE_CLUSTER \
+  kubectl config --kubeconfig "$new_kube_config_path" set-cluster home-cluster \
     --embed-certs \
     --server="https://api.$CLUSTER_DOMAIN:6443" \
     --certificate-authority="/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
-  kubectl config --kubeconfig "$new_kube_config_path" set-credentials "$username@$KUBE_CLUSTER" \
+  kubectl config --kubeconfig "$new_kube_config_path" set-credentials "$username@home-cluster" \
     --embed-certs \
     --client-certificate="$crt_path" \
     --client-key="$key_path"
-  kubectl config --kubeconfig "$new_kube_config_path" set-context $KUBE_CONTEXT \
-    --cluster $KUBE_CLUSTER --user "$username@$KUBE_CLUSTER"
-  kubectl config --kubeconfig "$new_kube_config_path" use-context $KUBE_CONTEXT
+  kubectl config --kubeconfig "$new_kube_config_path" set-context home-cluster \
+    --cluster home-cluster --user "$username@home-cluster"
+  kubectl config --kubeconfig "$new_kube_config_path" use-context home-cluster
 
   if [[ ! -e "$kube_config_path" ]] || ! diff -q "$new_kube_config_path" "$kube_config_path"; then
     info "Kube admin config validation failed, (re-)creating now"

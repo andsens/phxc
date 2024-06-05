@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
-# shellcheck source-path=../../..
 set -Eeo pipefail; shopt -s inherit_errexit
-PKGROOT=/usr/local/lib/upkg
 # shellcheck disable=SC1091
-source "$PKGROOT/.upkg/records.sh/records.sh"
-source "$PKGROOT/workloads/smallstep/commands/paths.sh"
+source /usr/local/lib/upkg/.upkg/records.sh/records.sh
 
+KUBE_CLIENT_CA_KEY_PATH=$STEPPATH/certs/kube_apiserver_client_ca_key
+KUBE_CLIENT_CA_CRT_PATH=$STEPPATH/certs/kube_apiserver_client_ca.crt
 
 main() {
   setup_config
@@ -14,7 +13,7 @@ main() {
 
 setup_config() {
   local config
-  config=$(jq --arg domain "pki-kube.$CLUSTER_DOMAIN" '.dnsNames+=[$domain]' "/var/lib/home-cluster/workloads/smallstep/config/kube-apiserver-client-ca.json")
+  config=$(jq --arg domain "pki-kube.$CLUSTER_DOMAIN" '.dnsNames+=[$domain]' "$STEPPATH/config-ro/kube-apiserver-client-ca.json")
 
   local kube_client_config kube_client
   info "Storing and then removing kube-apiserver-client-ca provisioner"

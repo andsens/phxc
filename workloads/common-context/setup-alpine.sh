@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
+set -Eeo pipefail; shopt -s inherit_errexit
 
-apt-get -y update
-apt-get -y install --no-install-recommends \
-  gettext jq yq wget ca-certificates libdigest-sha-perl
-rm -rf /var/cache/apt/lists/*
+apk add jq gettext py3-virtualenv perl-utils
+virtualenv /usr/local/lib/yq
+/usr/local/lib/yq/bin/pip3 install yq
+ln -s /usr/local/lib/yq/bin/yq /usr/local/bin/yq
 
 temp=$(mktemp)
 # shellcheck disable=SC2064
 trap "rm \"$temp\"" EXIT
-wget -qO"$temp" "https://github.com/orbit-online/upkg/releases/download/v0.26.3/upkg-install.tar.gz"
-shasum -a 256 -c <(echo "ae99b32cd7cd97a8d102999c8c87bc40844bf9994925dd432b8c0347bb23dc46  $temp")
+wget -qO"$temp" "https://github.com/orbit-online/upkg/releases/download/v0.26.5/upkg-install.tar.gz"
+shasum -a 256 -c <(echo "478ea3b01d58e2adf32579c2b1abfb257b24d17464367050e254063e42143b12  $temp")
 tar xzC /usr/local -f "$temp"
 upkg add -gp docopt-lib-v2.0.1 "https://github.com/andsens/docopt.sh/releases/download/v2.0.1/docopt-lib.sh.tar.gz" 539053da8b3063921b8889dbe752279e3a215d8fa3e2550d6521e094981f26a2
 upkg add -g "https://github.com/orbit-online/trap.sh/releases/download/v1.1.1/trap.sh.tar.gz" bdc50e863a44866a6d92c11570d8e255f95d65747128e6f262985452e7359bb4
