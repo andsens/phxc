@@ -1,38 +1,33 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+namespace: bootstrap
 resources:
-- credentials.yaml
-- create-boot-image.yaml
-- create-pxe-boot-image.yaml
-- amd64.yaml
+- ../settings/replacements
+- containers/create-boot-images
+- containers/node
+- containers/tftpd
+- tftpd.yaml
+- boot-server.yaml
 - networkpolicies.yaml
 - namespace.yaml
 - Kptfile
 - resourcegroup.yaml
 configMapGenerator:
 - files:
-  - containers/create-pxe-boot-image/create-pxe-boot-image.sh
-  - containers/create-pxe-boot-image/Dockerfile
-  name: create-pxe-boot-image
+  - config/autoexec.ipxe
+  - config/map-file
+  name: tftp
 - files:
-  - containers/create-uefi-boot-image/create-uefi-boot-image.sh
-  - containers/create-uefi-boot-image/Dockerfile
-  name: cleanup
-- files:
-  - containers/cleanup.sh
-  name: create-uefi-boot-image
-- files:
-  - containers/node/run-tasks.sh
-  - containers/node/Dockerfile
-  name: node
-generators:
-- generate-assets.yaml
-- generate-tasks.yaml
-transformers:
-- |-
-  apiVersion: builtin
-  kind: NamespaceTransformer
-  metadata:
-    name: (everything without an explicit namespace)
-    namespace: bootstrap
-  unsetOnly: true
+  - scripts/tftpd.sh
+  name: tftp-scripts
+replacements:
+- source: {fieldPath: data.cluster.bootServer.fixedIPv4, kind: ConfigMap, name: settings}
+  targets:
+  - select: {kind: Service, name: boot-server}
+    fieldPaths: [metadata.annotations.io\.cilium/lb-ipam-ips]
+    options: {delimiter: ',', index: 0}
+- source: {fieldPath: data.cluster.bootServer.fixedIPv6, kind: ConfigMap, name: settings}
+  targets:
+  - select: {kind: Service, name: boot-server}
+    fieldPaths: [metadata.annotations.io\.cilium/lb-ipam-ips]
+    options: {delimiter: ',', index: 1}

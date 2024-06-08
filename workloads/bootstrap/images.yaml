@@ -1,0 +1,12 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: images
+  labels:
+    app.kubernetes.io/name: bootstrap
+    app.kubernetes.io/component: images
+spec:
+  storageClassName: longhorn-rwx
+  accessModes: [ReadWriteMany]
+  resources: {requests: {storage: 1Gi}}

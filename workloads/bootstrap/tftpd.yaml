@@ -42,13 +42,26 @@ spec:
           containerPort: 69
           hostPort: 69
         volumeMounts:
-        - name: home-cluster
-          mountPath: /var/lib/home-cluster
-        - name: config
+        - name: scripts
+          mountPath: /scripts
+        - name: config-ro
+          mountPath: /config
+        - name: config-rw
           mountPath: /tftp/config
+        - name: images
+          mountPath: /tftp/pxe
+          subPath: pxe
+          readOnly: true
       volumes:
-      - name: home-cluster
-        persistentVolumeClaim:
-          claimName: home-cluster
-      - name: config
+      - name: scripts
+        configMap:
+          name: tftp-scripts
+          defaultMode: 0755
+      - name: config-ro
+        configMap:
+          name: tftp
+      - name: config-rw
         emptyDir: {}
+      - name: images
+        persistentVolumeClaim:
+          claimName: images

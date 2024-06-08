@@ -3,10 +3,16 @@ kind: Kustomization
 namespace: bootstrap
 resources:
 - amd64.yaml
-- ../../../settings/node-settings
+- ../../../settings/node
 configMapGenerator:
 - files:
   - Dockerfile
   name: node
+- files:
+  - create-boot-images-assets/etc-hosts
+  name: create-boot-images-assets
+- files:
+  - scripts/create-boot-images.sh
+  name: create-boot-images-scripts
 generators:
 - generate-bundle-cm.yaml

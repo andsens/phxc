@@ -5,4 +5,4 @@ Description=Watch for new container images to import to Spegel
 WantedBy=k3s@server.target k3s@agent.target
 
 [Path]
-DirectoryNotEmpty=/var/lib/persistent/container-images
+PathExistsGlob=/var/lib/persistent/container-images/*

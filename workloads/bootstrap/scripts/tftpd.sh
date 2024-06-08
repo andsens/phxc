@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeo pipefail; shopt -s inherit_errexit
 
-CONFIG_TPL=/var/lib/home-cluster/workloads/pxe/config/autoexec.ipxe
+CONFIG_TPL=/config/autoexec.ipxe
 CONFIG=/tftp/config/autoexec.ipxe
 
 main() {
@@ -14,7 +14,7 @@ main() {
   exec /usr/sbin/in.tftpd --foreground \
   --user tftp \
   --address :69 \
-  --map-file /var/lib/home-cluster/workloads/pxe/config/map-file \
+  --map-file /config/map-file \
   --secure /tftp
 }
 

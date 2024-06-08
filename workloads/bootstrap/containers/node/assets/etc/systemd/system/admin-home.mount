@@ -6,6 +6,6 @@ After=network-online.target
 WantedBy=multi-user.target
 
 [Mount]
-What=${NFSSHARES_ADMINHOME_ADDR}:${NFSSHARES_ADMINHOME_PATH}
+What=${ADMIN_NFSHOME_ADDR}:${ADMIN_NFSHOME_PATH}
 Where=/home/${ADMIN_USERNAME}
 Type=nfs

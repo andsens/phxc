@@ -5,6 +5,5 @@ resources:
 - create-boot-images.yaml
 configMapGenerator:
 - files:
-  - create-boot-images.sh
   - Dockerfile
   name: create-boot-images

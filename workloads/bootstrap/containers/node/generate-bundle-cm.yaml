@@ -5,4 +5,4 @@ metadata:
   annotations:
     config.kubernetes.io/function: |
       exec:
-        path: ./generate-bundle-cm.sh
+        path: ./scripts/generate-bundle-cm.sh

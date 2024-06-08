@@ -47,9 +47,12 @@ spec:
         - name: ARCH
           value: amd64
         volumeMounts:
+        - name: scripts
+          mountPath: /scripts
+        - name: assets
+          mountPath: /assets
         - name: node-settings
           mountPath: /node-settings
-          readOnly: true
         - name: images
           mountPath: /images/snapshots
           subPath: snapshots
@@ -64,10 +67,19 @@ spec:
       - name: context
         configMap:
           name: node
+      - name: scripts
+        configMap:
+          name: create-boot-images-scripts
+          defaultMode: 0755
+      - name: assets
+        configMap:
+          name: create-boot-images-assets
       - name: node-settings
         configMap:
           name: node-settings
+      - name: bundle
+        configMap:
+          name: bundle
       - name: images
-        hostPath:
-          path: /var/lib/persistent/host-images
-          type: DirectoryOrCreate
+        persistentVolumeClaim:
+          claimName: images

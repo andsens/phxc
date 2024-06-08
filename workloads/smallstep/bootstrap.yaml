@@ -181,6 +181,6 @@ metadata:
     app.kubernetes.io/name: smallstep
     app.kubernetes.io/component: bootstrap
 spec:
-  storageClassName: workloads
+  storageClassName: longhorn
   accessModes: [ReadWriteOnce]
   resources: {requests: {storage: 1Mi}}

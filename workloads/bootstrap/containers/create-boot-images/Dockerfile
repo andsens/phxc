@@ -7,4 +7,4 @@ RUN apt-get -y update; apt-get -y install --no-install-recommends \
   squashfs-tools guestfish dosfstools linux-image-amd64 \
   ; rm -rf /var/cache/apt/lists/*
 
-ENTRYPOINT ["/usr/local/bin/create-boot-images.sh"]
+ENTRYPOINT ["/scripts/create-boot-images.sh"]

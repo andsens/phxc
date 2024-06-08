@@ -15,7 +15,7 @@ items:
   # shellcheck disable=SC2016
   for node in $(yq -c '.nodes[]' "$PKGROOT/settings.yaml"); do
     ! mac=$(yq -re '.mac' <<<"$node")|| \
-      cm=$(yq -y --indentless --arg mac "$mac" --arg node "$node" '.items[0].data["\($mac).json"]=$node' <<<"$cm")
+      cm=$(yq -y --indentless --arg mac "${mac//:/-}" --arg node "$node" '.items[0].data["\($mac).json"]=$node' <<<"$cm")
   done
   printf "%s\n" "$cm"
 }

@@ -1,0 +1,2 @@
+re ^autoexec.ipxe$ /config/autoexec.ipxe
+re ^ipxe.efi$ /tftp/pxe/vmlinuz.unsigned.efi

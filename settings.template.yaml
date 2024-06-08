@@ -4,7 +4,11 @@
 
 # The admin user is set up on all bootstrapped nodes
 admin:
-  # If you are reusing your home directory on your TrueNAS, make sure the UID matches
+  # Will be mounted to the admin user home directory, leave empty to not mount anything
+  adminHome:
+    addr: '[fd25:9998:d0e7:e351:1a01:be9:4d9a:157d]'
+    path: /mnt/cluster/home/admin
+  # If mounting a NFS home share, make sure the UID matches the one on the share
   uid: 3000
   username: admin
   shell: /bin/bash
@@ -38,28 +42,6 @@ nodes:
     lan0:
       name: eth0
   arch: amd64
-##################
-### NFS Shares ###
-##################
-nfsShares:
-  # Location of the home-cluster git repository
-  homeCluster:
-    addr: '[fd25:9998:d0e7:e351:1a01:be9:4d9a:157d]'
-    path: /mnt/cluster/home-cluster
-  # Location of UEFI and PXE boot images and intermediates.
-  # Make sure to `mkdir dockerfiles initrd kernels raw snapshot squashfs`
-  # in the mount you are not specifying the home-cluster/images subdir
-  images:
-    addr: '[fd25:9998:d0e7:e351:1a01:be9:4d9a:157d]'
-    path: /mnt/cluster/images
-  # NFS CSI driver mounts
-  workloads:
-    addr: '[fd25:9998:d0e7:e351:1a01:be9:4d9a:157d]'
-    path: /mnt/cluster/workloads
-  # Will be mounted to the admin user home directory, leave empty to not mount anything
-  adminHome:
-    addr: '[fd25:9998:d0e7:e351:1a01:be9:4d9a:157d]'
-    path: /mnt/cluster/home/admin
 #########################
 ### Cluster settings ###
 #########################

@@ -99,8 +99,6 @@ spec:
   - metadata:
       name: data
     spec:
-      storageClassName: workloads
+      storageClassName: longhorn
       accessModes: [ReadWriteOnce]
-      resources:
-        requests:
-          storage: 1Gi
+      resources: {requests: {storage: 10Mi}}

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# shellcheck source-path=../../../..
+# shellcheck source-path=../../../../..
 set -Eeo pipefail; shopt -s inherit_errexit
-PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../../..")
+PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../../../..")
 
 main() {
   # shellcheck disable=SC1091
@@ -11,8 +11,11 @@ main() {
   [[ -z $version_flag ]] || version_flag=-V$version_flag
   PATH=$(path_prepend "$PKGROOT/.upkg/.bin")
   # shellcheck disable=SC2086
-  upkg bundle -d"$dest" $version_flag \
-    bin workloads README.md settings.template.yaml settings.yaml
+  (
+    cd "$PKGROOT"
+    upkg bundle -qd"$dest" $version_flag \
+      bin workloads README.md settings.template.yaml settings.yaml >/dev/null
+  )
 }
 
 main "$@"
