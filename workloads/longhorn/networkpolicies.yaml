@@ -58,6 +58,7 @@ spec:
     - ports:
       - port: "8500"
       - port: "8501"
+      - port: "8503"
     toEndpoints:
     - matchLabels:
         longhorn.io/component: instance-manager
@@ -101,6 +102,7 @@ spec:
     - ports:
       - port: "8500"
       - port: "8501"
+      - port: "8503"
     fromEndpoints:
     - matchLabels:
         app: longhorn-manager

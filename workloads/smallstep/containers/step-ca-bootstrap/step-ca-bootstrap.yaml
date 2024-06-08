@@ -14,13 +14,13 @@ spec:
         cluster.local/allow-internet-egress: "true"
     spec:
       restartPolicy: Never
-      containers:
+      initContainers:
       - name: kaniko
         image: gcr.io/kaniko-project/executor:latest
         args:
         - --dockerfile=context/Dockerfile
         - --destination=cluster.local/step-ca-bootstrap:latest
-        - --tar-path=/workspace/images/step-ca-bootstrap.tar
+        - --tar-path=/workspace/images/step-ca-bootstrap.tar.tmp
         - --no-push
         env:
         - name: GGCR_EXPERIMENT_ESTARGZ
@@ -32,6 +32,13 @@ spec:
           mountPath: /workspace/common-context
         - name: images
           mountPath: /workspace/images
+      containers:
+      - name: move-image
+        image: busybox
+        command: [sh, -c, mv /images/step-ca-bootstrap.tar.tmp /images/step-ca-bootstrap.tar]
+        volumeMounts:
+        - name: images
+          mountPath: /images
       volumes:
       - name: context
         configMap:

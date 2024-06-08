@@ -14,13 +14,13 @@ spec:
         cluster.local/allow-internet-egress: "true"
     spec:
       restartPolicy: Never
-      containers:
+      initContainers:
       - name: kaniko
         image: gcr.io/kaniko-project/executor:latest
         args:
         - --dockerfile=context/Dockerfile
         - --destination=cluster.local/tftpd:latest
-        - --tar-path=/workspace/images/tftpd.tar
+        - --tar-path=/workspace/images/tftpd.tar.tmp
         - --no-push
         env:
         - name: GGCR_EXPERIMENT_ESTARGZ
@@ -32,6 +32,13 @@ spec:
           mountPath: /workspace/common-context
         - name: images
           mountPath: /workspace/images
+      containers:
+      - name: move-image
+        image: busybox
+        args: [mv, /images/tftpd.tar.tmp, /images/tftpd.tar]
+        volumeMounts:
+        - name: images
+          mountPath: /images
       volumes:
       - name: context
         configMap:

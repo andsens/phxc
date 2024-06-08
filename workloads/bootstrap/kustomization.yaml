@@ -6,6 +6,7 @@ resources:
 - containers/create-boot-images
 - containers/node
 - containers/tftpd
+- images.yaml
 - tftpd.yaml
 - boot-server.yaml
 - networkpolicies.yaml
