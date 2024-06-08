@@ -1,8 +1,8 @@
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
-namespace: cert-manager
 metadata:
   name: cert-manager
+  namespace: cert-manager
   labels:
     app.kubernetes.io/name: webhook
     app.kubernetes.io/component: webhook
