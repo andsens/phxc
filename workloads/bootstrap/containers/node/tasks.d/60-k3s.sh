@@ -30,9 +30,9 @@ k3s() {
   cp_tpl /etc/systemd/system/apply-all-manifests.service
   systemctl enable apply-all-manifests.service
 
-  cp_tpl /etc/systemd/system/import-images.service
-  cp_tpl /etc/systemd/system/import-images.path
-  systemctl enable import-images.path
+  cp_tpl --raw /etc/systemd/system/import-container-images.service
+  cp_tpl --raw /etc/systemd/system/import-container-images.path
+  systemctl enable import-container-images.path
 
   cp_tpl /etc/systemd/system/k3s.service
   cp_tpl /etc/systemd/system/k3s.service
