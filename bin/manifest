@@ -70,6 +70,7 @@ docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
       cert-manager
       cert-manager-issuers
       kubernetes-secret-generator
+      longhorn
       smallstep
       bootstrap
       pxe

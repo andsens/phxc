@@ -1,0 +1,28 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: longhorn-ui
+  namespace: longhorn-system
+spec:
+  replicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: longhorn-driver-deployer
+  namespace: longhorn-system
+spec:
+  template:
+    spec:
+      containers:
+        - name: longhorn-driver-deployer
+          env:
+          - name: CSI_ATTACHER_REPLICA_COUNT
+            value: "1"
+          - name: CSI_PROVISIONER_REPLICA_COUNT
+            value: "1"
+          - name: CSI_RESIZER_REPLICA_COUNT
+            value: "1"
+          - name: CSI_SNAPSHOTTER_REPLICA_COUNT
+            value: "1"

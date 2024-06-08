@@ -1,0 +1,14 @@
+[Unit]
+Description=/var/lib/longhorn
+Requires=var-lib-persistent.mount mk-data-dirs.service
+After=var-lib-persistent.mount mk-data-dirs.service
+Before=k3s@agent.service k3s@server.service
+
+[Install]
+WantedBy=k3s@agent.target k3s@server.target
+
+[Mount]
+What=/var/lib/persistent/longhorn
+Where=/var/lib/longhorn
+Type=none
+Options=bind

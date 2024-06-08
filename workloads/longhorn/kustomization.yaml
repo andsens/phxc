@@ -1,9 +1,23 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-namespace: external-dns
 resources:
 - https://raw.githubusercontent.com/longhorn/longhorn/v1.6.2/deploy/longhorn.yaml
+- https://raw.githubusercontent.com/longhorn/longhorn/v1.6.2/examples/network-policy/backing-image-data-source-network-policy.yaml
+- https://raw.githubusercontent.com/longhorn/longhorn/v1.6.2/examples/network-policy/backing-image-manager-network-policy.yaml
+- https://raw.githubusercontent.com/longhorn/longhorn/v1.6.2/examples/network-policy/instance-manager-networking.yaml
+- https://raw.githubusercontent.com/longhorn/longhorn/v1.6.2/examples/network-policy/manager-network-policy.yaml
+- https://raw.githubusercontent.com/longhorn/longhorn/v1.6.2/examples/network-policy/recovery-backend-network-policy.yaml
+- https://raw.githubusercontent.com/longhorn/longhorn/v1.6.2/examples/network-policy/webhook-network-policy.yaml
 - networkpolicies.yaml
-- namespace.yaml
 - Kptfile
 - resourcegroup.yaml
+patches:
+- path: longhorn.yaml
+transformers:
+- |-
+  apiVersion: builtin
+  kind: NamespaceTransformer
+  metadata:
+    name: (everything without an explicit namespace)
+    namespace: longhorn-system
+  unsetOnly: true

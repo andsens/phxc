@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 
-PACKAGES+=(wget ca-certificates git)
+PACKAGES+=(
+  wget ca-certificates
+  git # kpt dep
+  open-iscsi nfs-common # longhorn deps
+)
 
 k3s() {
   local cmd

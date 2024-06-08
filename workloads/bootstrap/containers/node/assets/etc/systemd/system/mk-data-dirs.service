@@ -8,4 +8,4 @@ WantedBy=multi-user.target
 
 [Service]
 Type=oneshot
-ExecStart=mkdir -p /var/lib/persistent/containerd
+ExecStart=mkdir -p /var/lib/persistent/containerd /var/lib/persistent/longhorn
