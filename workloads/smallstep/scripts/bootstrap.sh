@@ -21,6 +21,7 @@ main() {
 create_ca_certificates() {
   info "Setting up root and intermediate certificates"
   if [[ ! -e $ROOT_KEY_PATH ]] || \
+        ! step certificate lint "$ROOT_CRT_PATH" || \
           step certificate needs-renewal "$ROOT_CRT_PATH"; then
     info "Root CA validation failed, (re-)creating now"
     step certificate create --profile=root-ca \
