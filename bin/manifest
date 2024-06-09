@@ -98,6 +98,7 @@ do declare -p "$p$varname";done;done;}
     elif $delete; then
       kpt live destroy - "${kptargs[@]}" <<<"$manifest_data"
     elif $build; then
+      [[ $manifest_data = $'---\n'* ]] || manifest_data=$'---\n'$manifest_data
       printf "%s\n" "$manifest_data"
     fi
   done
