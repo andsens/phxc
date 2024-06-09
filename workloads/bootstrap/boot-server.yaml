@@ -75,8 +75,8 @@ spec:
           mountPath: /images/pxe
           subPath: pxe
           readOnly: true
-        - name: tmp
-          mountPath: /tmp
+        - name: cache
+          mountPath: /var/cache/nginx
       volumes:
       - name: config
         configMap:
@@ -87,5 +87,5 @@ spec:
       - name: images
         persistentVolumeClaim:
           claimName: images
-      - name: tmp
+      - name: cache
         emptyDir: {}
