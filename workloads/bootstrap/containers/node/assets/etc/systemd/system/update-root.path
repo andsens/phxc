@@ -1,8 +1,0 @@
-[Unit]
-Description=Watch for new image matching the system architecture
-
-[Install]
-WantedBy=k3s@server.target k3s@agent.target
-
-[Path]
-PathExists=/var/lib/persistent/host-images/uefi/${ARCH}.raw
