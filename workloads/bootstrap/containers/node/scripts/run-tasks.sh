@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# shellcheck source-path=../../../..
+# shellcheck source-path=../../../../..
 set -Eeo pipefail; shopt -s inherit_errexit
-PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../../..")
+PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../../../..")
 # shellcheck disable=SC1091
 source "$PKGROOT/.upkg/records.sh/records.sh"
-# shellcheck source=../../../settings/lib/settings-env.shellcheck.sh
+# shellcheck source=workloads/settings/lib/settings-env.shellcheck.sh
 source "$PKGROOT/workloads/settings/lib/settings-env.sh"
 eval_settings
 

@@ -76,6 +76,8 @@ spec:
         app.kubernetes.io/component: certificates
         cluster.local/allow-internet-egress: "true"
     spec:
+      securityContext:
+        fsGroup: 1000
       initContainers:
       - name: setup-step-ca-config
         image: cluster.local/step-ca-bootstrap:latest

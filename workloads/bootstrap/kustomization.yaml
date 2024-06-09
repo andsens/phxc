@@ -15,6 +15,9 @@ resources:
 - resourcegroup.yaml
 configMapGenerator:
 - files:
+  - config/boot-server.conf
+  name: nginx
+- files:
   - config/autoexec.ipxe
   - config/map-file
   name: tftp

@@ -3,6 +3,7 @@ Description=Lightweight Kubernetes
 Documentation=https://k3s.io
 Wants=network-online.target
 After=network-online.target
+Before=k3s@%i.target
 
 [Service]
 Type=notify

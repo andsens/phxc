@@ -61,6 +61,8 @@ spec:
     spec:
       nodeSelector:
         node-role.kubernetes.io/control-plane: "true"
+      securityContext:
+        fsGroup: 1000
       initContainers:
       - name: setup-kube-apiserver-client-ca-config
         image: cluster.local/step-ca-bootstrap:latest
