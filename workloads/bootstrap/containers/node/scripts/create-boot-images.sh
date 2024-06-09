@@ -38,7 +38,6 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
 
   WORKDIR=$(mktemp -d)
   mkdir "$WORKDIR/root"
-  local disk="$WORKDIR/disk.img"
 
   # shellcheck disable=SC2016
   trap_append 'rm -rf "$WORKDIR"' EXIT
@@ -58,9 +57,9 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
   mkdir -p "$pxedir"
 
   info "Extracting kernel image"
-  mv "$WORKDIR/root/boot/vmlinuz" "$pxedir/vmlinuz.tmp"
+  mv "$WORKDIR/root/boot/vmlinuz" "$WORKDIR/root.img"
   mv "$WORKDIR/root/boot/initrd.img" "$pxedir/initrd.img.tmp"
-  mv "$WORKDIR/root/boot/vmlinuz.unsigned.efi" "$pxedir/vmlinuz.unsigned.efi.tmp"
+  mv "$WORKDIR/root/boot/vmlinuz.unsigned.efi" "$WORKDIR/BOOTX64.EFI"
 
   info "Creating squashfs image"
   local noprogress=
@@ -111,7 +110,7 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
   ESP_UUID=c12a7328-f81f-11d2-ba4b-00a0c93ec93b
 
   info "Creating UEFI boot image"
-  guestfish -xN "$disk"=disk:${disk_size_kib}K -- <<EOF
+  guestfish -xN "$WORKDIR/disk.raw"=disk:${disk_size_kib}K -- <<EOF
 part-init /dev/sda gpt
 part-add /dev/sda primary $(( partition_offset_b / sector_size_b )) $(( (partition_offset_b + partition_size_b ) / sector_size_b - 1 ))
 part-set-bootable /dev/sda 1 true
@@ -122,18 +121,25 @@ mkfs vfat /dev/sda1
 mount /dev/sda1 /
 
 mkdir-p /EFI/BOOT
-copy-in "$pxedir/vmlinuz.unsigned.efi.tmp" /EFI/BOOT/
-mv /EFI/BOOT/vmlinuz.unsigned.efi.tmp /EFI/BOOT/BOOTX64.EFI
+copy-in "$WORKDIR/BOOTX64.EFI" /EFI/BOOT/
 
 mkdir-p /home-cluster
-copy-in "$pxedir/root.img.tmp" /home-cluster/
-mv /home-cluster/root.img.tmp /home-cluster/root.img
+copy-in "$WORKDIR/root.img" /home-cluster/
 copy-in "$WORKDIR/node-settings" /home-cluster/
 EOF
 
   ### Finish up by moving everything to the right place
 
-  mv "$disk" "$uefidir/$__arch.raw.tmp"
+  # We don't write directly to /images/snapshots because it can be NFS mounted
+  # I'm not sure if it's longhorn or the NFS settings, but something
+  # is causing write errors when reading and writing to it through
+  # libguestfs. So instead we read/write on the tmpdir and then
+  # move everything over to /images afterwards.
+
+  mv "$WORKDIR/disk.raw" "$uefidir/$__arch.raw.tmp"
+  mv "$WORKDIR/root.img" "$pxedir/root.img.tmp"
+  mv "$WORKDIR/BOOTX64.EFI" "$pxedir/vmlinuz.unsigned.efi.tmp"
+
   mv "$uefidir/$__arch.raw.tmp" "$uefidir/$__arch.raw"
   mv "$pxedir/root.img.tmp" "$pxedir/root.img"
   mv "$pxedir/vmlinuz.tmp" "$pxedir/vmlinuz"
