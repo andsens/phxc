@@ -9,4 +9,4 @@ metadata:
 spec:
   storageClassName: longhorn-rwx
   accessModes: [ReadWriteMany]
-  resources: {requests: {storage: 1Gi}}
+  resources: {requests: {storage: 10Gi}}
