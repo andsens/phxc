@@ -26,8 +26,8 @@ spec:
       hostNetwork: true
       containers:
       - name: tftpd
-        image: distribution.docker-registry.svc.cluster.local/tftpd:latest
-        imagePullPolicy: Always
+        image: cluster.local/tftpd:latest
+        imagePullPolicy: Never
         securityContext:
           readOnlyRootFilesystem: true
           capabilities:
