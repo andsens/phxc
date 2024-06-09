@@ -19,6 +19,7 @@
       "sha256": "0469f15f5b689cb29b30f2a3b233c61856eb209fc50c74ef141120bbf70697f1"
     },
     {
+      "bin": [],
       "tar": "https://github.com/orbit-online/path-tools/releases/download/v1.0.0/path-tools.tar.gz",
       "sha256": "2ae2a98714aa81e2142b749dac9ecdb61e050e66bf8bd33aef0fccb2ce66c84b"
     },
@@ -40,6 +41,18 @@
     {
       "file": "https://dl.k8s.io/release/v1.30.1/bin/linux/amd64/kubectl",
       "sha256": "5b86f0b06e1a5ba6f8f00e2b01e8ed39407729c4990aeda961f83a586f975e8a"
+    },
+    {
+      "tar": "https://github.com/cilium/cilium-cli/releases/download/v0.16.10/cilium-linux-amd64.tar.gz",
+      "sha256": "aeb9d7c56108283a9fb9b370ec36b33f28f3126f6c4e6b4176a15cc6b2d3fc70",
+      "name": "cilium",
+      "bin": ["cilium"]
+    },
+    {
+      "tar": "https://dl.smallstep.com/gh-release/cli/gh-release-header/v0.26.0/step_linux_0.26.0_amd64.tar.gz",
+      "sha256": "7cc571744ead098c08e42ad09e4fe6d6c157519c7b5124c4872cfe84245fbd1e",
+      "name": "step",
+      "bin": ["step_0.26.0/bin/step"]
     }
   ]
 }

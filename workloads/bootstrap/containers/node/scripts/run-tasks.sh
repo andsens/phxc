@@ -68,6 +68,7 @@ cp_tpl() {
   DOC="cp-tpl - Render a template and save it at the corresponding container path
 Usage:
   cp-tpl [options] TPLPATH
+  cp-tpl [--raw --chmod MODE] TPLPATH...
 
 Options:
   -d --destination PATH  Override the destination path
@@ -75,45 +76,52 @@ Options:
   --chmod MODE           chmod the destination
 "
 # docopt parser below, refresh this parser with `docopt.sh run-tasks.sh`
-# shellcheck disable=2016,2086,2317,1090,1091,2034
+# shellcheck disable=2016,2086,2317,1090,1091,2034,2154
 docopt() { local v='2.0.1'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
-%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:288};usage=${DOC:75:33}
-digest=d0b8e;options=('-d --destination 1' ' --raw 0' ' --chmod 1');node_0(){
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:329};usage=${DOC:75:74}
+digest=a65de;options=('-d --destination 1' ' --raw 0' ' --chmod 1');node_0(){
 value __destination 0;};node_1(){ switch __raw 1;};node_2(){ value __chmod 2;}
-node_3(){ value TPLPATH a;};node_4(){ optional 0 1 2;};node_5(){ sequence 4 3;}
-cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2;printf "%s\n" \
-"${DOC:75:33}" >&2;exit 1;}';local varnames=(__destination __raw __chmod \
-TPLPATH) varname;for varname in "${varnames[@]}"; do unset "var_$varname";done
-parse 5 "$@";local p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do
-unset "$p$varname";done;eval $p'__destination=${var___destination:-};'$p'__raw'\
-'=${var___raw:-false};'$p'__chmod=${var___chmod:-};'$p'TPLPATH=${var_TPLPATH:-'\
-'};';local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
+node_3(){ value TPLPATH a true;};node_4(){ sequence 5 3;};node_5(){ optional 0;}
+node_6(){ sequence 7 8;};node_7(){ optional 1 2;};node_8(){ repeatable 3;}
+node_9(){ choice 4 6;};cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" \
+"$1" >&2;printf "%s\n" "${DOC:75:74}" >&2;exit 1;}';local \
+varnames=(__destination __raw __chmod TPLPATH) varname;for varname in \
+"${varnames[@]}"; do unset "var_$varname";done;parse 9 "$@";local \
+p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset "$p$varname"
+done;if declare -p var_TPLPATH >/dev/null 2>&1; then eval $p'TPLPATH=("${var_T'\
+'PLPATH[@]}")';else eval $p'TPLPATH=()';fi;eval $p'__destination=${var___desti'\
+'nation:-};'$p'__raw=${var___raw:-false};'$p'__chmod=${var___chmod:-};';local \
+docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
 ((;docopt_i>0;docopt_i--)); do for varname in "${varnames[@]}"; do declare -p \
 "$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' run-tasks.sh`
   eval "$(docopt "$@")"
 
-  TPLPATH=${TPLPATH#'/'}
-  local dest="${__destination:-"/$TPLPATH"}"
-  mkdir -p "$(dirname "$dest")"
-  # shellcheck disable=SC2154
-  if $__raw; then
-    if [[ -n $__destination ]]; then
-      info "Copying template %s to %s" "$TPLPATH" "$dest"
+  local tplpath
+  # shellcheck disable=SC2153
+  for tplpath in "${TPLPATH[@]}"; do
+    tplpath=${tplpath#'/'}
+    local dest="${__destination:-"/$tplpath"}"
+    mkdir -p "$(dirname "$dest")"
+    # shellcheck disable=SC2154
+    if $__raw; then
+      if [[ -n $__destination ]]; then
+        info "Copying template %s to %s" "$tplpath" "$dest"
+      else
+        info "Copying template %s" "$tplpath"
+      fi
+      cp "$PKGROOT/workloads/bootstrap/containers/node/assets/$tplpath" "$dest"
     else
-      info "Copying template %s" "$TPLPATH"
+      if [[ -n $__destination ]]; then
+        info "Rendering template %s to %s" "$tplpath" "$dest"
+      else
+        info "Rendering template %s" "$tplpath"
+      fi
+      envsubst <"$PKGROOT/workloads/bootstrap/containers/node/assets/$tplpath" >"$dest"
     fi
-    cp "$PKGROOT/workloads/bootstrap/containers/node/assets/$TPLPATH" "$dest"
-  else
-    if [[ -n $__destination ]]; then
-      info "Rendering template %s to %s" "$TPLPATH" "$dest"
-    else
-      info "Rendering template %s" "$TPLPATH"
-    fi
-    envsubst <"$PKGROOT/workloads/bootstrap/containers/node/assets/$TPLPATH" >"$dest"
-  fi
-  [[ -z $__chmod ]] || chmod "$__chmod" "$dest"
+    [[ -z $__chmod ]] || chmod "$__chmod" "$dest"
+  done
 }
 
 main "$@"

@@ -33,7 +33,7 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 
   local k3s_type=agent label label_config="node-label: []"
   for label in $(jq -r '(.["node-label"] // [])[]' /run/initramfs/node-settings.json); do
-    [[ $label != 'node-role.cluster.local/control-plane' ]] || k3s_type=server
+    [[ $label != 'node-role.cluster.local/control-plane=true' ]] || k3s_type=server
     # shellcheck disable=SC2016
     label_config=$(yq -y --arg l "$label" '.["node-label"]+=[$l]' <<<"$label_config")
   done

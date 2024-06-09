@@ -6,6 +6,9 @@ PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../..")
 main() {
   # shellcheck disable=SC1091
   source "$PKGROOT/.upkg/records.sh/records.sh"
+  # shellcheck disable=SC1091
+  source "$PKGROOT/.upkg/path-tools/path-tools.sh"
+  PATH=$(path_prepend "$PKGROOT/.upkg/.bin")
   # shellcheck source=workloads/settings/lib/settings-env.shellcheck.sh
   source "$PKGROOT/workloads/settings/lib/settings-env.sh"
   eval_settings
@@ -38,7 +41,7 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 
   if ! kubectl get -n kube-system deployment cilium-operator -o name &>/dev/null; then
     info "Cilium is not installed, installing now"
-    /usr/local/bin/cilium install --version=1.15.5 \
+    cilium install --version=1.15.5 \
       --set ipam.mode=cluster-pool \
       --set ipam.operator.clusterPoolIPv4PodCIDRList="$CLUSTER_CIDRS_PODIPV4" \
       --set ipam.operator.clusterPoolIPv6PodCIDRList="$CLUSTER_CIDRS_PODIPV6" \
