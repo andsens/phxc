@@ -61,7 +61,9 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
   mv "$WORKDIR/root/boot/vmlinuz.unsigned.efi" "$pxedir/vmlinuz.unsigned.efi.tmp"
 
   info "Creating squashfs image"
-  mksquashfs "$WORKDIR/root" "$pxedir/root.img.tmp" -noappend -quiet
+  local noprogress=
+  [[ -t 1 ]] || noprogress=-no-progress
+  mksquashfs "$WORKDIR/root" "$pxedir/root.img.tmp" -noappend -quiet $noprogress
 
   ### UEFI Boot ###
 
