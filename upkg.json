@@ -31,7 +31,9 @@
       "tar": "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.4.2/kustomize_v5.4.2_linux_amd64.tar.gz",
       "sha256": "881c6e9007c7ea2b9ecc214d13f4cdd1f837635dcf4db49ce4479898f7d911a3",
       "name": "kustomize",
-      "bin": ["kustomize"]
+      "bin": [
+        "kustomize"
+      ]
     },
     {
       "file": "https://github.com/GoogleContainerTools/kpt/releases/download/v1.0.0-beta.44/kpt_linux_amd64",
@@ -46,13 +48,21 @@
       "tar": "https://github.com/cilium/cilium-cli/releases/download/v0.16.10/cilium-linux-amd64.tar.gz",
       "sha256": "aeb9d7c56108283a9fb9b370ec36b33f28f3126f6c4e6b4176a15cc6b2d3fc70",
       "name": "cilium",
-      "bin": ["cilium"]
+      "bin": [
+        "cilium"
+      ]
     },
     {
       "tar": "https://dl.smallstep.com/gh-release/cli/gh-release-header/v0.26.0/step_linux_0.26.0_amd64.tar.gz",
       "sha256": "7cc571744ead098c08e42ad09e4fe6d6c157519c7b5124c4872cfe84245fbd1e",
       "name": "step",
-      "bin": ["step_0.26.0/bin/step"]
+      "bin": [
+        "step_0.26.0/bin/step"
+      ]
+    },
+    {
+      "tar": "https://github.com/orbit-online/bgpid/releases/download/v1.0.0/bgpid.tar.gz",
+      "sha256": "bac9fbcf574fc69f28eea803cf95ca1c67b607410a45ba4646afc2581b674d2e"
     }
   ]
 }

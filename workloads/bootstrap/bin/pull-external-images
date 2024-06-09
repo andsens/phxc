@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# shellcheck source-path=../../..
+set -Eeo pipefail; shopt -s inherit_errexit
+PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../..")
+
+main() {
+  # shellcheck disable=SC1091
+  source "$PKGROOT/.upkg/records.sh/records.sh"
+  # shellcheck disable=SC1091
+  source "$PKGROOT/.upkg/bgpid/bgpid.sh"
+
+  DOC="pull-external-images - Analyzes all manifests and pulls their external images
+Usage:
+  pull-external-images
+"
+# docopt parser below, refresh this parser with `docopt.sh pull-external-images`
+# shellcheck disable=2016,2086,2317,1090,1091,2034
+docopt() { local v='2.0.1'; source \
+"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:107};usage=${DOC:78:29}
+digest=a5fb5;options=();node_0(){ return 0;};cat <<<' docopt_exit() { [[ -n $1 \
+]] && printf "%s\n" "$1" >&2;printf "%s\n" "${DOC:78:29}" >&2;exit 1;}';local \
+varnames=() varname;for varname in "${varnames[@]}"; do unset "var_$varname"
+done;parse 0 "$@";return 0;local p=${DOCOPT_PREFIX:-''};for varname in \
+"${varnames[@]}"; do unset "$p$varname";done;eval ;local docopt_i=1;[[ \
+$BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for \
+varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
+# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' pull-external-images`
+  eval "$(docopt "$@")"
+
+  local image images
+  # shellcheck disable=SC2016
+  readarray -d $'\n' -t images < <(
+    (
+      "$PKGROOT/bin/manifest" build all | \
+        yq -r '. as $root | paths | select(. | join(".") | endswith(".image")) as $image |
+        $root | getpath($image) | select(type == "string" and (startswith("cluster.local/") | not))'
+      find workloads -name Dockerfile -exec grep FROM \{\} \; | cut -d ' ' -f 2
+    ) | sort -u
+  )
+  # shellcheck disable=SC2154
+  for image in "${images[@]}"; do
+    info "Pulling %s" "$image"
+    bg_run ctr -n k8s.io image pull --snapshotter stargz "$image"
+  done
+  bg_wait
+}
+
+main "$@"

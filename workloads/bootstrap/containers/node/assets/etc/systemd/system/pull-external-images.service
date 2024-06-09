@@ -1,0 +1,10 @@
+[Unit]
+Description=Pull external images to containerd
+Before=apply-all-manifests.service
+
+[Install]
+WantedBy=k3s@server.target k3s@agent.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/upkg/.upkg/home-cluster/workloads/bootstrap/bin/pull-external-images
