@@ -9,7 +9,6 @@ resources:
 - images.yaml
 - tftpd.yaml
 - boot-server.yaml
-- networkpolicies.yaml
 - namespace.yaml
 - Kptfile
 - resourcegroup.yaml
