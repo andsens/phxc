@@ -30,8 +30,10 @@ spec:
         volumeMounts:
         - name: context
           mountPath: /workspace/context
+        - name: common-context
+          mountPath: /workspace/common-context
         - name: bundle
-          mountPath: /workspace/context/home-cluster.tar.gz
+          mountPath: /workspace/home-cluster.tar.gz
           subPath: home-cluster.tar.gz
         - name: images
           mountPath: /images/snapshots
@@ -72,6 +74,10 @@ spec:
       - name: assets
         configMap:
           name: create-boot-images-assets
+      - name: common-context
+        configMap:
+          name: common-context
+          defaultMode: 0755
       - name: node-settings
         configMap:
           name: node-settings
