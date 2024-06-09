@@ -38,6 +38,8 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
 
   WORKDIR=$(mktemp -d)
   mkdir "$WORKDIR/root"
+  local disk="$WORKDIR/disk.img"
+
   # shellcheck disable=SC2016
   trap_append 'rm -rf "$WORKDIR"' EXIT
 
@@ -107,10 +109,9 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
   # Fixed, so we can find it when we need to mount the EFI partition during init
   DISK_UUID=caf66bff-edab-4fb1-8ad9-e570be5415d7
   ESP_UUID=c12a7328-f81f-11d2-ba4b-00a0c93ec93b
-  rm -f "$uefidir/$__arch.raw.tmp"
 
   info "Creating UEFI boot image"
-  guestfish -N "$uefidir/$__arch.raw.tmp"=disk:${disk_size_kib}K -- <<EOF
+  guestfish -xN "$disk"=disk:${disk_size_kib}K -- <<EOF
 part-init /dev/sda gpt
 part-add /dev/sda primary $(( partition_offset_b / sector_size_b )) $(( (partition_offset_b + partition_size_b ) / sector_size_b - 1 ))
 part-set-bootable /dev/sda 1 true
@@ -132,6 +133,7 @@ EOF
 
   ### Finish up by moving everything to the right place
 
+  mv "$disk" "$uefidir/$__arch.raw.tmp"
   mv "$uefidir/$__arch.raw.tmp" "$uefidir/$__arch.raw"
   mv "$pxedir/root.img.tmp" "$pxedir/root.img"
   mv "$pxedir/vmlinuz.tmp" "$pxedir/vmlinuz"
