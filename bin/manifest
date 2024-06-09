@@ -94,7 +94,8 @@ do declare -p "$p$varname";done;done;}
     manifest_data=$(kustomize build --enable-alpha-plugins --enable-exec "$PKGROOT/workloads/$manifest_name")
     # shellcheck disable=2154
     if $apply; then
-      kpt live apply - "${kptargs[@]}" <<<"$manifest_data"
+      # High request timeout, some manifests depend on images being built
+      kpt live apply --request-timeout 30m - "${kptargs[@]}" <<<"$manifest_data"
     elif $delete; then
       kpt live destroy - "${kptargs[@]}" <<<"$manifest_data"
     elif $build; then
