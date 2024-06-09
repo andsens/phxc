@@ -6,7 +6,7 @@ CONFIG=/tftp/config/autoexec.ipxe
 
 main() {
   # shellcheck disable=SC1091
-  source "$PKGROOT/.upkg/records.sh/records.sh"
+  source "/usr/local/lib/upkg/.upkg/records.sh/records.sh"
 
   # shellcheck disable=SC2016
   envsubst '${CLUSTER_BOOTSERVER_FIXEDIPV4}' <$CONFIG_TPL >$CONFIG
