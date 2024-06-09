@@ -1,0 +1,7 @@
+apiVersion: kpt.dev/v1alpha1
+kind: ResourceGroup
+metadata:
+  name: snapshots
+  namespace: kube-system
+  labels:
+    cli-utils.sigs.k8s.io/inventory-id: 50e437980dadd04f08a2f0734edcce10de3e1d77-1717913535224573869

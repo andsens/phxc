@@ -65,17 +65,16 @@ do declare -p "$p$varname";done;done;}
     MANIFEST=(
       cilium
       networkpolicies
-      csi-driver-nfs
-      etcd
       coredns
+      snapshots
+      longhorn
+      etcd
       external-dns
       cert-manager
       cert-manager-issuers
       kubernetes-secret-generator
-      longhorn
       smallstep
       bootstrap
-      pxe
       traefik
     )
     if $delete; then
