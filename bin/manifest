@@ -10,7 +10,7 @@ main() {
   source "$PKGROOT/.upkg/path-tools/path-tools.sh"
   PATH=$(path_prepend "$PKGROOT/.upkg/.bin")
 
-  DOC="apply-manifest - Manage manifests
+  DOC="manifest - Manage manifests
 Usage:
   manifest apply (all|MANIFEST...) [-- kptargs...]
   manifest build (all|MANIFEST...)
@@ -24,8 +24,8 @@ Note:
 # shellcheck disable=2016,2086,2317,1090,1091,2034,2154
 docopt() { local v='2.0.1'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
-%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:261};usage=${DOC:34:158}
-digest=5fd28;options=();node_0(){ value MANIFEST a true;};node_1(){ switch \
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:255};usage=${DOC:28:158}
+digest=e7c1b;options=();node_0(){ value MANIFEST a true;};node_1(){ switch \
 apply a:apply;};node_2(){ switch all a:all;};node_3(){ switch kptargs \
 a:kptargs true;};node_4(){ switch build a:build;};node_5(){ switch delete \
 a:delete;};node_6(){ switch latest_applied_all a:latest-applied-all;};node_7(){
@@ -33,7 +33,7 @@ switch __ a:--;};node_8(){ sequence 1 9 11;};node_9(){ choice 2 10;};node_10(){
 repeatable 0;};node_11(){ optional 7 12;};node_12(){ repeatable 3;};node_13(){
 sequence 4 9;};node_14(){ sequence 5 9;};node_15(){ choice 8 13 14 6;};cat \
 <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2;printf "%s\n" \
-"${DOC:34:158}" >&2;exit 1;}';local varnames=(MANIFEST apply all kptargs build \
+"${DOC:28:158}" >&2;exit 1;}';local varnames=(MANIFEST apply all kptargs build \
 delete latest_applied_all __) varname;for varname in "${varnames[@]}"; do
 unset "var_$varname";done;parse 15 "$@";local p=${DOCOPT_PREFIX:-''};for \
 varname in "${varnames[@]}"; do unset "$p$varname";done;if declare -p \
