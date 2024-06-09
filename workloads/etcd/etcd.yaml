@@ -101,4 +101,4 @@ spec:
     spec:
       storageClassName: longhorn
       accessModes: [ReadWriteOnce]
-      resources: {requests: {storage: 100Mi}}
+      resources: {requests: {storage: 500Mi}}
