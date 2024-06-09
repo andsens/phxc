@@ -108,8 +108,6 @@ spec:
         cluster.local/allow-internet-egress: "true"
         cluster.local/allow-apiserver-egress: "true"
     spec:
-      nodeSelector:
-        node-role.kubernetes.io/control-plane: "true"
       restartPolicy: Never
       serviceAccountName: bootstrap
       containers:
@@ -172,15 +170,3 @@ spec:
       - name: persistent-certs
         persistentVolumeClaim:
           claimName: step-ca-certs
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: step-ca-certs
-  labels:
-    app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: bootstrap
-spec:
-  storageClassName: longhorn
-  accessModes: [ReadWriteOnce]
-  resources: {requests: {storage: 1Mi}}

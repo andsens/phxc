@@ -182,6 +182,18 @@ spec:
         app.kubernetes.io/name: smallstep
         app.kubernetes.io/component: certificates
     spec:
-      storageClassName: workloads
+      storageClassName: longhorn
       accessModes: [ReadWriteOnce]
       resources: {requests: {storage: 1Mi}}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: step-ca-certs
+  labels:
+    app.kubernetes.io/name: smallstep
+    app.kubernetes.io/component: bootstrap
+spec:
+  storageClassName: longhorn-rwx
+  accessModes: [ReadWriteMany]
+  resources: {requests: {storage: 1Mi}}

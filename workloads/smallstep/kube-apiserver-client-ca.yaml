@@ -109,6 +109,8 @@ spec:
         - name: certs
           mountPath: /home/step/certs
           readOnly: true
+        - name: templates
+          mountPath: /home/step/templates
         - name: config-rw
           mountPath: /home/step/config
         - name: database
@@ -122,6 +124,9 @@ spec:
       - name: config
         configMap:
           name: config
+      - name: templates
+        configMap:
+          name: templates
       - name: certs
         emptyDir:
           medium: Memory
@@ -142,6 +147,6 @@ spec:
         app.kubernetes.io/name: smallstep
         app.kubernetes.io/component: kube-apiserver-client-ca
     spec:
-      storageClassName: workloads
+      storageClassName: longhorn
       accessModes: [ReadWriteOnce]
       resources: {requests: {storage: 1Mi}}

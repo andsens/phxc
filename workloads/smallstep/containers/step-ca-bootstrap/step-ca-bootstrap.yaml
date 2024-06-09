@@ -35,7 +35,7 @@ spec:
       containers:
       - name: move-image
         image: busybox
-        command: [sh, -c, mv /images/step-ca-bootstrap.tar.tmp /images/step-ca-bootstrap.tar]
+        args: [mv, /images/step-ca-bootstrap.tar.tmp, /images/step-ca-bootstrap.tar]
         volumeMounts:
         - name: images
           mountPath: /images

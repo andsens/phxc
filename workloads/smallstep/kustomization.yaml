@@ -26,6 +26,9 @@ configMapGenerator:
   - config/kube-apiserver-client-ca.json
   - config/templates/kube-apiserver-client-cert.tpl
   name: config
+- files:
+  - config/templates/kube-apiserver-client-cert.tpl
+  name: templates
 replacements:
 - source: {fieldPath: data.cluster.smallstep.fixedIPv4, kind: ConfigMap, name: settings}
   targets:
