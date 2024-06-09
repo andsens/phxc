@@ -46,3 +46,23 @@ spec:
         values: [csi-attacher, csi-provisioner, csi-resizer, csi-snapshotter]
   - toEntities:
     - kube-apiserver
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: longhorn-ui
+  namespace: longhorn-system
+spec:
+  endpointSelector:
+    matchLabels:
+      app: longhorn-ui
+  ingress:
+  - toPorts:
+    - ports:
+      - port: "8000"
+        protocol: TCP
+    fromEndpoints:
+    - matchLabels:
+        "k8s:io.kubernetes.pod.namespace": traefik
+        app.kubernetes.io/name: traefik
+        app.kubernetes.io/component: traefik

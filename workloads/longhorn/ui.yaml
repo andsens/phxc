@@ -1,0 +1,25 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: longhorn
+  namespace: longhorn-system
+  annotations:
+    cert-manager.io/issuer: cluster.acmeProvider.issuer
+    cert-manager.io/issuer-kind: cluster.acmeProvider.kind
+    cert-manager.io/issuer-group: cluster.acmeProvider.group
+spec:
+  tls:
+  - hosts: [longhorn.DOMAIN]
+    secretName: longhorn-tls
+  rules:
+  - host: longhorn.DOMAIN
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: longhorn-frontend
+            port:
+              name: http

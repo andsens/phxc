@@ -170,17 +170,13 @@ spec:
           successThreshold: 1
           timeoutSeconds: 2
         volumeMounts:
-        - name: home-cluster
-          mountPath: /etc/traefik/traefik.yaml
-          subPath: workloads/traefik/config/traefik.yaml
-        - name: home-cluster
-          mountPath: /etc/traefik/file-provider.yaml
-          subPath: workloads/traefik/config/file-provider.yaml
-        - mountPath: /tmp
-          name: tmp
+        - name: config
+          mountPath: /etc/traefik
+        - name: tmp
+          mountPath: /tmp
       volumes:
-      - name: home-cluster
-        persistentVolumeClaim:
-          claimName: home-cluster
+      - name: config
+        configMap:
+          name: traefik
       - name: tmp
         emptyDir: {}

@@ -30,22 +30,11 @@ spec:
           app.kubernetes.io/name: traefik
           app.kubernetes.io/component: traefik
   - ports:
-    - port: 5000
+    - port: 8000
     to:
     - namespaceSelector:
         matchLabels:
-          kubernetes.io/metadata.name: docker-registry
+          kubernetes.io/metadata.name: longhorn-system
       podSelector:
         matchLabels:
-          app.kubernetes.io/name: docker-registry
-          app.kubernetes.io/component: distribution
-  - ports:
-    - port: 5001
-    to:
-    - namespaceSelector:
-        matchLabels:
-          kubernetes.io/metadata.name: docker-registry
-      podSelector:
-        matchLabels:
-          app.kubernetes.io/name: docker-registry
-          app.kubernetes.io/component: auth
+          app: longhorn-ui

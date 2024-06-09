@@ -10,6 +10,11 @@ resources:
 - dashboard-ingress.yaml
 - Kptfile
 - resourcegroup.yaml
+configMapGenerator:
+- files:
+  - config/file-provider.yaml
+  - config/traefik.yaml
+  name: traefik
 replacements:
 - source: {fieldPath: data.cluster.domain, kind: ConfigMap, name: settings}
   targets:
