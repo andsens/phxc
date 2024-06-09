@@ -42,7 +42,7 @@ spec:
       - name: create-boot-images
         image: cluster.local/create-boot-images:latest
         imagePullPolicy: Never
-        args: ["$(ARCH)"]
+        args: [-a, $(ARCH)]
         env:
         - name: ARCH
           value: amd64
