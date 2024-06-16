@@ -9,7 +9,3 @@ reclaimPolicy: Delete
 volumeBindingMode: Immediate
 parameters:
   numberOfReplicas: "1"
-  staleReplicaTimeout: "2880"
-  fromBackup: ""
-  fsType: ext4
-  nfsOptions: noresvport,hard

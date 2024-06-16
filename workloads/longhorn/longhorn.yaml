@@ -42,11 +42,6 @@ data:
     volumeBindingMode: Immediate
     parameters:
       numberOfReplicas: "1"
-      staleReplicaTimeout: "30"
-      fromBackup: ""
-      fsType: "ext4"
-      dataLocality: "disabled"
-      unmapMarkSnapChainRemoved: "ignored"
 kind: ConfigMap
 metadata:
   labels:
