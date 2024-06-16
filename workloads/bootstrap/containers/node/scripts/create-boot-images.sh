@@ -34,7 +34,12 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
   local \
     tar=/images/snapshots/$__arch.tar \
     pxedir=/images/pxe/$__arch \
-    uefidir=/images/uefi
+    uefidir=/images/uefi \
+    efiname
+
+  case $__arch in
+    amd64) efiname=BOOTX64.EFI ;;
+  esac
 
   WORKDIR=$(mktemp -d)
   mkdir "$WORKDIR/root"
@@ -56,15 +61,15 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
 
   mkdir -p "$pxedir"
 
-  info "Extracting kernel image"
-  mv "$WORKDIR/root/boot/vmlinuz" "$WORKDIR/root.img"
-  mv "$WORKDIR/root/boot/initrd.img" "$pxedir/initrd.img.tmp"
-  mv "$WORKDIR/root/boot/vmlinuz.unsigned.efi" "$WORKDIR/BOOTX64.EFI"
+  info "Extracting unified kernel image"
+  rm "$WORKDIR/root/boot/vmlinuz"
+  rm "$WORKDIR/root/boot/initrd.img"
+  mv "$WORKDIR/root/boot/vmlinuz.unsigned.efi" "$WORKDIR/$efiname"
 
   info "Creating squashfs image"
   local noprogress=
   [[ -t 1 ]] || noprogress=-no-progress
-  mksquashfs "$WORKDIR/root" "$pxedir/root.img.tmp" -noappend -quiet $noprogress
+  mksquashfs "$WORKDIR/root" "$WORKDIR/root.img" -noappend -quiet $noprogress
 
   ### UEFI Boot ###
 
@@ -91,8 +96,8 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
       fs_table_size_b +
       config_size_b +
       node_settings_size_b +
-      $(stat -c %s "$pxedir/vmlinuz.unsigned.efi.tmp") +
-      $(stat -c %s "$pxedir/root.img.tmp") +
+      $(stat -c %s "$WORKDIR/$efiname") +
+      $(stat -c %s "$WORKDIR/root.img") +
       (sector_size_b - 1)
     ) / sector_size_b * sector_size_b
   ))
@@ -121,7 +126,7 @@ mkfs vfat /dev/sda1
 mount /dev/sda1 /
 
 mkdir-p /EFI/BOOT
-copy-in "$WORKDIR/BOOTX64.EFI" /EFI/BOOT/
+copy-in "$WORKDIR/$efiname" /EFI/BOOT/
 
 mkdir-p /home-cluster
 copy-in "$WORKDIR/root.img" /home-cluster/
@@ -136,15 +141,15 @@ EOF
   # libguestfs. So instead we read/write on the tmpdir and then
   # move everything over to /images afterwards.
 
+  info "Moving UEFI disk, squashfs root, and unified kernel image EFI to shared volume"
+
   mv "$WORKDIR/disk.raw" "$uefidir/$__arch.raw.tmp"
   mv "$WORKDIR/root.img" "$pxedir/root.img.tmp"
-  mv "$WORKDIR/BOOTX64.EFI" "$pxedir/vmlinuz.unsigned.efi.tmp"
+  mv "$WORKDIR/BOOTX64.EFI" "$pxedir/vmlinuz.efi.tmp"
 
   mv "$uefidir/$__arch.raw.tmp" "$uefidir/$__arch.raw"
   mv "$pxedir/root.img.tmp" "$pxedir/root.img"
-  mv "$pxedir/vmlinuz.tmp" "$pxedir/vmlinuz"
-  mv "$pxedir/initrd.img.tmp" "$pxedir/initrd.img"
-  mv "$pxedir/vmlinuz.unsigned.efi.tmp" "$pxedir/vmlinuz.unsigned.efi"
+  mv "$pxedir/vmlinuz.efi.tmp" "$pxedir/vmlinuz.efi"
 }
 
 

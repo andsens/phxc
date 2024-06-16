@@ -3,7 +3,7 @@
 # We don't have any prerequirements
 PREREQS=""
 case $1 in
-	prereqs) echo "${PREREQS}"; exit 0;;
+  prereqs) echo "${PREREQS}"; exit 0;;
 esac
 
 # shellcheck disable=SC1091
@@ -15,4 +15,3 @@ copy_exec /usr/bin/jq /bin
 copy_exec /usr/bin/basename /bin
 copy_exec /usr/bin/readlink /bin
 copy_exec /usr/bin/cp /bin
-copy_exec /usr/bin/mount /bin

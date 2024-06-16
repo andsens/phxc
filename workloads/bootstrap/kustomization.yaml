@@ -3,6 +3,7 @@ kind: Kustomization
 namespace: bootstrap
 resources:
 - ../settings/replacements
+- ../common-context
 - containers/create-boot-images
 - containers/node
 - containers/tftpd
@@ -17,12 +18,8 @@ configMapGenerator:
   - config/boot-server.conf
   name: nginx
 - files:
-  - config/autoexec.ipxe
   - config/map-file
   name: tftp
-- files:
-  - scripts/tftpd.sh
-  name: tftp-scripts
 replacements:
 - source: {fieldPath: data.cluster.bootServer.fixedIPv4, kind: ConfigMap, name: settings}
   targets:

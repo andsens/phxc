@@ -82,7 +82,6 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
   mkdir -p "$PKGROOT/images/pxe" "$PKGROOT/images/uefi"
   docker run --rm -ti \
     -v "$node_settings:/node-settings:ro" \
-    -v "$PKGROOT/workloads/bootstrap/containers/create-boot-images/create-boot-images.sh:/usr/local/bin/create-boot-images.sh:ro" \
     -v "$PKGROOT/workloads/bootstrap/containers/node/create-boot-images-assets:/assets:ro" \
     -v "$PKGROOT/workloads/bootstrap/containers/node/scripts:/scripts:ro" \
     -v "$PKGROOT/images/snapshots:/images/snapshots:ro" \

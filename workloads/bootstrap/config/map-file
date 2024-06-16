@@ -1,2 +1,5 @@
-re ^autoexec.ipxe$ /config/autoexec.ipxe
-re ^ipxe.efi$ /tftp/pxe/vmlinuz.unsigned.efi
+re ^x86.efi$ /pxe/x86/vmlinuz.efi last;
+re ^x64.efi$ /pxe/amd64/vmlinuz.efi last;
+re ^x86_64.efi$ /pxe/amd64/vmlinuz.efi last;
+re ^arm32.efi$ /pxe/arm/vmlinuz.efi last;
+re ^arm64.efi$ /pxe/arm64/vmlinuz.efi last;

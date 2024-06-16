@@ -42,8 +42,6 @@ spec:
           containerPort: 69
           hostPort: 69
         volumeMounts:
-        - name: scripts
-          mountPath: /scripts
         - name: config-ro
           mountPath: /config
         - name: config-rw
@@ -53,10 +51,6 @@ spec:
           subPath: pxe
           readOnly: true
       volumes:
-      - name: scripts
-        configMap:
-          name: tftp-scripts
-          defaultMode: 0755
       - name: config-ro
         configMap:
           name: tftp
