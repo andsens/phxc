@@ -64,7 +64,7 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
   info "Extracting unified kernel image"
   rm "$WORKDIR/root/boot/vmlinuz"
   rm "$WORKDIR/root/boot/initrd.img"
-  mv "$WORKDIR/root/boot/vmlinuz.unsigned.efi" "$WORKDIR/$efiname"
+  mv "$WORKDIR/root/boot/vmlinuz.efi" "$WORKDIR/$efiname"
 
   info "Creating squashfs image"
   local noprogress=

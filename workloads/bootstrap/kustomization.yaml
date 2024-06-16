@@ -8,6 +8,7 @@ resources:
 - containers/node
 - containers/tftpd
 - images.yaml
+- secureboot.yaml
 - tftpd.yaml
 - boot-server.yaml
 - namespace.yaml

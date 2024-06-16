@@ -21,4 +21,3 @@ service-cidr:
 - ${CLUSTER_CIDRS_SVCIPV6}
 tls-san:
 - api.${CLUSTER_DOMAIN}
-

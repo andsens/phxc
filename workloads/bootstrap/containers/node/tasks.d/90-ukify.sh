@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-PACKAGES+=(python3-pefile)
+PACKAGES+=(python3-pefile sbsigntool)
 
 ukify() {
   update-initramfs -u -k all
@@ -16,5 +16,8 @@ ukify() {
     --linux=/boot/vmlinuz \
     --initrd=/boot/initrd.img \
     --cmdline="root=/run/initramfs/root.img bootserver=${CLUSTER_BOOTSERVER_FIXEDIPV4} noresume" \
-    --output=/boot/vmlinuz.unsigned.efi
+    --signtool=sbsign \
+    --secureboot-private-key=/workspace/secureboot/tls.key \
+    --secureboot-certificate=/workspace/secureboot/tls.crt \
+    --output=/boot/vmlinuz.efi
 }
