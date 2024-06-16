@@ -9,7 +9,7 @@ resources:
 configMapGenerator:
 - files:
   - Corefile
-  name: config
+  name: coredns
 replacements:
 - source: {fieldPath: data.cluster.coredns.svc.fixedIPv4, kind: ConfigMap, name: settings}
   targets:
