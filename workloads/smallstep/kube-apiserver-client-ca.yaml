@@ -25,7 +25,7 @@ metadata:
     app.kubernetes.io/name: smallstep
     app.kubernetes.io/component: kube-apiserver-client-ca
   annotations:
-    io.cilium/lb-ipam-ips: "cluster.kubeAPIServerCA.fixedIPv4,cluster.kubeAPIServerCA.fixedIPv6"
+    io.cilium/lb-ipam-ips: "cluster.kubeAPIServerClientCA.fixedIPv4,cluster.kubeAPIServerClientCA.fixedIPv6"
     external-dns.alpha.kubernetes.io/hostname: pki-kube.DOMAIN.
 spec:
   type: LoadBalancer
@@ -70,6 +70,15 @@ spec:
         command: [/home/step/scripts/setup-kube-apiserver-client-ca-config.sh]
         securityContext:
           readOnlyRootFilesystem: true
+        env:
+        - name: CLUSTER_KUBEAPISERVERCLIENTCA_FIXEDIPV4
+          value: cluster.kubeAPIServerClientCA.fixedIPv4
+        - name: CLUSTER_KUBEAPISERVERCLIENTCA_FIXEDIPV6
+          value: cluster.kubeAPIServerClientCA.fixedIPv6
+        - name: CLUSTER_DOMAIN
+          value: cluster.domain
+        - name: CLUSTER_ADMINPUBKEY
+          value: cluster.adminPubkey
         volumeMounts:
         - name: scripts
           mountPath: /home/step/scripts
@@ -87,7 +96,7 @@ spec:
           mountPath: /home/step/config
       containers:
       - name: step-certificates
-        image: cr.step.sm/smallstep/step-ca:0.26.1
+        image: cr.step.sm/smallstep/step-ca:0.26.2
         command: [/usr/local/bin/step-ca]
         args: [/home/step/config/ca.json]
         securityContext:

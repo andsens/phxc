@@ -15,7 +15,6 @@ main() {
   create_step_issuer_provisioner
   create_ssh_host_provisioner
   create_kube_apiserver_client_ca_secret
-  "$STEPPATH/scripts/create-kube-config.sh" system:admin system:masters
 }
 
 create_ca_certificates() {
@@ -66,7 +65,6 @@ create_ca_secrets() {
   fi
 }
 
-
 create_step_issuer_provisioner() {
   info "Setting up step issuer provisioner"
   local step_issuer_dir=$STEPPATH/certs/step-issuer-provisioner
@@ -111,7 +109,6 @@ spec:
     info "StepClusterIssuer validation succeeded"
   fi
 }
-
 
 create_ssh_host_provisioner() {
   info "Setting up SSH host provisioner"

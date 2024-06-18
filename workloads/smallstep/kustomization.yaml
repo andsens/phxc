@@ -9,7 +9,6 @@ resources:
 - https://raw.githubusercontent.com/smallstep/helm-charts/v0.22.0/step-issuer/crds/certmanager.step.sm_stepissuers.yaml
 - bootstrap.yaml
 - certificates.yaml
-- refresh-kube-config.yaml
 - kube-apiserver-client-ca.yaml
 - issuer.yaml
 - namespace.yaml
@@ -18,17 +17,16 @@ resources:
 configMapGenerator:
 - files:
   - scripts/bootstrap.sh
-  - scripts/create-kube-config.sh
   - scripts/setup-kube-apiserver-client-ca-config.sh
   - scripts/setup-step-ca-config.sh
   name: scripts
 - files:
   - config/ca.json
   - config/kube-apiserver-client-ca.json
-  - config/templates/kube-apiserver-client-cert.tpl
   name: config
 - files:
-  - config/templates/kube-apiserver-client-cert.tpl
+  - config/templates/admin.tpl
+  - config/templates/kube-apiserver-client-cert-renewal.tpl
   name: templates
 replacements:
 - source: {fieldPath: data.cluster.smallstep.fixedIPv4, kind: ConfigMap, name: settings}
@@ -36,21 +34,29 @@ replacements:
   - select: {kind: Service, name: step-ca-external}
     fieldPaths: [metadata.annotations.io\.cilium/lb-ipam-ips]
     options: {delimiter: ',', index: 0}
+  - select: {group: apps, kind: StatefulSet, name: step-ca}
+    fieldPaths: ["spec.template.spec.initContainers.[name=setup-step-ca-config].env.[name=CLUSTER_SMALLSTEP_FIXEDIPV4].value"]
 - source: {fieldPath: data.cluster.smallstep.fixedIPv6, kind: ConfigMap, name: settings}
   targets:
   - select: {kind: Service, name: step-ca-external}
     fieldPaths: [metadata.annotations.io\.cilium/lb-ipam-ips]
     options: {delimiter: ',', index: 1}
+  - select: {group: apps, kind: StatefulSet, name: step-ca}
+    fieldPaths: ["spec.template.spec.initContainers.[name=setup-step-ca-config].env.[name=CLUSTER_SMALLSTEP_FIXEDIPV6].value"]
 - source: {fieldPath: data.cluster.kubeAPIServerClientCA.fixedIPv4, kind: ConfigMap, name: settings}
   targets:
   - select: {kind: Service, name: kube-apiserver-client-ca-external}
     fieldPaths: [metadata.annotations.io\.cilium/lb-ipam-ips]
     options: {delimiter: ',', index: 0}
+  - select: {group: apps, kind: StatefulSet, name: kube-apiserver-client-ca}
+    fieldPaths: ["spec.template.spec.initContainers.[name=setup-kube-apiserver-client-ca-config].env.[name=CLUSTER_KUBEAPISERVERCLIENTCA_FIXEDIPV4].value"]
 - source: {fieldPath: data.cluster.kubeAPIServerClientCA.fixedIPv6, kind: ConfigMap, name: settings}
   targets:
   - select: {kind: Service, name: kube-apiserver-client-ca-external}
     fieldPaths: [metadata.annotations.io\.cilium/lb-ipam-ips]
     options: {delimiter: ',', index: 1}
+  - select: {group: apps, kind: StatefulSet, name: kube-apiserver-client-ca}
+    fieldPaths: ["spec.template.spec.initContainers.[name=setup-kube-apiserver-client-ca-config].env.[name=CLUSTER_KUBEAPISERVERCLIENTCA_FIXEDIPV6].value"]
 - source: {fieldPath: data.cluster.domain, kind: ConfigMap, name: settings}
   targets:
   - select: {kind: Service, name: step-ca-external}
@@ -59,10 +65,11 @@ replacements:
   - select: {kind: Service, name: kube-apiserver-client-ca-external}
     fieldPaths: [metadata.annotations.external-dns\.alpha\.kubernetes\.io/hostname]
     options: {delimiter: '.', index: 1}
-- source: {fieldPath: data.admin.uid, kind: ConfigMap, name: settings}
+  - select: {group: apps, kind: StatefulSet, name: step-ca}
+    fieldPaths: ["spec.template.spec.initContainers.[name=setup-step-ca-config].env.[name=CLUSTER_DOMAIN].value"]
+  - select: {group: apps, kind: StatefulSet, name: kube-apiserver-client-ca}
+    fieldPaths: ["spec.template.spec.initContainers.[name=setup-kube-apiserver-client-ca-config].env.[name=CLUSTER_DOMAIN].value"]
+- source: {fieldPath: data.cluster.adminPubkey, kind: ConfigMap, name: settings}
   targets:
-  - select: {group: batch, kind: Job, name: bootstrap}
-    fieldPaths: ["spec.template.spec.containers.[name=bootstrap].env.[name=ADMIN_UID].value"]
-
-  - select: {group: batch, kind: CronJob, name: refresh-kube-config}
-    fieldPaths: ["spec.jobTemplate.spec.template.spec.containers.[name=refresh-kube-config].env.[name=ADMIN_UID].value"]
+  - select: {group: apps, kind: StatefulSet, name: kube-apiserver-client-ca}
+    fieldPaths: ["spec.template.spec.initContainers.[name=setup-kube-apiserver-client-ca-config].env.[name=CLUSTER_ADMINPUBKEY].value"]

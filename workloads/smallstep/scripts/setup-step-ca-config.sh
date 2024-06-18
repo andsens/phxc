@@ -3,19 +3,21 @@ set -Eeo pipefail; shopt -s inherit_errexit
 # shellcheck disable=SC1091
 source /usr/local/lib/upkg/.upkg/records.sh/records.sh
 
+
 KUBE_CLIENT_CA_CRT_PATH=$STEPPATH/certs/kube_apiserver_client_ca.crt
 
 main() {
-  local \
-    step_issuer_dir=$STEPPATH/step-issuer-provisioner \
-    ssh_host_dir=$STEPPATH/ssh-host-provisioner
-
   local config
-  config=$(jq --arg domain "pki.$CLUSTER_DOMAIN" '.dnsNames+=[$domain]' "$STEPPATH/config-ro/ca.json")
+  config=$(jq \
+    --arg ipv4 "$CLUSTER_SMALLSTEP_FIXEDIPV4" \
+    --arg ipv6 "$CLUSTER_SMALLSTEP_FIXEDIPV6" \
+    --arg domain "pki.$CLUSTER_DOMAIN" \
+    '.dnsNames+=[$ipv4, $ipv6, $domain]' \
+    "$STEPPATH/config-ro/ca.json")
 
   local name provisioner_names=(step-issuer ssh-host kube-apiserver-client-ca)
 
-  info "Storing and then removing step-issuer, ssh-host, and kube-apiserver-client-ca provisioners"
+  info "Storing and then removing %s provisioners" "${provisioner_names[*]}"
 
   declare -A configured_provisioners
   for name in "${provisioner_names[@]}"; do
@@ -31,15 +33,15 @@ main() {
 
   info "Adding step-issuer provisioner key"
   step ca provisioner add step-issuer --type JWK \
-    --public-key="$step_issuer_dir/pub.json" \
-    --private-key="$step_issuer_dir/priv.json" \
-    --password-file="$step_issuer_dir-password"
+    --public-key="$STEPPATH/step-issuer-provisioner/pub.json" \
+    --private-key="$STEPPATH/step-issuer-provisioner/priv.json" \
+    --password-file="$STEPPATH/step-issuer-provisioner-password"
 
   info "Adding ssh-host provisioner key"
   step ca provisioner add ssh-host --type JWK \
-    --public-key="$ssh_host_dir/pub.json" \
-    --private-key="$ssh_host_dir/priv.json" \
-    --password-file="$ssh_host_dir-password"
+    --public-key="$STEPPATH/ssh-host-provisioner/pub.json" \
+    --private-key="$STEPPATH/ssh-host-provisioner/priv.json" \
+    --password-file="$STEPPATH/ssh-host-provisioner-password"
 
   info "Adding kube-apiserver client CA provisioner certificate"
   step ca provisioner add kube-apiserver-client-ca --type X5C --x5c-root "$KUBE_CLIENT_CA_CRT_PATH"

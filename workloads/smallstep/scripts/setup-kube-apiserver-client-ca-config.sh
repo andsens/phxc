@@ -7,24 +7,27 @@ KUBE_CLIENT_CA_KEY_PATH=$STEPPATH/certs/kube_apiserver_client_ca_key
 KUBE_CLIENT_CA_CRT_PATH=$STEPPATH/certs/kube_apiserver_client_ca.crt
 
 main() {
-  setup_config
-  copy_ca
-}
-
-setup_config() {
   local config
-  config=$(jq --arg domain "pki-kube.$CLUSTER_DOMAIN" '.dnsNames+=[$domain]' "$STEPPATH/config-ro/kube-apiserver-client-ca.json")
+  config=$(jq \
+    --arg ipv4 "$CLUSTER_KUBEAPISERVERCLIENTCA_FIXEDIPV4" \
+    --arg ipv6 "$CLUSTER_KUBEAPISERVERCLIENTCA_FIXEDIPV6" \
+    --arg domain "pki-kube.$CLUSTER_DOMAIN" \
+    '.dnsNames+=[$ipv4, $ipv6, $domain]' \
+    "$STEPPATH/config-ro/kube-apiserver-client-ca.json")
 
-  local kube_client_config kube_client
-  info "Storing and then removing kube-apiserver-client-ca provisioner"
+  local name provisioner_names=(kube-apiserver-client-ca admin)
 
-  # 1. Store the provisioner config
-  kube_client_config=$(jq '.authority.provisioners[] | select(.name=="kube-apiserver-client-ca")' <<<"$config")
+  info "Storing and then removing %s provisioners" "${provisioner_names[*]}"
 
-  # 2. Remove the provisioner config
-  config=$(jq 'del(.authority.provisioners[] | select(.name=="kube-apiserver-client-ca"))' <<<"$config")
+  declare -A configured_provisioners
+  for name in "${provisioner_names[@]}"; do
+    # 1. Store the configured provisioner
+    configured_provisioners[$name]=$(jq --arg name "$name" '.authority.provisioners[] | select(.name==$name)' <<<"$config")
+    # 2. Remove the provisioner
+    config=$(jq --arg name "$name" 'del(.authority.provisioners[] | select(.name==$name))'  <<<"$config")
+  done
 
-  # 3. Add the provisioner key through `step ca provisioner add`
+  # 3. Add the provisioner keys through `step ca provisioner add`
 
   printf "%s\n" "$config" >"$STEPPATH/config/ca.json" # step operates on config/ca.json
 
@@ -32,28 +35,36 @@ setup_config() {
   step ca provisioner add kube-apiserver-client-ca --type X5C \
     --x5c-root "$KUBE_CLIENT_CA_CRT_PATH"
 
+  info "Adding admin provisioner key"
+  step ca provisioner add admin --type JWK --public-key=<(step crypto key format --jwk <<<"${CLUSTER_ADMINPUBKEY:?}")
+
   config=$(cat "$STEPPATH/config/ca.json") # done messing with the physical ca.json, read it into $config
 
-  # 4. Extract the added key
+  # 4. Extract the added keys
   info "Merging new provisioner keys with stored provisioner config"
 
-  local provisioner_key
-  provisioner_key=$(jq '.authority.provisioners[] | select(.name=="kube-apiserver-client-ca")' <<<"$config")
+  declare -A provisioner_keys
+  for name in "${provisioner_names[@]}"; do
+    provisioner_keys[$name]=$(jq --arg name "$name" '.authority.provisioners[] | select(.name==$name)' <<<"$config")
+  done
 
   # 5. Apply the extracted keys to the stored configs
-  kube_client=$(jq --argjson provisioner "$provisioner_key" '.roots=$provisioner.roots' <<<"$kube_client_config")
+  configured_provisioners[kube-apiserver-client-ca]=$(jq --argjson provisioner "${provisioner_keys[kube-apiserver-client-ca]}" \
+    '.roots=$provisioner.roots' <<<"${configured_provisioners[kube-apiserver-client-ca]}")
+  configured_provisioners[admin]=$(jq --argjson provisioner "${provisioner_keys[admin]}" \
+    '.key=$provisioner.key' <<<"${configured_provisioners[admin]}")
 
   info "Replacing added provisioners with merged config"
-  # 6. Remove the added provisioner
-  config=$(jq 'del(.authority.provisioners[] | select(.name=="kube-apiserver-client-ca"))' <<<"$config")
 
-  # 7. Insert the updated provisioner
-  config=$(jq --argjson kube_client "$kube_client" '.authority.provisioners += [$kube_client]' <<<"$config")
+  for name in "${provisioner_names[@]}"; do
+    # 6. Remove the added provisioner
+    config=$(jq --arg name "$name" 'del(.authority.provisioners[] | select(.name==$name))' <<<"$config")
+    # 7. Insert the updated provisioner
+    config=$(jq --argjson provisioner "${configured_provisioners[$name]}" '.authority.provisioners += [$provisioner]' <<<"$config")
+  done
 
   printf "%s\n" "$config" >"$STEPPATH/config/ca.json" # done, write the config
-}
 
-copy_ca() {
   local certs_ram_path=$STEPPATH/certs-ram
   info "Copying kube-apiserver-client-ca cert & key to RAM backed volume"
   cp "$KUBE_CLIENT_CA_CRT_PATH" "$certs_ram_path/$(basename "$KUBE_CLIENT_CA_CRT_PATH")"

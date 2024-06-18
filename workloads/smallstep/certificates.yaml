@@ -85,6 +85,13 @@ spec:
         command: [/home/step/scripts/setup-step-ca-config.sh]
         securityContext:
           readOnlyRootFilesystem: true
+        env:
+        - name: CLUSTER_SMALLSTEP_FIXEDIPV4
+          value: cluster.smallstep.fixedIPv4
+        - name: CLUSTER_SMALLSTEP_FIXEDIPV6
+          value: cluster.smallstep.fixedIPv6
+        - name: CLUSTER_DOMAIN
+          value: cluster.domain
         volumeMounts:
         - name: scripts
           mountPath: /home/step/scripts
@@ -112,7 +119,7 @@ spec:
           mountPath: /home/step/config
       containers:
       - name: step-certificates
-        image: cr.step.sm/smallstep/step-ca:0.26.1
+        image: cr.step.sm/smallstep/step-ca:0.26.2
         command: [/usr/local/bin/step-ca]
         args: [/home/step/config/ca.json]
         securityContext:

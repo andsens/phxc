@@ -53,16 +53,24 @@
       ]
     },
     {
-      "tar": "https://dl.smallstep.com/gh-release/cli/gh-release-header/v0.26.0/step_linux_0.26.0_amd64.tar.gz",
-      "sha256": "7cc571744ead098c08e42ad09e4fe6d6c157519c7b5124c4872cfe84245fbd1e",
-      "name": "step",
+      "tar": "https://github.com/orbit-online/bgpid/releases/download/v1.0.0/bgpid.tar.gz",
+      "sha256": "bac9fbcf574fc69f28eea803cf95ca1c67b607410a45ba4646afc2581b674d2e"
+    },
+    {
+      "tar": "https://github.com/smallstep/step-kms-plugin/releases/download/v0.11.3/step-kms-plugin_0.11.3_linux_amd64.tar.gz",
+      "sha256": "0bba22fc879afa8ef43e923e41513519217741e0c8b33197922c65787d4445eb",
+      "name": "step-kms-plugin",
       "bin": [
-        "step_0.26.0/bin/step"
+        "step-kms-plugin_0.11.3/step-kms-plugin"
       ]
     },
     {
-      "tar": "https://github.com/orbit-online/bgpid/releases/download/v1.0.0/bgpid.tar.gz",
-      "sha256": "bac9fbcf574fc69f28eea803cf95ca1c67b607410a45ba4646afc2581b674d2e"
+      "tar": "https://dl.smallstep.com/gh-release/cli/gh-release-header/v0.26.2/step_linux_0.26.2_amd64.tar.gz",
+      "sha256": "f5ab8947a11dab7b854d65111f71b582147945d62735576d80340d6dcb1adbf1",
+      "name": "step",
+      "bin": [
+        "step_0.26.2/bin/step"
+      ]
     }
   ]
 }
