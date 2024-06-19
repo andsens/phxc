@@ -41,12 +41,12 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
   bundle=$(mktemp --suffix .tar.gz)
   # shellcheck disable=SC2064
   trap "rm \"$bundle\"" EXIT
-  "$PKGROOT/workloads/bootstrap/containers/node/scripts/bundle.sh" "$bundle"
+  "$PKGROOT/workloads/bootstrap/node/scripts/bundle.sh" "$bundle"
 
   mkdir -p "$PKGROOT/images/snapshots"
   # shellcheck disable=SC2154
   docker run --rm -ti \
-    -v "$PKGROOT/workloads/bootstrap/containers/node/Dockerfile:/workspace/context/Dockerfile:ro" \
+    -v "$PKGROOT/workloads/bootstrap/node/Dockerfile:/workspace/context/Dockerfile:ro" \
     -v "$bundle:/workspace/home-cluster.tar.gz:ro" \
     -v "$PKGROOT/workloads/common-context:/workspace/common-context:ro" \
     -v "$PKGROOT/images/snapshots:/workspace/images/snapshots:rw" \
@@ -82,8 +82,8 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
   mkdir -p "$PKGROOT/images/pxe" "$PKGROOT/images/uefi"
   docker run --rm -ti \
     -v "$node_settings:/node-settings:ro" \
-    -v "$PKGROOT/workloads/bootstrap/containers/node/create-boot-images-assets:/assets:ro" \
-    -v "$PKGROOT/workloads/bootstrap/containers/node/scripts:/scripts:ro" \
+    -v "$PKGROOT/workloads/bootstrap/node/create-boot-images-assets:/assets:ro" \
+    -v "$PKGROOT/workloads/bootstrap/node/scripts:/scripts:ro" \
     -v "$PKGROOT/images/snapshots:/images/snapshots:ro" \
     -v "$PKGROOT/images/pxe:/images/pxe:rw" \
     -v "$PKGROOT/images/uefi:/images/uefi:rw" \

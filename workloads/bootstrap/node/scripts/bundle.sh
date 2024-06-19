@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# shellcheck source-path=../../../../..
+# shellcheck source-path=../../../..
 set -Eeo pipefail; shopt -s inherit_errexit
-PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../../../..")
+PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../../..")
 
 main() {
   # shellcheck disable=SC1091

@@ -3,7 +3,7 @@ kind: Kustomization
 namespace: bootstrap
 resources:
 - amd64.yaml
-- ../../../settings/node
+- ../../settings/node
 configMapGenerator:
 - files:
   - Dockerfile

@@ -5,8 +5,8 @@ resources:
 - ../settings/replacements
 - ../common-context
 - containers/create-boot-images
-- containers/node
 - containers/tftpd
+- node
 - images.yaml
 - secureboot.yaml
 - tftpd.yaml

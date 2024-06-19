@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# shellcheck source-path=../../../../..
+# shellcheck source-path=../../../..
 set -Eeo pipefail; shopt -s inherit_errexit
-PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../../../..")
+PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../../..")
 # shellcheck disable=SC1091
 source "$PKGROOT/.upkg/records.sh/records.sh"
 # shellcheck source=workloads/settings/lib/settings-env.shellcheck.sh
@@ -20,7 +20,7 @@ main() {
 
   PACKAGES=()
   local taskfile
-  for taskfile in "$PKGROOT/workloads/bootstrap/containers/node/tasks.d/"??-*.sh; do
+  for taskfile in "$PKGROOT/workloads/bootstrap/node/tasks.d/"??-*.sh; do
     # shellcheck disable=SC1090
     source "$taskfile"
   done
@@ -31,7 +31,7 @@ main() {
   rm -rf /var/cache/apt/lists/*
 
   local task
-  for taskfile in "$PKGROOT/workloads/bootstrap/containers/node/tasks.d/"??-*.sh; do
+  for taskfile in "$PKGROOT/workloads/bootstrap/node/tasks.d/"??-*.sh; do
     task=$(basename "$taskfile" .sh)
     task=${task#[0-9][0-9]-}
     task=${task//[^a-z0-9_]/_}
@@ -111,14 +111,14 @@ docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
       else
         info "Copying template %s" "$tplpath"
       fi
-      cp "$PKGROOT/workloads/bootstrap/containers/node/assets/$tplpath" "$dest"
+      cp "$PKGROOT/workloads/bootstrap/node/assets/$tplpath" "$dest"
     else
       if [[ -n $__destination ]]; then
         info "Rendering template %s to %s" "$tplpath" "$dest"
       else
         info "Rendering template %s" "$tplpath"
       fi
-      envsubst <"$PKGROOT/workloads/bootstrap/containers/node/assets/$tplpath" >"$dest"
+      envsubst <"$PKGROOT/workloads/bootstrap/node/assets/$tplpath" >"$dest"
     fi
     [[ -z $__chmod ]] || chmod "$__chmod" "$dest"
   done
