@@ -4,9 +4,7 @@ set -Eeo pipefail; shopt -s inherit_errexit
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../..")
 
 main() {
-  # shellcheck disable=SC1091
   source "$PKGROOT/.upkg/records.sh/records.sh"
-  # shellcheck disable=SC1091
   source "$PKGROOT/.upkg/bgpid/bgpid.sh"
 
   DOC="pull-external-images - Analyzes all manifests and pulls their external images

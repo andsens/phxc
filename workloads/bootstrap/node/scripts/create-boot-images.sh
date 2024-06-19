@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
+# shellcheck source-path=../../../..
 set -Eeo pipefail; shopt -s inherit_errexit
 PKGROOT=/usr/local/lib/upkg
 
 main() {
-  # shellcheck disable=SC1091
   source "$PKGROOT/.upkg/records.sh/records.sh"
-  # shellcheck disable=SC1091
   source "$PKGROOT/.upkg/trap.sh/trap.sh"
   DOC="create-boot-images - Create PXE & UEFI boot image from a container export
 Usage:

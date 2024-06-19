@@ -4,7 +4,6 @@ set -Eeo pipefail; shopt -s inherit_errexit
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../../..")
 
 main() {
-  # shellcheck disable=SC1091
   source "$PKGROOT/.upkg/path-tools/path-tools.sh"
   local dest=${1:?} version_flag
   version_flag=$(jq -r '.version // empty' "$PKGROOT/upkg.json")

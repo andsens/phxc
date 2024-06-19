@@ -4,7 +4,6 @@ set -Eeo pipefail; shopt -s inherit_errexit
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../..")
 
 main() {
-  # shellcheck disable=SC1091
   source "$PKGROOT/.upkg/records.sh/records.sh"
   # shellcheck source=workloads/settings/lib/settings-env.sh
   source "$PKGROOT/workloads/settings/lib/settings-env.sh"
