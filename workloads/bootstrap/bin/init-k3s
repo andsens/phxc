@@ -6,9 +6,9 @@ PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../..")
 main() {
   source "$PKGROOT/.upkg/records.sh/records.sh"
 
-  DOC="k3s-init - Initialize k3s
+  DOC="init-k3s - Initialize k3s
 Usage:
-  k3s-init
+  init-k3s
 
 Symlinks config.yaml to either agent.yaml or server.yaml depending on whether
 the node-role.cluster.local/control-plane node label is set and copies
@@ -20,7 +20,7 @@ node-label from node settings to
 docopt() { local v='2.0.1'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
 %d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:295};usage=${DOC:26:17}
-digest=b6858;options=();node_0(){ return 0;};cat <<<' docopt_exit() { [[ -n $1 \
+digest=83eaf;options=();node_0(){ return 0;};cat <<<' docopt_exit() { [[ -n $1 \
 ]] && printf "%s\n" "$1" >&2;printf "%s\n" "${DOC:26:17}" >&2;exit 1;}';local \
 varnames=() varname;for varname in "${varnames[@]}"; do unset "var_$varname"
 done;parse 0 "$@";return 0;local p=${DOCOPT_PREFIX:-''};for varname in \

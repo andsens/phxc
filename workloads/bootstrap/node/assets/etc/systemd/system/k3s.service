@@ -6,4 +6,4 @@ WantedBy=multi-user.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/lib/upkg/.upkg/home-cluster/workloads/bootstrap/bin/k3s-init
+ExecStart=/usr/local/lib/upkg/.upkg/home-cluster/workloads/bootstrap/bin/init-k3s
