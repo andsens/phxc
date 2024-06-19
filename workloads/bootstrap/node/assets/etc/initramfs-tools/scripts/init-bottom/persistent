@@ -11,13 +11,13 @@ esac
 
 settings_path=/run/initramfs/node-settings.json
 if [ ! -e "$settings_path" ]; then
-  log_warning_msg "Skipping networking setup. $settings_path does not exist"
+  log_warning_msg "Skipping persistent disk setup. $settings_path does not exist"
   exit 0
 fi
-node_name=$(jq -r '.name // "node"' "$settings_path")
+hostname=$(jq -r '.hostname // "node"' "$settings_path")
 
 if ! persistentdev=$(jq -re '.data' "$settings_path"); then
-  log_failure_msg "$node_name has no data device defined, skipping"
+  log_failure_msg "$hostname has no data device defined, skipping"
   exit 0
 fi
 

@@ -15,7 +15,7 @@ if [ ! -e "$settings_path" ]; then
   exit 0
 fi
 
-node_name=$(jq -r '.name // "node"' "$settings_path")
+hostname=$(jq -r '.hostname // "node"' "$settings_path")
 
 for network in $(jq -r '(.networks // []) | keys[]' "$settings_path"); do
   log_begin_msg "Configuring network $network"
@@ -38,7 +38,7 @@ done
 
 if hostname=$(jq -re '.hostname' "$settings_path"); then
   printf "%s\n" "$hostname" >"$rootmnt/etc/hostname"
-  log_success_msg "Configured hostname for $node_name as $hostname"
+  log_success_msg "Configured hostname for $hostname as $hostname"
 else
-  log_failure_msg "$node_name has no hostname defined, skipping"
+  log_failure_msg "$hostname has no hostname defined, skipping"
 fi
