@@ -32,8 +32,6 @@ spec:
           mountPath: /workspace/context
         - name: common-context
           mountPath: /workspace/common-context
-        - name: secureboot
-          mountPath: /workspace/secureboot
         - name: bundle
           mountPath: /workspace/home-cluster.tar.gz
           subPath: home-cluster.tar.gz
@@ -55,6 +53,10 @@ spec:
           mountPath: /assets
         - name: node-settings
           mountPath: /node-settings
+        - name: workspace
+          mountPath: /workspace
+        - name: secureboot
+          mountPath: /workspace/root/secureboot
         - name: images
           mountPath: /images/snapshots
           subPath: snapshots
@@ -86,9 +88,11 @@ spec:
       - name: bundle
         configMap:
           name: bundle
+      - name: workspace
+        emptyDir: {}
       - name: secureboot
         secret:
-          secretName: secureboot
+          secretName: secureboot-cert
       - name: images
         persistentVolumeClaim:
           claimName: images

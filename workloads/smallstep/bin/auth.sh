@@ -66,8 +66,8 @@ local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
 
   elif $kubectl_cert; then
 
-    ! step certificate needs-renewal "$cert_path" 2>/dev/null || \
-      step ca renew --context home-cluster-kube-api --force "$cert_path" "$key_path" 2>/dev/null
+    ! step certificate needs-renewal "$cert_path" 2>&1 | pipe_verbose || \
+      step ca renew --context home-cluster-kube-api --force "$cert_path" "$key_path" 2>&1 | pipe_verbose
     # shellcheck disable=SC2016
     yq \
       --arg cert "$(cat "$cert_path")" \

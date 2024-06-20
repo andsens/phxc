@@ -8,25 +8,26 @@ source "$PKGROOT/workloads/settings/lib/settings-env.sh"
 eval_settings
 
 main() {
-  confirm_container_build
-
   export DEBIAN_FRONTEND=noninteractive
 
+  # Enable backports
   sed -i 's/Suites: bookworm bookworm-updates/Suites: bookworm bookworm-updates bookworm-backports/' /etc/apt/sources.list.d/debian.sources
+  # Disable update-initramfs
+  cp_tpl --raw /etc/initramfs-tools/update-initramfs.conf
+  # Keep old/default config when there is a conflict (i.e. update-initramfs.conf)
+  cp_tpl --raw /etc/apt/apt.conf.d/10-dpkg-keep-conf.conf
 
-  apt-get update -qq
-  apt-get -qq install --no-install-recommends apt-utils gettext jq yq >/dev/null
-
-  PACKAGES=()
+  PACKAGES=(apt-utils gettext jq yq)
   local taskfile
   for taskfile in "$PKGROOT/workloads/bootstrap/node/tasks.d/"??-*.sh; do
     # shellcheck disable=SC1090
     source "$taskfile"
   done
 
-  readarray -t -d $'\n' PACKAGES < <(printf "%s\n" "${PACKAGES[@]}" | sort -u)
+  readarray -t -d $'\n' -O ${#PACKAGES[@]} PACKAGES < <(printf "%s\n" "${PACKAGES[@]}" | sort -u)
   info "Installing packages: %s" "${PACKAGES[*]}"
-  apt-get -qq install -t bookworm-backports --no-install-recommends "${PACKAGES[@]}" >/dev/null
+  apt-get update -qq
+  apt-get install -y -t bookworm-backports --no-install-recommends "${PACKAGES[@]}"
   rm -rf /var/cache/apt/lists/*
 
   local task
@@ -41,26 +42,6 @@ main() {
       warning "%s had no task named %s" "$(basename "$taskfile")" "$task"
     fi
   done
-}
-
-confirm_container_build() {
-  if [[ -f /proc/1/cgroup ]]; then
-    [[ "$(</proc/1/cgroup)" != *:cpuset:/docker/* ]] || return 0
-  fi
-  [[ ! -e /kaniko ]] || return 0
-  error "This script is intended to be run on during the container build phase"
-  printf "Do you want to continue regardless? [y/N]" >&2
-  if ${HOME_CLUSTER_IGNORE_CONTAINER_BUILD:-false}; then
-    printf " \$HOME_CLUSTER_IGNORE_CONTAINER_BUILD=true, continuing..."
-  elif [[ ! -t 1 ]]; then
-    printf "stdin is not a tty and HOME_CLUSTER_IGNORE_CONTAINER_BUILD!=true, aborting...\n" >&2
-    return 1
-  else
-    local continue
-    read -r continue
-    [[ $continue =~ [Yy] ]] || fatal "User aborted operation"
-    return 0
-  fi
 }
 
 cp_tpl() {

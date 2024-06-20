@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-BPACKAGES+=(systemd adduser)
 PACKAGES+=(systemd adduser)
 
 os() {

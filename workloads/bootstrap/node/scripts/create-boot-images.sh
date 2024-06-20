@@ -40,47 +40,68 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
     amd64) efiname=BOOTX64.EFI ;;
   esac
 
-  WORKDIR=$(mktemp -d)
-  mkdir "$WORKDIR/root"
-
-  # shellcheck disable=SC2016
-  trap_append 'rm -rf "$WORKDIR"' EXIT
+  mkdir -p /workspace/root
 
   info "Extracting container export"
   local layer
   for layer in $(jq -r '.[0].Layers[]' <(tar -xOf "$tar" manifest.json)); do
-    tar -xOf "$tar" "$layer" | tar -xz -C "$WORKDIR/root"
+    tar -xOf "$tar" "$layer" | tar -xz -C /workspace/root
   done
   # During bootstrapping with kaniko these file can't be removed/overwritten,
-  # instead we do it when creating the images
-  rm "$WORKDIR/root/etc/hostname" "$WORKDIR/root/etc/resolv.conf"
-  cp "/assets/etc-hosts" "$WORKDIR/root/etc/hosts"
+  # instead we do it when creating the image
+  rm /workspace/root/etc/hostname /workspace/root/etc/resolv.conf
+  cp /assets/etc-hosts /workspace/root/etc/hosts
+  # Revert the disabling of initramfs creation
+  cp /assets/etc-initramfs-tools-update-initramfs.conf /workspace/root/etc/initramfs-tools/update-initramfs.conf
 
-  # PXE Boot #
-
-  mkdir -p "$pxedir"
-
-  info "Extracting unified kernel image"
-  rm "$WORKDIR/root/boot/vmlinuz"
-  rm "$WORKDIR/root/boot/initrd.img"
-  mv "$WORKDIR/root/boot/vmlinuz.efi" "$WORKDIR/$efiname"
+  local vmlinuz initrd
+  vmlinuz=/$(readlink /workspace/root/vmlinuz)
+  initrd=/$(readlink /workspace/root/initrd.img)
+  # Remove kernel symlinks
+  rm /workspace/root/initrd.img* /workspace/root/vmlinuz*
+  # Move boot dir out of the way before creating squashfs image
+  mv /workspace/root/boot /workspace/boot
 
   info "Creating squashfs image"
   local noprogress=
   [[ -t 1 ]] || noprogress=-no-progress
-  mksquashfs "$WORKDIR/root" "$WORKDIR/root.img" -noappend -quiet $noprogress
+  mksquashfs /workspace/root /workspace/root.img -noappend -quiet $noprogress
+
+  # Move boot dir back into place
+  mv /workspace/boot /workspace/root/boot
+
+  local rootimg_checksum
+  rootimg_checksum=$(sha256sum /workspace/root.img | cut -d ' ' -f1)
+  mkdir /workspace/root/etc/home-cluster
+  printf "%s  /run/initramfs/root.img.tmp" "$rootimg_checksum" >/workspace/root/etc/home-cluster/root.img.sha256
+
+  info "Creating unified kernel image"
+  local kernver
+  kernver=${vmlinuz#'/boot/vmlinuz-'}
+  chroot /workspace/root update-initramfs -c -k "$kernver"
+  chroot /workspace/root /lib/systemd/ukify build \
+    --uname="$kernver" \
+    --linux="$vmlinuz" \
+    --initrd="$initrd" \
+    --cmdline="root=/run/initramfs/root.img bootserver=${CLUSTER_BOOTSERVER_FIXEDIPV4} noresume" \
+    --signtool=sbsign \
+    --secureboot-private-key=/secureboot/tls.key \
+    --secureboot-certificate=/secureboot/tls.crt \
+    --output=/boot/vmlinuz.efi
+
+  mv /workspace/root/boot/vmlinuz.efi /workspace/$efiname
 
   ### UEFI Boot ###
 
   info "Generate node settings"
-  mkdir "$WORKDIR/node-settings"
+  mkdir /workspace/node-settings
   local file node_settings_size_b=0
   for file in /node-settings/*; do
     node_settings_size_b=$(( node_settings_size_b + $(stat -c %s "$file") ))
-    cp "$file" "$WORKDIR/node-settings/$(basename "$file" | sed s/:/-/g)"
+    cp "$file" "/workspace/node-settings/$(basename "$file" | sed s/:/-/g)"
   done
 
-  dd if=/dev/random bs=32 count=1 >"$WORKDIR/random-seed"
+  dd if=/dev/random bs=32 count=1 >/workspace/random-seed
 
   local sector_size_b=512 gpt_size_b fs_table_size_b partition_offset_b partition_size_b disk_size_kib
   gpt_size_b=$((33 * sector_size_b))
@@ -95,8 +116,8 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
       fs_table_size_b +
       config_size_b +
       node_settings_size_b +
-      $(stat -c %s "$WORKDIR/$efiname") +
-      $(stat -c %s "$WORKDIR/root.img") +
+      $(stat -c %s /workspace/$efiname) +
+      $(stat -c %s /workspace/root.img) +
       (sector_size_b - 1)
     ) / sector_size_b * sector_size_b
   ))
@@ -114,7 +135,7 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
   ESP_UUID=c12a7328-f81f-11d2-ba4b-00a0c93ec93b
 
   info "Creating UEFI boot image"
-  guestfish -xN "$WORKDIR/disk.raw"=disk:${disk_size_kib}K -- <<EOF
+  guestfish -xN /workspace/disk.raw=disk:${disk_size_kib}K -- <<EOF
 part-init /dev/sda gpt
 part-add /dev/sda primary $(( partition_offset_b / sector_size_b )) $(( (partition_offset_b + partition_size_b ) / sector_size_b - 1 ))
 part-set-bootable /dev/sda 1 true
@@ -125,11 +146,11 @@ mkfs vfat /dev/sda1
 mount /dev/sda1 /
 
 mkdir-p /EFI/BOOT
-copy-in "$WORKDIR/$efiname" /EFI/BOOT/
+copy-in /workspace/$efiname /EFI/BOOT/
 
 mkdir-p /home-cluster
-copy-in "$WORKDIR/root.img" /home-cluster/
-copy-in "$WORKDIR/node-settings" /home-cluster/
+copy-in /workspace/root.img /home-cluster/
+copy-in /workspace/node-settings /home-cluster/
 EOF
 
   ### Finish up by moving everything to the right place
@@ -142,9 +163,9 @@ EOF
 
   info "Moving UEFI disk, squashfs root, and unified kernel image EFI to shared volume"
 
-  mv "$WORKDIR/disk.raw" "$uefidir/$__arch.raw.tmp"
-  mv "$WORKDIR/root.img" "$pxedir/root.img.tmp"
-  mv "$WORKDIR/BOOTX64.EFI" "$pxedir/vmlinuz.efi.tmp"
+  mv /workspace/disk.raw "$uefidir/$__arch.raw.tmp"
+  mv /workspace/root.img "$pxedir/root.img.tmp"
+  mv /workspace/BOOTX64.EFI "$pxedir/vmlinuz.efi.tmp"
 
   mv "$uefidir/$__arch.raw.tmp" "$uefidir/$__arch.raw"
   mv "$pxedir/root.img.tmp" "$pxedir/root.img"

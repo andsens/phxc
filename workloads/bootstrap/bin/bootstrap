@@ -35,6 +35,19 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' bootstrap`
   eval "$(docopt "$@")"
 
+  export STEPPATH=${STEPPATH:-$(step path --base)}
+  local \
+    key_path="$STEPPATH/system:admin.key" \
+    cert_path="$STEPPATH/secureboot.crt"
+  if [[ ! -e $key_path ]]; then
+    info "%s doesn't exist, creating now" "$key_path"
+    "$PKGROOT/bin/auth" init
+  fi
+  if [[ ! -e $cert_path ]]; then
+    info "%s doesn't exist, creating now" "$cert_path"
+    step certificate create --profile=self-signed --subtle --key="$key_path" "home-cluster Secure Boot (Admin)" "$cert_path"
+  fi
+
   local bundle
   bundle=$(mktemp --suffix .tar.gz)
   # shellcheck disable=SC2064
@@ -80,6 +93,8 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
   mkdir -p "$PKGROOT/images/pxe" "$PKGROOT/images/uefi"
   docker run --rm -ti \
     -v "$node_settings:/node-settings:ro" \
+    --mount type=bind,src="$key_path",dst=/workspace/root/secureboot/tls.key,readonly \
+    --mount type=bind,src="$cert_path",dst=/workspace/root/secureboot/tls.crt,readonly \
     -v "$PKGROOT/workloads/bootstrap/node/create-boot-images-assets:/assets:ro" \
     -v "$PKGROOT/workloads/bootstrap/node/scripts:/scripts:ro" \
     -v "$PKGROOT/images/snapshots:/images/snapshots:ro" \

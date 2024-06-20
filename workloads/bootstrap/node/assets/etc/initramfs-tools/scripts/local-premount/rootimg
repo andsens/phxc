@@ -8,8 +8,6 @@ esac
 # shellcheck disable=SC1091
 . /scripts/functions
 
-dl_failed=false
-
 # shellcheck disable=SC2013
 for x in $(cat /proc/cmdline); do
   case $x in
@@ -20,37 +18,48 @@ for x in $(cat /proc/cmdline); do
 done
 
 rootimg_path=/run/initramfs/root.img
-if [ -z "${bootserver}" ]; then
-  log_warning_msg "Skipping download of root image. Boot argument bootserver= not specified"
-  dl_failed=true
-else
+
+verify_rootimg() {
+  log_begin_msg "Verifying checksum of root.img"
+  if sha256sum -c /etc/home-cluster/root.img.sha256; then
+    mv $rootimg_path.tmp $rootimg_path
+  else
+    log_failure_msg "root.img checksum is incorrect"
+  fi
+}
+
+esp=/run/initramfs/efi
+if [ -e $esp/home-cluster/root.img ]; then
+  # If root.img is available in the ESP we *must* use it, the one on the bootserver might not match the embedded shasum
+  log_begin_msg "Copying root.img from ESP to RAM"
+  if cp $esp/home-cluster/root.img $rootimg_path.tmp; then
+    log_end_msg
+    verify_rootimg
+    exit 0
+  else
+    log_failure_msg "Failed to copy root.img"
+    exit 1
+  fi
+fi
+
+if [ -n "${bootserver}" ]; then
   set +e; configure_networking; set -e
-  if ( wget -qOtest "http://${bootserver}/" & w=$!; sleep .5; kill -0 $w 2>/dev/null || exit 0; kill -TERM $w; exit 1 ); then
-    img_addr=http://${bootserver}/$(uname -m)/root.img
-    log_begin_msg "Downloading root image to RAM from $img_addr"
-    if ! wget -qO$rootimg_path "$img_addr"; then
-      log_failure_msg "Failed downloading root.img"
-      dl_failed=true
-    else
+  img_addr=http://${bootserver}/$(uname -m)/root.img
+  log_begin_msg "Downloading root image to RAM from $img_addr"
+  if ( wget -qO- "http://${bootserver}/" >/dev/null 2>&1 & w=$!; sleep .5; kill -0 $w 2>/dev/null || exit 0; kill -TERM $w; exit 1 ); then
+    if ! wget -qO$rootimg_path.tmp "$img_addr"; then
       log_end_msg
+      verify_rootimg
       exit 0
+    else
+      log_failure_msg "Failed to download root.img: Download failed"
+      exit 1
     fi
   else
-    log_failure_msg "Bootserver is unavailable"
-    dl_failed=true
+    log_failure_msg "Failed to download root.img: Bootserver is unavailable"
+    exit 1
   fi
+else
+  log_warning_msg "Failed to download root image: Boot argument bootserver= not specified"
+  exit 1
 fi
-
-if $dl_failed; then
-  esp=/run/initramfs/efi
-  if [ -e $esp/home-cluster/root.img ]; then
-    log_begin_msg "Falling back to copying root.img from ESP to RAM"
-    if cp "$esp/home-cluster/root.img" $rootimg_path; then
-      log_end_msg
-      exit 0
-    fi
-    log_failure_msg "Failed to copy root.img"
-  fi
-fi
-
-exit 1

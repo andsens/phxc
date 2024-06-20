@@ -1,7 +1,7 @@
 [Unit]
 Description=/var/lib/longhorn
-Requires=var-lib-persistent.mount mk-data-dirs.service
-After=var-lib-persistent.mount mk-data-dirs.service
+Requires=setup-persistent.service
+After=setup-persistent.service
 Before=k3s@agent.service k3s@server.service
 
 [Install]

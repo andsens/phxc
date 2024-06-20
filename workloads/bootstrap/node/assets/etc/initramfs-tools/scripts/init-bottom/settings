@@ -37,7 +37,7 @@ fi
 settings_path=/run/initramfs/node-settings.json
 settings_url=http://$bootserver/$mac.json
 
-if ( wget -qOtest "http://${bootserver}/" & w=$!; sleep .5; kill -0 $w 2>/dev/null || exit 0; kill -TERM $w; exit 1 ); then
+if ( wget -qO- "http://${bootserver}/" >/dev/null 2>&1 & w=$!; sleep .5; kill -0 $w 2>/dev/null || exit 0; kill -TERM $w; exit 1 ); then
   log_begin_msg "Downloading settings from $settings_url"
   if wget -qO"$settings_path" "$settings_url"; then
     log_end_msg
