@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+PACKAGES+=(libtss2-fapi1 libtss2-rc0)
+
 persistent() {
   mkdir -p /var/lib/rancher/k3s/agent/containerd
   cp_tpl --raw \

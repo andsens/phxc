@@ -30,18 +30,25 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 
   if ! cryptsetup isLuks "$devpath" 2>/dev/null; then
     info "%s not initialized, formatting" "$devpath"
+    initialize "$devpath"
+  else
+    cryptsetup open --type luks "$devpath" persistent
   fi
-  cryptsetup open --type luks "$devpath" persistent
+  mkdir /var/lib/persistent
   mount /dev/mapper/persistent /var/lib/persistent
   mkdir -p /var/lib/persistent/containerd /var/lib/persistent/longhorn
 }
 
 initialize() {
-  local devpath=$1
-  key=$(head -c64 /dev/urandom)
-  cryptsetup luksFormat "$devpath" <(printf "%s" "$key")
-  systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7+11 "$devpath"
-  cryptsetup luksRemoveKey "$devpath" <(printf "%s" "$key")
+  local devpath=$1 keyfile
+  keyfile=$(mktemp)
+  # shellcheck disable=SC2064
+  trap "rm \"$keyfile\"" EXIT
+  cryptsetup luksFormat --batch-mode "$devpath" "$keyfile"
+  systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7+11 --unlock-key-file "$keyfile" "$devpath"
+  cryptsetup luksRemoveKey --batch-mode "$devpath" "$keyfile"
+  cryptsetup open --type luks "$devpath" persistent
+  mkfs.ext4 /dev/mapper/persistent
 }
 
 main "$@"
