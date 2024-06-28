@@ -79,6 +79,7 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
   local kernver
   kernver=${vmlinuz#'/boot/vmlinuz-'}
   chroot /workspace/root update-initramfs -c -k "$kernver"
+  cp -r /secureboot /workspace/root/secureboot
   chroot /workspace/root /lib/systemd/ukify build \
     --uname="$kernver" \
     --linux="$vmlinuz" \
