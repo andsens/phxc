@@ -102,7 +102,6 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
   local sector_size_b=512 gpt_size_b fs_table_size_b partition_offset_b partition_size_b disk_size_kib
   gpt_size_b=$((33 * sector_size_b))
   fs_table_size_b=$(( 1024 * 1024 )) # Total guess, but should be enough
-  config_size_b=1024 # Same, should be fine
   partition_offset_b=$((1024 * 1024))
   # efi * 2 : The EFI boot loader is copied to two different destinations
   # stat -c %s : Size in bytes of the file
@@ -110,7 +109,6 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
   partition_size_b=$((
     (
       fs_table_size_b +
-      config_size_b +
       node_settings_size_b +
       $(stat -c %s /usr/lib/shim/shimx64.efi.signed) +
       $(stat -c %s /usr/lib/shim/mmx64.efi.signed) +
