@@ -11,3 +11,6 @@ spec:
     kind: StepClusterIssuer
     name: step-issuer
   usages: []
+  privateKey:
+    # Key *must* be RSA. When sbsign signs the UKI it always specifies that the key is RSA regardless of the facts.
+    algorithm: RSA

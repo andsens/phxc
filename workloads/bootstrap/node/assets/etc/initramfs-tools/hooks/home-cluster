@@ -15,4 +15,3 @@ copy_exec /usr/bin/jq /bin
 copy_exec /usr/bin/basename /bin
 copy_exec /usr/bin/readlink /bin
 copy_exec /usr/bin/cp /bin
-copy_file "root.img checksum" /etc/home-cluster/root.img.sha256

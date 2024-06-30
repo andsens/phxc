@@ -33,12 +33,7 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
   local \
     tar=/images/snapshots/$__arch.tar \
     pxedir=/images/pxe/$__arch \
-    uefidir=/images/uefi \
-    efiname
-
-  case $__arch in
-    amd64) efiname=BOOTX64.EFI ;;
-  esac
+    uefidir=/images/uefi
 
   mkdir -p /workspace/root
 
@@ -70,10 +65,9 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
   # Move boot dir back into place
   mv /workspace/boot /workspace/root/boot
 
+  # Hash the root image so we can verify it during boot
   local rootimg_checksum
   rootimg_checksum=$(sha256sum /workspace/root.img | cut -d ' ' -f1)
-  mkdir /workspace/root/etc/home-cluster
-  printf "%s  /run/initramfs/root.img.tmp" "$rootimg_checksum" >/workspace/root/etc/home-cluster/root.img.sha256
 
   info "Creating unified kernel image"
   local kernver
@@ -84,13 +78,12 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
     --uname="$kernver" \
     --linux="$vmlinuz" \
     --initrd="$initrd" \
-    --cmdline="root=/run/initramfs/root.img bootserver=${CLUSTER_BOOTSERVER_FIXEDIPV4} noresume" \
+    --cmdline="root=/run/initramfs/root.img root_sha256=$rootimg_checksum bootserver=${CLUSTER_BOOTSERVER_FIXEDIPV4} noresume" \
     --signtool=sbsign \
     --secureboot-private-key=/secureboot/tls.key \
     --secureboot-certificate=/secureboot/tls.crt \
     --output=/boot/vmlinuz.efi
-
-  mv /workspace/root/boot/vmlinuz.efi /workspace/$efiname
+  mv /workspace/root/boot/vmlinuz.efi /workspace/vmlinuz.efi
 
   ### UEFI Boot ###
 
@@ -101,6 +94,8 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
     node_settings_size_b=$(( node_settings_size_b + $(stat -c %s "$file") ))
     cp "$file" "/workspace/node-settings/$(basename "$file" | sed s/:/-/g)"
   done
+
+  step certificate format /secureboot/tls.crt >/workspace/secureboot.der
 
   dd if=/dev/random bs=32 count=1 >/workspace/random-seed
 
@@ -117,7 +112,10 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
       fs_table_size_b +
       config_size_b +
       node_settings_size_b +
-      $(stat -c %s /workspace/$efiname) +
+      $(stat -c %s /usr/lib/shim/shimx64.efi.signed) +
+      $(stat -c %s /usr/lib/shim/mmx64.efi.signed) +
+      $(stat -c %s /workspace/vmlinuz.efi) +
+      $(stat -c %s /workspace/secureboot.der) +
       $(stat -c %s /workspace/root.img) +
       (sector_size_b - 1)
     ) / sector_size_b * sector_size_b
@@ -136,6 +134,14 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
   ESP_UUID=c12a7328-f81f-11d2-ba4b-00a0c93ec93b
 
   info "Creating UEFI boot image"
+  local shimname grubname
+  case $__arch in
+    amd64)
+      shimname=BOOTX64.EFI
+      grubname=grubx64.efi
+      ;;
+  esac
+
   guestfish -xN /workspace/disk.raw=disk:${disk_size_kib}K -- <<EOF
 part-init /dev/sda gpt
 part-add /dev/sda primary $(( partition_offset_b / sector_size_b )) $(( (partition_offset_b + partition_size_b ) / sector_size_b - 1 ))
@@ -147,9 +153,15 @@ mkfs vfat /dev/sda1
 mount /dev/sda1 /
 
 mkdir-p /EFI/BOOT
-copy-in /workspace/$efiname /EFI/BOOT/
+copy-in /usr/lib/shim/shimx64.efi.signed /EFI/BOOT/
+mv /EFI/BOOT/shimx64.efi.signed /EFI/BOOT/$shimname
+copy-in /usr/lib/shim/mmx64.efi.signed /EFI/BOOT/
+mv /EFI/BOOT/mmx64.efi.signed /EFI/BOOT/mmx64.efi
+copy-in /workspace/vmlinuz.efi /EFI/BOOT/
+mv /EFI/BOOT/vmlinuz.efi /EFI/BOOT/$grubname
 
 mkdir-p /home-cluster
+copy-in /workspace/secureboot.der /home-cluster/
 copy-in /workspace/root.img /home-cluster/
 copy-in /workspace/node-settings /home-cluster/
 EOF
@@ -166,7 +178,7 @@ EOF
 
   mv /workspace/disk.raw "$uefidir/$__arch.raw.tmp"
   mv /workspace/root.img "$pxedir/root.img.tmp"
-  mv /workspace/BOOTX64.EFI "$pxedir/vmlinuz.efi.tmp"
+  mv /workspace/vmlinuz.efi "$pxedir/vmlinuz.efi.tmp"
 
   mv "$uefidir/$__arch.raw.tmp" "$uefidir/$__arch.raw"
   mv "$pxedir/root.img.tmp" "$pxedir/root.img"

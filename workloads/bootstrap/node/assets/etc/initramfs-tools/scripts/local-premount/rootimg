@@ -18,10 +18,22 @@ for x in $(cat /proc/cmdline); do
 done
 
 rootimg_path=/run/initramfs/root.img
+# shellcheck disable=SC2013
+for x in $(cat /proc/cmdline); do
+  case $x in
+  root_sha256=*)
+    root_sha256=${x#root_sha256=}
+    ;;
+  esac
+done
+if [ -z "${root_sha256}" ]; then
+  log_warning_msg "Unable to mount root disk. Boot argument root_sha256= not specified"
+  exit 1
+fi
 
 verify_rootimg() {
   log_begin_msg "Verifying checksum of root.img"
-  if sha256sum -c /etc/home-cluster/root.img.sha256; then
+  if printf "%s  %s" "$root_sha256" "$rootimg_path.tmp" | sha256sum -c -; then
     mv $rootimg_path.tmp $rootimg_path
   else
     log_failure_msg "root.img checksum is incorrect"
