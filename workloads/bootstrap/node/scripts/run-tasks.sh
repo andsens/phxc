@@ -42,6 +42,9 @@ main() {
       warning "%s had no task named %s" "$(basename "$taskfile")" "$task"
     fi
   done
+
+  apt-get autoremove -y
+  apt-get autoclean
 }
 
 cp_tpl() {
