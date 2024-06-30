@@ -6,7 +6,7 @@ PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../..")
 main() {
   source "$PKGROOT/.upkg/records.sh/records.sh"
 
-  DOC="setup-persistent - Initialize and/or mount the persistent disk
+  DOC="setup-persistent - Setup the persistent disk
 Usage:
   setup-persistent
 "
@@ -14,9 +14,9 @@ Usage:
 # shellcheck disable=2016,2086,2317,1090,1091,2034
 docopt() { local v='2.0.1'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
-%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:88};usage=${DOC:63:25}
-digest=2b497;options=();node_0(){ return 0;};cat <<<' docopt_exit() { [[ -n $1 \
-]] && printf "%s\n" "$1" >&2;printf "%s\n" "${DOC:63:25}" >&2;exit 1;}';local \
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:70};usage=${DOC:45:25}
+digest=a2214;options=();node_0(){ return 0;};cat <<<' docopt_exit() { [[ -n $1 \
+]] && printf "%s\n" "$1" >&2;printf "%s\n" "${DOC:45:25}" >&2;exit 1;}';local \
 varnames=() varname;for varname in "${varnames[@]}"; do unset "var_$varname"
 done;parse 0 "$@";return 0;local p=${DOCOPT_PREFIX:-''};for varname in \
 "${varnames[@]}"; do unset "$p$varname";done;eval ;local docopt_i=1;[[ \
@@ -32,7 +32,7 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
     info "%s not initialized, formatting" "$devpath"
     initialize "$devpath"
   else
-    cryptsetup open --type luks "$devpath" persistent
+    cryptsetup luksOpen "$devpath" persistent
   fi
   mkdir /var/lib/persistent
   mount /dev/mapper/persistent /var/lib/persistent
@@ -40,14 +40,29 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 }
 
 initialize() {
-  local devpath=$1 keyfile
-  keyfile=$(mktemp)
+  local devpath=$1 tmp_key recovery_key=/var/run/initramfs/persistent.recovery-key
+
+  # Setup with temporary key
+  tmp_key=$(mktemp)
   # shellcheck disable=SC2064
-  trap "rm \"$keyfile\"" EXIT
-  cryptsetup luksFormat --batch-mode "$devpath" "$keyfile"
-  systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7+11 --unlock-key-file "$keyfile" "$devpath"
-  cryptsetup luksRemoveKey --batch-mode "$devpath" "$keyfile"
-  cryptsetup open --type luks "$devpath" persistent
+  trap "rm -f \"$tmp_key\"" EXIT
+  head -c64 /dev/urandom >"$tmp_key"
+  cryptsetup luksFormat --batch-mode "$devpath" "$tmp_key"
+
+  # TPM enrollment
+  systemd-cryptenroll --tpm2-device auto --tpm2-pcrs=7+14 --unlock-key-file "$tmp_key" "$devpath"
+
+  # Recovery key enrollment
+  touch $recovery_key; chmod go-rwx $recovery_key
+  systemd-cryptenroll --recovery-key --unlock-key-file "$tmp_key" "$devpath" >$recovery_key
+
+  # Remove temporary key
+  cryptsetup luksRemoveKey --batch-mode "$devpath" "$tmp_key"
+
+  # Unlock volume
+  cryptsetup luksOpen "$devpath" persistent
+
+  # Create filesystem
   mkfs.ext4 /dev/mapper/persistent
 }
 
