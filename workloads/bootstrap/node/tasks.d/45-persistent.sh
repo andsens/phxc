@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
-PACKAGES+=(libtss2-fapi1 libtss2-rc0)
+PACKAGES+=(
+  libtss2-fapi1 libtss2-rc0 # Needed by systemd-cryptenroll for interacting with a TPM device
+)
 
 persistent() {
   mkdir -p /var/lib/rancher/k3s/agent/containerd
