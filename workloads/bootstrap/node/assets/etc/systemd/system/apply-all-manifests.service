@@ -9,6 +9,6 @@ WantedBy=k3s@server.target
 [Service]
 Type=oneshot
 Environment=HOME=/root KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-ExecCondition=bash -c '! /usr/local/bin/manifest latest-applied-all'
-ExecStart=/usr/local/bin/manifest apply all
+ExecCondition=bash -c '! /usr/local/lib/upkg/.upkg/home-cluster/bin/manifest latest-applied-all'
+ExecStart=/usr/local/lib/upkg/.upkg/home-cluster/bin/manifest apply all
 TimeoutSec=1200

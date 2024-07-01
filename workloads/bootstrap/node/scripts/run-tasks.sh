@@ -30,6 +30,8 @@ main() {
   apt-get install -y -t bookworm-backports --no-install-recommends "${PACKAGES[@]}"
   rm -rf /var/cache/apt/lists/*
 
+  upkg add -g "$PKGROOT/workloads/bootstrap/node/assets/system.upkg.json"
+
   local task
   for taskfile in "$PKGROOT/workloads/bootstrap/node/tasks.d/"??-*.sh; do
     task=$(basename "$taskfile" .sh)

@@ -6,14 +6,6 @@ PACKAGES+=(
 )
 
 k3s() {
-  local cmd
-  for cmd in k3s kubectl crictl ctr; do
-    upkg add -gp "$cmd" 'https://github.com/k3s-io/k3s/releases/download/v1.30.0%2Bk3s1/k3s' e4b85e74d7be314f39e033142973cc53619f4fbaff3639a420312f20dea12868
-  done
-  mkdir -p /etc/rancher/k3s/config.yaml.d
-
-  upkg add -gp cilium -b cilium 'https://github.com/cilium/cilium-cli/releases/download/v0.16.10/cilium-linux-amd64.tar.gz' aeb9d7c56108283a9fb9b370ec36b33f28f3126f6c4e6b4176a15cc6b2d3fc70
-
   cp_tpl /etc/rancher/k3s/server.yaml
   cp_tpl --raw \
     /etc/systemd/system/k3s@.target \
