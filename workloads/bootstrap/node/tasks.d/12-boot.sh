@@ -11,6 +11,7 @@ PACKAGES+=(
   overlayroot # Used for making ro-root writeable
   systemd-resolved # DNS resolution setup
   avahi-daemon libnss-mdns # System reachability through mdns
+  mokutil # Secure boot management
 )
 
 boot() {
@@ -42,4 +43,10 @@ boot() {
   cp_tpl /etc/overlayroot.conf
   # root disk is a squashfs image, none of these are needed
   systemctl disable fstrim e2scrub_all e2scrub_reap
+
+  # Exclusive MOK DB management
+  cp_tpl \
+    /etc/systemd/system/check-mok-db.service \
+    /etc/systemd/system/fix-mok-db.service
+  systemctl enable check-mok-db.service
 }

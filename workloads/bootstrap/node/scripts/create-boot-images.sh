@@ -56,6 +56,9 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
   rm /workspace/root/initrd.img* /workspace/root/vmlinuz*
   # Move boot dir out of the way before creating squashfs image
   mv /workspace/root/boot /workspace/boot
+  # Convert secureboot cert from PEM to DER and save to root disk for enrollment by exclusive-mok
+  mkdir /workspace/root/etc/home-cluster
+  step certificate format /secureboot/tls.crt >/workspace/root/etc/home-cluster/secureboot.der
 
   info "Creating squashfs image"
   local noprogress=
@@ -87,15 +90,13 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
 
   ### UEFI Boot ###
 
-  info "Generate node settings"
+  info "Generating node settings"
   mkdir /workspace/node-settings
   local file node_settings_size_b=0
   for file in /node-settings/*; do
     node_settings_size_b=$(( node_settings_size_b + $(stat -c %s "$file") ))
     cp "$file" "/workspace/node-settings/$(basename "$file" | sed s/:/-/g)"
   done
-
-  step certificate format /secureboot/tls.crt >/workspace/secureboot.der
 
   dd if=/dev/random bs=32 count=1 >/workspace/random-seed
 
@@ -113,7 +114,7 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
       $(stat -c %s /usr/lib/shim/shimx64.efi.signed) +
       $(stat -c %s /usr/lib/shim/mmx64.efi.signed) +
       $(stat -c %s /workspace/vmlinuz.efi) +
-      $(stat -c %s /workspace/secureboot.der) +
+      $(stat -c %s /workspace/root/etc/home-cluster/secureboot.der) +
       $(stat -c %s /workspace/root.img) +
       (sector_size_b - 1)
     ) / sector_size_b * sector_size_b
@@ -159,7 +160,7 @@ copy-in /workspace/vmlinuz.efi /EFI/BOOT/
 mv /EFI/BOOT/vmlinuz.efi /EFI/BOOT/$grubname
 
 mkdir-p /home-cluster
-copy-in /workspace/secureboot.der /home-cluster/
+copy-in /workspace/root/etc/home-cluster/secureboot.der /home-cluster/
 copy-in /workspace/root.img /home-cluster/
 copy-in /workspace/node-settings /home-cluster/
 EOF
