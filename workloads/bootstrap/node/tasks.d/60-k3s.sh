@@ -12,6 +12,8 @@ k3s() {
   done
   mkdir -p /etc/rancher/k3s/config.yaml.d
 
+  upkg add -gp cilium -b cilium 'https://github.com/cilium/cilium-cli/releases/download/v0.16.10/cilium-linux-amd64.tar.gz' aeb9d7c56108283a9fb9b370ec36b33f28f3126f6c4e6b4176a15cc6b2d3fc70
+
   cp_tpl /etc/rancher/k3s/server.yaml
   cp_tpl --raw \
     /etc/systemd/system/k3s@.target \

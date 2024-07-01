@@ -45,14 +45,6 @@
       "sha256": "5b86f0b06e1a5ba6f8f00e2b01e8ed39407729c4990aeda961f83a586f975e8a"
     },
     {
-      "tar": "https://github.com/cilium/cilium-cli/releases/download/v0.16.10/cilium-linux-amd64.tar.gz",
-      "sha256": "aeb9d7c56108283a9fb9b370ec36b33f28f3126f6c4e6b4176a15cc6b2d3fc70",
-      "name": "cilium",
-      "bin": [
-        "cilium"
-      ]
-    },
-    {
       "tar": "https://github.com/orbit-online/bgpid/releases/download/v1.0.0/bgpid.tar.gz",
       "sha256": "bac9fbcf574fc69f28eea803cf95ca1c67b607410a45ba4646afc2581b674d2e"
     },
