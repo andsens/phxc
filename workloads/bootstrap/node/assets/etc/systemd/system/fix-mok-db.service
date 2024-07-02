@@ -1,8 +1,0 @@
-[Unit]
-Description=Ensure that the home-cluster secureboot certificate is the only certificate in the MOK DB
-FailureAction=reboot
-
-[Service]
-Type=oneshot
-ExecStart=/usr/local/lib/upkg/.upkg/home-cluster/workloads/bootstrap/bin/exclusive-mok
-StandardError=journal+console

@@ -56,7 +56,7 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
   rm /workspace/root/initrd.img* /workspace/root/vmlinuz*
   # Move boot dir out of the way before creating squashfs image
   mv /workspace/root/boot /workspace/boot
-  # Convert secureboot cert from PEM to DER and save to root disk for enrollment by exclusive-mok
+  # Convert secureboot cert from PEM to DER and save to root disk for enrollment by enroll-sb-cert
   mkdir /workspace/root/etc/home-cluster
   step certificate format /secureboot/tls.crt >/workspace/root/etc/home-cluster/secureboot.der
 

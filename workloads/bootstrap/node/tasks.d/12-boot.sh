@@ -46,7 +46,7 @@ boot() {
 
   # Exclusive MOK DB management
   cp_tpl \
-    /etc/systemd/system/check-mok-db.service \
-    /etc/systemd/system/fix-mok-db.service
-  systemctl enable check-mok-db.service
+    /etc/systemd/system/enroll-sb-cert.service \
+    /etc/systemd/system/check-sb-cert.service
+  systemctl enable enroll-sb-cert.service
 }
