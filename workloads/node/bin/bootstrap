@@ -75,18 +75,20 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
     info "Not bootstrapping '%s', no files have changed since last run" "node:$__arch"
   fi
 
-  if find "$PKGROOT/workloads/node/containers/create-boot-images" "$PKGROOT/workloads/common-context" \
-    -newer "$PKGROOT/images/snapshots/create-boot-images.tar" | grep -q .; then
+  if find "$PKGROOT/workloads/node/containers/create-boot-image" "$PKGROOT/workloads/common-context" \
+    -newer "$PKGROOT/images/snapshots/create-boot-image.tar" | grep -q .; then
     docker run --rm -ti \
       -v "$PKGROOT/workloads/common-context:/workspace/common-context:ro" \
-      -v "$PKGROOT/workloads/node/containers/create-boot-images:/workspace/context:ro" \
+      -v "$PKGROOT/workloads/node/containers/create-boot-image:/workspace/context:ro" \
       -v "$PKGROOT/images/snapshots:/workspace/images/snapshots:rw" \
       gcr.io/kaniko-project/executor:latest \
       --dockerfile context/Dockerfile \
-      --destination cluster.local/create-boot-images:latest \
-      --tar-path "/workspace/images/snapshots/create-boot-images:latest.tar" \
+      --destination cluster.local/create-boot-image:latest \
+      --tar-path "/workspace/images/snapshots/create-boot-image.tar" \
       --no-push
-    docker load -i "$PKGROOT/images/snapshots/create-boot-images:latest.tar"
+    docker load -i "$PKGROOT/images/snapshots/create-boot-image.tar"
+  else
+    info "Not bootstrapping '%s', no files have changed since last run" "create-boot-image"
   fi
 
   local node_settings
@@ -100,13 +102,13 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
     -v "$node_settings:/node-settings:ro" \
     --mount type=bind,src="$sb_key_path",dst=/secureboot/tls.key,readonly \
     --mount type=bind,src="$sb_cert_path",dst=/secureboot/tls.crt,readonly \
-    -v "$PKGROOT/workloads/node/bootstrap/create-boot-images-assets:/assets:ro" \
+    -v "$PKGROOT/workloads/node/bootstrap/create-boot-image-assets:/assets:ro" \
     -v "$PKGROOT/workloads/node/bootstrap/scripts:/scripts:ro" \
     -v "$PKGROOT/images/snapshots:/images/snapshots:ro" \
     -v "$PKGROOT/images/pxe:/images/pxe:rw" \
     -v "$PKGROOT/images/uefi:/images/uefi:rw" \
     -e "CLUSTER_BOOTSERVER_FIXEDIPV4=${CLUSTER_BOOTSERVER_FIXEDIPV4:?}" \
-    cluster.local/create-boot-images:latest --arch "$__arch"
+    cluster.local/create-boot-image:latest --arch "$__arch"
 }
 
 main "$@"

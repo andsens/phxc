@@ -9,11 +9,12 @@ configMapGenerator:
   - Dockerfile
   name: node
 - files:
-  - create-boot-images-assets/etc-hosts
-  name: create-boot-images-assets
+  - create-boot-image-assets/etc-hosts
+  - create-boot-image-assets/etc-initramfs-tools-update-initramfs.conf
+  name: create-boot-image-assets
 - files:
-  - scripts/create-boot-images.sh
+  - scripts/create-boot-image.sh
   - scripts/get-pe-digest.py
-  name: create-boot-images-scripts
+  name: create-boot-image-scripts
 generators:
 - generate-bundle-cm.yaml

@@ -15,4 +15,4 @@ RUN apt-get -y update; apt-get -y install --no-install-recommends \
     signify==0.6.1 \
     docopt==0.6.2
 
-ENTRYPOINT ["/scripts/create-boot-images.sh"]
+ENTRYPOINT ["/scripts/create-boot-image.sh"]

@@ -1,16 +1,16 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: build-create-boot-images
+  name: build-create-boot-image
   labels:
     app.kubernetes.io/name: bootstrap
-    app.kubernetes.io/component: create-boot-images
+    app.kubernetes.io/component: create-boot-image
 spec:
   template:
     metadata:
       labels:
         app.kubernetes.io/name: bootstrap
-        app.kubernetes.io/component: create-boot-images
+        app.kubernetes.io/component: create-boot-image
         cluster.local/allow-internet-egress: "true"
     spec:
       restartPolicy: Never
@@ -19,8 +19,8 @@ spec:
         image: gcr.io/kaniko-project/executor:latest
         args:
         - --dockerfile=context/Dockerfile
-        - --destination=cluster.local/create-boot-images:latest
-        - --tar-path=/workspace/images/create-boot-images.tar.tmp
+        - --destination=cluster.local/create-boot-image:latest
+        - --tar-path=/workspace/images/create-boot-image.tar.tmp
         - --no-push
         env:
         - name: GGCR_EXPERIMENT_ESTARGZ
@@ -35,14 +35,14 @@ spec:
       containers:
       - name: move-image
         image: busybox
-        args: [mv, /images/create-boot-images.tar.tmp, /images/create-boot-images.tar]
+        args: [mv, /images/create-boot-image.tar.tmp, /images/create-boot-image.tar]
         volumeMounts:
         - name: images
           mountPath: /images
       volumes:
       - name: context
         configMap:
-          name: create-boot-images
+          name: create-boot-image
       - name: common-context
         configMap:
           name: common-context

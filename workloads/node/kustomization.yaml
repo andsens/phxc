@@ -4,7 +4,7 @@ namespace: node
 resources:
 - ../settings/replacements
 - ../common-context
-- containers/create-boot-images
+- containers/create-boot-image
 - containers/tftpd
 - bootstrap
 - keylime.yaml

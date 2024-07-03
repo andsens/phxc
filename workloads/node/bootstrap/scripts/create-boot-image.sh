@@ -5,27 +5,27 @@ PKGROOT=/usr/local/lib/upkg
 
 main() {
   source "$PKGROOT/.upkg/records.sh/records.sh"
-  DOC="create-boot-images - Create PXE & UEFI boot image from a container export
+  DOC="create-boot-image - Create PXE & UEFI boot image from a container export
 Usage:
-  create-boot-images [-a ARCH]
+  create-boot-image [-a ARCH]
 
 Options:
   -a --arch ARCH  Processor architecture of the image [default: amd64]
 "
-# docopt parser below, refresh this parser with `docopt.sh create-boot-images.sh`
+# docopt parser below, refresh this parser with `docopt.sh create-boot-image.sh`
 # shellcheck disable=2016,2086,2317,1090,1091,2034
 docopt() { local v='2.0.1'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
-%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:192};usage=${DOC:74:37}
-digest=aea8f;options=('-a --arch 1');node_0(){ value __arch 0;};node_1(){
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:190};usage=${DOC:73:36}
+digest=4c455;options=('-a --arch 1');node_0(){ value __arch 0;};node_1(){
 optional 0;};cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2
-printf "%s\n" "${DOC:74:37}" >&2;exit 1;}';local varnames=(__arch) varname;for \
+printf "%s\n" "${DOC:73:36}" >&2;exit 1;}';local varnames=(__arch) varname;for \
 varname in "${varnames[@]}"; do unset "var_$varname";done;parse 1 "$@";local \
 p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset "$p$varname"
 done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
 =~ ^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for varname in \
 "${varnames[@]}"; do declare -p "$p$varname";done;done;}
-# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' create-boot-images.sh`
+# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' create-boot-image.sh`
   eval "$(docopt "$@")"
 
   # shellcheck disable=SC2154

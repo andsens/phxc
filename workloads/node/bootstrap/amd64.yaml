@@ -39,8 +39,8 @@ spec:
           mountPath: /images/snapshots
           subPath: snapshots
       containers:
-      - name: create-boot-images
-        image: cluster.local/create-boot-images:latest
+      - name: create-boot-image
+        image: cluster.local/create-boot-image:latest
         imagePullPolicy: Never
         args: [-a, $(ARCH)]
         env:
@@ -73,11 +73,11 @@ spec:
           name: node
       - name: scripts
         configMap:
-          name: create-boot-images-scripts
+          name: create-boot-image-scripts
           defaultMode: 0755
       - name: assets
         configMap:
-          name: create-boot-images-assets
+          name: create-boot-image-assets
       - name: common-context
         configMap:
           name: common-context
