@@ -77,7 +77,7 @@ do declare -p "$p$varname";done;done;}
       cert-manager-issuers
       kubernetes-secret-generator
       smallstep
-      bootstrap
+      node
       traefik
     )
     if $delete; then

@@ -1,0 +1,106 @@
+#!/usr/bin/env bash
+# shellcheck source-path=../../..
+set -Eeo pipefail; shopt -s inherit_errexit
+PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../..")
+export DOCKER_CLI_HINTS=false
+
+main() {
+  source "$PKGROOT/.upkg/records.sh/records.sh"
+  source "$PKGROOT/.upkg/path-tools/path-tools.sh"
+  PATH=$(path_prepend "$PKGROOT/.upkg/.bin")
+  # shellcheck source=workloads/settings/lib/settings-env.shellcheck.sh
+  source "$PKGROOT/workloads/settings/lib/settings-env.sh"
+  eval_settings
+
+  DOC="bootstrap - Bootstrap images
+Usage:
+  bootstrap [-a ARCH]
+
+Options:
+  -a --arch ARCH  Processor architecture of the image [default: amd64]
+"
+# docopt parser below, refresh this parser with `docopt.sh bootstrap`
+# shellcheck disable=2016,2086,2317,1090,1091,2034
+docopt() { local v='2.0.1'; source \
+"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:138};usage=${DOC:29:28}
+digest=00c86;options=('-a --arch 1');node_0(){ value __arch 0;};node_1(){
+optional 0;};cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2
+printf "%s\n" "${DOC:29:28}" >&2;exit 1;}';local varnames=(__arch) varname;for \
+varname in "${varnames[@]}"; do unset "var_$varname";done;parse 1 "$@";local \
+p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset "$p$varname"
+done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
+=~ ^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for varname in \
+"${varnames[@]}"; do declare -p "$p$varname";done;done;}
+# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' bootstrap`
+  eval "$(docopt "$@")"
+
+  export STEPPATH=${STEPPATH:-$(step path --base)}
+  local \
+    sb_key_path="$STEPPATH/secureboot.key" \
+    sb_cert_path="$STEPPATH/secureboot.crt"
+  if [[ ! -e $sb_cert_path ]] || step certificate needs-renewal "$sb_cert_path" 2>&1 | pipe_verbose; then
+    # Key *must* be RSA. When sbsign signs the UKI it always specifies that the key is RSA regardless of the facts.
+    step certificate create --template=<(printf '{
+	"subject": {{ toJson .Subject }},
+	"keyUsage": ["digitalSignature"],
+	"extKeyUsage": ["codeSigning"]
+}') --force --insecure --no-password --not-after=$((10*365*24))h --kty=RSA "home-cluster Secure Boot (Admin)" "$sb_cert_path" "$sb_key_path"
+  fi
+
+  local bundle
+  bundle=$(mktemp --suffix .tar.gz)
+  # shellcheck disable=SC2064
+  trap "rm \"$bundle\"" EXIT
+  "$PKGROOT/workloads/node/bin/bundle" "$bundle"
+
+  mkdir -p "$PKGROOT/images/snapshots"
+  # shellcheck disable=SC2154
+  docker run --rm -ti \
+    -v "$PKGROOT/workloads/node/bootstrap/Dockerfile:/workspace/context/Dockerfile:ro" \
+    -v "$bundle:/workspace/home-cluster.tar.gz:ro" \
+    -v "$PKGROOT/workloads/common-context:/workspace/common-context:ro" \
+    -v "$PKGROOT/images/snapshots:/workspace/images/snapshots:rw" \
+    gcr.io/kaniko-project/executor:latest \
+    --dockerfile context/Dockerfile \
+    --build-arg "ARCH=$__arch" \
+    --custom-platform="linux/$__arch" \
+    --destination cluster.local/node:amd64 \
+    --insecure-registry=cluster.local \
+    --tar-path "/workspace/images/snapshots/$__arch.tar" \
+    --no-push
+
+  if find "$PKGROOT/workloads/node/containers/create-boot-images" -newer "$PKGROOT/images/snapshots/create-boot-images:latest.tar" | grep -q .; then
+    docker run --rm -ti \
+      -v "$PKGROOT/workloads/common-context:/workspace/common-context:ro" \
+      -v "$PKGROOT/workloads/node/containers/create-boot-images:/workspace/context:ro" \
+      -v "$PKGROOT/images/snapshots:/workspace/images/snapshots:rw" \
+      gcr.io/kaniko-project/executor:latest \
+      --dockerfile context/Dockerfile \
+      --destination cluster.local/create-boot-images:latest \
+      --tar-path "/workspace/images/snapshots/create-boot-images:latest.tar" \
+      --no-push
+    docker load -i "$PKGROOT/images/snapshots/create-boot-images:latest.tar"
+  fi
+
+  local node_settings
+  node_settings=$(mktemp -d)
+  for node in $(yq -c '.nodes[]' "$PKGROOT/settings.yaml"); do
+    ! mac=$(yq -re '.mac' <<<"$node")|| \
+      printf "%s\n" "$node" >"$node_settings/$mac.json"
+  done
+  mkdir -p "$PKGROOT/images/pxe" "$PKGROOT/images/uefi"
+  docker run --rm -ti \
+    -v "$node_settings:/node-settings:ro" \
+    --mount type=bind,src="$sb_key_path",dst=/secureboot/tls.key,readonly \
+    --mount type=bind,src="$sb_cert_path",dst=/secureboot/tls.crt,readonly \
+    -v "$PKGROOT/workloads/node/bootstrap/create-boot-images-assets:/assets:ro" \
+    -v "$PKGROOT/workloads/node/bootstrap/scripts:/scripts:ro" \
+    -v "$PKGROOT/images/snapshots:/images/snapshots:ro" \
+    -v "$PKGROOT/images/pxe:/images/pxe:rw" \
+    -v "$PKGROOT/images/uefi:/images/uefi:rw" \
+    -e "CLUSTER_BOOTSERVER_FIXEDIPV4=${CLUSTER_BOOTSERVER_FIXEDIPV4:?}" \
+    cluster.local/create-boot-images:latest --arch "$__arch"
+}
+
+main "$@"

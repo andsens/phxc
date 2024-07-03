@@ -1,0 +1,50 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: node
+resources:
+- ../settings/replacements
+- ../common-context
+- containers/create-boot-images
+- containers/tftpd
+- bootstrap
+- keylime.yaml
+- images.yaml
+- secureboot.yaml
+- tftpd.yaml
+- boot-server.yaml
+- namespace.yaml
+- Kptfile
+- resourcegroup.yaml
+configMapGenerator:
+- files:
+  - config/pxe/boot-server.conf
+  name: boot-server
+- files:
+  - config/pxe/map-file
+  name: tftp
+- files:
+  - config/keylime/registrar.conf
+  - config/keylime/tenant.conf
+  - config/keylime/verifier.conf
+  name: keylime
+replacements:
+- source: {fieldPath: data.cluster.bootServer.fixedIPv4, kind: ConfigMap, name: settings}
+  targets:
+  - select: {kind: Service, name: boot-server}
+    fieldPaths: [metadata.annotations.io\.cilium/lb-ipam-ips]
+    options: {delimiter: ',', index: 0}
+- source: {fieldPath: data.cluster.bootServer.fixedIPv6, kind: ConfigMap, name: settings}
+  targets:
+  - select: {kind: Service, name: boot-server}
+    fieldPaths: [metadata.annotations.io\.cilium/lb-ipam-ips]
+    options: {delimiter: ',', index: 1}
+- source: {fieldPath: data.cluster.keylime.fixedIPv4, kind: ConfigMap, name: settings}
+  targets:
+  - select: {kind: Service, name: keylime}
+    fieldPaths: [metadata.annotations.io\.cilium/lb-ipam-ips]
+    options: {delimiter: ',', index: 0}
+- source: {fieldPath: data.cluster.keylime.fixedIPv6, kind: ConfigMap, name: settings}
+  targets:
+  - select: {kind: Service, name: keylime}
+    fieldPaths: [metadata.annotations.io\.cilium/lb-ipam-ips]
+    options: {delimiter: ',', index: 1}

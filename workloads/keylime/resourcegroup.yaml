@@ -1,6 +1,0 @@
-apiVersion: kpt.dev/v1alpha1
-kind: ResourceGroup
-metadata:
-  name: keylime
-  labels:
-    cli-utils.sigs.k8s.io/inventory-id: 9f886a11607604d0c18905d60954feac02b72296-1719747829338287381

@@ -1,0 +1,141 @@
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: keylime
+  labels:
+    app.kubernetes.io/name: keylime
+    app.kubernetes.io/component: server
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: keylime
+      app.kubernetes.io/component: server
+  ingress:
+  - toPorts:
+    - ports:
+      - port: "8881"
+      - port: "8890"
+      - port: "8891"
+    fromEntities:
+    - all
+  egress:
+  - toPorts:
+    - ports:
+      - port: "9002"
+    toEntities:
+    - all
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: keylime
+  labels:
+    app.kubernetes.io/name: keylime
+    app.kubernetes.io/component: server
+  annotations:
+    io.cilium/lb-ipam-ips: "cluster.bootServer.fixedIPv4,cluster.bootServer.fixedIPv6"
+spec:
+  type: LoadBalancer
+  ipFamilies: [IPv4, IPv6]
+  ipFamilyPolicy: RequireDualStack
+  selector:
+    app.kubernetes.io/name: keylime
+    app.kubernetes.io/component: server
+  ports:
+  - name: verifier
+    port: 8881
+    targetPort: 8881
+  - name: registrar
+    port: 8890
+    targetPort: 8890
+  - name: registrar-tls
+    port: 8891
+    targetPort: 8891
+  - name: revoke-notif
+    port: 8992
+    targetPort: 8992
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: keylime
+  labels:
+    app.kubernetes.io/name: keylime
+    app.kubernetes.io/component: server
+spec:
+  serviceName: keylime
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: keylime
+      app.kubernetes.io/component: server
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: keylime
+        app.kubernetes.io/component: server
+    spec:
+      containers:
+      - name: verifier
+        image: quay.io/keylime/keylime_verifier:sha-552326a
+        securityContext:
+          readOnlyRootFilesystem: true
+        ports:
+        - name: verifier
+          containerPort: 8881
+        - name: revoke-notif
+          containerPort: 8992
+        volumeMounts:
+        - name: config
+          mountPath: /etc/keylime/verifier.conf
+          subPath: verifier.conf
+        - name: config
+          mountPath: /etc/keylime/tenant.conf
+          subPath: tenant.conf
+        - name: tls
+          mountPath: /var/lib/keylime/cv_ca
+        - name: database
+          mountPath: /var/lib/keylime/db
+      - name: registrar
+        image: quay.io/keylime/keylime_registrar:sha-552326a
+        securityContext:
+          readOnlyRootFilesystem: true
+        ports:
+        - name: registrar
+          containerPort: 8890
+        - name: registrar-tls
+          containerPort: 8891
+        volumeMounts:
+        - name: config
+          mountPath: /etc/keylime/registrar.conf
+          subPath: registrar.conf
+        - name: tls
+          mountPath: /var/lib/keylime/cv_ca
+        - name: database
+          mountPath: /var/lib/keylime/db
+      volumes:
+      - name: config
+        configMap:
+          name: keylime
+      - name: images
+        persistentVolumeClaim:
+          claimName: images
+  volumeClaimTemplates:
+  - metadata:
+      name: tls
+      labels:
+        app.kubernetes.io/name: keylime
+        app.kubernetes.io/component: tls
+    spec:
+      storageClassName: longhorn
+      accessModes: [ReadWriteOnce]
+      resources: {requests: {storage: 100Mi}}
+  - metadata:
+      name: database
+      labels:
+        app.kubernetes.io/name: keylime
+        app.kubernetes.io/component: database
+    spec:
+      storageClassName: longhorn
+      accessModes: [ReadWriteOnce]
+      resources: {requests: {storage: 100Mi}}

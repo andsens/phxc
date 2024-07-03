@@ -1,4 +1,0 @@
-re ^grubx32.efi$ /pxe/x86/vmlinuz.efi last;
-re ^grubx64.efi$ /pxe/amd64/vmlinuz.efi last;
-re ^grubarm.efi$ /pxe/arm/vmlinuz.efi last;
-re ^grubaa64.efi$ /pxe/arm64/vmlinuz.efi last;
