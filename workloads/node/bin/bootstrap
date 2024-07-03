@@ -55,44 +55,46 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
   "$PKGROOT/workloads/node/bin/bundle" "$bundle"
 
   # shellcheck disable=SC2154
-  mkdir -p "$PKGROOT/images/snapshots/$__arch"
+  mkdir -p "$PKGROOT/images/$__arch"
   if find "$PKGROOT/workloads/node/bootstrap" "$PKGROOT/workloads/common-context" \
-    -newer "$PKGROOT/images/snapshots/$__arch/node.tar" 2>/dev/null | grep -q .; then
+    -newer "$PKGROOT/images/$__arch/node.tar" 2>/dev/null | grep -q .; then
     info "Building '%s'" "node:$__arch"
     docker run --rm -ti \
       -v "$PKGROOT/workloads/node/bootstrap/Dockerfile:/workspace/context/Dockerfile:ro" \
       -v "$bundle:/workspace/home-cluster.tar.gz:ro" \
       -v "$PKGROOT/workloads/common-context:/workspace/common-context:ro" \
-      -v "$PKGROOT/images/snapshots:/workspace/images/snapshots:rw" \
+      -v "$PKGROOT/images:/workspace/images:rw" \
       gcr.io/kaniko-project/executor:latest \
       --dockerfile context/Dockerfile \
       --build-arg "ARCH=$__arch" \
       --custom-platform="linux/$__arch" \
       --destination "cluster.local/node:$__arch" \
       --insecure-registry=cluster.local \
-      --tar-path "/workspace/images/snapshots/$__arch/node.tar" \
+      --tar-path "/workspace/images/$__arch/node.new.tar" \
       --no-push
   else
     info "Not building '%s', no files have changed since last run" "node:$__arch"
+    cp "$PKGROOT/images/$__arch/node.tar" "$PKGROOT/images/$__arch/node.new.tar"
   fi
 
   if find "$PKGROOT/workloads/node/containers/create-boot-image" "$PKGROOT/workloads/common-context" \
-    -newer "$PKGROOT/images/snapshots/$__arch/create-boot-image.tar" 2>/dev/null | grep -q .; then
+    -newer "$PKGROOT/images/$__arch/create-boot-image.tar" 2>/dev/null | grep -q .; then
     info "Building '%s'" "create-boot-image:$__arch"
     docker run --rm -ti \
       -v "$PKGROOT/workloads/common-context:/workspace/common-context:ro" \
       -v "$PKGROOT/workloads/node/containers/create-boot-image:/workspace/context:ro" \
-      -v "$PKGROOT/images/snapshots:/workspace/images/snapshots:rw" \
+      -v "$PKGROOT/images:/workspace/images:rw" \
       gcr.io/kaniko-project/executor:latest \
       --dockerfile context/Dockerfile \
       --build-arg "ARCH=$__arch" \
       --custom-platform="linux/$__arch" \
       --destination "cluster.local/create-boot-image:$__arch" \
-      --tar-path "/workspace/images/snapshots/$__arch/create-boot-image.tar" \
+      --tar-path "/workspace/images/$__arch/create-boot-image.new.tar" \
       --no-push
-    docker load -i "$PKGROOT/images/snapshots/$__arch/create-boot-image.tar"
+    docker load -i "$PKGROOT/images/$__arch/create-boot-image.new.tar"
   else
     info "Not building '%s', no files have changed since last run" "create-boot-image"
+    cp "$PKGROOT/images/$__arch/create-boot-image.tar" "$PKGROOT/images/$__arch/create-boot-image.new.tar"
   fi
 
   local node_settings
@@ -101,18 +103,17 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
     ! mac=$(yq -re '.mac' <<<"$node")|| \
       printf "%s\n" "$node" >"$node_settings/$mac.json"
   done
-  mkdir -p "$PKGROOT/images/pxe" "$PKGROOT/images/uefi"
   docker run --rm -ti \
     -v "$node_settings:/node-settings:ro" \
     --mount type=bind,src="$sb_key_path",dst=/secureboot/tls.key,readonly \
     --mount type=bind,src="$sb_cert_path",dst=/secureboot/tls.crt,readonly \
     -v "$PKGROOT/workloads/node/bootstrap/create-boot-image-assets:/assets:ro" \
     -v "$PKGROOT/workloads/node/bootstrap/scripts:/scripts:ro" \
-    -v "$PKGROOT/images/snapshots:/images/snapshots:ro" \
-    -v "$PKGROOT/images/pxe:/images/pxe:rw" \
-    -v "$PKGROOT/images/uefi:/images/uefi:rw" \
+    -v "$PKGROOT/images:/images:rw" \
     -e "CLUSTER_BOOTSERVER_FIXEDIPV4=${CLUSTER_BOOTSERVER_FIXEDIPV4:?}" \
+    -e CHOWN=$UID:$UID \
     "cluster.local/create-boot-image:$__arch"
+  mv "$PKGROOT/images/$__arch.old/create-boot-image.new.tar" "$PKGROOT/images/$__arch/create-boot-image.tar"
 }
 
 main "$@"

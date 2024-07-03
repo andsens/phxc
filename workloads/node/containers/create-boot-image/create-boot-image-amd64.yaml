@@ -39,7 +39,7 @@ spec:
       containers:
       - name: move-image
         image: busybox
-        args: [mv, /images/create-boot-image.tar.tmp, /images/create-boot-image.tar]
+        args: [mv, /images/create-boot-image:$(ARCH).tar.tmp, /images/create-boot-image:$(ARCH).tar]
         volumeMounts:
         - name: images
           mountPath: /images

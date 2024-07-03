@@ -6,17 +6,12 @@ PKGROOT=/usr/local/lib/upkg
 main() {
   source "$PKGROOT/.upkg/records.sh/records.sh"
   # shellcheck disable=SC2154
-  local \
-    tar=/images/snapshots/$ARCH/node.tar \
-    pxedir=/images/pxe/$ARCH \
-    uefidir=/images/uefi
 
   mkdir -p /workspace/root
 
   info "Extracting container export"
-  local layer
-  for layer in $(jq -r '.[0].Layers[]' <(tar -xOf "$tar" manifest.json)); do
-    tar -xOf "$tar" "$layer" | tar -xz -C /workspace/root
+  for layer in $(jq -r '.[0].Layers[]' <(tar -xOf "/images/$ARCH/node.new.tar" manifest.json)); do
+    tar -xOf "/images/$ARCH/node.new.tar" "$layer" | tar -xz -C /workspace/root
   done
   # During bootstrapping with kaniko these file can't be removed/overwritten,
   # instead we do it when creating the image
@@ -116,7 +111,7 @@ main() {
     default) fatal "Unknown processor architecture: %s" "$ARCH" ;;
   esac
 
-  guestfish -xN /workspace/disk.raw=disk:${disk_size_kib}K -- <<EOF
+  guestfish -xN /workspace/node.raw=disk:${disk_size_kib}K -- <<EOF
 part-init /dev/sda gpt
 part-add /dev/sda primary $(( partition_offset_b / sector_size_b )) $(( (partition_offset_b + partition_size_b ) / sector_size_b - 1 ))
 part-set-bootable /dev/sda 1 true
@@ -140,13 +135,8 @@ copy-in /workspace/root.img /home-cluster/
 copy-in /workspace/node-settings /home-cluster/
 EOF
 
-  ### Finish up by moving everything to the right place
-
-  # We don't write directly to /images/snapshots because it can be NFS mounted
-  # I'm not sure if it's longhorn or the NFS settings, but something
-  # is causing write errors when reading and writing to it through
-  # libguestfs. So instead we read/write on the tmpdir and then
-  # move everything over to /images afterwards.
+  # Finish up by moving everything to the right place in the most atomic way possible
+  # as to avoid leaving anything in an incomplete state
 
   info "Moving UEFI disk, squashfs root, shim bootloader, mok manager, and unified kernel image EFI to shared volume"
 
@@ -154,16 +144,26 @@ EOF
   /signify/bin/python3 /scripts/get-pe-digest.py --json /workspace/vmlinuz.efi >/workspace/vmlinuz.efi.digest.json
   /signify/bin/python3 /scripts/get-pe-digest.py --json /usr/lib/shim/shim${shimsuffix}.efi.signed >/workspace/shim.efi.digest.json
 
-  cp /usr/lib/shim/shim${shimsuffix}.efi.signed "$pxedir/shim.efi"
-  cp /usr/lib/shim/mm${shimsuffix}.efi.signed "$pxedir/mm.efi"
-  mv /workspace/disk.raw "$uefidir/$ARCH.raw.tmp"
-  mv /workspace/root.img "$pxedir/root.img.tmp"
-  mv /workspace/vmlinuz.efi "$pxedir/vmlinuz.efi.tmp"
+  local \
+    tmpdir=/images/$ARCH.tmp \
+    olddir=/images/$ARCH.old \
+       dir=/images/$ARCH
 
-  mv "$uefidir/$ARCH.raw.tmp" "$uefidir/$ARCH.raw"
-  mv "$pxedir/root.img.tmp" "$pxedir/root.img"
-  mv "$pxedir/vmlinuz.efi.tmp" "$pxedir/vmlinuz.efi"
+  rm -rf "$tmpdir"
+  mkdir "/images/$ARCH.tmp"
+  mv "$dir/node.new.tar"                        "$tmpdir/node.tar"
+  cp /usr/lib/shim/shim${shimsuffix}.efi.signed "$tmpdir/shim.efi"
+  mv /workspace/shim.efi.digest.json            "$tmpdir/shim.efi.digest.json"
+  cp /usr/lib/shim/mm${shimsuffix}.efi.signed   "$tmpdir/mm.efi"
+  mv /workspace/root.img                        "$tmpdir/root.img"
+  mv /workspace/vmlinuz.efi                     "$tmpdir/vmlinuz.efi"
+  mv /workspace/vmlinuz.efi.digest.json         "$tmpdir/vmlinuz.efi.digest.json"
+  mv /workspace/node.raw                        "$tmpdir/node.raw"
+
+  rm -rf "$olddir"
+  mv "$dir" "$olddir"
+  mv "$tmpdir" "$dir"
+  [[ -z "$CHOWN" ]] || chown -R "$CHOWN" "$dir"
 }
-
 
 main "$@"

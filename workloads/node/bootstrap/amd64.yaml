@@ -23,7 +23,7 @@ spec:
         - --build-arg=ARCH=$(ARCH)
         - --custom-platform=linux/$(ARCH)
         - --destination=cluster.local/non-existent
-        - --tar-path=/images/snapshots/$(ARCH)/node.tar
+        - --tar-path=/images/$(ARCH)/node.new.tar
         - --no-push
         env:
         - name: ARCH
@@ -37,8 +37,7 @@ spec:
           mountPath: /workspace/home-cluster.tar.gz
           subPath: home-cluster.tar.gz
         - name: images
-          mountPath: /images/snapshots
-          subPath: snapshots
+          mountPath: /images
       containers:
       - name: create-boot-image
         image: cluster.local/create-boot-image:amd64
@@ -55,15 +54,7 @@ spec:
         - name: secureboot
           mountPath: /secureboot
         - name: images
-          mountPath: /images/snapshots
-          subPath: snapshots
-          readOnly: true
-        - name: images
-          mountPath: /images/pxe
-          subPath: pxe
-        - name: images
-          mountPath: /images/uefi
-          subPath: uefi
+          mountPath: /images
       volumes:
       - name: context
         configMap:
