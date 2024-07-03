@@ -70,7 +70,8 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
     --tar-path "/workspace/images/snapshots/$__arch.tar" \
     --no-push
 
-  if find "$PKGROOT/workloads/node/containers/create-boot-images" -newer "$PKGROOT/images/snapshots/create-boot-images:latest.tar" | grep -q .; then
+  if find "$PKGROOT/workloads/node/containers/create-boot-images" "$PKGROOT/workloads/common-context" \
+    -newer "$PKGROOT/images/snapshots/create-boot-images:latest.tar" | grep -q .; then
     docker run --rm -ti \
       -v "$PKGROOT/workloads/common-context:/workspace/common-context:ro" \
       -v "$PKGROOT/workloads/node/containers/create-boot-images:/workspace/context:ro" \
