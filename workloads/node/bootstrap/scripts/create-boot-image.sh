@@ -7,7 +7,7 @@ main() {
   source "$PKGROOT/.upkg/records.sh/records.sh"
   # shellcheck disable=SC2154
   local \
-    tar=/images/snapshots/$ARCH.tar \
+    tar=/images/snapshots/$ARCH/node.tar \
     pxedir=/images/pxe/$ARCH \
     uefidir=/images/uefi
 

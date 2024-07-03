@@ -54,10 +54,10 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
   trap "rm \"$bundle\"" EXIT
   "$PKGROOT/workloads/node/bin/bundle" "$bundle"
 
-  mkdir -p "$PKGROOT/images/snapshots"
   # shellcheck disable=SC2154
+  mkdir -p "$PKGROOT/images/snapshots/$__arch"
   if find "$PKGROOT/workloads/node/bootstrap" "$PKGROOT/workloads/common-context" \
-    -newer "$PKGROOT/images/snapshots/$__arch.tar" 2>/dev/null | grep -q .; then
+    -newer "$PKGROOT/images/snapshots/$__arch/node.tar" 2>/dev/null | grep -q .; then
     info "Building '%s'" "node:$__arch"
     docker run --rm -ti \
       -v "$PKGROOT/workloads/node/bootstrap/Dockerfile:/workspace/context/Dockerfile:ro" \
@@ -70,15 +70,15 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
       --custom-platform="linux/$__arch" \
       --destination "cluster.local/node:$__arch" \
       --insecure-registry=cluster.local \
-      --tar-path "/workspace/images/snapshots/$__arch.tar" \
+      --tar-path "/workspace/images/snapshots/$__arch/node.tar" \
       --no-push
   else
     info "Not building '%s', no files have changed since last run" "node:$__arch"
   fi
 
   if find "$PKGROOT/workloads/node/containers/create-boot-image" "$PKGROOT/workloads/common-context" \
-    -newer "$PKGROOT/images/snapshots/create-boot-image:$__arch.tar" 2>/dev/null | grep -q .; then
-    info "Building '%s'" "create-boot-image"
+    -newer "$PKGROOT/images/snapshots/$__arch/create-boot-image.tar" 2>/dev/null | grep -q .; then
+    info "Building '%s'" "create-boot-image:$__arch"
     docker run --rm -ti \
       -v "$PKGROOT/workloads/common-context:/workspace/common-context:ro" \
       -v "$PKGROOT/workloads/node/containers/create-boot-image:/workspace/context:ro" \
@@ -88,9 +88,9 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
       --build-arg "ARCH=$__arch" \
       --custom-platform="linux/$__arch" \
       --destination "cluster.local/create-boot-image:$__arch" \
-      --tar-path "/workspace/images/snapshots/create-boot-image:$__arch.tar" \
+      --tar-path "/workspace/images/snapshots/$__arch/create-boot-image.tar" \
       --no-push
-    docker load -i "$PKGROOT/images/snapshots/create-boot-image:$__arch.tar"
+    docker load -i "$PKGROOT/images/snapshots/$__arch/create-boot-image.tar"
   else
     info "Not building '%s', no files have changed since last run" "create-boot-image"
   fi

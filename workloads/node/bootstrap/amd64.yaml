@@ -23,7 +23,7 @@ spec:
         - --build-arg=ARCH=$(ARCH)
         - --custom-platform=linux/$(ARCH)
         - --destination=cluster.local/non-existent
-        - --tar-path=/images/snapshots/$(ARCH).tar
+        - --tar-path=/images/snapshots/$(ARCH)/node.tar
         - --no-push
         env:
         - name: ARCH
