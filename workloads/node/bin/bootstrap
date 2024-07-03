@@ -57,7 +57,8 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
   mkdir -p "$PKGROOT/images/snapshots"
   # shellcheck disable=SC2154
   if find "$PKGROOT/workloads/node/bootstrap" "$PKGROOT/workloads/common-context" \
-    -newer "$PKGROOT/images/snapshots/$__arch.tar" | grep -q .; then
+    -newer "$PKGROOT/images/snapshots/$__arch.tar" 2>/dev/null | grep -q .; then
+    info "Building '%s'" "node:$__arch"
     docker run --rm -ti \
       -v "$PKGROOT/workloads/node/bootstrap/Dockerfile:/workspace/context/Dockerfile:ro" \
       -v "$bundle:/workspace/home-cluster.tar.gz:ro" \
@@ -72,23 +73,26 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
       --tar-path "/workspace/images/snapshots/$__arch.tar" \
       --no-push
   else
-    info "Not bootstrapping '%s', no files have changed since last run" "node:$__arch"
+    info "Not building '%s', no files have changed since last run" "node:$__arch"
   fi
 
   if find "$PKGROOT/workloads/node/containers/create-boot-image" "$PKGROOT/workloads/common-context" \
-    -newer "$PKGROOT/images/snapshots/create-boot-image.tar" | grep -q .; then
+    -newer "$PKGROOT/images/snapshots/create-boot-image:$__arch.tar" 2>/dev/null | grep -q .; then
+    info "Building '%s'" "create-boot-image"
     docker run --rm -ti \
       -v "$PKGROOT/workloads/common-context:/workspace/common-context:ro" \
       -v "$PKGROOT/workloads/node/containers/create-boot-image:/workspace/context:ro" \
       -v "$PKGROOT/images/snapshots:/workspace/images/snapshots:rw" \
       gcr.io/kaniko-project/executor:latest \
       --dockerfile context/Dockerfile \
-      --destination cluster.local/create-boot-image:latest \
-      --tar-path "/workspace/images/snapshots/create-boot-image.tar" \
+      --build-arg "ARCH=$__arch" \
+      --custom-platform="linux/$__arch" \
+      --destination "cluster.local/create-boot-image:$__arch" \
+      --tar-path "/workspace/images/snapshots/create-boot-image:$__arch.tar" \
       --no-push
-    docker load -i "$PKGROOT/images/snapshots/create-boot-image.tar"
+    docker load -i "$PKGROOT/images/snapshots/create-boot-image:$__arch.tar"
   else
-    info "Not bootstrapping '%s', no files have changed since last run" "create-boot-image"
+    info "Not building '%s', no files have changed since last run" "create-boot-image"
   fi
 
   local node_settings
@@ -108,7 +112,7 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
     -v "$PKGROOT/images/pxe:/images/pxe:rw" \
     -v "$PKGROOT/images/uefi:/images/uefi:rw" \
     -e "CLUSTER_BOOTSERVER_FIXEDIPV4=${CLUSTER_BOOTSERVER_FIXEDIPV4:?}" \
-    cluster.local/create-boot-image:latest --arch "$__arch"
+    "cluster.local/create-boot-image:$__arch"
 }
 
 main "$@"

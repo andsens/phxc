@@ -5,33 +5,10 @@ PKGROOT=/usr/local/lib/upkg
 
 main() {
   source "$PKGROOT/.upkg/records.sh/records.sh"
-  DOC="create-boot-image - Create PXE & UEFI boot image from a container export
-Usage:
-  create-boot-image [-a ARCH]
-
-Options:
-  -a --arch ARCH  Processor architecture of the image [default: amd64]
-"
-# docopt parser below, refresh this parser with `docopt.sh create-boot-image.sh`
-# shellcheck disable=2016,2086,2317,1090,1091,2034
-docopt() { local v='2.0.1'; source \
-"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
-%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:190};usage=${DOC:73:36}
-digest=4c455;options=('-a --arch 1');node_0(){ value __arch 0;};node_1(){
-optional 0;};cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2
-printf "%s\n" "${DOC:73:36}" >&2;exit 1;}';local varnames=(__arch) varname;for \
-varname in "${varnames[@]}"; do unset "var_$varname";done;parse 1 "$@";local \
-p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset "$p$varname"
-done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
-=~ ^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for varname in \
-"${varnames[@]}"; do declare -p "$p$varname";done;done;}
-# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' create-boot-image.sh`
-  eval "$(docopt "$@")"
-
   # shellcheck disable=SC2154
   local \
-    tar=/images/snapshots/$__arch.tar \
-    pxedir=/images/pxe/$__arch \
+    tar=/images/snapshots/$ARCH.tar \
+    pxedir=/images/pxe/$ARCH \
     uefidir=/images/uefi
 
   mkdir -p /workspace/root
@@ -133,10 +110,10 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
 
   info "Creating UEFI boot image"
   local shimsuffix
-  case $__arch in
+  case $ARCH in
     amd64) shimsuffix=x64 ;;
     aa64) shimsuffix=arm64 ;;
-    default) fatal "Unknown processor architecture: %s" "$__arch" ;;
+    default) fatal "Unknown processor architecture: %s" "$ARCH" ;;
   esac
 
   guestfish -xN /workspace/disk.raw=disk:${disk_size_kib}K -- <<EOF
@@ -179,11 +156,11 @@ EOF
 
   cp /usr/lib/shim/shim${shimsuffix}.efi.signed "$pxedir/shim.efi"
   cp /usr/lib/shim/mm${shimsuffix}.efi.signed "$pxedir/mm.efi"
-  mv /workspace/disk.raw "$uefidir/$__arch.raw.tmp"
+  mv /workspace/disk.raw "$uefidir/$ARCH.raw.tmp"
   mv /workspace/root.img "$pxedir/root.img.tmp"
   mv /workspace/vmlinuz.efi "$pxedir/vmlinuz.efi.tmp"
 
-  mv "$uefidir/$__arch.raw.tmp" "$uefidir/$__arch.raw"
+  mv "$uefidir/$ARCH.raw.tmp" "$uefidir/$ARCH.raw"
   mv "$pxedir/root.img.tmp" "$pxedir/root.img"
   mv "$pxedir/vmlinuz.efi.tmp" "$pxedir/vmlinuz.efi"
 }

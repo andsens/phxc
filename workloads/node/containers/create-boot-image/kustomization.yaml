@@ -2,7 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: bootstrap
 resources:
-- create-boot-image.yaml
+- create-boot-image-amd64.yaml
 configMapGenerator:
 - files:
   - Dockerfile

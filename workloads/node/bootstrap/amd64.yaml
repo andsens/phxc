@@ -21,6 +21,7 @@ spec:
         args:
         - --dockerfile=context/Dockerfile
         - --build-arg=ARCH=$(ARCH)
+        - --custom-platform=linux/$(ARCH)
         - --destination=cluster.local/non-existent
         - --tar-path=/images/snapshots/$(ARCH).tar
         - --no-push
@@ -40,12 +41,8 @@ spec:
           subPath: snapshots
       containers:
       - name: create-boot-image
-        image: cluster.local/create-boot-image:latest
+        image: cluster.local/create-boot-image:amd64
         imagePullPolicy: Never
-        args: [-a, $(ARCH)]
-        env:
-        - name: ARCH
-          value: amd64
         volumeMounts:
         - name: scripts
           mountPath: /scripts

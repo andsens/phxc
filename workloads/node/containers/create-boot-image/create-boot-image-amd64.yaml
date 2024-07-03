@@ -19,10 +19,14 @@ spec:
         image: gcr.io/kaniko-project/executor:latest
         args:
         - --dockerfile=context/Dockerfile
-        - --destination=cluster.local/create-boot-image:latest
-        - --tar-path=/workspace/images/create-boot-image.tar.tmp
+        - --destination=cluster.local/create-boot-image:$(ARCH)
+        - --build-arg=ARCH=$(ARCH)
+        - --custom-platform=linux/$(ARCH)
+        - --tar-path=/workspace/images/create-boot-image:$(ARCH).tar.tmp
         - --no-push
         env:
+        - name: ARCH
+          value: amd64
         - name: GGCR_EXPERIMENT_ESTARGZ
           value: "1"
         volumeMounts:
