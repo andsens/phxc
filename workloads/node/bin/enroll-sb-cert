@@ -50,10 +50,9 @@ for varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   else
     info "Certificate '%s' not found in MOK DB, enrolling now" "$home_cluster_cn"
     printf "password\npassword\n" | mokutil --import /etc/home-cluster/secureboot.der
-    warning "The MOK DB has been changed. The system will reboot and you will be presented with the MOK Manager."
-    warning "Confirm the delete/import actions that were enqueued and continue booting."
+    warning "The MOK DB has been changed. When you reboot the system you will be presented with the MOK Manager."
+    warning "Confirm the import that has been enqueued and continue booting."
     warning "The password to perform the action is 'password'."
-    sleep 10
     return 1
   fi
 }

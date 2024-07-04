@@ -1,6 +1,6 @@
 [Unit]
 Description=Check if the home-cluster secureboot certificate is enrolled in the MOK DB
-Before=keylime_agent.service systemd-logind.service
+Before=keylime_agent.service
 OnFailure=enroll-sb-cert.service
 
 [Install]

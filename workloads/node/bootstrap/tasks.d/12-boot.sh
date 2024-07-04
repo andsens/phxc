@@ -44,9 +44,7 @@ boot() {
   # root disk is a squashfs image, none of these are needed
   systemctl disable fstrim e2scrub_all e2scrub_reap
 
-  # Exclusive MOK DB management
-  cp_tpl \
-    /etc/systemd/system/enroll-sb-cert.service \
-    /etc/systemd/system/check-sb-cert.service
-  systemctl enable enroll-sb-cert.service
+  # Check secure boot cert in MOK DB
+  cp_tpl /etc/systemd/system/check-sb-cert.service
+  systemctl enable check-sb-cert.service
 }

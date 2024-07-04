@@ -22,8 +22,6 @@ keylime() {
   # shellcheck disable=SC2164
   (cd "$src"; cargo deb -p keylime_agent)
   dpkg -i "$src/target/debian/keylime-agent_0.2.6-1_amd64.deb"
-  # Make keylime_agent dependent on check-mok-db.service
-  sed -i 's/Requires=\(.*\)/Requires=\1 check-mok-db.service/' /lib/systemd/system/keylime_agent.service
   cp_tpl /etc/keylime/agent.conf
   rustup self uninstall -y
   apt-get purge -qy make gcc libclang-dev libssl-dev libtss2-dev libzmq3-dev pkg-config
