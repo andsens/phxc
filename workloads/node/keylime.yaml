@@ -96,6 +96,9 @@ spec:
           mountPath: /var/lib/keylime/cv_ca
         - name: database
           mountPath: /var/lib/keylime/db
+        - name: images
+          mountPath: /etc/keylime/mb_refstate.json
+          subPath: mb_refstate.json
       - name: registrar
         image: quay.io/keylime/keylime_registrar:sha-552326a
         securityContext:

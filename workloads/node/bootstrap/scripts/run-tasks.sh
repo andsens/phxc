@@ -10,6 +10,9 @@ eval_settings
 main() {
   export DEBIAN_FRONTEND=noninteractive
 
+  # Create kaniko destination dir
+  mkdir -p "/images/$ARCH"
+
   # Enable backports
   sed -i 's/Suites: bookworm bookworm-updates/Suites: bookworm bookworm-updates bookworm-backports/' /etc/apt/sources.list.d/debian.sources
   # Disable update-initramfs

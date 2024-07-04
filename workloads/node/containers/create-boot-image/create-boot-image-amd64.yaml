@@ -40,6 +40,9 @@ spec:
       - name: move-image
         image: busybox
         args: [mv, /images/create-boot-image:$(ARCH).tar.tmp, /images/create-boot-image:$(ARCH).tar]
+        env:
+        - name: ARCH
+          value: amd64
         volumeMounts:
         - name: images
           mountPath: /images

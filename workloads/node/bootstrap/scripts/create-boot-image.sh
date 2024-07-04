@@ -141,29 +141,59 @@ EOF
   info "Moving UEFI disk, squashfs root, shim bootloader, mok manager, and unified kernel image EFI to shared volume"
 
   # Extract digests used for PE signatures so we can use them for remote attestation
-  /signify/bin/python3 /scripts/get-pe-digest.py --json /workspace/vmlinuz.efi >/workspace/vmlinuz.efi.digest.json
   /signify/bin/python3 /scripts/get-pe-digest.py --json /usr/lib/shim/shim${shimsuffix}.efi.signed >/workspace/shim.efi.digest.json
+  /signify/bin/python3 /scripts/get-pe-digest.py --json /workspace/vmlinuz.efi >/workspace/vmlinuz.efi.digest.json
+  local shim_sha256 vmlinuz_sha256
+  shim_sha256=$(jq -r .sha256 /workspace/shim.efi.digest.json)
+  vmlinuz_sha256=$(jq -r .sha256 /workspace/vmlinuz.efi.digest.json)
+  local mb_refstate
+  mb_refstate=$(jq --arg shim "$shim_sha256" --arg vmlinuz "$vmlinuz_sha256" '
+    .kernels=[{
+      "shim_authcode_sha256": "0x\($shim)",
+      "grub_authcode_sha256": "0x\($vmlinuz)"
+    }]
+  ' <<<{})
 
-  local \
-    tmpdir=/images/$ARCH.tmp \
-    olddir=/images/$ARCH.old \
-       dir=/images/$ARCH
+  if [[ -e /images/$ARCH.old ]]; then
+    # Append the old image digests as well
+    shim_sha256=$(jq -r .sha256 "/images/$ARCH.old/shim.efi.digest.json")
+    vmlinuz_sha256=$(jq -r .sha256 "/images/$ARCH.old/vmlinuz.efi.digest.json")
+    mb_refstate=$(jq --arg shim "$shim_sha256" --arg vmlinuz "$vmlinuz_sha256" '
+      .kernels+=[{
+        "shim_authcode_sha256": "0x\($shim)",
+        "grub_authcode_sha256": "0x\($vmlinuz)"
+      }]
+    ' <<<"$mb_refstate")
+  fi
+  printf "%s\n" "$mb_refstate" >/workspace/mb_refstate.json
 
-  rm -rf "$tmpdir"
+  # Move all local files into the /images mount
+  rm -rf "/images/$ARCH.tmp"
   mkdir "/images/$ARCH.tmp"
-  mv "$dir/node.new.tar"                        "$tmpdir/node.tar"
-  cp /usr/lib/shim/shim${shimsuffix}.efi.signed "$tmpdir/shim.efi"
-  mv /workspace/shim.efi.digest.json            "$tmpdir/shim.efi.digest.json"
-  cp /usr/lib/shim/mm${shimsuffix}.efi.signed   "$tmpdir/mm.efi"
-  mv /workspace/root.img                        "$tmpdir/root.img"
-  mv /workspace/vmlinuz.efi                     "$tmpdir/vmlinuz.efi"
-  mv /workspace/vmlinuz.efi.digest.json         "$tmpdir/vmlinuz.efi.digest.json"
-  mv /workspace/node.raw                        "$tmpdir/node.raw"
+  mv "/images/$ARCH/node.new.tar"               "/images/$ARCH.tmp/node.tar"
+  mv /workspace/node.raw                        "/images/$ARCH.tmp/node.raw"
+  mv /workspace/root.img                        "/images/$ARCH.tmp/root.img"
+  mv /workspace/vmlinuz.efi                     "/images/$ARCH.tmp/vmlinuz.efi"
+  cp /usr/lib/shim/shim${shimsuffix}.efi.signed "/images/$ARCH.tmp/shim.efi"
+  cp /usr/lib/shim/mm${shimsuffix}.efi.signed   "/images/$ARCH.tmp/mm.efi"
+  mv /workspace/shim.efi.digest.json            "/images/$ARCH.tmp/shim.efi.digest.json"
+  mv /workspace/vmlinuz.efi.digest.json         "/images/$ARCH.tmp/vmlinuz.efi.digest.json"
+  mv /workspace/mb_refstate.json                "/images/$ARCH.tmp/mb_refstate.json"
 
-  rm -rf "$olddir"
-  mv "$dir" "$olddir"
-  mv "$tmpdir" "$dir"
-  [[ -z "$CHOWN" ]] || chown -R "$CHOWN" "$dir"
+  # Move current node image to old, move new images from tmp to current
+  rm -rf "/images/$ARCH.old"
+  mv "/images/$ARCH" "/images/$ARCH.old"
+  mv "/images/$ARCH.tmp" "/images/$ARCH"
+
+  # Create/update global mb_refstate for all archs
+  local mb_refstate_file all_mb_refstates='{"kernels": []}'
+  for mb_refstate_file in /images/*/mb_refstate.json; do
+    mb_refstate=$(cat "$mb_refstate_file")
+    all_mb_refstates=$(jq --argjson mb_refstate "$mb_refstate" '.kernels+=$mb_refstate.kernels' <<<"$all_mb_refstates")
+  done
+  printf "%s\n" "$all_mb_refstates" >/images/mb_refstate.json
+
+  [[ -z "$CHOWN" ]] || chown -R "$CHOWN" "/images/$ARCH" "/images/mb_refstate.json"
 }
 
 main "$@"
