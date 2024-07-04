@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-exec kubectl -n keylime exec keylime-0 -c verifier -- keylime_tenant "$@"
+exec kubectl -n node exec keylime-0 -c verifier -- keylime_tenant "$@"
