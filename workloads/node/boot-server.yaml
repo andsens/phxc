@@ -72,8 +72,7 @@ spec:
           mountPath: /etc/nginx/nginx.conf
           subPath: boot-server.conf
         - name: images
-          mountPath: /images/pxe
-          subPath: pxe
+          mountPath: /images
           readOnly: true
         - name: cache
           mountPath: /var/cache/nginx

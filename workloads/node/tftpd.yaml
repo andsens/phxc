@@ -47,8 +47,7 @@ spec:
         - name: config-rw
           mountPath: /tftp/config
         - name: images
-          mountPath: /tftp/pxe
-          subPath: pxe
+          mountPath: /tftp/images
           readOnly: true
       volumes:
       - name: config-ro

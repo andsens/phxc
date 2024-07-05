@@ -1,7 +1,7 @@
-re ^shimx64.efi$ /pxe/amd64/shim.efi last;
-re ^mmx64.efi$ /pxe/amd64/mm.efi last;
-re ^grubx64.efi$ /pxe/amd64/vmlinuz.efi last;
+re ^shimx64.efi$ /images/amd64/shim.efi last;
+re ^mmx64.efi$ /images/amd64/mm.efi last;
+re ^grubx64.efi$ /images/amd64/vmlinuz.efi last;
 
-re ^grubaa64.efi$ /pxe/arm64/vmlinuz.efi last;
-re ^mmxaa64.efi$ /pxe/arm64/mm.efi last;
-re ^grubxaa64.efi$ /pxe/arm64/vmlinuz.efi last;
+re ^grubaa64.efi$ /images/arm64/vmlinuz.efi last;
+re ^mmxaa64.efi$ /images/arm64/mm.efi last;
+re ^grubxaa64.efi$ /images/arm64/vmlinuz.efi last;

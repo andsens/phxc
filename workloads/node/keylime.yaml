@@ -99,6 +99,8 @@ spec:
         - name: images
           mountPath: /etc/keylime/mb_refstate.json
           subPath: mb_refstate.json
+        - name: tmp
+          mountPath: /tmp
       - name: registrar
         image: quay.io/keylime/keylime_registrar:sha-552326a
         securityContext:
@@ -116,6 +118,8 @@ spec:
           mountPath: /var/lib/keylime/cv_ca
         - name: database
           mountPath: /var/lib/keylime/db
+        - name: tmp
+          mountPath: /tmp
       volumes:
       - name: config
         configMap:
@@ -123,6 +127,9 @@ spec:
       - name: images
         persistentVolumeClaim:
           claimName: images
+      - name: tmp
+        emptyDir:
+          medium: Memory
   volumeClaimTemplates:
   - metadata:
       name: tls
