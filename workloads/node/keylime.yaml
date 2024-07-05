@@ -99,6 +99,7 @@ spec:
         - name: images
           mountPath: /etc/keylime/mb_refstate.json
           subPath: mb_refstate.json
+          readOnly: true
         - name: tmp
           mountPath: /tmp
       - name: registrar

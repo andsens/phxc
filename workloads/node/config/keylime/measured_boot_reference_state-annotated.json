@@ -1,9 +1,0 @@
-{
-  "has_secureboot": true,
-  "kernels": [
-    {
-      "shim_authcode_sha256": "0xd694fd3e7467ee1e5364328098267e40737fe494406a435d06c26d10a1f5aa5e",
-      "grub_authcode_sha256": "0x5bada88a77190661dda58b5da0040ecdab39ac0d1f1f9b2f05f2543fe9654999"
-    }
-  ]
-}
