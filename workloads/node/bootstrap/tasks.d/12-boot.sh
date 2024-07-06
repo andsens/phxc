@@ -11,6 +11,7 @@ PACKAGES+=(
   overlayroot # Used for making ro-root writeable
   systemd-resolved # DNS resolution setup
   avahi-daemon libnss-mdns # System reachability through mdns
+  tpm2-tools openssl xxd curl systemd-timesyncd # Remote attestation for cluster authentication
 )
 
 boot() {
@@ -35,6 +36,10 @@ boot() {
   cp_tpl --raw --chmod=0755 /etc/initramfs-tools/scripts/init-bottom/networking
   cp_tpl /etc/systemd/system/setup-cluster-dns.service
   systemctl enable setup-cluster-dns.service
+
+  # Authentication towards the cluster
+  cp_tpl --raw --chmod=0755 /etc/initramfs-tools/scripts/init-bottom/authenticate
+  systemctl enable systemd-timesyncd
 
   # Root
   printf "squashfs\n" >>/etc/initramfs-tools/modules

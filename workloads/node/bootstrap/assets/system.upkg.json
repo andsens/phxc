@@ -1,4 +1,5 @@
 {
+  "$schema": "https://schemas.orbit.dev/upkg/upkg-v0.27.0.schema.json",
   "bin": [".upkg/.bin"],
   "dependencies": [
     {

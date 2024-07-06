@@ -1,0 +1,220 @@
+#!/usr/bin/env bash
+# shellcheck source-path=../../..
+# Source: https://github.com/osresearch/safeboot-attest
+# safeboot-attest: TPM2 Remote Attestation
+#
+# This wraps the low level `tpm2-tools` programs into a fairly turn-key
+# remote attestation system to allow a client to use the TPM2 to prove to
+# a server that the PCRs are in a given state, and to then receive a
+# sealed secret that can only be decrypted if the system is still in
+# that state.
+#
+# The external programs used are:
+# xxd, mktemp, tpm2, rm, date printf cp, curl, dd, openssl, cat
+#
+# For more info: https://safeboot.dev/attestation/
+set -Eeo pipefail; shopt -s inherit_errexit
+PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../..")
+export LC_ALL=C
+
+main() {
+  source "$PKGROOT/.upkg/records.sh/records.sh"
+  DOC="safeboot-attest - Send a PCR quote to an attestation server and get a secret in return
+Usage:
+  safeboot-attest [options] ATTESTATION_URL
+
+Options:
+  --debug-response  Debug the server response
+  --pcrs PCRs       Comma-separated list of PCRs to generate a quote for
+                    [default: 0,1,2,3,4]
+"
+# docopt parser below, refresh this parser with `docopt.sh safeboot-attest`
+# shellcheck disable=2016,2086,2317,1090,1091,2034
+docopt() { local v='2.0.1'; source \
+"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:307};usage=${DOC:87:50}
+digest=fdb32;options=(' --debug-response 0' ' --pcrs 1');node_0(){ switch \
+__debug_response 0;};node_1(){ value __pcrs 1;};node_2(){ value \
+ATTESTATION_URL a;};node_3(){ optional 0 1;};node_4(){ sequence 3 2;};cat <<<' \
+docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2;printf "%s\n" \
+"${DOC:87:50}" >&2;exit 1;}';local varnames=(__debug_response __pcrs \
+ATTESTATION_URL) varname;for varname in "${varnames[@]}"; do unset \
+"var_$varname";done;parse 4 "$@";local p=${DOCOPT_PREFIX:-''};for varname in \
+"${varnames[@]}"; do unset "$p$varname";done;eval $p'__debug_response=${var___'\
+'debug_response:-false};'$p'__pcrs=${var___pcrs:-0,1,2,3,4};'$p'ATTESTATION_UR'\
+'L=${var_ATTESTATION_URL:-};';local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && \
+docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for varname in "${varnames[@]}"; \
+do declare -p "$p$varname";done;done;}
+# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' safeboot-attest`
+  eval "$(docopt "$@")"
+
+  TPM2_QUIET='--quiet'
+  _records_level_ge "${LOGLEVEL:-$_records_fallback_loglevel}" "verbose" || TPM2_QUIET=''
+
+  TMP=$(mktemp -d)
+  trap 'rm -rf "$TMP"' EXIT
+
+  mkdir "$TMP/quote"
+  # shellcheck disable=SC2154
+  generate_quote "$__pcrs"
+  local file form_opts=()
+  for file in "$TMP/quote"/*; do
+    form_opts+=(--form "$(basename "$file")=@$file")
+  done
+  info "Sending quote to %s" "$ATTESTATION_URL"
+  # shellcheck disable=SC2154
+  if $__debug_response; then
+    curl -X POST -f "${form_opts[@]}" "$ATTESTATION_URL" > "$TMP/secret"
+  else
+    curl -X POST -fs "${form_opts[@]}" "$ATTESTATION_URL" || fatal $? "Attestation failed"
+    unseal_response "$TMP/secret"
+  fi
+}
+
+tpm2_flushall() {
+  verbose "tpm2: flushing contexts"
+  tpm2 flushcontext --transient-object 2>&1 | \
+    LOGPROGRAM=tpm2 pipe_verbose || fatal $? "tpm2_flushcontext: unable to flush transient handles"
+  tpm2 flushcontext --loaded-session 2>&1 | \
+    LOGPROGRAM=tpm2 pipe_verbose || fatal $? "tpm2_flushcontext: unable to flush sessions"
+  tpm2 flushcontext --saved-session 2>&1 | \
+    LOGPROGRAM=tpm2 pipe_verbose || fatal $? "tpm2_flushcontext: unable to flush saved session"
+}
+
+tpm2_secret_session() {
+  tpm2_flushall
+  verbose "tpm2: starting secret session"
+  tpm2 startauthsession $TPM2_QUIET --session "$TMP/session.ctx" --policy-session 2>&1 | \
+    LOGPROGRAM=tpm2 pipe_verbose || fatal $? "tpm2_startauthsession: unable to start authenticated session"
+  # context is TPM_RH_ENDORSEMENT because why would you want names?
+  tpm2 policysecret $TPM2_QUIET --session "$TMP/session.ctx" --object-context "endorsement" 2>&1 | \
+    LOGPROGRAM=tpm2 pipe_verbose || fatal $? "tpm2_policysecret: unable to set context TPM_RH_ENDORSEMENT"
+}
+
+generate_quote() {
+  local pcrs=$1
+  tpm2_flushall
+
+  # read the key in RSA PEM format for openssl compatability
+  info "tpm2: reading endorsement key"
+  tpm2 createek --ek-context "$TMP/ek.ctx" --key-algorithm "rsa" --format "PEM" --public "$TMP/quote/ek.pub" 2>&1 | \
+    LOGPROGRAM=tpm2 pipe_verbose || fatal $? "tpm2_createek: unable to retrieve endorsement key"
+  # tpm2 createek --ek-context "$TMP/ek.ctx" --key-algorithm "rsa" --public "$TMP/quote/ek.pub.bin" 2>&1 | \
+  #   LOGPROGRAM=tpm2 pipe_verbose || fatal $? "tpm2_createek: unable to retrieve endorsement key"
+
+  # tpm2 getekcertificate $TPM2_QUIET --offline \
+  #   --ek-public "$TMP/quote/ek.pub.bin" -o ek.bin 2>&1 | \
+  #   LOGPROGRAM=tpm2 pipe_verbose || fatal $? "tpm2_getekcertificate: unable to retrieve endorsement certificate"
+
+  tpm2_secret_session
+  info "tpm2: creating ephemeral attestation key"
+  tpm2 create $TPM2_QUIET --parent-context "$TMP/ek.ctx" --parent-auth "session:$TMP/session.ctx" \
+    --key-algorithm "ecc:ecdsa:null" \
+    --attributes "fixedtpm|fixedparent|sensitivedataorigin|userwithauth|restricted|sign|stclear" \
+    --public "$TMP/ak-pub.key" --private "$TMP/ak-priv.key" 2>&1 | \
+    LOGPROGRAM=tpm2 pipe_verbose || fatal $? "tpm2_create: unable to create an attestation key"
+
+  # have to start a new secret session to load the attestation key
+  tpm2_secret_session
+  tpm2 load >&2 \
+    $TPM2_QUIET \
+    --parent-context "$TMP/ek.ctx" \
+    --auth "session:$TMP/session.ctx" \
+    --key-context "$TMP/ak.ctx" \
+    --public "$TMP/ak-pub.key" \
+    --private "$TMP/ak-priv.key" 2>&1 | \
+    LOGPROGRAM=tpm2 pipe_verbose || fatal $? "tpm2_load: unable to load attestation key"
+
+  # read the public component so that the name can be
+  # computed with sha256 by the server
+  tpm2 readpublic $TPM2_QUIET --object-context "$TMP/ak.ctx" --output "$TMP/quote/ak.pub" --format "tpmt" 2>&1 | \
+    LOGPROGRAM=tpm2 pipe_verbose || fatal $? "tpm2_readpublic: unable to display info"
+
+  tpm2 flushcontext --transient-object
+
+  local epoch nonce
+  epoch=$(date '+%s')
+  nonce=$(printf '%08x' "$epoch")
+  printf "%s" "$nonce" > "$TMP/quote/nonce" || fatal "$TMP/nonce: unable to create"
+
+  # get a quote using this attestation key
+  tpm2_flushall
+  info "Generating quote %s" "$nonce"
+  tpm2 quote >&2 \
+    $TPM2_QUIET \
+    --key-context "$TMP/ak.ctx" \
+    --pcr-list "sha256:$pcrs" \
+    --qualification "$nonce" \
+    --message "$TMP/quote/quote" \
+    --signature "$TMP/quote/sig" \
+    --pcr "$TMP/quote/pcr" 2>&1 | \
+    LOGPROGRAM=tpm2 pipe_verbose || fatal $? "tpm2_quote: unable to generate quote"
+
+  verbose "Validating quote"
+  tpm2 checkquote \
+    $TPM2_QUIET \
+    --qualification "$(cat "$TMP/quote/nonce")" \
+    --message "$TMP/quote/quote" \
+    --signature "$TMP/quote/sig" \
+    --pcr "$TMP/quote/pcr" \
+    --public "$TMP/quote/ak.pub" 2>&1 | \
+    LOGPROGRAM=tpm2 pipe_verbose || fatal $? "Failed to verify own quote"
+}
+
+# credential.bin has a sealed secret for us
+# this assumes that the EK and AK are still present in $TMP
+# the file format that is returned is a simple concatenation of:
+#
+# 328 bytes tpm2 credential blob, containing 64 bytes of secret
+# 32 bytes of hmac of the encrypted data
+# any number of bytes of data
+#
+# the unsealed secret has
+# 32 bytes of AES key
+# 16 bytes of AES IV
+# 16 bytes of HMAC key
+#
+unseal_response() {
+  REPLY="$1"
+
+  info "attest: unsealing response"
+
+  dd if="$REPLY" of="$TMP/cred.blob" bs=16 skip=0 count=23 2>&-
+  dd if="$REPLY" of="$TMP/hmac.bin" bs=16 skip=23 count=2 2>&-
+  dd if="$REPLY" of="$TMP/cipher.bin" bs=16 skip=25 2>&-
+
+  tpm2_secret_session
+
+  tpm2 activatecredential \
+    $TPM2_QUIET \
+    --credentialedkey-context "$TMP/ak.ctx" \
+    --credentialkey-context "$TMP/ek.ctx" \
+    --credentialkey-auth "session:$TMP/session.ctx" \
+    --credential-blob "$TMP/cred.blob" \
+    --certinfo-data "$TMP/secret.key" 2>&1 | \
+    LOGPROGRAM=tpm2 pipe_verbose || fatal $? "tpm2_activatecredential: unable to unseal key"
+
+  # split the secret.key into AES key and IV,
+  dd if="$TMP/secret.key" bs=16 skip=0 count=2 of="$TMP/aes.key" 2>&-
+  dd if="$TMP/secret.key" bs=16 skip=2 count=1 of="$TMP/aes.iv" 2>&-
+  dd if="$TMP/secret.key" bs=16 skip=3 count=1 of="$TMP/hmac.key" 2>&-
+
+  # validate the hmac on the reply
+  verbose "Validating reply"
+  openssl dgst \
+    -sha256 -binary -mac hmac -macopt hexkey:"$(xxd -p -c128 "$TMP/hmac.key")" \
+    -out "$TMP/hmac.out" "$TMP/cipher.bin" 2>&1 | \
+    LOGPROGRAM=openssl pipe_verbose || fatal $? "unable to hmac reply"
+
+  cmp --quiet "$TMP/hmac.out" "$TMP/hmac.bin" || fatal $? "hmac failed"
+
+  # hmac validated, so the encrypted data should be
+  # safe to decrypt with the session key, writing to stdout
+  verbose "Decrypting reply"
+  openssl enc -d -aes-256-cbc \
+    -iv "$(xxd -p -c128 "$TMP/aes.iv")" -K "$(xxd -p -c128 "$TMP/aes.key")" \
+    -in "$TMP/cipher.bin" 2>&1 |\
+    LOGPROGRAM=openssl pipe_verbose || fatal $? "unable to decrypt reply"
+}
+
+main "$@"

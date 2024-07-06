@@ -58,17 +58,12 @@ if [ -n "${bootserver}" ]; then
   set +e; configure_networking; set -e
   img_addr=http://${bootserver}/$(uname -m)/root.img
   log_begin_msg "Downloading root image to RAM from $img_addr"
-  if ( wget -qO- "http://${bootserver}/" >/dev/null 2>&1 & w=$!; sleep .5; kill -0 $w 2>/dev/null || exit 0; kill -TERM $w; exit 1 ); then
-    if ! wget -qO$rootimg_path.tmp "$img_addr"; then
-      log_end_msg
-      verify_rootimg
-      exit 0
-    else
-      log_failure_msg "Failed to download root.img: Download failed"
-      exit 1
-    fi
+  if ! curl -fsL --connect-timeout 5 --retry 3 -o $rootimg_path.tmp "$img_addr"; then
+    log_end_msg
+    verify_rootimg
+    exit 0
   else
-    log_failure_msg "Failed to download root.img: Bootserver is unavailable"
+    log_failure_msg "Failed to download root.img: Download failed"
     exit 1
   fi
 else

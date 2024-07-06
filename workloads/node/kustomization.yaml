@@ -5,6 +5,7 @@ resources:
 - ../settings/replacements
 - ../common-context
 - containers/create-boot-image
+- containers/safeboot-attest
 - containers/tftpd
 - bootstrap
 - images.yaml
@@ -17,7 +18,11 @@ resources:
 configMapGenerator:
 - files:
   - config/boot-server.conf
-  name: boot-server
+  name: boot-server-config
+- files:
+  - scripts/safeboot-attest/attest-server.py
+  - scripts/safeboot-attest/attest-verify
+  name: boot-server-scripts
 - files:
   - config/map-file
   name: tftp

@@ -59,7 +59,7 @@ spec:
     spec:
       containers:
       - name: nginx
-        image: nginx:1.27.0
+        image: nginx:1.27-alpine-slim
         securityContext:
           readOnlyRootFilesystem: true
         ports:
@@ -76,10 +76,34 @@ spec:
           readOnly: true
         - name: cache
           mountPath: /var/cache/nginx
+      - name: safeboot-attest
+        image: cluster.local/safeboot-attest:latest
+        imagePullPolicy: Never
+        securityContext:
+          readOnlyRootFilesystem: true
+        ports:
+        - name: http
+          containerPort: 8000
+        volumeMounts:
+        - name: scripts
+          mountPath: /usr/local/lib/safeboot-attest/attest-server.py
+          subPath: attest-server.py
+        - name: scripts
+          mountPath: /usr/local/lib/safeboot-attest/attest-verify
+          subPath: attest-verify
+        - name: images
+          mountPath: /images
+          readOnly: true
+        - name: tmp
+          mountPath: /tmp
       volumes:
       - name: config
         configMap:
-          name: boot-server
+          name: boot-server-config
+      - name: scripts
+        configMap:
+          name: boot-server-scripts
+          defaultMode: 0755
       - name: node-settings
         configMap:
           name: node-settings
@@ -87,4 +111,6 @@ spec:
         persistentVolumeClaim:
           claimName: images
       - name: cache
+        emptyDir: {}
+      - name: tmp
         emptyDir: {}

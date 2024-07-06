@@ -34,25 +34,22 @@ if ! mac=$(ip link show "$link" | tail -n1 | grep -Eo '([a-f0-9]{2}:){5}[a-f0-9]
   exit 1
 fi
 
+settings_filename=$(printf "%s" "$mac" | sed s/:/-/g).json
 settings_path=/run/initramfs/node-settings.json
-settings_url=http://$bootserver/$mac.json
+settings_url=http://$bootserver/$settings_filename
 
-if ( wget -qO- "http://${bootserver}/" >/dev/null 2>&1 & w=$!; sleep .5; kill -0 $w 2>/dev/null || exit 0; kill -TERM $w; exit 1 ); then
-  log_begin_msg "Downloading settings from $settings_url"
-  if wget -qO"$settings_path" "$settings_url"; then
-    log_end_msg
-    exit 0
-  else
-    log_failure_msg "Failed to download settings"
-  fi
+log_begin_msg "Downloading settings from $settings_url"
+if curl -fsL --connect-timeout 5 --retry 3 -o "$settings_path" "$settings_url"; then
+  log_end_msg
+  exit 0
 else
-  log_failure_msg "Bootserver is unavailable"
+  log_failure_msg "Failed to download settings"
 fi
 
 esp=/run/initramfs/efi
 if [ -e $esp ]; then
   log_begin_msg "Falling back to copying settings from ESP mount instead"
-  if cp "/run/initramfs/efi/home-cluster/node-settings/$(printf "%s" "$mac" | sed s/:/-/g).json" "$settings_path"; then
+  if cp "/run/initramfs/efi/home-cluster/node-settings/$settings_filename" "$settings_path"; then
     log_end_msg
     exit 0
   else

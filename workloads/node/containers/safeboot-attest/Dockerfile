@@ -1,0 +1,12 @@
+FROM debian:bookworm
+SHELL ["/bin/bash", "-Eeo", "pipefail", "-c"]
+RUN /workspace/common-context/setup-debian.sh
+
+WORKDIR /usr/local/lib/safeboot-attest
+RUN apt-get update; apt-get install -y --no-install-recommends \
+  python3-venv tpm2-tools xxd \
+  ; rm -rf /var/cache/apt/lists/*; \
+  python3 -m venv /usr/local/lib/safeboot-attest; \
+  bin/pip3 install -r /workspace/context/requirements.txt
+
+ENTRYPOINT ["bin/gunicorn", "-b", "127.0.0.1:8000", "attest-server:app"]

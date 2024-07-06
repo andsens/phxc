@@ -10,8 +10,17 @@ esac
 . /usr/share/initramfs-tools/hook-functions
 
 copy_exec /sbin/blkid /bin
-copy_exec /usr/bin/wget /bin
+copy_exec /usr/bin/curl /bin
 copy_exec /usr/bin/jq /bin
 copy_exec /usr/bin/basename /bin
 copy_exec /usr/bin/readlink /bin
 copy_exec /usr/bin/cp /bin
+copy_exec /usr/bin/bash /bin
+copy_file executable /usr/local/lib/upkg/.upkg/home-cluster/workloads/node/bin/safeboot-attest
+copy_file library /usr/local/lib/upkg/.upkg/home-cluster/.upkg/records.sh/records.sh
+copy_file library /usr/local/lib/upkg/.upkg/home-cluster/.upkg/docopt-lib-v2.0.1/docopt-lib.sh
+copy_exec /usr/bin/xxd /bin
+copy_exec /usr/bin/tpm2 /bin
+copy_exec /usr/bin/openssl /bin
+copy_exec /usr/lib/x86_64-linux-gnu/libtss2-tcti-device.so.0
+copy_modules_dir kernel/drivers/char/tpm
