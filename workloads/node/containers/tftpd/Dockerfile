@@ -1,7 +1,6 @@
 FROM alpine
-RUN apk add bash
+RUN apk add --no-cache bash
 SHELL ["/bin/bash", "-Eeo", "pipefail", "-c"]
-
 RUN /workspace/common-context/setup-alpine.sh
 
 RUN apk add tftp-hpa perl-utils; adduser -DH tftp; mkdir /tftp
