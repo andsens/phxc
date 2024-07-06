@@ -11,7 +11,6 @@ PACKAGES+=(
   overlayroot # Used for making ro-root writeable
   systemd-resolved # DNS resolution setup
   avahi-daemon libnss-mdns # System reachability through mdns
-  mokutil # Secure boot management
 )
 
 boot() {
@@ -43,8 +42,4 @@ boot() {
   cp_tpl /etc/overlayroot.conf
   # root disk is a squashfs image, none of these are needed
   systemctl disable fstrim e2scrub_all e2scrub_reap
-
-  # Check secure boot cert in MOK DB
-  cp_tpl /etc/systemd/system/check-sb-cert.service
-  systemctl enable check-sb-cert.service
 }

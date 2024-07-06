@@ -1,7 +1,5 @@
 [Unit]
 Description=Initializes k3s as either server or agent depending on the labels in node settings
-Requires=keylime_agent.service
-After=keylime_agent.service
 
 [Install]
 WantedBy=multi-user.target
