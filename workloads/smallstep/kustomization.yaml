@@ -21,13 +21,18 @@ configMapGenerator:
   - scripts/setup-step-ca-config.sh
   name: scripts
 - files:
-  - config/ca.json
   - config/kube-apiserver-client-ca.json
-  name: config
+  name: kube-apiserver-client-ca-config
 - files:
   - config/templates/admin.tpl
   - config/templates/kube-apiserver-client-cert-renewal.tpl
-  name: templates
+  name: kube-apiserver-client-ca-templates
+- files:
+  - config/ca.json
+  - config/kube-apiserver-client-ca.json
+  name: ca-config
+- files: []
+  name: ca-templates
 replacements:
 - source: {fieldPath: data.cluster.smallstep.fixedIPv4, kind: ConfigMap, name: settings}
   targets:

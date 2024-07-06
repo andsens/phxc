@@ -134,10 +134,10 @@ spec:
           defaultMode: 0755
       - name: config
         configMap:
-          name: config
+          name: kube-apiserver-client-ca-config
       - name: templates
         configMap:
-          name: templates
+          name: kube-apiserver-client-ca-templates
       - name: certs
         emptyDir:
           medium: Memory

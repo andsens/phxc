@@ -160,7 +160,10 @@ spec:
           defaultMode: 0755
       - name: config
         configMap:
-          name: config
+          name: ca-config
+      - name: templates
+        configMap:
+          name: ca-templates
       - name: step-issuer-provisioner
         secret:
           secretName: step-issuer-provisioner
