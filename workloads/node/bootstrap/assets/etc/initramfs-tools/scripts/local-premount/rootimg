@@ -12,51 +12,49 @@ rootimg_path=/run/initramfs/root.img
 # shellcheck disable=SC2013
 for x in $(cat /proc/cmdline); do
   case $x in
-  root_sha256=*)
-    root_sha256=${x#root_sha256=}
-    ;;
+  root_sha256=*) root_sha256=${x#root_sha256=} ;;
   esac
 done
 if [ -z "${root_sha256}" ]; then
-  log_warning_msg "Unable to mount root disk. Boot argument root_sha256= not specified"
+  panic "Unable to mount root disk. Boot argument root_sha256= not specified"
   exit 1
 fi
 
 verify_rootimg() {
   log_begin_msg "Verifying checksum of root.img"
-  if printf "%s  %s" "$root_sha256" "$rootimg_path.tmp" | sha256sum -c -; then
+  if printf "%s  %s" "$root_sha256" $rootimg_path.tmp | sha256sum -c -; then
     mv $rootimg_path.tmp $rootimg_path
   else
-    log_failure_msg "root.img checksum is incorrect"
+    panic "root.img checksum is incorrect"
+    exit 1
   fi
 }
 
 esp=/run/initramfs/efi
 if [ -e $esp/home-cluster/root.img ]; then
-  # If root.img is available in the ESP we *must* use it, the one on the boot-server might not match the embedded shasum
   log_begin_msg "Copying root.img from ESP to RAM"
   if cp $esp/home-cluster/root.img $rootimg_path.tmp; then
     log_end_msg
     verify_rootimg
+    exit 0
   else
-    log_failure_msg "Failed to copy root.img"
+    log_failure_msg "Failed to copy root.img, falling back to downloading from boot-server"
+  fi
+  # Try to download root.img instead, the sha256 might not match though
+fi
+set +e; configure_networking; set -e
+if [ -n "$ROOTSERVER" ]; then
+  img_addr=http://${ROOTSERVER}/$(uname -m)/root.img
+  log_begin_msg "Downloading root image to RAM from $img_addr"
+  if curl -fsL --connect-timeout 5 --retry 3 -o $rootimg_path.tmp "$img_addr"; then
+    log_end_msg
+    verify_rootimg
+    exit 0
+  else
+    panic "Failed to download root.img: Download failed"
     exit 1
   fi
 else
-  set +e; configure_networking; set -e
-  if [ -n "$ROOTSERVER" ]; then
-    img_addr=http://${ROOTSERVER}/$(uname -m)/root.img
-    log_begin_msg "Downloading root image to RAM from $img_addr"
-    if ! curl -fsL --connect-timeout 5 --retry 3 -o $rootimg_path.tmp "$img_addr"; then
-      log_end_msg
-      verify_rootimg
-      exit 0
-    else
-      log_failure_msg "Failed to download root.img: Download failed"
-      exit 1
-    fi
-  else
-    log_failure_msg "Failed to download root.img: ROOTSERVER/NEXT_SERVER not found in DHCP lease"
-    exit 1
-  fi
+  panic "Failed to download root.img: ROOTSERVER/NEXT_SERVER not found in DHCP lease"
+  exit 1
 fi
