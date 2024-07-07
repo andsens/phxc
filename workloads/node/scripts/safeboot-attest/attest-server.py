@@ -31,6 +31,7 @@ import hashlib
 import time
 from Crypto.Hash import SHA256, HMAC
 from Crypto.Cipher import AES
+from Crypto.PublicKey import RSA
 from Crypto.Random import get_random_bytes
 from Crypto.Util.Padding import pad
 
@@ -58,7 +59,7 @@ def home_post():
   _tmp = None
   try:
     # at a minimum there must be:
-    required = ('quote', 'sig', 'pcr', 'nonce', 'ak.pub', 'ek.pub')
+    required = ('quote', 'sig', 'pcr', 'nonce', 'ak.pub', 'ek.pem')
 
     for f in required:
       if f not in request.files:
@@ -83,8 +84,7 @@ def home_post():
       with open(os.path.join(tmpdir, f), 'wb') as fd:
         fd.write(files[f])
 
-    ek_hash = SHA256.new(files['ek.pub']).hexdigest()
-    ak_hash = SHA256.new(files['ak.pub']).hexdigest()
+    ek_hash = SHA256.new(RSA.import_key(files['ek.pem']).export_key(format='DER')).hexdigest()
 
     # check that the AK meets our requirements
     sub = subprocess.run([
@@ -174,9 +174,9 @@ def home_post():
       '--quiet',
       '--tcti', 'none',
       '--secret', secret_filename,
-      '--public', os.path.join(tmpdir, 'ek.pub'),
+      '--public', os.path.join(tmpdir, 'ek.pem'),
       '--key-algorithm', 'rsa',
-      '--name', f'000b{ak_hash}',
+      '--name', f'000b{SHA256.new(files["ak.pub"]).hexdigest()}',
       '--credential-blob', cred_filename,
     ],
       stdout=subprocess.PIPE,

@@ -28,8 +28,8 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 
   local pcr4_sha256
   pcr4_sha256=$(yq -r '.pcrs.sha256["4"]' "$PAYLOAD_DIR/quote.yaml")
-  if ! find_pcr4_match "$pcr4_sha256"; then
-    fatal "Unable to find match for PCR 4 among known images"
+  if ! find_pcr4_match "$EK_HASH" "$pcr4_sha256"; then
+    fatal "%s: Unable to find match for PCR 4 among known images" "$EK_HASH"
   fi
 
   # TODO: verify EK
@@ -39,7 +39,7 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 
 find_pcr4_match() {
   # Lowercase with ",,"
-  local pcr4_sha256=${1,,} \
+  local EK_HASH=$1 pcr4_sha256=${2,,} \
     init_sha256 start_sha256 barrier_sha256
   init_sha256=$(printf "0000000000000000000000000000000000000000000000000000000000000000")
   start_sha256=$(printf "Calling EFI Application from Boot Option" | sha256)
