@@ -110,7 +110,6 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
     -v "$PKGROOT/workloads/node/bootstrap/create-boot-image-assets:/assets:ro" \
     -v "$PKGROOT/workloads/node/bootstrap/scripts:/scripts:ro" \
     -v "$PKGROOT/images:/images:rw" \
-    -e "CLUSTER_BOOTSERVER_FIXEDIPV4=${CLUSTER_BOOTSERVER_FIXEDIPV4:?}" \
     -e CHOWN=$UID:$UID \
     "cluster.local/create-boot-image:$__arch"
   mv "$PKGROOT/images/$__arch.old/create-boot-image.new.tar" "$PKGROOT/images/$__arch/create-boot-image.tar"

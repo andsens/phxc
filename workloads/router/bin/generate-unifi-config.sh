@@ -60,7 +60,7 @@ EOF
 
   local pxe_config
   pxe_config=$(cat <<EOF
-next-server $_TFTPD_IPV4;
+next-server $_BOOTSERVER_IPV4;
 if option arch = 00:06 {
   option bootfile-name "x86.efi";
   filename "x86.efi";
@@ -115,8 +115,8 @@ EOF
 }
 
 set_cluster_vars() {
-  _TFTPD_IPV4=$(
-    kubectl get nodes -l "node-role.cluster.local/tftpd=true" -o=jsonpath='{.items[*].status.addresses}' | \
+  _BOOTSERVER_IPV4=$(
+    kubectl get nodes -l "node-role.cluster.local/boot-server=true" -o=jsonpath='{.items[*].status.addresses}' | \
       jq -r '.[] | select(.type=="InternalIP" and (.address | test("^[0-9.]+$"))) | .address'
   )
   _NODES_IPV4=$(

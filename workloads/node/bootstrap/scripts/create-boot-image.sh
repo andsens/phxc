@@ -41,15 +41,14 @@ main() {
   rootimg_checksum=$(sha256sum /workspace/root.img | cut -d ' ' -f1)
 
   info "Creating unified kernel image"
-  local kernver
-  kernver=${vmlinuz#'/boot/vmlinuz-'}
+  local kernver=${vmlinuz#'/boot/vmlinuz-'}
   chroot /workspace/root update-initramfs -c -k "$kernver"
   cp -r /secureboot /workspace/root/secureboot
   chroot /workspace/root /lib/systemd/ukify build \
     --uname="$kernver" \
     --linux="$vmlinuz" \
     --initrd="$initrd" \
-    --cmdline="root=/run/initramfs/root.img root_sha256=$rootimg_checksum bootserver=${CLUSTER_BOOTSERVER_FIXEDIPV4} noresume" \
+    --cmdline="root=/run/initramfs/root.img root_sha256=$rootimg_checksum noresume" \
     --signtool=sbsign \
     --secureboot-private-key=/secureboot/tls.key \
     --secureboot-certificate=/secureboot/tls.crt \
@@ -158,7 +157,7 @@ EOF
 
   # Move current node image to old, move new images from tmp to current
   rm -rf "/images/$ARCH.old"
-  mv "/images/$ARCH" "/images/$ARCH.old"
+  mv "/images/$ARCH"     "/images/$ARCH.old"
   mv "/images/$ARCH.tmp" "/images/$ARCH"
 
   [[ -z "$CHOWN" ]] || chown -R "$CHOWN" "/images/$ARCH"

@@ -1,62 +1,29 @@
 ---
-apiVersion: cilium.io/v2
-kind: CiliumNetworkPolicy
-metadata:
-  name: boot-server
-  labels:
-    app.kubernetes.io/name: pxe
-    app.kubernetes.io/component: boot-server
-spec:
-  endpointSelector:
-    matchLabels:
-      app.kubernetes.io/name: pxe
-      app.kubernetes.io/component: boot-server
-  ingress:
-  - toPorts:
-    - ports:
-      - port: "80"
-    fromEntities:
-    - all
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: boot-server
-  labels:
-    app.kubernetes.io/name: pxe
-    app.kubernetes.io/component: boot-server
-  annotations:
-    io.cilium/lb-ipam-ips: "cluster.bootServer.fixedIPv4,cluster.bootServer.fixedIPv6"
-spec:
-  type: LoadBalancer
-  ipFamilies: [IPv4, IPv6]
-  ipFamilyPolicy: RequireDualStack
-  selector:
-    app.kubernetes.io/name: pxe
-    app.kubernetes.io/component: boot-server
-  ports:
-  - name: http
-    port: 80
-    targetPort: 80
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: boot-server
   labels:
-    app.kubernetes.io/name: pxe
+    app.kubernetes.io/name: node
     app.kubernetes.io/component: boot-server
 spec:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: pxe
+      app.kubernetes.io/name: node
       app.kubernetes.io/component: boot-server
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: pxe
+        app.kubernetes.io/name: node
         app.kubernetes.io/component: boot-server
     spec:
+      nodeSelector:
+        node-role.cluster.local/boot-server: "true"
+      hostNetwork: true
       containers:
       - name: nginx
         image: nginx:1.27-alpine-slim
@@ -70,11 +37,11 @@ spec:
           mountPath: /node-settings
         - name: config
           mountPath: /etc/nginx/nginx.conf
-          subPath: boot-server.conf
+          subPath: nginx.conf
         - name: images
           mountPath: /images
           readOnly: true
-        - name: cache
+        - name: nginx-cache
           mountPath: /var/cache/nginx
       - name: safeboot-attest
         image: cluster.local/safeboot-attest:latest
@@ -94,8 +61,31 @@ spec:
         - name: images
           mountPath: /images
           readOnly: true
-        - name: tmp
+        - name: safeboot-attest-tmp
           mountPath: /tmp
+      - name: tftpd
+        image: cluster.local/tftpd:latest
+        imagePullPolicy: Never
+        securityContext:
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: [ALL]
+            add:
+            - NET_BIND_SERVICE
+            - SETUID
+            - SETGID
+            - SYS_CHROOT
+        ports:
+        - name: tftp
+          containerPort: 69
+          hostPort: 69
+        volumeMounts:
+        - name: config
+          mountPath: /config/map-file
+          subPath: tftpd-map-file
+        - name: images
+          mountPath: /tftp/images
+          readOnly: true
       volumes:
       - name: config
         configMap:
@@ -110,7 +100,7 @@ spec:
       - name: images
         persistentVolumeClaim:
           claimName: images
-      - name: cache
+      - name: nginx-cache
         emptyDir: {}
-      - name: tmp
+      - name: safeboot-attest-tmp
         emptyDir: {}

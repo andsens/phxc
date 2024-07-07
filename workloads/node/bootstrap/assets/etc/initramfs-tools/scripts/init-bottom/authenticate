@@ -9,21 +9,10 @@ esac
 # shellcheck disable=SC1091
 . /scripts/functions
 
-# shellcheck disable=SC2013
-for x in $(cat /proc/cmdline); do
-  case $x in
-  bootserver=*)
-    bootserver=${x#bootserver=}
-    ;;
-  esac
-done
-if [ -z "${bootserver}" ]; then
-  log_warning_msg "Skipping cluster authentication. Boot argument bootserver= not specified, unable to contact bootserver"
+set +e; configure_networking; set -e
+if [ -n "$ROOTSERVER" ]; then
+  /usr/local/lib/upkg/.upkg/home-cluster/workloads/node/bin/safeboot-attest "http://${ROOTSERVER}/attest"
+else
+  log_warning_msg "Skipping cluster authentication: ROOTSERVER/NEXT_SERVER not found in DHCP lease"
   exit 1
 fi
-
-set +e; configure_networking; set -e
-
-/usr/local/lib/upkg/.upkg/home-cluster/workloads/node/bin/safeboot-attest "http://${bootserver}/attest"
-
-exit 1
