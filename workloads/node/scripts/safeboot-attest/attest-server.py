@@ -154,7 +154,7 @@ def home_post():
     # read the (binary) response from the sub process stdout
     secret_payload = sub.stdout
 
-    log.info(f'{ek_hash}: Sealing response of {len(secret_payload)} bytes into {sealed_filename}')
+    log.info(f'{ek_hash}: Sealing response of {len(secret_payload)} bytes')
     # create an ephemeral session key, IV and HMAC key
     aes_key = get_random_bytes(32)
     aes_iv = get_random_bytes(16)
@@ -168,7 +168,7 @@ def home_post():
       f.write(aes_key + aes_iv + hmac_key)
 
     # and now seal it with the AK/EK into a credential blob
-    cred_filename = os.path.join(tmpdir, 'credential.blob')
+    sealed_filename = os.path.join(tmpdir, 'credential.blob')
     sub = subprocess.run([
       'tpm2', 'makecredential',
       '--quiet',
@@ -177,7 +177,7 @@ def home_post():
       '--public', os.path.join(tmpdir, 'ek.pem'),
       '--key-algorithm', 'rsa',
       '--name', f'000b{SHA256.new(files["ak.pub"]).hexdigest()}',
-      '--credential-blob', cred_filename,
+      '--credential-blob', sealed_filename,
     ],
       stdout=subprocess.PIPE,
       stderr=sys.stderr,
@@ -195,7 +195,7 @@ def home_post():
     hmac = HMAC.new(key=hmac_key, msg=cipher, digestmod=SHA256).digest()
 
     # append the hmac and cipher text to the cred file
-    with open(cred_filename, 'ab') as f:
+    with open(sealed_filename, 'ab') as f:
       f.write(hmac)
       f.write(cipher)
 

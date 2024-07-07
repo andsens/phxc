@@ -48,8 +48,8 @@ main() {
     --linux="$vmlinuz" \
     --initrd="$initrd" \
     --cmdline="root=/run/initramfs/root.img root_sha256=$rootimg_checksum noresume" \
-    --output=/boot/vmlinuz.efi
-  mv /workspace/root/boot/vmlinuz.efi /workspace/vmlinuz.efi
+    --output=/boot/uki.efi
+  mv /workspace/root/boot/uki.efi /workspace/uki.efi
 
   ### UEFI Boot ###
 
@@ -74,7 +74,7 @@ main() {
       node_settings_size_b +
       $(stat -c %s /usr/lib/shim/shimx64.efi.signed) +
       $(stat -c %s /usr/lib/shim/mmx64.efi.signed) +
-      $(stat -c %s /workspace/vmlinuz.efi) +
+      $(stat -c %s /workspace/uki.efi) +
       $(stat -c %s /workspace/root.img) +
       (sector_size_b - 1)
     ) / sector_size_b * sector_size_b
@@ -115,8 +115,8 @@ copy-in /usr/lib/shim/shim${shimsuffix}.efi.signed /EFI/BOOT/
 mv /EFI/BOOT/shim${shimsuffix}.efi.signed /EFI/BOOT/BOOT${shimsuffix^^}.EFI
 copy-in /usr/lib/shim/mm${shimsuffix}.efi.signed /EFI/BOOT/
 mv /EFI/BOOT/mm${shimsuffix}.efi.signed /EFI/BOOT/mm${shimsuffix}.efi
-copy-in /workspace/vmlinuz.efi /EFI/BOOT/
-mv /EFI/BOOT/vmlinuz.efi /EFI/BOOT/grub${shimsuffix}.efi
+copy-in /workspace/uki.efi /EFI/BOOT/
+mv /EFI/BOOT/uki.efi /EFI/BOOT/grub${shimsuffix}.efi
 
 mkdir-p /home-cluster
 copy-in /workspace/root.img /home-cluster/
@@ -129,8 +129,19 @@ EOF
   info "Moving UEFI disk, squashfs root, shim bootloader, mok manager, and unified kernel image EFI to shared volume"
 
   # Extract digests used for PE signatures so we can use them for remote attestation
-  /signify/bin/python3 /scripts/get-pe-digest.py --json /usr/lib/shim/shim${shimsuffix}.efi.signed >/workspace/shim.efi.digest.json
-  /signify/bin/python3 /scripts/get-pe-digest.py --json /workspace/vmlinuz.efi >/workspace/vmlinuz.efi.digest.json
+  local shim_digests uki_digests kernel_digests
+  shim_digests=$(/signify/bin/python3 /scripts/get-pe-digest.py --json /usr/lib/shim/shim${shimsuffix}.efi.signed)
+  uki_digests=$(/signify/bin/python3 /scripts/get-pe-digest.py --json /workspace/uki.efi)
+  # See https://lists.freedesktop.org/archives/systemd-devel/2022-December/048694.html
+  # as to why we also measure the embedded kernel
+  objcopy -O binary --only-section=.linux /workspace/uki.efi /workspace/kernel
+  kernel_digests=$(/signify/bin/python3 /scripts/get-pe-digest.py --json /workspace/kernel)
+  jq -n --argjson shim "$shim_digests" --argjson uki "$uki_digests" --argjson kernel "$kernel_digests" '
+    {
+      "shim": $shim,
+      "uki": $uki,
+      "kernel": $kernel
+    }' >/workspace/digests.json
 
   # Move all local files into the /images mount
   rm -rf "/images/$ARCH.tmp"
@@ -138,11 +149,10 @@ EOF
   mv "/images/$ARCH/node.new.tar"               "/images/$ARCH.tmp/node.tar"
   mv /workspace/node.raw                        "/images/$ARCH.tmp/node.raw"
   mv /workspace/root.img                        "/images/$ARCH.tmp/root.img"
-  mv /workspace/vmlinuz.efi                     "/images/$ARCH.tmp/vmlinuz.efi"
+  mv /workspace/uki.efi                         "/images/$ARCH.tmp/uki.efi"
   cp /usr/lib/shim/shim${shimsuffix}.efi.signed "/images/$ARCH.tmp/shim.efi"
   cp /usr/lib/shim/mm${shimsuffix}.efi.signed   "/images/$ARCH.tmp/mm.efi"
-  mv /workspace/shim.efi.digest.json            "/images/$ARCH.tmp/shim.efi.digest.json"
-  mv /workspace/vmlinuz.efi.digest.json         "/images/$ARCH.tmp/vmlinuz.efi.digest.json"
+  mv /workspace/digests.json                    "/images/$ARCH.tmp/digests.json"
 
   # Move current node image to old, move new images from tmp to current
   rm -rf "/images/$ARCH.old"

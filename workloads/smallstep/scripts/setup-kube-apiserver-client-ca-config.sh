@@ -9,7 +9,7 @@ KUBE_CLIENT_CA_CRT_PATH=$STEPPATH/certs/kube_apiserver_client_ca.crt
 main() {
   local config lb_pv4 lb_ipv6 node_setting control_plane_hostname
   for node_setting in /node-settings/*.json; do
-    if jq -re '(.["node-label"] // []) | indices("node-role.kubernetes.io/control-plane=true") | length > 0' "$node_setting" >/dev/null; then
+    if jq -re '(.["node-label"] // []) | index("node-role.kubernetes.io/control-plane=true")!=null' "$node_setting" >/dev/null; then
       control_plane_hostname=$(jq -re '.hostname' "$node_setting")
       break
     fi

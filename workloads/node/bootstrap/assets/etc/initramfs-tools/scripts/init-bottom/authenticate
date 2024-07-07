@@ -10,7 +10,7 @@ esac
 . /scripts/functions
 
 safeboot_attest=/usr/local/lib/upkg/.upkg/home-cluster/workloads/node/bin/safeboot-attest
-if jq -re '(.["node-label"] // []) | indices("node-role.cluster.local/boot-server=true") | length > 0' /run/initramfs/node-settings.json >/dev/null; then
+if jq -re '(.["node-label"] // []) | index("node-role.cluster.local/boot-server=true")!=null' /run/initramfs/node-settings.json >/dev/null; then
   log_warning_msg "Skipping cluster authentication: This node is the boot-server. Saving attestation quote to /run/initramfs/quote.tar instead."
   $safeboot_attest generate-quote >/run/initramfs/quote.tar
 else

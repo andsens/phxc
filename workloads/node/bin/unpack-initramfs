@@ -5,6 +5,6 @@ PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../..")
 
 rm -rf "$PKGROOT/mnt/initramfs"
 mkdir "$PKGROOT/mnt/initramfs"
-objcopy -O binary -j.initrd "$PKGROOT/images/amd64/vmlinuz.efi" "$PKGROOT/mnt/initrd"
+objcopy -O binary -j.initrd "$PKGROOT/images/amd64/unikernel.efi" "$PKGROOT/mnt/initrd"
 cd "$PKGROOT/mnt/initramfs"
 zstd -cd "$PKGROOT/mnt/initrd" | cpio -idv

@@ -83,7 +83,7 @@ local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
 
     control_plane_hostname=$(
       yq -re '[
-        .nodes[] | select((.["node-label"] // []) | indices("node-role.kubernetes.io/control-plane=true") | length > 0)
+        .nodes[] | select((.["node-label"] // []) | index("node-role.kubernetes.io/control-plane=true")!=null)
       ] | first | .hostname' "$PKGROOT/settings.yaml")
 
     ################################
