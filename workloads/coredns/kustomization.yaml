@@ -25,17 +25,17 @@ replacements:
     fieldPaths: [spec.clusterIPs.1]
 - source: {fieldPath: data.cluster.coredns.lb.fixedIPv4, kind: ConfigMap, name: settings}
   targets:
-  - select: {kind: Service, name: external-dns}
+  - select: {kind: Service, name: external-coredns}
     fieldPaths: [metadata.annotations.io\.cilium/lb-ipam-ips]
     options: {delimiter: ',', index: 0}
 - source: {fieldPath: data.cluster.coredns.lb.fixedIPv6, kind: ConfigMap, name: settings}
   targets:
-  - select: {kind: Service, name: external-dns}
+  - select: {kind: Service, name: external-coredns}
     fieldPaths: [metadata.annotations.io\.cilium/lb-ipam-ips]
     options: {delimiter: ',', index: 1}
 - source: {fieldPath: data.cluster.domain, kind: ConfigMap, name: settings}
   targets:
-  - select: {kind: Service, name: external-dns}
+  - select: {kind: Service, name: external-coredns}
     fieldPaths: [metadata.annotations.external-dns\.alpha\.kubernetes\.io/hostname]
     options: {delimiter: '.', index: 1}
   - select: {group: apps, kind: Deployment, name: coredns}
