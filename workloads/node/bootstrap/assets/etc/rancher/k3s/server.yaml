@@ -13,6 +13,8 @@ disable:
 kube-controller-manager-arg:
 - node-cidr-mask-size-ipv4=24
 - node-cidr-mask-size-ipv6=112
+kube-apiserver-arg:
+- service-node-port-range=1024-32767
 cluster-cidr:
 - ${CLUSTER_CIDRS_PODIPV4}
 - ${CLUSTER_CIDRS_PODIPV6}
