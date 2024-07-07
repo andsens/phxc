@@ -33,7 +33,7 @@ verify_rootimg() {
 
 esp=/run/initramfs/efi
 if [ -e $esp/home-cluster/root.img ]; then
-  # If root.img is available in the ESP we *must* use it, the one on the bootserver might not match the embedded shasum
+  # If root.img is available in the ESP we *must* use it, the one on the boot-server might not match the embedded shasum
   log_begin_msg "Copying root.img from ESP to RAM"
   if cp $esp/home-cluster/root.img $rootimg_path.tmp; then
     log_end_msg
