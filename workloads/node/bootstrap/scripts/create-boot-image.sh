@@ -68,8 +68,6 @@ main() {
   # Convert secureboot cert from PEM to DER and save to ESP for easy enrollment
   step certificate format /secureboot/tls.crt >/workspace/secureboot.der
 
-  dd if=/dev/random bs=32 count=1 >/workspace/random-seed
-
   local sector_size_b=512 gpt_size_b fs_table_size_b partition_offset_b partition_size_b disk_size_kib
   gpt_size_b=$((33 * sector_size_b))
   fs_table_size_b=$(( 1024 * 1024 )) # Total guess, but should be enough
