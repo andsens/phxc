@@ -51,8 +51,6 @@ spec:
           mountPath: /node-settings
         - name: workspace
           mountPath: /workspace
-        - name: secureboot
-          mountPath: /secureboot
         - name: images
           mountPath: /images
       volumes:
@@ -78,9 +76,6 @@ spec:
           name: bundle
       - name: workspace
         emptyDir: {}
-      - name: secureboot
-        secret:
-          secretName: secureboot-cert
       - name: images
         persistentVolumeClaim:
           claimName: images

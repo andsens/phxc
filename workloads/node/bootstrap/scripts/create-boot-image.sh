@@ -43,15 +43,11 @@ main() {
   info "Creating unified kernel image"
   local kernver=${vmlinuz#'/boot/vmlinuz-'}
   chroot /workspace/root update-initramfs -c -k "$kernver"
-  cp -r /secureboot /workspace/root/secureboot
   chroot /workspace/root /lib/systemd/ukify build \
     --uname="$kernver" \
     --linux="$vmlinuz" \
     --initrd="$initrd" \
     --cmdline="root=/run/initramfs/root.img root_sha256=$rootimg_checksum noresume" \
-    --signtool=sbsign \
-    --secureboot-private-key=/secureboot/tls.key \
-    --secureboot-certificate=/secureboot/tls.crt \
     --output=/boot/vmlinuz.efi
   mv /workspace/root/boot/vmlinuz.efi /workspace/vmlinuz.efi
 
@@ -64,9 +60,6 @@ main() {
     node_settings_size_b=$(( node_settings_size_b + $(stat -c %s "$file") ))
     cp "$file" "/workspace/node-settings/$(basename "$file" | sed s/:/-/g)"
   done
-
-  # Convert secureboot cert from PEM to DER and save to ESP for easy enrollment
-  step certificate format /secureboot/tls.crt >/workspace/secureboot.der
 
   local sector_size_b=512 gpt_size_b fs_table_size_b partition_offset_b partition_size_b disk_size_kib
   gpt_size_b=$((33 * sector_size_b))
@@ -82,7 +75,6 @@ main() {
       $(stat -c %s /usr/lib/shim/shimx64.efi.signed) +
       $(stat -c %s /usr/lib/shim/mmx64.efi.signed) +
       $(stat -c %s /workspace/vmlinuz.efi) +
-      $(stat -c %s /workspace/secureboot.der) +
       $(stat -c %s /workspace/root.img) +
       (sector_size_b - 1)
     ) / sector_size_b * sector_size_b
@@ -127,7 +119,6 @@ copy-in /workspace/vmlinuz.efi /EFI/BOOT/
 mv /EFI/BOOT/vmlinuz.efi /EFI/BOOT/grub${shimsuffix}.efi
 
 mkdir-p /home-cluster
-copy-in /workspace/secureboot.der /home-cluster/
 copy-in /workspace/root.img /home-cluster/
 copy-in /workspace/node-settings /home-cluster/
 EOF

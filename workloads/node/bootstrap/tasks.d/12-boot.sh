@@ -5,7 +5,7 @@ PACKAGES+=(
   systemd-sysv systemd-boot # systemd bootup
   initramfs-tools busybox util-linux zstd # initrd
   "linux-image-${ARCH?}"
-  python3-pefile sbsigntool # UKI creation & signing
+  python3-pefile # UKI creation
   dosfstools # Used for mounting ESP
   iproute2 wget # Used in settings to determine MAC address and then fetching settings
   overlayroot # Used for making ro-root writeable

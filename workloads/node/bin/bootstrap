@@ -36,17 +36,6 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
   eval "$(docopt "$@")"
 
   export STEPPATH=${STEPPATH:-$(step path --base)}
-  local \
-    sb_key_path="$STEPPATH/secureboot.key" \
-    sb_cert_path="$STEPPATH/secureboot.crt"
-  if [[ ! -e $sb_cert_path ]] || step certificate needs-renewal "$sb_cert_path" 2>&1 | pipe_verbose; then
-    # Key *must* be RSA. When sbsign signs the UKI it always specifies that the key is RSA regardless of the facts.
-    step certificate create --template=<(printf '{
-	"subject": {{ toJson .Subject }},
-	"keyUsage": ["digitalSignature"],
-	"extKeyUsage": ["codeSigning"]
-}') --force --insecure --no-password --not-after=$((10*365*24))h --kty=RSA "home-cluster Secure Boot (Admin)" "$sb_cert_path" "$sb_key_path"
-  fi
 
   local bundle
   bundle=$(mktemp --suffix .tar.gz)
@@ -105,8 +94,6 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
   done
   docker run --rm -ti \
     -v "$node_settings:/node-settings:ro" \
-    --mount type=bind,src="$sb_key_path",dst=/secureboot/tls.key,readonly \
-    --mount type=bind,src="$sb_cert_path",dst=/secureboot/tls.crt,readonly \
     -v "$PKGROOT/workloads/node/bootstrap/create-boot-image-assets:/assets:ro" \
     -v "$PKGROOT/workloads/node/bootstrap/scripts:/scripts:ro" \
     -v "$PKGROOT/images:/images:rw" \

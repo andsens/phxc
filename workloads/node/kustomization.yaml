@@ -9,7 +9,6 @@ resources:
 - containers/tftpd
 - bootstrap
 - images.yaml
-- secureboot.yaml
 - boot-server.yaml
 - namespace.yaml
 - Kptfile
