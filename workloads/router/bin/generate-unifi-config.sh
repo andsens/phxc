@@ -58,22 +58,6 @@ EOF
       '.[$rasn].neighbor[$ip]={"remote-as": $casn, "address-family":{"ipv6-unicast": $emptystr}}' <<<"$bgp_config")
   done
 
-# if substring (option vendor-class-identifier, 0, 10) = "HTTPClient" {
-#   option vendor-class-identifier "HTTPClient";
-#   if option arch = 00:06 or option arch = 00:0f {
-#     option bootfile-name "http://$CLUSTER_BOOTSERVER_FIXEDIPV4/x86/vmlinuz.efi";
-#     filename "http://$CLUSTER_BOOTSERVER_FIXEDIPV4/x86/vmlinuz.efi";
-#   } elsif option arch = 00:07 or option arch = 00:10 {
-#     option bootfile-name "http://$CLUSTER_BOOTSERVER_FIXEDIPV4/x64/vmlinuz.efi";
-#     filename "http://$CLUSTER_BOOTSERVER_FIXEDIPV4/x64/vmlinuz.efi";
-#   } elsif option arch = 00:0a or option arch = 00:12 {
-#     option bootfile-name "http://$CLUSTER_BOOTSERVER_FIXEDIPV4/arm32/vmlinuz.efi";
-#     filename "http://$CLUSTER_BOOTSERVER_FIXEDIPV4/arm32/vmlinuz.efi";
-#   } elsif option arch = 00:0b or option arch = 00:13 {
-#     option bootfile-name "http://$CLUSTER_BOOTSERVER_FIXEDIPV4/arm64/vmlinuz.efi";
-#     filename "http://$CLUSTER_BOOTSERVER_FIXEDIPV4/arm64/vmlinuz.efi";
-#   }
-# } else {
   local pxe_config
   pxe_config=$(cat <<EOF
 next-server $_TFTPD_IPV4;
@@ -92,7 +76,6 @@ if option arch = 00:06 {
 }
 EOF
   )
-# }
   pxe_config=${pxe_config//'"'/'&quot;'}
   pxe_config=${pxe_config//$'\n'/}
 
