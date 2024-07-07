@@ -3,9 +3,8 @@ SHELL ["/usr/bin/bash", "-Eeo", "pipefail", "-c"]
 ARG ARCH
 ENV ARCH=$ARCH
 
-RUN /workspace/common-context/setup-debian.sh
-
-RUN apt-get -y update; apt-get -y install --no-install-recommends \
+RUN /workspace/common-context/setup-debian.sh; \
+  apt-get -y update; apt-get -y install --no-install-recommends \
   squashfs-tools guestfish dosfstools linux-image-${ARCH} shim-signed python3-venv \
   ; rm -rf /var/cache/apt/lists/*; \
   upkg add -gp step -b step_0.26.2/bin/step \

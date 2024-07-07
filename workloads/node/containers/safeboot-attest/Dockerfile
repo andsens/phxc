@@ -1,9 +1,9 @@
 FROM debian:bookworm
 SHELL ["/bin/bash", "-Eeo", "pipefail", "-c"]
-RUN /workspace/common-context/setup-debian.sh
 
 WORKDIR /usr/local/lib/safeboot-attest
-RUN apt-get update; apt-get install -y --no-install-recommends \
+RUN /workspace/common-context/setup-debian.sh; \
+  apt-get update; apt-get install -y --no-install-recommends \
   python3-venv tpm2-tools xxd \
   ; rm -rf /var/cache/apt/lists/*; \
   python3 -m venv /usr/local/lib/safeboot-attest; \
