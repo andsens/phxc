@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
-# We don't have any prerequirements
-PREREQS=""
+# Depend on settings so we can check if we are the boot-server
+PREREQS="settings"
 case $1 in
 	prereqs) echo "${PREREQS}"; exit 0;;
 esac
@@ -9,10 +9,16 @@ esac
 # shellcheck disable=SC1091
 . /scripts/functions
 
-set +e; configure_networking; set -e
-if [ -n "$ROOTSERVER" ]; then
-  /usr/local/lib/upkg/.upkg/home-cluster/workloads/node/bin/safeboot-attest "http://${ROOTSERVER}/attest"
+safeboot_attest=/usr/local/lib/upkg/.upkg/home-cluster/workloads/node/bin/safeboot-attest
+if jq -re '.["node-label"] | indices("node-role.cluster.local/boot-server=true") | length > 0' /run/initramfs/node-settings.json >/dev/null; then
+  log_warning_msg "Skipping cluster authentication: This node is the boot-server. Saving attestation quote to /run/initramfs/quote.tar instead."
+  $safeboot_attest generate-quote >/run/initramfs/quote.tar
 else
-  log_warning_msg "Skipping cluster authentication: ROOTSERVER/NEXT_SERVER not found in DHCP lease"
-  exit 1
+  set +e; configure_networking; set -e
+  if [ -n "$ROOTSERVER" ]; then
+    $safeboot_attest attest "http://${ROOTSERVER}/attest" >/run/initramfs/cluster-secrets
+  else
+    log_failure_msg "Skipping cluster authentication: ROOTSERVER/NEXT_SERVER not found in DHCP lease"
+    exit 1
+  fi
 fi

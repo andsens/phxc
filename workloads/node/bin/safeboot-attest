@@ -21,30 +21,35 @@ main() {
   source "$PKGROOT/.upkg/records.sh/records.sh"
   DOC="safeboot-attest - Send a PCR quote to an attestation server and get a secret in return
 Usage:
-  safeboot-attest [options] ATTESTATION_URL
+  safeboot-attest [-d --pcrs PCRs] attest ATTESTATION_URL
+  safeboot-attest [--pcrs PCRs] generate-quote
 
 Options:
-  --debug-response  Debug the server response
-  --pcrs PCRs       Comma-separated list of PCRs to generate a quote for
-                    [default: 0,1,2,3,4]
+  -d --debug-response  Debug the server response
+  --pcrs PCRs          Comma-separated list of PCRs to generate a quote for
+                       [default: 0,1,2,3,4]
 "
 # docopt parser below, refresh this parser with `docopt.sh safeboot-attest`
 # shellcheck disable=2016,2086,2317,1090,1091,2034
 docopt() { local v='2.0.1'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
-%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:307};usage=${DOC:87:50}
-digest=fdb32;options=(' --debug-response 0' ' --pcrs 1');node_0(){ switch \
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:377};usage=${DOC:87:111}
+digest=75999;options=('-d --debug-response 0' ' --pcrs 1');node_0(){ switch \
 __debug_response 0;};node_1(){ value __pcrs 1;};node_2(){ value \
-ATTESTATION_URL a;};node_3(){ optional 0 1;};node_4(){ sequence 3 2;};cat <<<' \
-docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2;printf "%s\n" \
-"${DOC:87:50}" >&2;exit 1;}';local varnames=(__debug_response __pcrs \
-ATTESTATION_URL) varname;for varname in "${varnames[@]}"; do unset \
-"var_$varname";done;parse 4 "$@";local p=${DOCOPT_PREFIX:-''};for varname in \
-"${varnames[@]}"; do unset "$p$varname";done;eval $p'__debug_response=${var___'\
-'debug_response:-false};'$p'__pcrs=${var___pcrs:-0,1,2,3,4};'$p'ATTESTATION_UR'\
-'L=${var_ATTESTATION_URL:-};';local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && \
-docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for varname in "${varnames[@]}"; \
-do declare -p "$p$varname";done;done;}
+ATTESTATION_URL a;};node_3(){ switch attest a:attest;};node_4(){ switch \
+generate_quote a:generate-quote;};node_5(){ sequence 6 3 2;};node_6(){
+optional 0 1;};node_7(){ sequence 8 4;};node_8(){ optional 1;};node_9(){
+choice 5 7;};cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2
+printf "%s\n" "${DOC:87:111}" >&2;exit 1;}';local varnames=(__debug_response \
+__pcrs ATTESTATION_URL attest generate_quote) varname;for varname in \
+"${varnames[@]}"; do unset "var_$varname";done;parse 9 "$@";local \
+p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset "$p$varname"
+done;eval $p'__debug_response=${var___debug_response:-false};'$p'__pcrs=${var_'\
+'__pcrs:-0,1,2,3,4};'$p'ATTESTATION_URL=${var_ATTESTATION_URL:-};'$p'attest=${'\
+'var_attest:-false};'$p'generate_quote=${var_generate_quote:-false};';local \
+docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
+((;docopt_i>0;docopt_i--)); do for varname in "${varnames[@]}"; do declare -p \
+"$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' safeboot-attest`
   eval "$(docopt "$@")"
 
@@ -56,18 +61,23 @@ do declare -p "$p$varname";done;done;}
 
   mkdir "$TMP/quote"
   # shellcheck disable=SC2154
-  generate_quote "$__pcrs"
-  local file form_opts=()
-  for file in "$TMP/quote"/*; do
-    form_opts+=(--form "$(basename "$file")=@$file")
-  done
-  info "Sending quote to %s" "$ATTESTATION_URL"
-  # shellcheck disable=SC2154
-  if $__debug_response; then
-    curl -X POST -f "${form_opts[@]}" "$ATTESTATION_URL" > "$TMP/secret"
-  else
-    curl -X POST -fs "${form_opts[@]}" "$ATTESTATION_URL" || fatal $? "Attestation failed"
-    unseal_response "$TMP/secret"
+  if $attest; then
+    generate_quote "$__pcrs"
+    local file form_opts=()
+    for file in "$TMP/quote"/*; do
+      form_opts+=(--form "$(basename "$file")=@$file")
+    done
+    info "Sending quote to %s" "$ATTESTATION_URL"
+    # shellcheck disable=SC2154
+    if $__debug_response; then
+      curl -X POST -f "${form_opts[@]}" "$ATTESTATION_URL" > "$TMP/secret"
+    else
+      curl -X POST -fs "${form_opts[@]}" "$ATTESTATION_URL" || fatal $? "Attestation failed"
+      unseal_response "$TMP/secret"
+    fi
+  elif $generate_quote; then
+    generate_quote "$__pcrs"
+    (cd "$TMP/quote"; tar -c -- *)
   fi
 }
 
@@ -176,8 +186,7 @@ generate_quote() {
 #
 unseal_response() {
   REPLY="$1"
-
-  info "attest: unsealing response"
+  info "Unsealing response"
 
   dd if="$REPLY" of="$TMP/cred.blob" bs=16 skip=0 count=23 2>&-
   dd if="$REPLY" of="$TMP/hmac.bin" bs=16 skip=23 count=2 2>&-
