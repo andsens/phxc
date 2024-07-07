@@ -3,8 +3,8 @@
 set -Eeo pipefail; shopt -s inherit_errexit
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../../..")
 source "$PKGROOT/.upkg/records.sh/records.sh"
-# shellcheck source=workloads/settings/lib/settings-env.shellcheck.sh
-source "$PKGROOT/workloads/settings/lib/settings-env.sh"
+# shellcheck source=workloads/settings/env/settings.shellcheck.sh
+source "$PKGROOT/workloads/settings/env/settings.sh"
 eval_settings
 
 main() {

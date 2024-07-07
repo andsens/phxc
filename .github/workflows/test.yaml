@@ -25,8 +25,8 @@ jobs:
         sudo rm /usr/bin/yq
         sudo ln -s "${{ github.workspace }}/yq/bin/yq" /usr/local/bin/yq
     - uses: orbit-online/upkg-install@v1
-    - name: Generate settings-env.shellcheck.sh
-      run: workloads/settings/bin/generate-settings-env.shellcheck.sh
+    - name: Generate settings.shellcheck.sh
+      run: workloads/settings/env/generate-shellcheck.sh
     - name: Run ShellCheck
       uses: ludeeus/action-shellcheck@master
       env:

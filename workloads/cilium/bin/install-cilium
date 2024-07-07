@@ -7,8 +7,8 @@ main() {
   source "$PKGROOT/.upkg/records.sh/records.sh"
   source "$PKGROOT/.upkg/path-tools/path-tools.sh"
   PATH=$(path_prepend "$PKGROOT/.upkg/.bin")
-  # shellcheck source=workloads/settings/lib/settings-env.shellcheck.sh
-  source "$PKGROOT/workloads/settings/lib/settings-env.sh"
+  # shellcheck source=workloads/settings/env/settings.shellcheck.sh
+  source "$PKGROOT/workloads/settings/env/settings.sh"
   eval_settings
 
   DOC="install-cilium - Install cilium in k3s

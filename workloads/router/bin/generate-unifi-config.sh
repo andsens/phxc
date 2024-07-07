@@ -5,8 +5,8 @@ PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../..")
 
 main() {
   source "$PKGROOT/.upkg/records.sh/records.sh"
-  # shellcheck source=workloads/settings/lib/settings-env.sh
-  source "$PKGROOT/workloads/settings/lib/settings-env.sh"
+  # shellcheck source=workloads/settings/env/settings.shellcheck.sh
+  source "$PKGROOT/workloads/settings/env/settings.sh"
   # shellcheck disable=SC2119
   eval_settings
 
