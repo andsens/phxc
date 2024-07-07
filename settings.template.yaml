@@ -9,7 +9,7 @@ admin:
     addr: '[fd25:9998:d0e7:e351:1a01:be9:4d9a:157d]'
     path: /mnt/cluster/home/admin
   # If mounting a NFS home share, make sure the UID matches the one on the share
-  uid: 3000
+  uid: 1000
   username: admin
   shell: /bin/bash
   # Generate with mkpasswd (from the `whois` package) and make sure to single quote
@@ -24,28 +24,33 @@ admin:
 ### Node settings ###
 ########################
 nodes:
-- hostname: k8s-nas.local
+- hostname: k8s-master.local
+  mac: 00:01:02:a0:b0:ff
+  networks:
   nic:
     lan0:
-      name: ens3
+      nic: ens3
     host:
-      name: ens4
+      nic: ens4
       addrs: [10.186.223.3/24, 'fd25:9998:d0e7:e351:1a01:be9:4d9a:157f/48']
   arch: amd64
-  vm: Kubernetes
-  disk: /dev/zvol/cluster/Kubernetes
-  fixedIPv4: '10.186.223.168'
-  fixedIPv6: 'fd73:9867:6b4d:0:2a0:98ff:fe06:4044'
-  # Customizable names
+  data: /dev/vdb
+  node-label: [node-role.cluster.local/control-plane=true, node-role.cluster.local/boot-server=true]
 - hostname: k8s-hyperv.local
-  nic:
+  mac: 00:15:5d:cd:6b:02
+  networks:
     lan0:
-      name: eth0
+      nic: eth0
   arch: amd64
+  data: /dev/disk/by-path/acpi-VMBUS:00-vmbus-12345678901234567890123456789012-lun-1
 #########################
 ### Cluster settings ###
 #########################
 cluster:
+  adminPubkey: |-
+    -----BEGIN PUBLIC KEY-----
+    ...
+    -----END PUBLIC KEY-----
   # Top-level domain name of your cluster
   domain: example.org
   # Name of the acme provider to use
@@ -74,31 +79,15 @@ cluster:
     fixedIPv6: 'fd73:9867:6b4d:0:feec:daff:fe04:a9ec'
   # CoreDNS, the central DNS server for the entire cluster
   coredns:
+    # Fixed IP from the service subnet above for port forwarding
     svc:
-      # Fixed IP from the service subnet above for port forwarding
       fixedIPv4: '10.33.0.10'
       fixedIPv6: 'fd73:9867:6b4d:cafe:0000:34::1'
+    # Fixed IP from the load balancer subnet above for port forwarding
     lb:
-      # Fixed IP from the load balancer subnet above for port forwarding
       fixedIPv4: '10.34.0.2'
       fixedIPv6: 'fd73:9867:6b4d:cafe:0:34::2'
+  # Fixed etcd IP address for coredns, note that this is from the svc pool and not the lb pool
   etcd:
-    # Fixed etcd IP address for coredns, note that this is from the svc pool and not the lb pool
     fixedIPv4: '10.33.0.2'
     fixedIPv6: 'fd73:9867:6b4d:cafe:0:33:0:2'
-  # Traefik reverse-proxy
-  traefik:
-    fixedIPv4: '10.34.0.2'
-    fixedIPv6: 'fd73:9867:6b4d:cafe:0000:34::2'
-  # Smallstep PKI
-  smallstep:
-    fixedIPv4: '10.34.0.3'
-    fixedIPv6: 'fd73:9867:6b4d:cafe:0000:34::3'
-  # Smallstep Kubernetes CA for renewing kubernetes client certs
-  kubeAPIServerClientCA:
-    fixedIPv4: '10.34.0.5'
-    fixedIPv6: 'fd73:9867:6b4d:cafe:0:34::5'
-unifi:
-  usg_ssh_address: 'admin@192.168.1.1'
-  cloudkey_ssh_address: 'ubnt@192.168.1.3'
-  unifi_site: default
