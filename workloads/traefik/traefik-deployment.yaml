@@ -28,8 +28,6 @@ metadata:
     type: frontend
     app.kubernetes.io/name: traefik
     app.kubernetes.io/component: traefik
-  annotations:
-    io.cilium/lb-ipam-ips: "cluster.traefik.fixedIPv4,cluster.traefik.fixedIPv6"
 spec:
   type: LoadBalancer
   ipFamilies: [IPv4, IPv6]
