@@ -1,3 +1,39 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kube-apiserver-client-ca
+  labels:
+    app.kubernetes.io/name: smallstep
+    app.kubernetes.io/component: kube-apiserver-client-ca
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: kube-apiserver-client-ca
+  labels:
+    app.kubernetes.io/name: smallstep
+    app.kubernetes.io/component: kube-apiserver-client-ca
+rules:
+- apiGroups: [""]
+  resources: [services]
+  verbs: [get]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kube-apiserver-client-ca
+  labels:
+    app.kubernetes.io/name: smallstep
+    app.kubernetes.io/component: kube-apiserver-client-ca
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: kube-apiserver-client-ca
+subjects:
+- kind: ServiceAccount
+  name: kube-apiserver-client-ca
+---
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
@@ -16,6 +52,24 @@ spec:
       - port: "9000"
     fromEntities:
     - all
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kube-apiserver-client-ca-host
+  labels:
+    app.kubernetes.io/name: smallstep
+    app.kubernetes.io/component: kube-apiserver-client-ca
+spec:
+  type: NodePort
+  selector:
+    app.kubernetes.io/name: smallstep
+    app.kubernetes.io/component: kube-apiserver-client-ca
+  ports:
+  - name: api
+    port: 9001
+    nodePort: 9001
+    targetPort: api
 ---
 apiVersion: v1
 kind: Service
@@ -57,10 +111,11 @@ spec:
       labels:
         app.kubernetes.io/name: smallstep
         app.kubernetes.io/component: kube-apiserver-client-ca
-        cluster.local/allow-internet-egress: "true"
+        cluster.local/allow-apiserver-egress: "true"
     spec:
       nodeSelector:
         node-role.kubernetes.io/control-plane: "true"
+      serviceAccountName: kube-apiserver-client-ca
       securityContext:
         fsGroup: 1000
       initContainers:
@@ -71,10 +126,10 @@ spec:
         securityContext:
           readOnlyRootFilesystem: true
         env:
-        - name: CLUSTER_KUBEAPISERVERCLIENTCA_FIXEDIPV4
-          value: cluster.kubeAPIServerClientCA.fixedIPv4
-        - name: CLUSTER_KUBEAPISERVERCLIENTCA_FIXEDIPV6
-          value: cluster.kubeAPIServerClientCA.fixedIPv6
+        - name: HOST_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
         - name: CLUSTER_DOMAIN
           value: cluster.domain
         - name: CLUSTER_ADMINPUBKEY

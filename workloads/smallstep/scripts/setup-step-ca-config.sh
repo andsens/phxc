@@ -7,10 +7,12 @@ source /usr/local/lib/upkg/.upkg/records.sh/records.sh
 KUBE_CLIENT_CA_CRT_PATH=$STEPPATH/certs/kube_apiserver_client_ca.crt
 
 main() {
-  local config
+  local config lb_pv4 lb_ipv6
+  lb_pv4=$(kubectl -n smallstep get svc step-ca-external -o=jsonpath='{.status.loadBalancer.ingress[0].ip}')
+  lb_ipv6=$(kubectl -n smallstep get svc step-ca-external -o=jsonpath='{.status.loadBalancer.ingress[1].ip}')
   config=$(jq \
-    --arg ipv4 "$CLUSTER_SMALLSTEP_FIXEDIPV4" \
-    --arg ipv6 "$CLUSTER_SMALLSTEP_FIXEDIPV6" \
+    --arg ipv4 "$lb_pv4" \
+    --arg ipv6 "$lb_ipv6" \
     --arg domain "pki.$CLUSTER_DOMAIN" \
     '.dnsNames+=[$ipv4, $ipv6, $domain]' \
     "$STEPPATH/config-ro/ca.json")

@@ -36,13 +36,3 @@ replacements:
   targets:
   - select: {group: networking.k8s.io, kind: Ingress, name: traefik-dashboard}
     fieldPaths: [metadata.annotations.cert-manager\.io/issuer]
-- source: {fieldPath: data.cluster.traefik.fixedIPv4, kind: ConfigMap, name: settings}
-  targets:
-  - select: {kind: Service, name: traefik-frontend}
-    fieldPaths: [metadata.annotations.io\.cilium/lb-ipam-ips]
-    options: {delimiter: ',', index: 0}
-- source: {fieldPath: data.cluster.traefik.fixedIPv6, kind: ConfigMap, name: settings}
-  targets:
-  - select: {kind: Service, name: traefik-frontend}
-    fieldPaths: [metadata.annotations.io\.cilium/lb-ipam-ips]
-    options: {delimiter: ',', index: 1}

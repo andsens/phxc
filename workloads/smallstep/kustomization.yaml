@@ -34,34 +34,6 @@ configMapGenerator:
 - files: []
   name: ca-templates
 replacements:
-- source: {fieldPath: data.cluster.smallstep.fixedIPv4, kind: ConfigMap, name: settings}
-  targets:
-  - select: {kind: Service, name: step-ca-external}
-    fieldPaths: [metadata.annotations.io\.cilium/lb-ipam-ips]
-    options: {delimiter: ',', index: 0}
-  - select: {group: apps, kind: StatefulSet, name: step-ca}
-    fieldPaths: ["spec.template.spec.initContainers.[name=setup-step-ca-config].env.[name=CLUSTER_SMALLSTEP_FIXEDIPV4].value"]
-- source: {fieldPath: data.cluster.smallstep.fixedIPv6, kind: ConfigMap, name: settings}
-  targets:
-  - select: {kind: Service, name: step-ca-external}
-    fieldPaths: [metadata.annotations.io\.cilium/lb-ipam-ips]
-    options: {delimiter: ',', index: 1}
-  - select: {group: apps, kind: StatefulSet, name: step-ca}
-    fieldPaths: ["spec.template.spec.initContainers.[name=setup-step-ca-config].env.[name=CLUSTER_SMALLSTEP_FIXEDIPV6].value"]
-- source: {fieldPath: data.cluster.kubeAPIServerClientCA.fixedIPv4, kind: ConfigMap, name: settings}
-  targets:
-  - select: {kind: Service, name: kube-apiserver-client-ca-external}
-    fieldPaths: [metadata.annotations.io\.cilium/lb-ipam-ips]
-    options: {delimiter: ',', index: 0}
-  - select: {group: apps, kind: StatefulSet, name: kube-apiserver-client-ca}
-    fieldPaths: ["spec.template.spec.initContainers.[name=setup-kube-apiserver-client-ca-config].env.[name=CLUSTER_KUBEAPISERVERCLIENTCA_FIXEDIPV4].value"]
-- source: {fieldPath: data.cluster.kubeAPIServerClientCA.fixedIPv6, kind: ConfigMap, name: settings}
-  targets:
-  - select: {kind: Service, name: kube-apiserver-client-ca-external}
-    fieldPaths: [metadata.annotations.io\.cilium/lb-ipam-ips]
-    options: {delimiter: ',', index: 1}
-  - select: {group: apps, kind: StatefulSet, name: kube-apiserver-client-ca}
-    fieldPaths: ["spec.template.spec.initContainers.[name=setup-kube-apiserver-client-ca-config].env.[name=CLUSTER_KUBEAPISERVERCLIENTCA_FIXEDIPV6].value"]
 - source: {fieldPath: data.cluster.domain, kind: ConfigMap, name: settings}
   targets:
   - select: {kind: Service, name: step-ca-external}

@@ -7,12 +7,15 @@ KUBE_CLIENT_CA_KEY_PATH=$STEPPATH/certs/kube_apiserver_client_ca_key
 KUBE_CLIENT_CA_CRT_PATH=$STEPPATH/certs/kube_apiserver_client_ca.crt
 
 main() {
-  local config
+  local config lb_pv4 lb_ipv6
+  lb_pv4=$(kubectl -n smallstep get svc kube-apiserver-client-ca-external -o=jsonpath='{.status.loadBalancer.ingress[0].ip}')
+  lb_ipv6=$(kubectl -n smallstep get svc kube-apiserver-client-ca-external -o=jsonpath='{.status.loadBalancer.ingress[1].ip}')
   config=$(jq \
-    --arg ipv4 "$CLUSTER_KUBEAPISERVERCLIENTCA_FIXEDIPV4" \
-    --arg ipv6 "$CLUSTER_KUBEAPISERVERCLIENTCA_FIXEDIPV6" \
+    --arg host_ip "$HOST_IP" \
+    --arg ipv4 "$lb_pv4" \
+    --arg ipv6 "$lb_ipv6" \
     --arg domain "pki-kube.$CLUSTER_DOMAIN" \
-    '.dnsNames+=[$ipv4, $ipv6, $domain]' \
+    '.dnsNames+=[$host_ip, $ipv4, $ipv6, $domain]' \
     "$STEPPATH/config-ro/kube-apiserver-client-ca.json")
 
   local name provisioner_names=(kube-apiserver-client-ca admin)
