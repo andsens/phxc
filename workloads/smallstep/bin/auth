@@ -79,14 +79,19 @@ local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
 
     OLD_KUBECONFIG=$KUBECONFIG
 
-    local profile ca_url fingerprint config_path config
+    local profile ca_url fingerprint config_path config control_plane_hostname
+
+    control_plane_hostname=$(
+      yq -re '[
+        .nodes[] | select((.["node-label"] // []) | indices("node-role.kubernetes.io/control-plane=true") | length > 0)
+      ] | first | .hostname' "$PKGROOT/settings.yaml")
 
     ################################
     ### Setup kube client API CA ###
     ################################
     context=home-cluster-kube-api
     info "Bootstrapping Smallstep %s context" $context
-    ca_url=https://$CLUSTER_KUBEAPISERVERCLIENTCA_FIXEDIPV4:9001
+    ca_url=https://$control_plane_hostname:9001
     fingerprint=$(step certificate fingerprint <(curl -s --insecure "$ca_url/roots.pem")) # TOFU for the kube-api CA
     step ca bootstrap --context $context --force --ca-url="$ca_url" --fingerprint="$fingerprint"
 
@@ -108,10 +113,9 @@ local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
     #########################
     ### Setup kube config ###
     #########################
-    local kube_config_path=$HOME/.kube/home-cluster.yaml kube_cluster=home-cluster kube_api_hostname kube_api_addr kube_context
-    kube_api_hostname=$(yq -r '[.nodes[] | select((.["node-label"] // [])[] | contains("node-role.cluster.local/control-plane=true"))] | first | .hostname' "$PKGROOT/settings.yaml")
+    local kube_config_path=$HOME/.kube/home-cluster.yaml kube_cluster=home-cluster kube_api_addr kube_context
     kube_context=home-cluster
-    kube_api_addr="https://$kube_api_hostname:6443"
+    kube_api_addr="https://$control_plane_hostname:6443"
     kubectl config --kubeconfig "$kube_config_path" set-cluster home-cluster \
       --server="$kube_api_addr" \
       --embed-certs \
@@ -120,7 +124,7 @@ local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
       )
     kubectl config --kubeconfig "$kube_config_path" set-credentials "$__username@$kube_cluster" \
       --exec-api-version="client.authentication.k8s.io/v1beta1" \
-      --exec-command="$PKGROOT/workloads/smallstep/bin/auth.sh" \
+      --exec-command="$PKGROOT/workloads/smallstep/bin/auth" \
       --exec-arg=kubectl-cert
     kubectl config --kubeconfig "$kube_config_path" set-context $kube_context \
       --cluster "$kube_cluster" --user "$__username@$kube_cluster"
@@ -130,9 +134,11 @@ local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
     ##############################
     ### Setup the home-cluster ###
     ##############################
+    local smallstep_ipv4
+    smallstep_ipv4=$(kubectl --context "$kube_context" -n smallstep get svc step-ca-external -o=jsonpath='{.status.loadBalancer.ingress[0].ip}')
     context=home-cluster-pki
     info "Bootstrapping Smallstep %s context" $context
-    ca_url=https://$CLUSTER_SMALLSTEP_FIXEDIPV4:9000
+    ca_url=https://$smallstep_ipv4:9000
     # Retrieve the fingerprint by connecting to kubernetes, no TOFU needed
     fingerprint=$(step certificate fingerprint <(kubectl --context "$kube_context" -n smallstep get secret smallstep-root -o=jsonpath='{.data.tls\.crt}' | base64 -d))
     step ca bootstrap --context $context --force --ca-url "$ca_url" --fingerprint="$fingerprint"

@@ -3,6 +3,7 @@ kind: Kustomization
 namespace: smallstep
 resources:
 - ../settings/replacements
+- ../settings/node
 - ../common-context
 - containers/step-ca-bootstrap
 - https://raw.githubusercontent.com/smallstep/helm-charts/v0.22.0/step-issuer/crds/certmanager.step.sm_stepclusterissuers.yaml

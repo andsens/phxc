@@ -11,7 +11,7 @@ Usage:
   init-k3s
 
 Symlinks config.yaml to either agent.yaml or server.yaml depending on whether
-the node-role.cluster.local/control-plane node label is set and copies
+the node-role.kubernetes.io/control-plane node label is set and copies
 node-label from node settings to
 /etc/rancher/k3s/config.yaml.d/node-label.yaml, then it starts k3s.
 "
@@ -32,7 +32,7 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 
   local k3s_type=agent label label_config="node-label: []"
   for label in $(jq -r '(.["node-label"] // [])[]' /run/initramfs/node-settings.json); do
-    [[ $label != 'node-role.cluster.local/control-plane=true' ]] || k3s_type=server
+    [[ $label != 'node-role.kubernetes.io/control-plane=true' ]] || k3s_type=server
     # shellcheck disable=SC2016
     label_config=$(yq -y --arg l "$label" '.["node-label"]+=[$l]' <<<"$label_config")
   done

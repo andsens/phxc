@@ -7,15 +7,21 @@ KUBE_CLIENT_CA_KEY_PATH=$STEPPATH/certs/kube_apiserver_client_ca_key
 KUBE_CLIENT_CA_CRT_PATH=$STEPPATH/certs/kube_apiserver_client_ca.crt
 
 main() {
-  local config lb_pv4 lb_ipv6
+  local config lb_pv4 lb_ipv6 node_setting control_plane_hostname
+  for node_setting in /node-settings/*.json; do
+    if jq -re '(.["node-label"] // []) | indices("node-role.kubernetes.io/control-plane=true") | length > 0' "$node_setting" >/dev/null; then
+      control_plane_hostname=$(jq -re '.hostname' "$node_setting")
+      break
+    fi
+  done
   lb_pv4=$(kubectl -n smallstep get svc kube-apiserver-client-ca-external -o=jsonpath='{.status.loadBalancer.ingress[0].ip}')
   lb_ipv6=$(kubectl -n smallstep get svc kube-apiserver-client-ca-external -o=jsonpath='{.status.loadBalancer.ingress[1].ip}')
   config=$(jq \
-    --arg host_ip "$HOST_IP" \
+    --arg control_plane_hostname "$control_plane_hostname" \
     --arg ipv4 "$lb_pv4" \
     --arg ipv6 "$lb_ipv6" \
     --arg domain "pki-kube.$CLUSTER_DOMAIN" \
-    '.dnsNames+=[$host_ip, $ipv4, $ipv6, $domain]' \
+    '.dnsNames+=[$control_plane_hostname, $ipv4, $ipv6, $domain]' \
     "$STEPPATH/config-ro/kube-apiserver-client-ca.json")
 
   local name provisioner_names=(kube-apiserver-client-ca admin)

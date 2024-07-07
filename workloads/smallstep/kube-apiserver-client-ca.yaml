@@ -126,10 +126,6 @@ spec:
         securityContext:
           readOnlyRootFilesystem: true
         env:
-        - name: HOST_IP
-          valueFrom:
-            fieldRef:
-              fieldPath: status.hostIP
         - name: CLUSTER_DOMAIN
           value: cluster.domain
         - name: CLUSTER_ADMINPUBKEY
@@ -145,6 +141,8 @@ spec:
         - name: kube-apiserver-client-ca-key
           mountPath: /home/step/certs/kube_apiserver_client_ca_key
           readOnly: true
+        - name: node-settings
+          mountPath: /node-settings
         - name: certs
           mountPath: /home/step/certs-ram
         - name: config-rw
@@ -193,6 +191,9 @@ spec:
       - name: templates
         configMap:
           name: kube-apiserver-client-ca-templates
+      - name: node-settings
+        configMap:
+          name: node-settings
       - name: certs
         emptyDir:
           medium: Memory
