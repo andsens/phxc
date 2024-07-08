@@ -19,10 +19,10 @@ export LC_ALL=C
 
 main() {
   source "$PKGROOT/.upkg/records.sh/records.sh"
-  DOC="safeboot-attest - Send a PCR quote to an attestation server and get a secret in return
+  DOC="attest - Send a PCR quote to an attestation server and get a secret in return
 Usage:
-  safeboot-attest [-d --pcrs PCRs] attest ATTESTATION_URL
-  safeboot-attest [--pcrs PCRs] generate-quote
+  attest [-d --pcrs PCRs] attest ATTESTATION_URL
+  attest [--pcrs PCRs] generate-quote
 
 Options:
   -d --debug-response  Debug the server response
@@ -33,14 +33,14 @@ Options:
 # shellcheck disable=2016,2086,2317,1090,1091,2034
 docopt() { local v='2.0.1'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
-%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:377};usage=${DOC:87:111}
-digest=75999;options=('-d --debug-response 0' ' --pcrs 1');node_0(){ switch \
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:350};usage=${DOC:78:93}
+digest=d7cbd;options=('-d --debug-response 0' ' --pcrs 1');node_0(){ switch \
 __debug_response 0;};node_1(){ value __pcrs 1;};node_2(){ value \
 ATTESTATION_URL a;};node_3(){ switch attest a:attest;};node_4(){ switch \
 generate_quote a:generate-quote;};node_5(){ sequence 6 3 2;};node_6(){
 optional 0 1;};node_7(){ sequence 8 4;};node_8(){ optional 1;};node_9(){
 choice 5 7;};cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2
-printf "%s\n" "${DOC:87:111}" >&2;exit 1;}';local varnames=(__debug_response \
+printf "%s\n" "${DOC:78:93}" >&2;exit 1;}';local varnames=(__debug_response \
 __pcrs ATTESTATION_URL attest generate_quote) varname;for varname in \
 "${varnames[@]}"; do unset "var_$varname";done;parse 9 "$@";local \
 p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset "$p$varname"
@@ -72,8 +72,8 @@ docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
     if $__debug_response; then
       curl -X POST -f "${form_opts[@]}" "$ATTESTATION_URL"
     else
-      curl -X POST -fs "${form_opts[@]}" "$ATTESTATION_URL" > "$TMP/secret" || fatal $? "Attestation failed"
-      unseal_response "$TMP/secret"
+      curl -X POST -fs "${form_opts[@]}" "$ATTESTATION_URL" > "$TMP/reply" || fatal $? "Attestation failed"
+      unseal_response || fatal $? "Failed to unseal the response"
     fi
   elif $generate_quote; then
     generate_quote "$__pcrs"
@@ -185,14 +185,11 @@ generate_quote() {
 # 16 bytes of HMAC key
 #
 unseal_response() {
-  REPLY="$1"
   info "Unsealing response"
 
-  # See attest-server.py for the reuse of the IV as an HMAC
-
-  dd if="$REPLY" status=none bs=16 skip=0  count=22 of="$TMP/cred.blob"
-  dd if="$REPLY" status=none bs=16 skip=22 count=2  of="$TMP/hmac.bin"
-  dd if="$REPLY" status=none bs=16 skip=24          of="$TMP/cipher.bin"
+  dd if="$TMP/reply" status=none bs=16 skip=0  count=22 of="$TMP/cred.blob"
+  dd if="$TMP/reply" status=none bs=16 skip=22 count=2  of="$TMP/hmac.bin"
+  dd if="$TMP/reply" status=none bs=16 skip=24          of="$TMP/cipher.bin"
 
   tpm2_session
 
@@ -206,6 +203,7 @@ unseal_response() {
     LOGPROGRAM=tpm2 pipe_verbose || fatal $? "tpm2_activatecredential: unable to unseal key"
 
   # split the secret.key into AES key and IV,
+  # See attest-server.py for the reuse of the IV as an HMAC
   dd if="$TMP/secret.key" bs=16 skip=0 count=2 status=none of="$TMP/aes.key"
   dd if="$TMP/secret.key" bs=16 skip=2 count=1 status=none of="$TMP/aes.iv"
   dd if="$TMP/secret.key" bs=16 skip=2 count=1 status=none of="$TMP/hmac.key"
@@ -225,8 +223,7 @@ unseal_response() {
   verbose "Decrypting reply"
   openssl enc -d -aes-256-cbc \
     -iv "$(xxd -p -c128 "$TMP/aes.iv")" -K "$(xxd -p -c128 "$TMP/aes.key")" \
-    -in "$TMP/cipher.bin" 2>&1 |\
-    LOGPROGRAM=openssl pipe_verbose || fatal $? "unable to decrypt reply"
+    -in "$TMP/cipher.bin" || fatal $? "unable to decrypt reply"
 }
 
 main "$@"

@@ -40,9 +40,10 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
     add_pending_ek "$EK_HASH"
     fatal "The endorsement key is not whitelisted"
   else
-    verbose "The endorsement key is whitelisted"
+    info "The endorsement key is whitelisted"
   fi
 
+  info "Remote attestation succeeded"
   output_secrets
 
   return 0

@@ -27,12 +27,13 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 
   local devpath
   devpath=$(jq -re '.data' /run/initramfs/node-settings.json)
+  [[ -e /run/initramfs/cluster-secrets ]] || fatal "/run/initramfs/cluster-secrets does not exist"
 
   if ! cryptsetup isLuks "$devpath" 2>/dev/null; then
     info "%s not initialized, formatting" "$devpath"
     initialize "$devpath"
   else
-    cryptsetup luksOpen "$devpath" persistent
+    cryptsetup luksOpen "$devpath" persistent --keyfile <(jq -j '.["disk-encryption-key"]' /run/initramfs/cluster-secrets)
   fi
   mkdir /var/lib/persistent
   mount /dev/mapper/persistent /var/lib/persistent
@@ -40,27 +41,10 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 }
 
 initialize() {
-  local devpath=$1 tmp_key recovery_key=/var/run/initramfs/persistent.recovery-key
+  local devpath=$1
 
-  # Setup with temporary key
-  tmp_key=$(mktemp)
-  # shellcheck disable=SC2064
-  trap "rm -f \"$tmp_key\"" EXIT
-  head -c64 /dev/urandom >"$tmp_key"
-  cryptsetup luksFormat --batch-mode "$devpath" "$tmp_key"
-
-  # TPM enrollment
-  systemd-cryptenroll --tpm2-device auto --tpm2-pcrs=7+14 --unlock-key-file "$tmp_key" "$devpath"
-
-  # Recovery key enrollment
-  touch $recovery_key; chmod go-rwx $recovery_key
-  systemd-cryptenroll --recovery-key --unlock-key-file "$tmp_key" "$devpath" >$recovery_key
-
-  # Remove temporary key
-  cryptsetup luksRemoveKey --batch-mode "$devpath" "$tmp_key"
-
-  # Unlock volume
-  cryptsetup luksOpen "$devpath" persistent
+  cryptsetup luksFormat --batch-mode "$devpath" <(jq -j '.["disk-encryption-key"]' /run/initramfs/cluster-secrets)
+  cryptsetup luksOpen "$devpath" persistent --keyfile <(jq -j '.["disk-encryption-key"]' /run/initramfs/cluster-secrets)
 
   # Create filesystem
   mkfs.ext4 /dev/mapper/persistent

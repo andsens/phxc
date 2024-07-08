@@ -73,9 +73,6 @@ spec:
         imagePullPolicy: Never
         securityContext:
           readOnlyRootFilesystem: true
-        env:
-        - name: LOGLEVEL
-          value: verbose
         ports:
         - name: http
           containerPort: 8000

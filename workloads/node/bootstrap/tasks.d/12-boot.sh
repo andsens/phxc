@@ -38,7 +38,7 @@ boot() {
   systemctl enable setup-cluster-dns.service
 
   # Authentication towards the cluster
-  cp_tpl --raw --chmod=0755 /etc/initramfs-tools/scripts/init-bottom/authenticate
+  cp_tpl --raw --chmod=0755 /etc/initramfs-tools/scripts/init-bottom/attest
   systemctl enable systemd-timesyncd
 
   # Root

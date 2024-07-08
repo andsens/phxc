@@ -85,23 +85,24 @@ def home_post():
         fd.write(files[f])
 
     ek_hash = SHA256.new(RSA.import_key(files['ek.pem']).export_key(format='DER')).hexdigest()
+    ek_short = ek_hash[0:8]
 
     # check that the AK meets our requirements
     sub = subprocess.run([
       'tpm2', 'print', '--type', 'TPMT_PUBLIC', os.path.join(tmpdir, 'ak.pub')
     ], stdout=subprocess.PIPE, stderr=sys.stderr)
     if sub.returncode != 0:
-      log.error('unable to parse AK')
+      log.error(f'{ek_short}: unable to parse AK')
       abort(403, 'BAD_AK')
 
     # The output contains YAML description of the attestation key
     ak = yaml.safe_load(sub.stdout)
     if not 'attributes' in ak and not 'value' in ak['attributes']:
-      log.error('unable to parse AK')
+      log.error(f'{ek_short}: unable to parse AK')
       abort(403, 'BAD_AK')
 
     if ak['attributes']['value'] != ak_type:
-      log.error(f"bad AK type: {ak['attributes']['value']}")
+      log.error(f"{ek_short} bad AK type: {ak['attributes']['value']}")
       abort(403, 'BAD_AK')
 
     # use the tpm2 checkquote to validate the signature on the quote,
@@ -110,7 +111,7 @@ def home_post():
     drift = round(int(f'0x{files["nonce"].decode("ascii")}', 16) - time.time())
     if abs(drift) > max_drift:
       # Allow a time drift of {max_drift} seconds
-      log.error(f'{ek_hash}: Detected nonce timedrift of {drift}s between client and server (max is {max_drift}s)')
+      log.error(f'{ek_short}: Detected nonce timedrift of {drift}s between client and server (max is {max_drift}s)')
       abort (403, 'BAD_QUOTE')
 
     sub = subprocess.run(['tpm2', 'checkquote',
@@ -144,17 +145,17 @@ def home_post():
     # if the quote meets policy for this ekhash.
     # This is where the actual business logic happens; the other
     # steps have purely been validating that the quote is well formed, etc.
-    log.info(f'{ek_hash}: Verifying quote')
+    log.verbose(f'{ek_short}: Verifying quote')
     sub = subprocess.run([attest_verify_script, ek_hash, tmpdir], stdout=subprocess.PIPE, stderr=sys.stderr)
 
     if sub.returncode != 0:
-      log.error(f'{ek_hash}: Quote verification failed')
+      log.error(f'{ek_short}: Quote verification failed')
       abort(403, 'verify failed')
 
     # read the (binary) response from the sub process stdout
     secret_payload = sub.stdout
 
-    log.info(f'{ek_hash}: Sealing response of {len(secret_payload)} bytes')
+    log.debug(f'{ek_short}: Sealing response of {len(secret_payload)} bytes')
     # create an ephemeral session key, IV and HMAC key
     aes_key = get_random_bytes(32)
     aes_iv = get_random_bytes(16)
@@ -195,7 +196,7 @@ def home_post():
     )
 
     if sub.returncode != 0:
-      log.error(f'{ek_hash}: makecredential failed')
+      log.error(f'{ek_short}: makecredential failed')
       abort(500, "sealing failed")
 
     # use the AES key and IV to encrypt the secret data
@@ -212,7 +213,7 @@ def home_post():
 
     return send_file(sealed_filename)
   except Exception as e:
-    log.error(e)
+    log.error(f'{ek_short}: {e}')
     abort(500, 'unknown error, check server logs for more information')
   finally:
     if _tmp is not None:
