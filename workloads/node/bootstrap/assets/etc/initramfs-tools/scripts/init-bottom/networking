@@ -21,6 +21,7 @@ for network in $(jq -r '(.networks // []) | keys[]' "$settings_path"); do
   log_begin_msg "Configuring network $network"
   if ! nic_name=$(jq -re --arg network "$network" '.networks[$network].nic' "$settings_path"); then
     log_failure_msg "$network has no nic defined, skipping"
+    continue
   fi
   net_conf=$(printf '[Match]\nName=%s\n\n[Network]' "$nic_name")
   addrs=$(jq -r --arg network "$network" '(.networks[$network].addrs // [])[]' "$settings_path")

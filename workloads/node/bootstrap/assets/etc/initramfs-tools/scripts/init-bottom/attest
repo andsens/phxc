@@ -17,12 +17,12 @@ else
   set +e; configure_networking; set -e
   if [ -n "$ROOTSERVER" ]; then
     if secrets=$($attest attest "http://${ROOTSERVER}/attest"); then
-      printf "%s\n" "$secrets" >/run/initramfs/cluster-secrets
+      printf "%s\n" "$secrets" >/run/initramfs/cluster-secrets.json
     else
-      panic "Remote attestation failed"
+      log_failure_msg "Remote attestation failed"
     fi
   else
     log_failure_msg "Skipping remote attestation: ROOTSERVER/NEXT_SERVER not found in DHCP lease"
-    exit 1
+    exit 0
   fi
 fi

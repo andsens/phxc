@@ -11,18 +11,19 @@ esac
 
 set +e; configure_networking; set -e
 if [ -z "$ROOTSERVER" ]; then
-  log_warning_msg "Skipping download/copy of settings: ROOTSERVER not found in DHCP lease"
-  exit 1
+  panic "Skipping download/copy of settings: ROOTSERVER not found in DHCP lease"
 fi
+boot_state=$(jq --arg next_server "$ROOTSERVER" '.next_server=$next_server' /run/initramfs/boot-state.json)
+printf "%s\n" "$boot_state" >/run/initramfs/boot-state.json
 
 # Get the NIC MAC we use to contact the boot server
 if ! link=$(ip -o route get to "$ROOTSERVER" | grep -Eo 'dev [^ ]+' | cut -d ' ' -f2); then
   log_failure_msg "Unable to determine interface used to contact $ROOTSERVER, aborting node-settings.json download/copy"
-  exit 1
+  exit 0
 fi
 if ! mac=$(ip link show "$link" | tail -n1 | grep -Eo '([a-f0-9]{2}:){5}[a-f0-9]{2}' | head -n1); then
   log_failure_msg "Unable to determine the MAC address of the interface $link, aborting node-settings.json download/copy"
-  exit 1
+  exit 0
 fi
 
 settings_filename=$(printf "%s" "$mac" | sed s/:/-/g).json

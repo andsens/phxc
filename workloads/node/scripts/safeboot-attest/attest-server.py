@@ -145,7 +145,7 @@ def home_post():
     # if the quote meets policy for this ekhash.
     # This is where the actual business logic happens; the other
     # steps have purely been validating that the quote is well formed, etc.
-    log.verbose(f'{ek_short}: Verifying quote')
+    log.debug(f'{ek_short}: Verifying quote')
     sub = subprocess.run([attest_verify_script, ek_hash, tmpdir], stdout=subprocess.PIPE, stderr=sys.stderr)
 
     if sub.returncode != 0:

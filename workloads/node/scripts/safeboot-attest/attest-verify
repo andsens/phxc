@@ -28,19 +28,23 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 
   LOGPROGRAM="attest-verify (${EK_HASH:0:8})"
 
+  if ! is_ek_whitelisted "$EK_HASH"; then
+    if is_ek_pending "$EK_HASH"; then
+      fatal "The endorsement key is pending authorization"
+    else
+      add_pending_ek "$EK_HASH"
+      fatal "The endorsement key is not whitelisted"
+    fi
+  else
+    info "The endorsement key is whitelisted"
+  fi
+
   local pcr4_sha256
   pcr4_sha256=$(yq -r '.pcrs.sha256["4"]' "$PAYLOAD_DIR/quote.yaml")
   # Lowercase with ",,"
   pcr4_sha256=${pcr4_sha256,,}
   if ! find_pcr4_match "$EK_HASH" "$pcr4_sha256"; then
     fatal "Unable to find match for PCR 4 amongst known or whitelisted images"
-  fi
-
-  if ! is_ek_whitelisted "$EK_HASH"; then
-    add_pending_ek "$EK_HASH"
-    fatal "The endorsement key is not whitelisted"
-  else
-    info "The endorsement key is whitelisted"
   fi
 
   info "Remote attestation succeeded"
@@ -94,17 +98,20 @@ is_ek_whitelisted() {
   jq -re --arg ek_hash "$EK_HASH" 'index($ek_hash)!=null' "$ek_whitelist" &>/dev/null
 }
 
+is_ek_pending() {
+  local EK_HASH=$1 ek_pending=/attestation-database/ek-pending.json
+  jq -re --arg ek_hash "$EK_HASH" 'index($ek_hash)!=null' "$ek_pending" &>/dev/null
+}
+
 add_pending_ek() {
   local EK_HASH=$1 ek_pending=/attestation-database/ek-pending.json
   if [[ -z $(cat "$ek_pending" 2>/dev/null) ]]; then
     printf '[]\n' >"$ek_pending"
   fi
-  if ! jq -re --arg ek_hash "$EK_HASH" 'index($ek_hash)!=null' "$ek_pending" &>/dev/null; then
-    local new_pending
-    info "Adding to list of pending endorsement keys"
-    new_pending=$(jq --arg ek_hash "$EK_HASH" '. += [$ek_hash]' "$ek_pending")
-    printf "%s\n" "$new_pending" >"$ek_pending"
-  fi
+  local new_pending
+  info "Adding to list of pending endorsement keys"
+  new_pending=$(jq --arg ek_hash "$EK_HASH" '. += [$ek_hash]' "$ek_pending")
+  printf "%s\n" "$new_pending" >"$ek_pending"
 }
 
 sha256_extend() {

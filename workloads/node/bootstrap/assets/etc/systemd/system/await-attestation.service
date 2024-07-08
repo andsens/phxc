@@ -1,0 +1,14 @@
+[Unit]
+Description=Wait for successful remote attestation, then reboot
+ConditionPathExists=!/run/initramfs/cluster-secrets.json
+SuccessAction=reboot
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=oneshot
+Restart=on-failure
+RestartSec=15
+ExecStart=bash -c '/usr/local/lib/upkg/.upkg/home-cluster/workloads/node/bin/attest attest "http://$(jq -r .next_server /run/initramfs/boot-state.json)/attest"'
+StandardOutput=null

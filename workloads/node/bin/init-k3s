@@ -25,7 +25,7 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' init-k3s`
   eval "$(docopt "$@")"
 
-  [[ -e /run/initramfs/cluster-secrets ]] || fatal "/run/initramfs/cluster-secrets does not exist"
+  [[ -e /run/initramfs/cluster-secrets.json ]] || fatal "/run/initramfs/cluster-secrets.json does not exist"
 
   mkdir -p /etc/rancher/k3s/config.yaml.d
 
@@ -37,7 +37,7 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   done
   printf '%s\n' "$label_config" >/etc/rancher/k3s/config.yaml.d/node-label.yaml
 
-  (umask 0077; yq -n '{"token": .["k3s-token"]}' /run/initramfs/cluster-secrets >/etc/rancher/k3s/config.yaml.d/k3s-token.yaml)
+  (umask 0077; yq -n '{"token": .["k3s-token"]}' /run/initramfs/cluster-secrets.json >/etc/rancher/k3s/config.yaml.d/k3s-token.yaml)
 
   ln -sTf ${k3s_type}.yaml /etc/rancher/k3s/config.yaml
   systemctl start k3s@${k3s_type}.target

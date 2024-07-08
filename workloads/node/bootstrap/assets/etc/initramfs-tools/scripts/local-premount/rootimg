@@ -23,6 +23,8 @@ fi
 verify_rootimg() {
   log_begin_msg "Verifying checksum of root.img"
   if printf "%s  %s" "$root_sha256" $rootimg_path.tmp | sha256sum -c -; then
+    boot_state=$(jq --arg rootimg_sha256 "$root_sha256" '.rootimg_sha256=$rootimg_sha256' /run/initramfs/boot-state.json)
+    printf "%s\n" "$boot_state" >/run/initramfs/boot-state.json
     mv $rootimg_path.tmp $rootimg_path
   else
     panic "root.img checksum is incorrect"
@@ -34,6 +36,8 @@ esp=/run/initramfs/efi
 if [ -e $esp/home-cluster/root.img ]; then
   log_begin_msg "Copying root.img from ESP to RAM"
   if cp $esp/home-cluster/root.img $rootimg_path.tmp; then
+    boot_state=$(jq '.rootimg_src="ESP"' /run/initramfs/boot-state.json)
+    printf "%s\n" "$boot_state" >/run/initramfs/boot-state.json
     log_end_msg
     verify_rootimg
     exit 0
@@ -47,6 +51,8 @@ if [ -n "$ROOTSERVER" ]; then
   img_addr=http://${ROOTSERVER}/$(uname -m)/root.img
   log_begin_msg "Downloading root image to RAM from $img_addr"
   if curl -fsL --connect-timeout 5 --retry 3 -o $rootimg_path.tmp "$img_addr"; then
+    boot_state=$(jq '.rootimg_src="boot-server"' /run/initramfs/boot-state.json)
+    printf "%s\n" "$boot_state" >/run/initramfs/boot-state.json
     log_end_msg
     verify_rootimg
     exit 0

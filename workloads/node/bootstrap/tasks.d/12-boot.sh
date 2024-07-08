@@ -18,6 +18,9 @@ boot() {
   # Hook for copying tooling into intramfs
   cp_tpl --raw --chmod=0755 /etc/initramfs-tools/hooks/home-cluster
 
+  # Setup boot-state.json
+  cp_tpl --raw --chmod=0755 /etc/initramfs-tools/scripts/init-top/create-boot-state
+
   # Clear machine-id, let systemd generate one on first boot
   rm /var/lib/dbus/machine-id /etc/machine-id
 
@@ -39,7 +42,8 @@ boot() {
 
   # Authentication towards the cluster
   cp_tpl --raw --chmod=0755 /etc/initramfs-tools/scripts/init-bottom/attest
-  systemctl enable systemd-timesyncd
+  cp_tpl --raw /etc/systemd/system/await-attestation.service
+  systemctl enable systemd-timesyncd await-attestation
 
   # Root
   printf "squashfs\n" >>/etc/initramfs-tools/modules

@@ -216,7 +216,7 @@ unseal_response() {
     -out "$TMP/hmac.out" "$TMP/cipher.bin" 2>&1 | \
     LOGPROGRAM=openssl pipe_verbose || fatal $? "Failed to create hmac of reply"
 
-  cmp --quiet "$TMP/hmac.out" "$TMP/hmac.bin" || fatal $? "hmac comparison failed"
+  diff -q "$TMP/hmac.out" "$TMP/hmac.bin" &>/dev/null || fatal $? "hmac comparison failed"
 
   # hmac validated, so the encrypted data should be
   # safe to decrypt with the session key, writing to stdout
