@@ -26,20 +26,24 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' attest-verify`
   eval "$(docopt "$@")"
 
+  LOGPROGRAM="attest-verify (${EK_HASH:0:8})"
+
   local pcr4_sha256
   pcr4_sha256=$(yq -r '.pcrs.sha256["4"]' "$PAYLOAD_DIR/quote.yaml")
   # Lowercase with ",,"
   pcr4_sha256=${pcr4_sha256,,}
   if ! find_pcr4_match "$EK_HASH" "$pcr4_sha256"; then
-    fatal "%s: Unable to find match for PCR 4 amongst known or whitelisted images" "$EK_HASH"
+    fatal "Unable to find match for PCR 4 amongst known or whitelisted images"
   fi
 
   if ! is_ek_whitelisted "$EK_HASH"; then
     add_pending_ek "$EK_HASH"
-    fatal "%s: The endorsement key is not whitelisted" "$EK_HASH"
+    fatal "The endorsement key is not whitelisted"
   else
-    verbose "The endorsement key is whitelisted" "$EK_HASH"
+    verbose "The endorsement key is whitelisted"
   fi
+
+  output_secrets
 
   return 0
 }
@@ -51,14 +55,14 @@ find_pcr4_match() {
   for digestfile in /images/*/digests.json; do
     verbose "Checking against own image: %s" "$(basename "$(dirname "$digestfile")")"
     if check_pcr4_match "$digestfile" "$pcr4_sha256"; then
-      info "%s: SHA256 of PCR4 matches image at %s" "$EK_HASH" "$digestfile"
+      info "SHA256 of PCR4 matches image at %s" "$digestfile"
       return 0
     fi
   done
   for digestfile in /attestation-database/pcr-whitelist/*; do
     verbose "Checking whitelisted digest: %s" "$(basename "$digestfile")"
     if check_pcr4_match "$digestfile" "$pcr4_sha256"; then
-      info "%s: SHA256 of PCR4 matches whitelist at %s" "$EK_HASH" "$digestfile"
+      info "SHA256 of PCR4 matches whitelist at %s" "$digestfile"
       return 0
     fi
   done
@@ -96,7 +100,7 @@ add_pending_ek() {
   fi
   if ! jq -re --arg ek_hash "$EK_HASH" 'index($ek_hash)!=null' "$ek_pending" &>/dev/null; then
     local new_pending
-    info "%s: Adding to list of pending endorsement keys" "$EK_HASH"
+    info "Adding to list of pending endorsement keys"
     new_pending=$(jq --arg ek_hash "$EK_HASH" '. += [$ek_hash]' "$ek_pending")
     printf "%s\n" "$new_pending" >"$ek_pending"
   fi
@@ -114,6 +118,17 @@ sha256_extend() {
     fi
   done
   printf "%s" "$result"
+}
+
+output_secrets() {
+  local disk_encryption_key k3s_token
+  verbose "Outputting secrets"
+  disk_encryption_key=$(cat /secrets/disk-encryption-key)
+  k3s_token=$(cat /secrets/k3s-token)
+  jq -n --arg disk_encryption_key "$disk_encryption_key" --arg k3s_token "$k3s_token" '{
+    "disk-encryption-key": $disk_encryption_key,
+    "k3s-token": $k3s_token
+  }'
 }
 
 main "$@"

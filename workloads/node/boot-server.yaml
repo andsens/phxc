@@ -8,9 +8,24 @@ metadata:
     app.kubernetes.io/component: boot-server
 spec:
   type: ClusterIP
+  clusterIP: None
   selector:
     app.kubernetes.io/name: node
     app.kubernetes.io/component: boot-server
+  ports: []
+---
+apiVersion: secretgenerator.mittwald.de/v1alpha1
+kind: StringSecret
+metadata:
+  name: disk-encryption-key
+  labels:
+    app.kubernetes.io/name: node
+    app.kubernetes.io/component: boot-server
+spec:
+  fields:
+  - fieldName: password
+    encoding: base64url
+    length: "32"
 ---
 apiVersion: apps/v1
 kind: StatefulSet
@@ -21,10 +36,6 @@ metadata:
     app.kubernetes.io/component: boot-server
 spec:
   serviceName: boot-server
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: node
@@ -78,6 +89,13 @@ spec:
         - name: images
           mountPath: /images
           readOnly: true
+        - name: k3s-token
+          mountPath: /secrets/k3s-token
+          readOnly: true
+        - name: disk-encryption-key
+          mountPath: /secrets/disk-encryption-key
+          subPath: password
+          readOnly: true
         - name: attestation-database
           mountPath: /attestation-database
         - name: safeboot-attest-tmp
@@ -119,6 +137,13 @@ spec:
       - name: images
         persistentVolumeClaim:
           claimName: images
+      - name: k3s-token
+        hostPath:
+          path: /var/lib/rancher/k3s/server/token
+          type: File
+      - name: disk-encryption-key
+        secret:
+          secretName: disk-encryption-key
       - name: nginx-cache
         emptyDir: {}
       - name: safeboot-attest-tmp

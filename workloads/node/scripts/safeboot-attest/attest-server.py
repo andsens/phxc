@@ -158,14 +158,25 @@ def home_post():
     # create an ephemeral session key, IV and HMAC key
     aes_key = get_random_bytes(32)
     aes_iv = get_random_bytes(16)
-    hmac_key = get_random_bytes(16)
+    # andsens: On my Windows Hyper-V machine
+    # the max length for a session key file is
+    # 48 bytes for some reason, meaning there's
+    # not enough space to also include an hmac.
+    # To fix this, we reuse the AES IV.
+    # What could possibly go wrong?
+    # This is pretty close to "rolling your own crypto"
+    # territory, but it's 00:21 on a monday and I'm
+    # kind of done with these TPM2 shenanigans
+    hmac_key = aes_iv
+    # hmac_key = get_random_bytes(16)
 
     # create the session key file that concatenates the
     # AES key, IV and hmac key. 64-bytes is the maximum
     # allowed with tpm2
     secret_filename = os.path.join(tmpdir, 'secret.bin')
     with open(secret_filename, 'wb') as f:
-      f.write(aes_key + aes_iv + hmac_key)
+      f.write(aes_key + aes_iv)
+      # f.write(aes_key + aes_iv + hmac_key)
 
     # and now seal it with the AK/EK into a credential blob
     sealed_filename = os.path.join(tmpdir, 'credential.blob')
@@ -178,7 +189,7 @@ def home_post():
       '--key-algorithm', 'rsa',
       '--name', f'000b{SHA256.new(files["ak.pub"]).hexdigest()}',
       '--credential-blob', sealed_filename,
-    ],
+      ],
       stdout=subprocess.PIPE,
       stderr=sys.stderr,
     )
