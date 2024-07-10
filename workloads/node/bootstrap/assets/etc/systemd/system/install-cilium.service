@@ -5,7 +5,7 @@ Requires=k3s@server.service
 After=k3s@server.service
 
 [Install]
-WantedBy=k3s@server.target
+WantedBy=k3s@server.service
 
 [Service]
 Type=oneshot

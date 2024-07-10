@@ -47,7 +47,7 @@ spec:
         app.kubernetes.io/component: boot-server
     spec:
       nodeSelector:
-        node-role.cluster.local/boot-server: "true"
+        node-role.kubernetes.io/control-plane: "true"
       hostNetwork: true
       containers:
       - name: nginx

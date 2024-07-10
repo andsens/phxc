@@ -3,9 +3,9 @@ Description=Lightweight Kubernetes
 Documentation=https://k3s.io
 Wants=network-online.target
 After=network-online.target
-Before=k3s@%i.target
 
 [Service]
+ExecCondition=yq -re --arg type %i 'any(.["node-label"][]; . == "node-role.kubernetes.io/control-plane=true") == ($type == "server")' /run/initramfs/node-settings.json
 Type=notify
 EnvironmentFile=-/etc/default/%N
 EnvironmentFile=-/etc/sysconfig/%N
@@ -23,4 +23,4 @@ RestartSec=5s
 ExecStartPre=/bin/sh -xc '! /usr/bin/systemctl is-enabled --quiet nm-cloud-setup.service 2>/dev/null'
 ExecStartPre=-/sbin/modprobe br_netfilter
 ExecStartPre=-/sbin/modprobe overlay
-ExecStart=/usr/local/bin/k3s %i
+ExecStart=/usr/local/bin/k3s %i -c /etc/rancher/k3s/%i.yaml

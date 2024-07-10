@@ -3,16 +3,22 @@
 PACKAGES+=(
   git # kpt dep
   open-iscsi nfs-common # longhorn deps
+  tpm2-tools openssl xxd curl systemd-timesyncd # Remote attestation for cluster authentication
 )
 
 k3s() {
+  mkdir -p /var/lib/rancher/k3s/agent/containerd
   cp_tpl /etc/rancher/k3s/server.yaml
   cp_tpl --raw \
-    /etc/systemd/system/k3s@.target \
+    /etc/systemd/system/cluster-auth.service \
+    /etc/systemd/system/configure-k3s.service \
+    /etc/systemd/system/setup-persistent.service \
+    /etc/systemd/system/var-lib-rancher-k3s-agent-containerd.mount \
+    /etc/systemd/system/var-lib-longhorn.mount \
+    /etc/systemd/system/k3s.target \
+    /etc/systemd/system/k3s@.service \
     /etc/rancher/k3s/agent.yaml \
     /etc/rancher/k3s/registry.yaml \
-    /etc/systemd/system/k3s.service \
-    /etc/systemd/system/k3s@.service \
     /etc/systemd/system/install-cilium.service \
     /etc/systemd/system/pull-external-images.service \
     /etc/systemd/system/apply-all-manifests.service \
@@ -20,9 +26,13 @@ k3s() {
     /etc/systemd/system/import-container-images.path
 
   systemctl enable \
+    cluster-auth.service \
+    setup-persistent.service \
+    var-lib-rancher-k3s-agent-containerd.mount \
+    var-lib-longhorn.mount \
+    k3s.target \
     install-cilium.service \
     pull-external-images.service \
     apply-all-manifests.service \
-    import-container-images.path \
-    k3s.service
+    import-container-images.path
 }

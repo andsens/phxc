@@ -6,41 +6,37 @@ PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../..")
 main() {
   source "$PKGROOT/.upkg/records.sh/records.sh"
 
-  DOC="init-k3s - Initialize k3s
+  DOC="configure-k3s - Set k3s node-label & token
 Usage:
-  init-k3s
+  configure-k3s
 "
-# docopt parser below, refresh this parser with `docopt.sh init-k3s`
+# docopt parser below, refresh this parser with `docopt.sh configure-k3s`
 # shellcheck disable=2016,2086,2317,1090,1091,2034
 docopt() { local v='2.0.1'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
-%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:43};usage=${DOC:26:17}
-digest=d7de9;options=();node_0(){ return 0;};cat <<<' docopt_exit() { [[ -n $1 \
-]] && printf "%s\n" "$1" >&2;printf "%s\n" "${DOC:26:17}" >&2;exit 1;}';local \
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:65};usage=${DOC:43:22}
+digest=065f4;options=();node_0(){ return 0;};cat <<<' docopt_exit() { [[ -n $1 \
+]] && printf "%s\n" "$1" >&2;printf "%s\n" "${DOC:43:22}" >&2;exit 1;}';local \
 varnames=() varname;for varname in "${varnames[@]}"; do unset "var_$varname"
 done;parse 0 "$@";return 0;local p=${DOCOPT_PREFIX:-''};for varname in \
 "${varnames[@]}"; do unset "$p$varname";done;eval ;local docopt_i=1;[[ \
 $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for \
 varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
-# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' init-k3s`
+# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' configure-k3s`
   eval "$(docopt "$@")"
-
-  [[ -e /run/initramfs/cluster-secrets.json ]] || fatal "/run/initramfs/cluster-secrets.json does not exist"
 
   mkdir -p /etc/rancher/k3s/config.yaml.d
 
-  local k3s_type=agent label label_config="node-label: []"
+  local label label_config="node-label: []"
   for label in $(jq -r '(.["node-label"] // [])[]' /run/initramfs/node-settings.json); do
-    [[ $label != 'node-role.kubernetes.io/control-plane=true' ]] || k3s_type=server
     # shellcheck disable=SC2016
     label_config=$(yq -y --arg l "$label" '.["node-label"]+=[$l]' <<<"$label_config")
   done
   printf '%s\n' "$label_config" >/etc/rancher/k3s/config.yaml.d/node-label.yaml
 
-  (umask 0077; yq -n '{"token": .["k3s-token"]}' /run/initramfs/cluster-secrets.json >/etc/rancher/k3s/config.yaml.d/k3s-token.yaml)
-
-  ln -sTf ${k3s_type}.yaml /etc/rancher/k3s/config.yaml
-  systemctl start k3s@${k3s_type}.target
+  if [[ -e /run/initramfs/cluster-secrets.json ]]; then
+    (umask 0077; yq '{"token": .["k3s-token"]}' /run/initramfs/cluster-secrets.json >/etc/rancher/k3s/config.yaml.d/k3s-token.yaml)
+  fi
 }
 
 main "$@"

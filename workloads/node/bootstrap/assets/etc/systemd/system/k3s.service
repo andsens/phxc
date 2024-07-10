@@ -1,9 +1,0 @@
-[Unit]
-Description=Initializes k3s as either server or agent depending on the labels in node settings
-
-[Install]
-WantedBy=multi-user.target
-
-[Service]
-Type=oneshot
-ExecStart=/usr/local/lib/upkg/.upkg/home-cluster/workloads/node/bin/init-k3s

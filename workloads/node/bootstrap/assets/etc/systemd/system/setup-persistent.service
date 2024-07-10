@@ -1,11 +1,13 @@
 [Unit]
-Description=Initialize/mount the persistent disk
+Description=Initialize and mount the persistent disk
 ConditionPathExists=/run/initramfs/node-settings.json
+Wants=cluster-auth.service
+After=cluster-auth.service
 
 [Install]
-WantedBy=k3s@agent.target k3s@server.target
+WantedBy=k3s@server.service k3s@agent.service
 
 [Service]
 Type=oneshot
-ExecCondition=jq -re '.data' /run/initramfs/node-settings.json
+ExecCondition=jq -re '.data.devPath' /run/initramfs/node-settings.json
 ExecStart=/usr/local/lib/upkg/.upkg/home-cluster/workloads/node/bin/setup-persistent

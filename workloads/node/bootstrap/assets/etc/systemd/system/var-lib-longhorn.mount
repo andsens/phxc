@@ -2,10 +2,10 @@
 Description=/var/lib/longhorn
 Requires=setup-persistent.service
 After=setup-persistent.service
-Before=k3s@agent.service k3s@server.service
+Before=k3s@server.service k3s@agent.service
 
 [Install]
-WantedBy=k3s@agent.target k3s@server.target
+RequiredBy=k3s@server.service k3s@agent.service
 
 [Mount]
 What=/var/lib/persistent/longhorn

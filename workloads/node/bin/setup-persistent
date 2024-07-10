@@ -25,29 +25,32 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' setup-persistent`
   eval "$(docopt "$@")"
 
-  local devpath
-  devpath=$(jq -re '.data' /run/initramfs/node-settings.json)
-  [[ -e /run/initramfs/cluster-secrets.json ]] || fatal "/run/initramfs/cluster-secrets.json does not exist"
-
-  if ! cryptsetup isLuks "$devpath" 2>/dev/null; then
-    info "%s not initialized, formatting" "$devpath"
-    initialize "$devpath"
+  local devpath encrypted
+  devpath=$(jq -re '.data.devPath' /run/initramfs/node-settings.json)
+  encrypted=$(jq -re '.data.encrypted==true' /run/initramfs/node-settings.json)
+  if ! $encrypted; then
+    if lsblk --json --output FSTYPE "$devpath" | jq -re '.blockdevices[0].fstype == null' >/dev/null; then
+      info "%s not initialized, formatting" "$devpath"
+      mkfs.ext4 "$devpath"
+    fi
+    mount "$devpath" /var/lib/persistent
   else
-    cryptsetup luksOpen "$devpath" persistent --keyfile <(jq -j '.["disk-encryption-key"]' /run/initramfs/cluster-secrets.json)
+    [[ -e /run/initramfs/cluster-secrets.json ]] || fatal "/run/initramfs/cluster-secrets.json does not exist"
+
+    local disk_encryption_key
+    disk_encryption_key=$(jq -j '.["disk-encryption-key"]' /run/initramfs/cluster-secrets.json)
+    if ! cryptsetup isLuks "$devpath" 2>/dev/null; then
+      info "%s not initialized, formatting" "$devpath"
+      cryptsetup luksFormat --batch-mode "$devpath" <(printf "%s" "$disk_encryption_key")
+      cryptsetup open --type luks2 --key-file <(printf "%s" "$disk_encryption_key") "$devpath" persistent
+      mkfs.ext4 /dev/mapper/persistent
+    else
+      cryptsetup open --type luks2 --key-file <(printf "%s" "$disk_encryption_key") "$devpath" persistent
+    fi
+    mkdir /var/lib/persistent
+    mount /dev/mapper/persistent /var/lib/persistent
+    mkdir -p /var/lib/persistent/containerd /var/lib/persistent/longhorn
   fi
-  mkdir /var/lib/persistent
-  mount /dev/mapper/persistent /var/lib/persistent
-  mkdir -p /var/lib/persistent/containerd /var/lib/persistent/longhorn
-}
-
-initialize() {
-  local devpath=$1
-
-  cryptsetup luksFormat --batch-mode "$devpath" <(jq -j '.["disk-encryption-key"]' /run/initramfs/cluster-secrets.json)
-  cryptsetup luksOpen "$devpath" persistent --keyfile <(jq -j '.["disk-encryption-key"]' /run/initramfs/cluster-secrets.json)
-
-  # Create filesystem
-  mkfs.ext4 /dev/mapper/persistent
 }
 
 main "$@"

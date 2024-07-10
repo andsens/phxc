@@ -116,7 +116,7 @@ EOF
 
 set_cluster_vars() {
   _BOOTSERVER_IPV4=$(
-    kubectl get nodes -l "node-role.cluster.local/boot-server=true" -o=jsonpath='{.items[*].status.addresses}' | \
+    kubectl get nodes -l "node-role.kubernetes.io/control-plane=true" -o=jsonpath='{.items[*].status.addresses}' | \
       jq -r '.[] | select(.type=="InternalIP" and (.address | test("^[0-9.]+$"))) | .address'
   )
   _NODES_IPV4=$(

@@ -1,0 +1,13 @@
+[Unit]
+Description=Set k3s node-label & token
+ConditionPathExists=/run/initramfs/node-settings.json
+Wants=cluster-auth.service
+After=cluster-auth.service
+Before=k3s@server.service k3s@agent.service
+
+[Install]
+RequiredBy=k3s@server.service k3s@agent.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/upkg/.upkg/home-cluster/workloads/node/bin/configure-k3s

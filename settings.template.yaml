@@ -35,7 +35,7 @@ nodes:
       addrs: [10.186.223.3/24, 'fd25:9998:d0e7:e351:1a01:be9:4d9a:157f/48']
   arch: amd64
   data: /dev/vdb
-  node-label: [node-role.kubernetes.io/control-plane=true, node-role.cluster.local/boot-server=true]
+  node-label: [node-role.kubernetes.io/control-plane=true]
 - hostname: k8s-hyperv.local
   mac: 00:15:5d:cd:6b:02
   networks:

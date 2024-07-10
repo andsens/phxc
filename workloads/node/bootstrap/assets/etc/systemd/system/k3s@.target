@@ -1,3 +1,0 @@
-[Unit]
-Description=The startup target for k3s server or agent
-Wants=k3s@%i.service

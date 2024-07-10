@@ -2,7 +2,7 @@
 Description=Watch for new container images
 
 [Install]
-WantedBy=k3s@server.target k3s@agent.target
+WantedBy=k3s@server.service k3s@agent.service
 
 [Path]
 PathExistsGlob=/var/lib/persistent/container-images/*.tar

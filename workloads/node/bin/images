@@ -66,7 +66,7 @@ whitelist add del) varname;for varname in "${varnames[@]}"; do unset \
         '. += [{"name": $name, "uki_sha256": $uki_sha256, "location": "local"}]' <<<"$images"
       )
     done
-    jq -r '.[] | [.name, .location, .uki_sha256] | @tsv' <<<"$images" | column -ts $'\t' -n "images" -N "Name,Location,UKI SHA256"
+    jq -r '.[] | [.name, .location, .uki_sha256] | @tsv' <<<"$images" | column -ts $'\t' -n "images" -N "Name/Whitelisting date,Location,UKI SHA256"
   elif $whitelist; then
     if $add; then
       local uki_sha256
@@ -81,7 +81,7 @@ whitelist add del) varname;for varname in "${varnames[@]}"; do unset \
       fi
     elif $del; then
       # shellcheck disable=SC2153
-      exec_server "rm -rf /attestation-database/pcr-whitelist/$UKI_SHA256"
+      exec_server "rm /attestation-database/pcr-whitelist/$UKI_SHA256.json"
       info "The whitelist entry with the UKI SHA256 %s has been removed" "$UKI_SHA256"
     fi
   fi

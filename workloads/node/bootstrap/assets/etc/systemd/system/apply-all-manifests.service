@@ -1,10 +1,10 @@
 [Unit]
 Description=Apply all manifests
 Requires=k3s@server.service install-cilium.service
-After=install-cilium.service
+After=k3s@server.service install-cilium.service
 
 [Install]
-WantedBy=k3s@server.target
+WantedBy=k3s@server.service
 
 [Service]
 Type=oneshot

@@ -1,5 +1,6 @@
 [Unit]
 Description=Import images to containerd
+Requires=k3s@server.service k3s@agent.service
 
 [Service]
 Type=oneshot
