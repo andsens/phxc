@@ -19,6 +19,7 @@ k3s() {
     /etc/systemd/system/k3s@.service \
     /etc/rancher/k3s/agent.yaml \
     /etc/rancher/k3s/registry.yaml \
+    /etc/rancher/k3s/config.yaml.d/shared.yaml \
     /etc/systemd/system/install-cilium.service \
     /etc/systemd/system/pull-external-images.service \
     /etc/systemd/system/apply-all-manifests.service \

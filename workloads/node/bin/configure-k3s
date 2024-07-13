@@ -27,16 +27,20 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 
   mkdir -p /etc/rancher/k3s/config.yaml.d
 
-  local label label_config="node-label: []"
+  local label label_config="node-label: []" k3s_type=agent
   for label in $(jq -r '(.["node-label"] // [])[]' /run/initramfs/node-settings.json); do
+    [[ $label != 'node-role.kubernetes.io/control-plane=true' ]] || k3s_type=server
     # shellcheck disable=SC2016
     label_config=$(yq -y --arg l "$label" '.["node-label"]+=[$l]' <<<"$label_config")
   done
   printf '%s\n' "$label_config" >/etc/rancher/k3s/config.yaml.d/node-label.yaml
 
   if [[ -e /run/initramfs/cluster-secrets.json ]]; then
-    (umask 0077; yq '{"token": .["k3s-token"]}' /run/initramfs/cluster-secrets.json >/etc/rancher/k3s/config.yaml.d/k3s-token.yaml)
+    # shellcheck disable=SC2016
+    (umask 0077; yq '{token: .["k3s-token"]}' /run/initramfs/cluster-secrets.json >/etc/rancher/k3s/config.yaml.d/token.yaml)
+    yq '{server: (.["control-plane-addrs"] | first)}' /run/initramfs/cluster-secrets.json >/etc/rancher/k3s/config.yaml.d/server.yaml
   fi
+  ln -sf "$k3s_type.yaml" /etc/rancher/k3s/config.yaml
 }
 
 main "$@"
