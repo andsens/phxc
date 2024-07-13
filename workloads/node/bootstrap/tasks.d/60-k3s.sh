@@ -26,6 +26,7 @@ k3s() {
     /etc/systemd/system/import-container-images.path
 
   systemctl enable \
+    systemd-timesyncd.service \
     cluster-auth.service \
     setup-persistent.service \
     var-lib-rancher-k3s-agent-containerd.mount \
