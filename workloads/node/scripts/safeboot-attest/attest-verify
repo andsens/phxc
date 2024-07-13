@@ -129,13 +129,18 @@ sha256_extend() {
 }
 
 output_secrets() {
-  local disk_encryption_key k3s_token
+  local disk_encryption_key k3s_token control_plane_addrs
   verbose "Outputting secrets"
   disk_encryption_key=$(cat /secrets/disk-encryption-key)
   k3s_token=$(cat /secrets/k3s-token)
-  jq -n --arg disk_encryption_key "$disk_encryption_key" --arg k3s_token "$k3s_token" '{
+  control_plane_addrs=$(
+    kubectl get nodes -l "node-role.cluster.local/control-plane=true" \
+      -o=jsonpath='{.items[*].status.addresses}' | jq -r '[.[] | select(.type=="InternalIP" and (.address | test("^[0-9.]+$"))) | "https://\(.address):6443"]'
+  )
+  jq -n --arg disk_encryption_key "$disk_encryption_key" --arg k3s_token "$k3s_token" --argjson control_plane_addrs "$control_plane_addrs" '{
     "disk-encryption-key": $disk_encryption_key,
-    "k3s-token": $k3s_token
+    "k3s-token": $k3s_token,
+    "control-plane-addrs": $control_plane_addrs
   }'
 }
 
