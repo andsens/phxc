@@ -1,0 +1,14 @@
+[Unit]
+Description=/etc/rancher/node
+Requires=setup-persistent.service
+After=setup-persistent.service
+Before=k3s@server.service k3s@agent.service
+
+[Install]
+RequiredBy=k3s@server.service k3s@agent.service
+
+[Mount]
+What=/var/lib/persistent/node-password
+Where=/etc/rancher/node
+Type=none
+Options=bind

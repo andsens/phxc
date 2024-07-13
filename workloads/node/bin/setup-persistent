@@ -49,8 +49,8 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
     fi
     mkdir /var/lib/persistent
     mount /dev/mapper/persistent /var/lib/persistent
-    mkdir -p /var/lib/persistent/containerd /var/lib/persistent/longhorn
   fi
+  mkdir -p /var/lib/persistent/containerd /var/lib/persistent/longhorn /var/lib/persistent/node-password
 }
 
 main "$@"

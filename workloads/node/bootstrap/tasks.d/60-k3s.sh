@@ -15,6 +15,7 @@ k3s() {
     /etc/systemd/system/setup-persistent.service \
     /etc/systemd/system/var-lib-rancher-k3s-agent-containerd.mount \
     /etc/systemd/system/var-lib-longhorn.mount \
+    /etc/systemd/system/etc-rancher-node.mount \
     /etc/systemd/system/k3s.target \
     /etc/systemd/system/k3s@.service \
     /etc/rancher/k3s/agent.yaml \
@@ -32,6 +33,7 @@ k3s() {
     setup-persistent.service \
     var-lib-rancher-k3s-agent-containerd.mount \
     var-lib-longhorn.mount \
+    etc-rancher-node.mount \
     k3s.target \
     install-cilium.service \
     pull-external-images.service \
