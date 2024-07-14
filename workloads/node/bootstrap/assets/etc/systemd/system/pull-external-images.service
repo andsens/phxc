@@ -1,7 +1,6 @@
 [Unit]
 Description=Pull external images to containerd
 Before=apply-all-manifests.service
-Requires=k3s@server.service k3s@agent.service
 After=k3s@server.service k3s@agent.service
 
 [Install]
