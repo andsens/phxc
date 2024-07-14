@@ -7,13 +7,12 @@ PACKAGES+=(
 )
 
 k3s() {
-  mkdir -p /var/lib/rancher/k3s/agent/containerd
   cp_tpl /etc/rancher/k3s/server.yaml
   cp_tpl --raw \
     /etc/systemd/system/cluster-auth.service \
     /etc/systemd/system/configure-k3s.service \
     /etc/systemd/system/setup-persistent.service \
-    /etc/systemd/system/var-lib-rancher-k3s-agent-containerd.mount \
+    /etc/systemd/system/var-lib-rancher-k3s.mount \
     /etc/systemd/system/var-lib-longhorn.mount \
     /etc/systemd/system/etc-rancher-node.mount \
     /etc/systemd/system/workload-ready@.service \
@@ -33,7 +32,7 @@ k3s() {
     systemd-timesyncd.service \
     cluster-auth.service \
     setup-persistent.service \
-    var-lib-rancher-k3s-agent-containerd.mount \
+    var-lib-rancher-k3s.mount \
     var-lib-longhorn.mount \
     etc-rancher-node.mount \
     k3s.target \
