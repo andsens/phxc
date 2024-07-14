@@ -30,6 +30,10 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   [[ $data_devpath != "$(jq -re .esp_device /run/initramfs/boot-state.json 2>/dev/null)" ]] || \
     fatal "Potential mis-configuration: The ESP device path and the data device path are the same (%s)" "$data_devpath"
 
+  if [[ -e /var/lib/persistent ]]; then
+    warning "/var/lib/persistent already exists, assuming persistent disk is already set up, aborting..."
+    exit 0
+  fi
   mkdir /var/lib/persistent
   if jq -re '.data.encrypted==true' /run/initramfs/node-settings.json >/dev/null; then
     [[ -e /run/initramfs/cluster-secrets.json ]] || fatal "/run/initramfs/cluster-secrets.json does not exist"
