@@ -28,12 +28,14 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   local esp_devpath arch
   esp_devpath=$(jq -re .esp_devpath /run/initramfs/boot-state.json) || fatal "boot-state.json does not specify ESP device path"
   arch=$(uname -m)
-  local root_img
-  root_img=$(mktemp)
+  local node_raw
+  node_raw=$(mktemp)
   # shellcheck disable=SC2064
-  trap "rm \"$root_img\"" EXIT
-  curl -fsL -o "$root_img" "http://boot-server.node.svc.cluster.local/$arch/root.img"
-  dd if="$root_img" of="$esp_devpath" bs=512
+  trap "rm \"$node_raw\"" EXIT
+  if ! curl -fsL -o "$node_raw" "http://boot-server.node.svc.cluster.local/$arch/node.raw"; then
+    fatal "Failed to download raw disk image"
+  fi
+  dd if="$node_raw" of="$esp_devpath" bs=512
 }
 
 main "$@"
