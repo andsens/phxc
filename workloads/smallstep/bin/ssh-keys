@@ -7,6 +7,7 @@ main() {
   source "$PKGROOT/.upkg/records.sh/records.sh"
   source "$PKGROOT/.upkg/path-tools/path-tools.sh"
   PATH=$(path_prepend "$PKGROOT/.upkg/.bin")
+  [[ ! -r /etc/rancher/k3s/k3s.yaml ]] || export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 
   DOC="ssh-keys - Manage ssh-keys
 Usage:

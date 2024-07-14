@@ -5,6 +5,9 @@ PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../..")
 
 main() {
   source "$PKGROOT/.upkg/records.sh/records.sh"
+  source "$PKGROOT/.upkg/path-tools/path-tools.sh"
+  PATH=$(path_prepend "$PKGROOT/.upkg/.bin")
+  [[ ! -r /etc/rancher/k3s/k3s.yaml ]] || export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
   # shellcheck source=workloads/settings/env/settings.shellcheck.sh
   source "$PKGROOT/workloads/settings/env/settings.sh"
   eval_settings
