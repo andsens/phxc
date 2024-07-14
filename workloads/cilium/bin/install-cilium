@@ -31,13 +31,6 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' install-cilium`
   eval "$(docopt "$@")"
 
-  info "Waiting for k3s to become ready"
-  local max_wait=300 wait_left=300
-  until kubectl get -n default endpoints kubernetes -o json | jq -e '.subsets[0].addresses | length > 0' &>/dev/null; do
-    sleep 1
-    ((--wait_left > 0)) || fatal "Timed out after %d seconds waiting for k3s to become ready." "$max_wait"
-  done
-
   if ! kubectl get -n kube-system deployment cilium-operator -o name &>/dev/null; then
     info "Cilium is not installed, installing now"
     cilium install --version=1.15.5 \
@@ -67,14 +60,6 @@ data:
   else
     info "Cilium is already installed"
   fi
-
-  info "Waiting for Cilium to become ready"
-  max_wait=300 wait_left=300
-  until [[ $(kubectl get -n kube-system deployment cilium-operator -ojsonpath='{.status.readyReplicas}' 2>&1) = 1 ]]; do
-    sleep 1
-    ((--wait_left > 0)) || fatal "Timed out after %d seconds waiting for Cilium to become ready" "$max_wait"
-  done
-  info "Cilium is ready"
 }
 
 main "$@"

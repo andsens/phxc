@@ -16,6 +16,8 @@ k3s() {
     /etc/systemd/system/var-lib-rancher-k3s-agent-containerd.mount \
     /etc/systemd/system/var-lib-longhorn.mount \
     /etc/systemd/system/etc-rancher-node.mount \
+    /etc/systemd/system/workload-ready@.service \
+    /etc/systemd/system/workload-ready@.target \
     /etc/systemd/system/k3s.target \
     /etc/systemd/system/k3s@.service \
     /etc/rancher/k3s/agent.yaml \

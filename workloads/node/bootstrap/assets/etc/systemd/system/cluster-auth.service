@@ -7,7 +7,6 @@ Before=k3s@agent.service
 RequiredBy=k3s@agent.service
 
 [Service]
-ExecCondition=yq -re 'any(.["node-label"][]; . == "node-role.kubernetes.io/control-plane=true") == false' /run/initramfs/node-settings.json
 Type=oneshot
 ExecStart=/usr/local/lib/upkg/.upkg/home-cluster/workloads/node/bin/cluster-auth login --retry 15
 StandardOutput=null

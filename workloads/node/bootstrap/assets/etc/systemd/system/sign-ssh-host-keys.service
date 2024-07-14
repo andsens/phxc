@@ -1,9 +1,10 @@
 [Unit]
 Description=Sign SSH host keys
-After=k3s@server.service k3s@client.service apply-all-manifests.service
+Requires=workload-ready@step-ca.target
+After=workload-ready@step-ca.target
 
 [Install]
-WantedBy=k3s@server.target k3s@agent.target
+WantedBy=k3s@server.service k3s@agent.service
 
 [Service]
 Type=oneshot

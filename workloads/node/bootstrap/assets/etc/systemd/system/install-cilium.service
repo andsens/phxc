@@ -1,8 +1,8 @@
 [Unit]
 Description=Install Cilium in K3S
 Documentation=https://docs.cilium.io/en/stable/installation/k3s/
-Requires=k3s@server.service
-After=k3s@server.service
+Requires=workload-ready@k3s.target
+After=workload-ready@k3s.target
 
 [Install]
 WantedBy=k3s@server.service

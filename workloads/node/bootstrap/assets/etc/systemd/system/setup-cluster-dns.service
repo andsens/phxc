@@ -1,6 +1,7 @@
 [Unit]
 Description=Setup Cluster DNS
-After=k3s@server.service k3s@agent.service apply-all-manifests.service
+Requires=workload-ready@coredns.target
+After=workload-ready@coredns.target
 
 [Install]
 WantedBy=multi-user.target

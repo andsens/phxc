@@ -33,13 +33,6 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'DEST=${var_DES'\
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' ssh-keys`
   eval "$(docopt "$@")"
 
-  info "Waiting for step-ca to become ready"
-  max_wait=300 wait_left=300
-  until [[ $(kubectl get -n smallstep sts step-ca -ojsonpath='{.status.readyReplicas}' 2>&1) = 1 ]]; do
-    sleep 1
-    ((--wait_left > 0)) || fatal "Timed out after %d seconds waiting for step-ca to become ready" "$max_wait"
-  done
-
   if [[ ! -e "$(step path)/certs/root_ca.crt" ]]; then
     info "Bootstrapping Smallstep"
     step ca bootstrap \

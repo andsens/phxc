@@ -1,6 +1,7 @@
 [Unit]
-Description=Sign SSH host keys
-After=k3s@server.service k3s@agent.service apply-all-manifests.service
+Description=Download SSH User CA keys
+Requires=workload-ready@step-ca.target
+After=workload-ready@step-ca.target
 
 [Install]
 WantedBy=multi-user.target
