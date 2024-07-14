@@ -14,6 +14,9 @@ PACKAGES+=(
 )
 
 boot() {
+  # Enable serial console
+  systemctl enable serial-getty@ttyS0
+
   # Hook for copying tooling into intramfs
   cp_tpl --raw --chmod=0755 /etc/initramfs-tools/hooks/home-cluster
 
