@@ -25,18 +25,13 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' setup-persistent`
   eval "$(docopt "$@")"
 
-  local data_devpath encrypted
+  local data_devpath
   data_devpath=$(jq -re '.data.devPath' /run/initramfs/node-settings.json)
   [[ $data_devpath != "$(jq -re .esp_device /run/initramfs/boot-state.json 2>/dev/null)" ]] || \
     fatal "Potential mis-configuration: The ESP device path and the data device path are the same (%s)" "$data_devpath"
-  encrypted=$(jq -re '.data.encrypted==true' /run/initramfs/node-settings.json)
-  if ! $encrypted; then
-    if lsblk --json --output FSTYPE "$data_devpath" | jq -re '.blockdevices[0].fstype == null' >/dev/null; then
-      info "%s not initialized, formatting" "$data_devpath"
-      mkfs.ext4 "$data_devpath"
-    fi
-    mount "$data_devpath" /var/lib/persistent
-  else
+
+  mkdir /var/lib/persistent
+  if jq -re '.data.encrypted==true' /run/initramfs/node-settings.json >/dev/null; then
     [[ -e /run/initramfs/cluster-secrets.json ]] || fatal "/run/initramfs/cluster-secrets.json does not exist"
 
     local disk_encryption_key
@@ -49,8 +44,13 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
     else
       cryptsetup open --type luks2 --key-file <(printf "%s" "$disk_encryption_key") "$data_devpath" persistent
     fi
-    mkdir /var/lib/persistent
     mount /dev/mapper/persistent /var/lib/persistent
+  else
+    if lsblk --json --output FSTYPE "$data_devpath" | jq -re '.blockdevices[0].fstype == null' >/dev/null; then
+      info "%s not initialized, formatting" "$data_devpath"
+      mkfs.ext4 "$data_devpath"
+    fi
+    mount "$data_devpath" /var/lib/persistent
   fi
   mkdir -p /var/lib/persistent/containerd /var/lib/persistent/longhorn /var/lib/persistent/node-password
 }
