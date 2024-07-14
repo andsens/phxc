@@ -29,7 +29,11 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 
   local label label_config="node-label: []" k3s_type=agent
   for label in $(jq -r '(.["node-label"] // [])[]' /run/initramfs/node-settings.json); do
-    [[ $label != 'node-role.kubernetes.io/control-plane=true' ]] || k3s_type=server
+    if [[ $label = 'node-role.kubernetes.io/control-plane=true' ]]; then
+      k3s_type=server
+      # Filter out the label, it's not a valid label we can set
+      continue
+    fi
     # shellcheck disable=SC2016
     label_config=$(yq -y --arg l "$label" '.["node-label"]+=[$l]' <<<"$label_config")
   done
