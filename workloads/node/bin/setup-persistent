@@ -25,27 +25,29 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' setup-persistent`
   eval "$(docopt "$@")"
 
-  local devpath encrypted
-  devpath=$(jq -re '.data.devPath' /run/initramfs/node-settings.json)
+  local data_devpath encrypted
+  data_devpath=$(jq -re '.data.devPath' /run/initramfs/node-settings.json)
+  [[ $data_devpath != "$(jq -re .esp_device /run/initramfs/boot-state.json 2>/dev/null)" ]] || \
+    fatal "Potential mis-configuration: The ESP device path and the data device path are the same (%s)" "$data_devpath"
   encrypted=$(jq -re '.data.encrypted==true' /run/initramfs/node-settings.json)
   if ! $encrypted; then
-    if lsblk --json --output FSTYPE "$devpath" | jq -re '.blockdevices[0].fstype == null' >/dev/null; then
-      info "%s not initialized, formatting" "$devpath"
-      mkfs.ext4 "$devpath"
+    if lsblk --json --output FSTYPE "$data_devpath" | jq -re '.blockdevices[0].fstype == null' >/dev/null; then
+      info "%s not initialized, formatting" "$data_devpath"
+      mkfs.ext4 "$data_devpath"
     fi
-    mount "$devpath" /var/lib/persistent
+    mount "$data_devpath" /var/lib/persistent
   else
     [[ -e /run/initramfs/cluster-secrets.json ]] || fatal "/run/initramfs/cluster-secrets.json does not exist"
 
     local disk_encryption_key
     disk_encryption_key=$(jq -j '.["disk-encryption-key"]' /run/initramfs/cluster-secrets.json)
-    if ! cryptsetup isLuks "$devpath" 2>/dev/null; then
-      info "%s not initialized, formatting" "$devpath"
-      cryptsetup luksFormat --batch-mode "$devpath" <(printf "%s" "$disk_encryption_key")
-      cryptsetup open --type luks2 --key-file <(printf "%s" "$disk_encryption_key") "$devpath" persistent
+    if ! cryptsetup isLuks "$data_devpath" 2>/dev/null; then
+      info "%s not initialized, formatting" "$data_devpath"
+      cryptsetup luksFormat --batch-mode "$data_devpath" <(printf "%s" "$disk_encryption_key")
+      cryptsetup open --type luks2 --key-file <(printf "%s" "$disk_encryption_key") "$data_devpath" persistent
       mkfs.ext4 /dev/mapper/persistent
     else
-      cryptsetup open --type luks2 --key-file <(printf "%s" "$disk_encryption_key") "$devpath" persistent
+      cryptsetup open --type luks2 --key-file <(printf "%s" "$disk_encryption_key") "$data_devpath" persistent
     fi
     mkdir /var/lib/persistent
     mount /dev/mapper/persistent /var/lib/persistent

@@ -7,7 +7,7 @@ PACKAGES+=(
   "linux-image-${ARCH?}"
   python3-pefile # UKI creation
   dosfstools # Used for mounting ESP
-  iproute2 wget # Used in settings to determine MAC address and then fetching settings
+  iproute2 curl # Used in settings to determine MAC address and then fetching settings
   overlayroot # Used for making ro-root writeable
   systemd-resolved # DNS resolution setup
   avahi-daemon libnss-mdns # System reachability through mdns

@@ -2,6 +2,6 @@ re ^shimx64.efi$ /images/amd64/shim.efi last;
 re ^mmx64.efi$ /images/amd64/mm.efi last;
 re ^grubx64.efi$ /images/amd64/unikernel.efi last;
 
-re ^shimaa64.efi$ /images/arm64/unikernel.efi last;
+re ^shimaa64.efi$ /images/arm64/shim.efi last;
 re ^mmaa64.efi$ /images/arm64/mm.efi last;
 re ^grubaa64.efi$ /images/arm64/unikernel.efi last;

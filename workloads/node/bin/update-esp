@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# shellcheck source-path=../../..
+set -Eeo pipefail; shopt -s inherit_errexit
+PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../..")
+
+main() {
+  source "$PKGROOT/.upkg/records.sh/records.sh"
+
+  DOC="update-esp - Update EFI system partition disk with the latest bootstrapped image
+Usage:
+  update-esp
+"
+# docopt parser below, refresh this parser with `docopt.sh update-esp`
+# shellcheck disable=2016,2086,2317,1090,1091,2034
+docopt() { local v='2.0.1'; source \
+"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:100};usage=${DOC:81:19}
+digest=b8780;options=();node_0(){ return 0;};cat <<<' docopt_exit() { [[ -n $1 \
+]] && printf "%s\n" "$1" >&2;printf "%s\n" "${DOC:81:19}" >&2;exit 1;}';local \
+varnames=() varname;for varname in "${varnames[@]}"; do unset "var_$varname"
+done;parse 0 "$@";return 0;local p=${DOCOPT_PREFIX:-''};for varname in \
+"${varnames[@]}"; do unset "$p$varname";done;eval ;local docopt_i=1;[[ \
+$BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for \
+varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
+# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' update-esp`
+  eval "$(docopt "$@")"
+
+  local esp_devpath arch
+  esp_devpath=$(jq -re .esp_devpath /run/initramfs/boot-state.json) || fatal "boot-state.json does not specify ESP device path"
+  arch=$(uname -m)
+  local root_img
+  root_img=$(mktemp)
+  # shellcheck disable=SC2064
+  trap "rm \"$root_img\"" EXIT
+  curl -fsL -o "$root_img" "http://boot-server.node.svc.cluster.local/$arch/root.img"
+  dd if="$root_img" of="$esp_devpath" bs=512
+}
+
+main "$@"

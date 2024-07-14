@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 # We need udev to create the by-uuid links
-PREREQS="udev"
+PREREQS="udev create-boot-state"
 case $1 in
 	prereqs) echo "${PREREQS}"; exit 0;;
 esac
@@ -22,4 +22,6 @@ if [ -e /dev/disk/by-partuuid/$ESP_UUID ]; then
   mkdir $esp_path
   mount -rt vfat /dev/disk/by-partuuid/$ESP_UUID $esp_path
   log_end_msg
+  boot_state=$(jq --arg esp_devpath "$device" '.esp_devpath=$esp_devpath' /run/initramfs/boot-state.json)
+  printf "%s\n" "$boot_state" >/run/initramfs/boot-state.json
 fi

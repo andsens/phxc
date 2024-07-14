@@ -43,11 +43,13 @@ metadata:
     app.kubernetes.io/component: boot-server
 spec:
   type: ClusterIP
-  clusterIP: None
   selector:
     app.kubernetes.io/name: node
     app.kubernetes.io/component: boot-server
-  ports: []
+  ports:
+  - name: http
+    port: 80
+    targetPort: http
 ---
 apiVersion: secretgenerator.mittwald.de/v1alpha1
 kind: StringSecret
