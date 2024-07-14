@@ -35,7 +35,9 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   if ! curl -fsL -o "$node_raw" "http://boot-server.node.svc.cluster.local/$arch/node.raw"; then
     fatal "Failed to download raw disk image"
   fi
+  info "Writing %s to %s" "$arch/node.raw" "$esp_devpath"
   dd if="$node_raw" of="$esp_devpath" bs=512
+  info "%s has been updated with the latest bootstrapped image"
 }
 
 main "$@"
