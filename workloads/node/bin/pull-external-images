@@ -41,7 +41,7 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
     info "Pulling %s" "$image"
     bg_run ctr -n k8s.io image pull --snapshotter stargz "$image"
   done
-  bg_wait
+  bg_block
 }
 
 main "$@"
