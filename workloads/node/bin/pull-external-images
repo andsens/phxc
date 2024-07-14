@@ -6,6 +6,7 @@ PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../..")
 main() {
   source "$PKGROOT/.upkg/records.sh/records.sh"
   source "$PKGROOT/.upkg/bgpid/bgpid.sh"
+  [[ ! -r /etc/rancher/k3s/k3s.yaml ]] || export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 
   DOC="pull-external-images - Analyzes all manifests and pulls their external images
 Usage:
@@ -30,12 +31,13 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   # shellcheck disable=SC2016
   readarray -d $'\n' -t images < <(
     (
-      "$PKGROOT/bin/manifest" build all | \
+      LOGLEVEL=warning "$PKGROOT/bin/manifest" build all | \
         yq -r '. as $root | paths | select(. | join(".") | endswith(".image")) as $image |
         $root | getpath($image) | select(type == "string" and (startswith("cluster.local/") | not))'
-      find workloads -name Dockerfile -exec grep FROM \{\} \; | cut -d ' ' -f 2
+      find "$PKGROOT/workloads" -name Dockerfile -exec grep FROM \{\} \; | cut -d ' ' -f 2
     ) | sort -u
   )
+  BG_MAXPARALLEL=2
   # shellcheck disable=SC2154
   for image in "${images[@]}"; do
     info "Pulling %s" "$image"

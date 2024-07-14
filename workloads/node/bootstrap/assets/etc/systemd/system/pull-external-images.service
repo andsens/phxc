@@ -9,4 +9,6 @@ WantedBy=k3s@server.service k3s@agent.service
 
 [Service]
 Type=oneshot
+Restart=on-failure
+RestartSec=15s
 ExecStart=/usr/local/lib/upkg/.upkg/home-cluster/workloads/node/bin/pull-external-images
