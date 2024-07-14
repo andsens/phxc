@@ -6,29 +6,29 @@ PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../..")
 main() {
   source "$PKGROOT/.upkg/records.sh/records.sh"
 
-  DOC="import-images - Import kaniko tar exports from a directory
+  DOC="import-container-images - Import kaniko tar exports from a directory
 Usage:
-  import-images [options]
+  import-container-images [options]
 
 Options:
   -p --path PATH  Which directory to import from
                   [default: /var/lib/persistent/container-images]
 "
-# docopt parser below, refresh this parser with `docopt.sh import-images`
+# docopt parser below, refresh this parser with `docopt.sh import-container-images`
 # shellcheck disable=2016,2086,2317,1090,1091,2034
 docopt() { local v='2.0.1'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
-%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:216};usage=${DOC:59:32}
-digest=c1baf;options=('-p --path 1');node_0(){ value __path 0;};node_1(){
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:236};usage=${DOC:69:42}
+digest=5dbe5;options=('-p --path 1');node_0(){ value __path 0;};node_1(){
 optional 0;};cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2
-printf "%s\n" "${DOC:59:32}" >&2;exit 1;}';local varnames=(__path) varname;for \
+printf "%s\n" "${DOC:69:42}" >&2;exit 1;}';local varnames=(__path) varname;for \
 varname in "${varnames[@]}"; do unset "var_$varname";done;parse 1 "$@";local \
 p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset "$p$varname"
 done;eval $p'__path=${var___path:-/var/lib/persistent/container-images};'
 local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
 ((;docopt_i>0;docopt_i--)); do for varname in "${varnames[@]}"; do declare -p \
 "$p$varname";done;done;}
-# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' import-images`
+# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' import-container-images`
   eval "$(docopt "$@")"
 
   local tarfile

@@ -1,6 +1,6 @@
 [Unit]
-Description=Import images to containerd
+Description=Import container images to containerd
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/lib/upkg/.upkg/home-cluster/workloads/node/bin/import-images
+ExecStart=/usr/local/lib/upkg/.upkg/home-cluster/workloads/node/bin/import-container-images
