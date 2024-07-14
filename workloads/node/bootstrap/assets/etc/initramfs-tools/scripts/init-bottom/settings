@@ -16,37 +16,24 @@ fi
 boot_state=$(jq --arg next_server "$ROOTSERVER" '.next_server=$next_server' /run/initramfs/boot-state.json)
 printf "%s\n" "$boot_state" >/run/initramfs/boot-state.json
 
-# Get the NIC MAC we use to contact the boot server
-if ! link=$(ip -o route get to "$ROOTSERVER" | grep -Eo 'dev [^ ]+' | cut -d ' ' -f2); then
-  log_failure_msg "Unable to determine interface used to contact $ROOTSERVER, aborting node-settings.json download/copy"
-  exit 0
-fi
-if ! mac=$(ip link show "$link" | tail -n1 | grep -Eo '([a-f0-9]{2}:){5}[a-f0-9]{2}' | head -n1); then
-  log_failure_msg "Unable to determine the MAC address of the interface $link, aborting node-settings.json download/copy"
-  exit 0
-fi
-
-settings_filename=$(printf "%s" "$mac" | sed s/:/-/g).json
 settings_path=/run/initramfs/node-settings.json
-settings_url=http://$ROOTSERVER/$settings_filename
-
-log_begin_msg "Downloading settings from $settings_url"
-if curl -fsL --connect-timeout 5 --retry 3 -o "$settings_path" "$settings_url"; then
-  log_end_msg
-  exit 0
-else
-  log_failure_msg "Failed to download settings"
-fi
-
 esp=/run/initramfs/efi
-if [ -e $esp ]; then
-  log_begin_msg "Falling back to copying settings from ESP mount instead"
-  if cp "$esp/home-cluster/node-settings/$settings_filename" "$settings_path"; then
+# Run through all NIC MACs (except loopback) and find one that matches a node setting
+log_begin_msg "Copying/downloading settings from ESP and/or boot-server"
+for mac in $(ip -o link show | grep -v ' lo: ' | grep -Eo 'link/[^ ]+ [^ ]+' | cut -d ' ' -f2); do
+  settings_filename=$(printf "%s" "$mac" | sed s/:/-/g).json
+  if cp "$esp/home-cluster/node-settings/$settings_filename" "$settings_path.tmp" 2>/dev/null; then
+    mv "$settings_path.tmp" "$settings_path"
+  fi
+  # Download settings from boot-server, there might be a newer version (but keep the one from the ESP if it exists if we don't succeed)
+  if curl -fsL --connect-timeout 5 --retry 3 -o "$settings_path.tmp" "http://$ROOTSERVER/$settings_filename"; then
+    mv "$settings_path.tmp" "$settings_path"
+  fi
+
+  # Quit as soon as we have a node-settings.json
+  if [ -e "$settings_path" ]; then
     log_end_msg
     exit 0
-  else
-    log_failure_msg "Failed to copy settings"
   fi
-fi
-
+done
 exit 1
