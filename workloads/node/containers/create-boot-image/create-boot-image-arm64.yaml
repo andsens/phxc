@@ -15,7 +15,7 @@ spec:
     spec:
       restartPolicy: Never
       nodeSelector:
-        kubernetes.io/arch: amd64
+        kubernetes.io/arch: arm64
       initContainers:
       - name: kaniko
         image: gcr.io/kaniko-project/executor:latest
@@ -28,7 +28,7 @@ spec:
         - --no-push
         env:
         - name: ARCH
-          value: amd64
+          value: arm64
         - name: GGCR_EXPERIMENT_ESTARGZ
           value: "1"
         volumeMounts:
@@ -44,7 +44,7 @@ spec:
         args: [mv, /images/create-boot-image:$(ARCH).tar.tmp, /images/create-boot-image:$(ARCH).tar]
         env:
         - name: ARCH
-          value: amd64
+          value: arm64
         volumeMounts:
         - name: images
           mountPath: /images

@@ -3,6 +3,7 @@ kind: Kustomization
 namespace: bootstrap
 resources:
 - create-boot-image-amd64.yaml
+- create-boot-image-arm64.yaml
 configMapGenerator:
 - files:
   - Dockerfile

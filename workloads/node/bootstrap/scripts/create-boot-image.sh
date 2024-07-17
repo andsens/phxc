@@ -54,6 +54,13 @@ main() {
 
   ### UEFI Boot ###
 
+  local shimsuffix
+  case $ARCH in
+    amd64) shimsuffix=x64 ;;
+    arm64) shimsuffix=aa64 ;;
+    default) fatal "Unknown processor architecture: %s" "$ARCH" ;;
+  esac
+
   info "Generating node settings"
   mkdir /workspace/node-settings
   local file node_settings_size_b=0
@@ -73,8 +80,8 @@ main() {
     (
       fs_table_size_b +
       node_settings_size_b +
-      $(stat -c %s /usr/lib/shim/shimx64.efi.signed) +
-      $(stat -c %s /usr/lib/shim/mmx64.efi.signed) +
+      $(stat -c %s /usr/lib/shim/shim${shimsuffix}.efi.signed) +
+      $(stat -c %s /usr/lib/shim/mm${shimsuffix}.efi.signed) +
       $(stat -c %s /workspace/uki.efi) +
       $(stat -c %s /workspace/root.img) +
       (sector_size_b - 1)
@@ -94,12 +101,6 @@ main() {
   ESP_UUID=c12a7328-f81f-11d2-ba4b-00a0c93ec93b
 
   info "Creating UEFI boot image"
-  local shimsuffix
-  case $ARCH in
-    amd64) shimsuffix=x64 ;;
-    aa64) shimsuffix=arm64 ;;
-    default) fatal "Unknown processor architecture: %s" "$ARCH" ;;
-  esac
 
   guestfish -xN /workspace/node.raw=disk:${disk_size_kib}K -- <<EOF
 part-init /dev/sda gpt
