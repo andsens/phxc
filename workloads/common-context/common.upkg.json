@@ -1,4 +1,5 @@
 {
+  "$schema": "https://schemas.orbit.dev/upkg/upkg-v0.28.0.schema.json",
   "dependencies": [
     {
       "tar": "https://github.com/andsens/docopt.sh/releases/download/v2.0.1/docopt-lib.sh.tar.gz",

@@ -1,32 +1,68 @@
 {
-  "$schema": "https://schemas.orbit.dev/upkg/upkg-v0.27.0.schema.json",
+  "$schema": "https://schemas.orbit.dev/upkg/upkg-v0.28.0.schema.json",
   "bin": [".upkg/.bin"],
   "dependencies": [
     {
+      "name": "k3s",
+      "os/arch": "Linux/x86_64",
       "file": "https://github.com/k3s-io/k3s/releases/download/v1.30.0%2Bk3s1/k3s",
-      "sha256": "e4b85e74d7be314f39e033142973cc53619f4fbaff3639a420312f20dea12868",
-      "name": "k3s"
+      "sha256": "e4b85e74d7be314f39e033142973cc53619f4fbaff3639a420312f20dea12868"
     },
     {
+      "name": "kubectl",
+      "os/arch": "Linux/x86_64",
       "file": "https://github.com/k3s-io/k3s/releases/download/v1.30.0%2Bk3s1/k3s",
-      "sha256": "e4b85e74d7be314f39e033142973cc53619f4fbaff3639a420312f20dea12868",
-      "name": "kubectl"
+      "sha256": "e4b85e74d7be314f39e033142973cc53619f4fbaff3639a420312f20dea12868"
     },
     {
+      "name": "crictl",
+      "os/arch": "Linux/x86_64",
       "file": "https://github.com/k3s-io/k3s/releases/download/v1.30.0%2Bk3s1/k3s",
-      "sha256": "e4b85e74d7be314f39e033142973cc53619f4fbaff3639a420312f20dea12868",
-      "name": "crictl"
+      "sha256": "e4b85e74d7be314f39e033142973cc53619f4fbaff3639a420312f20dea12868"
     },
     {
+      "name": "ctr",
+      "os/arch": "Linux/x86_64",
       "file": "https://github.com/k3s-io/k3s/releases/download/v1.30.0%2Bk3s1/k3s",
-      "sha256": "e4b85e74d7be314f39e033142973cc53619f4fbaff3639a420312f20dea12868",
-      "name": "ctr"
+      "sha256": "e4b85e74d7be314f39e033142973cc53619f4fbaff3639a420312f20dea12868"
     },
     {
-      "tar": "https://github.com/cilium/cilium-cli/releases/download/v0.16.10/cilium-linux-amd64.tar.gz",
-      "sha256": "aeb9d7c56108283a9fb9b370ec36b33f28f3126f6c4e6b4176a15cc6b2d3fc70",
+      "name": "k3s",
+      "os/arch": "Linux/aarch64",
+      "file": "https://github.com/k3s-io/k3s/releases/download/v1.30.2%2Bk3s1/k3s-arm64",
+      "sha256": "3f24ab230a520e92f09afd036c06d416143cd8ac7176a967f95cda441150bd19"
+    },
+    {
+      "name": "kubectl",
+      "os/arch": "Linux/aarch64",
+      "file": "https://github.com/k3s-io/k3s/releases/download/v1.30.2%2Bk3s1/k3s-arm64",
+      "sha256": "3f24ab230a520e92f09afd036c06d416143cd8ac7176a967f95cda441150bd19"
+    },
+    {
+      "name": "crictl",
+      "os/arch": "Linux/aarch64",
+      "file": "https://github.com/k3s-io/k3s/releases/download/v1.30.2%2Bk3s1/k3s-arm64",
+      "sha256": "3f24ab230a520e92f09afd036c06d416143cd8ac7176a967f95cda441150bd19"
+    },
+    {
+      "name": "ctr",
+      "os/arch": "Linux/aarch64",
+      "file": "https://github.com/k3s-io/k3s/releases/download/v1.30.2%2Bk3s1/k3s-arm64",
+      "sha256": "3f24ab230a520e92f09afd036c06d416143cd8ac7176a967f95cda441150bd19"
+    },
+    {
       "name": "cilium",
-      "bin": ["cilium"]
+      "bin": ["cilium"],
+      "os/arch": "Linux/x86_64",
+      "tar": "https://github.com/cilium/cilium-cli/releases/download/v0.16.10/cilium-linux-amd64.tar.gz",
+      "sha256": "aeb9d7c56108283a9fb9b370ec36b33f28f3126f6c4e6b4176a15cc6b2d3fc70"
+    },
+    {
+      "name": "cilium",
+      "bin": ["cilium"],
+      "os/arch": "Linux/aarch64",
+      "tar": "https://github.com/cilium/cilium-cli/releases/download/v0.16.10/cilium-linux-arm64.tar.gz",
+      "sha256": "625e880a9a5a9f38931a3e129fe2c811bd4883105b6f4dbe562734d48a082f7a"
     }
   ]
 }

@@ -3,6 +3,7 @@ kind: Kustomization
 namespace: node
 resources:
 - amd64.yaml
+- arm64.yaml
 - ../../settings/node
 configMapGenerator:
 - files:

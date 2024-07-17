@@ -1,0 +1,83 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: build-arm64
+  labels:
+    app.kubernetes.io/name: bootstrap
+    app.kubernetes.io/component: arm64
+spec:
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: bootstrap
+        app.kubernetes.io/component: arm64
+        cluster.local/allow-internet-egress: "true"
+    spec:
+      restartPolicy: Never
+      nodeSelector:
+        kubernetes.io/arch: arm64
+      initContainers:
+      - name: kaniko
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+        - --dockerfile=context/Dockerfile
+        - --build-arg=ARCH=$(ARCH)
+        - --custom-platform=linux/$(ARCH)
+        - --destination=cluster.local/non-existent
+        - --tar-path=/images/$(ARCH)/node.new.tar
+        - --no-push
+        env:
+        - name: ARCH
+          value: arm64
+        volumeMounts:
+        - name: context
+          mountPath: /workspace/context
+        - name: common-context
+          mountPath: /workspace/common-context
+        - name: bundle
+          mountPath: /workspace/home-cluster.tar.gz
+          subPath: home-cluster.tar.gz
+        - name: images
+          mountPath: /images
+      containers:
+      - name: create-boot-image
+        image: cluster.local/create-boot-image:arm64
+        imagePullPolicy: Never
+        volumeMounts:
+        - name: scripts
+          mountPath: /scripts
+        - name: assets
+          mountPath: /assets
+        - name: node-settings
+          mountPath: /node-settings
+        - name: workspace
+          mountPath: /workspace
+        - name: images
+          mountPath: /images
+      volumes:
+      - name: context
+        configMap:
+          name: node
+      - name: scripts
+        configMap:
+          name: create-boot-image-scripts
+          defaultMode: 0755
+      - name: assets
+        configMap:
+          name: create-boot-image-assets
+      - name: common-context
+        configMap:
+          name: common-context
+          defaultMode: 0755
+      - name: node-settings
+        configMap:
+          name: node-settings
+      - name: bundle
+        configMap:
+          name: bundle
+      - name: workspace
+        emptyDir: {}
+      - name: images
+        persistentVolumeClaim:
+          claimName: images
