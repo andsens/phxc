@@ -35,27 +35,13 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' bootstrap`
   eval "$(docopt "$@")"
 
-  local guest_qemu_arch
-  # shellcheck disable=SC2154
-  case $__arch in
-    amd64) guest_qemu_arch=x86_64 ;;
-    arm64) guest_qemu_arch=aarch64 ;;
-    default) fatal "Unknown processor architecture: %s" "$__arch" ;;
-  esac
-
-  local host_qemu_arch
-  case $(uname -m) in
-    x86_64) host_qemu_arch=amd64 ;;
-    aarch64) host_qemu_arch=aarch64 ;;
-    default) fatal "Unknown host processor architecture: %s" "$(uname -m)" ;;
-  esac
-
   local bundle
   bundle=$(mktemp --suffix .tar.gz)
   # shellcheck disable=SC2064
   trap "rm \"$bundle\"" EXIT
   "$PKGROOT/workloads/node/bin/bundle" "$bundle"
 
+  # shellcheck disable=SC2154
   mkdir -p "$PKGROOT/images/$__arch"
 
   if [[ ! -e "$PKGROOT/images/$__arch/create-boot-image.tar" ]] || \
@@ -76,21 +62,7 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
     docker load -i "$PKGROOT/images/$__arch/create-boot-image.new.tar"
   else
     info "Not building '%s', no files have changed since last run" "create-boot-image"
-    cp "$PKGROOT/images/$__arch/create-boot-image.tar" "$PKGROOT/images/$__arch/create-boot-image.new.tar"
-  fi
-
-  if [[ $host_qemu_arch != "$__arch" ]]; then
-    local guest_qemu_major_version host_qemu_major_version
-    guest_qemu_major_version=$(
-      docker run --rm -ti --entrypoint "/usr/bin/qemu-system-${guest_qemu_arch}" "cluster.local/create-boot-image:$__arch" --version | \
-      head -n1 | sed 's/QEMU emulator version \([0-9]\+\).*/\1/'
-    )
-    [[ -c /dev/kvm ]] || \
-      fatal "%s is not installed on the host system, please install it with major version %s" "$guest_qemu_major_version"
-    host_qemu_major_version=$("qemu-system-${host_qemu_arch}" --version | head -n1 | sed 's/QEMU emulator version \([0-9]\+\).*/\1/')
-    [[ $host_qemu_major_version = "$guest_qemu_major_version" ]] || \
-      fatal "QEMU version mismatch! The QEMU major version of the host system is %s while the image to create the node image uses version %s." \
-        "$host_qemu_major_version" "$guest_qemu_major_version"
+    cp "$PKGROOT/images/$__arch/create-boot-image.tar" "$PKGROOT/images/$__arch.new/create-boot-image.tar"
   fi
 
   info "Building '%s'" "node:$__arch"
