@@ -10,8 +10,8 @@ main() {
   mkdir -p /workspace/root
 
   info "Extracting container export"
-  for layer in $(jq -r '.[0].Layers[]' <(tar -xOf "/images/$ARCH/node.new.tar" manifest.json)); do
-    tar -xOf "/images/$ARCH/node.new.tar" "$layer" | tar -xz -C /workspace/root
+  for layer in $(jq -r '.[0].Layers[]' <(tar -xOf "/images/$ARCH.new/node.tar" manifest.json)); do
+    tar -xOf "/images/$ARCH.new/node.tar" "$layer" | tar -xz -C /workspace/root
   done
   # During bootstrapping with kaniko these file can't be removed/overwritten,
   # instead we do it when creating the image
@@ -146,20 +146,17 @@ EOF
     }' >/workspace/digests.json
 
   # Move all local files into the /images mount
-  rm -rf "/images/$ARCH.tmp"
-  mkdir "/images/$ARCH.tmp"
-  mv "/images/$ARCH/node.new.tar"               "/images/$ARCH.tmp/node.tar"
-  mv /workspace/node.raw                        "/images/$ARCH.tmp/node.raw"
-  mv /workspace/root.img                        "/images/$ARCH.tmp/root.img"
-  mv /workspace/uki.efi                         "/images/$ARCH.tmp/uki.efi"
-  cp /usr/lib/shim/shim${shimsuffix}.efi.signed "/images/$ARCH.tmp/shim.efi"
-  cp /usr/lib/shim/mm${shimsuffix}.efi.signed   "/images/$ARCH.tmp/mm.efi"
-  mv /workspace/digests.json                    "/images/$ARCH.tmp/digests.json"
+  mv /workspace/node.raw                        "/images/$ARCH.new/node.raw"
+  mv /workspace/root.img                        "/images/$ARCH.new/root.img"
+  mv /workspace/uki.efi                         "/images/$ARCH.new/uki.efi"
+  cp /usr/lib/shim/shim${shimsuffix}.efi.signed "/images/$ARCH.new/shim.efi"
+  cp /usr/lib/shim/mm${shimsuffix}.efi.signed   "/images/$ARCH.new/mm.efi"
+  mv /workspace/digests.json                    "/images/$ARCH.new/digests.json"
 
   # Move current node image to old, move new images from tmp to current
   rm -rf "/images/$ARCH.old"
-  mv "/images/$ARCH"     "/images/$ARCH.old"
-  mv "/images/$ARCH.tmp" "/images/$ARCH"
+  [[ ! -e /images/$ARCH ]] || mv "/images/$ARCH" "/images/$ARCH.old"
+  mv "/images/$ARCH.new" "/images/$ARCH"
 
   [[ -z "$CHOWN" ]] || chown -R "$CHOWN" "/images/$ARCH"
 }

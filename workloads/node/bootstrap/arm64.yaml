@@ -18,6 +18,12 @@ spec:
       nodeSelector:
         kubernetes.io/arch: arm64
       initContainers:
+      - name: initialize-new-run
+        image: busybox
+        command: [bash, -c, rm -rf /images/$(ARCH).new; mkdir /images/$(ARCH).new]
+        env:
+        - name: ARCH
+          value: arm64
       - name: kaniko
         image: gcr.io/kaniko-project/executor:latest
         args:
@@ -25,7 +31,7 @@ spec:
         - --build-arg=ARCH=$(ARCH)
         - --custom-platform=linux/$(ARCH)
         - --destination=cluster.local/non-existent
-        - --tar-path=/images/$(ARCH)/node.new.tar
+        - --tar-path=/images/$(ARCH).new/node.tar
         - --no-push
         env:
         - name: ARCH

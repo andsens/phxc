@@ -42,7 +42,8 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
   "$PKGROOT/workloads/node/bin/bundle" "$bundle"
 
   # shellcheck disable=SC2154
-  mkdir -p "$PKGROOT/images/$__arch"
+  rm -rf "$PKGROOT/images/$__arch.new"
+  mkdir "$PKGROOT/images/$__arch.new"
 
   if [[ ! -e "$PKGROOT/images/$__arch/create-boot-image.tar" ]] || \
      find "$PKGROOT/workloads/node/containers/create-boot-image" "$PKGROOT/workloads/common-context" \
@@ -57,9 +58,9 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
       --build-arg "ARCH=$__arch" \
       --custom-platform="linux/$__arch" \
       --destination "cluster.local/create-boot-image:$__arch" \
-      --tar-path "/workspace/images/$__arch/create-boot-image.new.tar" \
+      --tar-path "/workspace/images/$__arch.new/create-boot-image.tar" \
       --no-push
-    docker load -i "$PKGROOT/images/$__arch/create-boot-image.new.tar"
+    docker load -i "$PKGROOT/images/$__arch.new/create-boot-image.tar"
   else
     info "Not building '%s', no files have changed since last run" "create-boot-image"
     cp "$PKGROOT/images/$__arch/create-boot-image.tar" "$PKGROOT/images/$__arch.new/create-boot-image.tar"
@@ -77,13 +78,13 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
     --custom-platform="linux/$__arch" \
     --destination "cluster.local/node:$__arch" \
     --insecure-registry=cluster.local \
-    --tar-path "/workspace/images/$__arch/node.new.tar" \
+    --tar-path "/workspace/images/$__arch.new/node.tar" \
     --no-push
 
   local node_settings
   node_settings=$(mktemp -d)
   for node in $(yq -c '.nodes[]' "$PKGROOT/settings.yaml"); do
-    ! mac=$(yq -re '.mac' <<<"$node")|| \
+    ! mac=$(yq -re '.mac' <<<"$node") || \
       printf "%s\n" "$node" >"$node_settings/$mac.json"
   done
   docker run --rm -ti \
@@ -95,7 +96,6 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
     --group-add "$(stat -c %g /dev/kvm)" \
     -e CHOWN=$UID:$UID \
     "cluster.local/create-boot-image:$__arch"
-  mv "$PKGROOT/images/$__arch.old/create-boot-image.new.tar" "$PKGROOT/images/$__arch/create-boot-image.tar"
 }
 
 main "$@"
