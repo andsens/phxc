@@ -5,7 +5,7 @@ ENV ARCH=$ARCH
 
 RUN /workspace/common-context/setup-debian.sh; \
   apt-get -y update; apt-get -y install --no-install-recommends \
-  squashfs-tools guestfish dosfstools linux-image-${ARCH} shim-signed python3-venv binutils \
+  squashfs-tools guestfish ipxe-qemu dosfstools linux-image-${ARCH} shim-signed python3-venv binutils \
   ; rm -rf /var/cache/apt/lists/*; \
   upkg add -g /workspace/common-context/smallstep.upkg.json; \
   python3 -m venv /signify; \
