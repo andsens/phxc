@@ -50,6 +50,7 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
        -newer "$PKGROOT/images/$__arch/create-boot-image.tar" 2>/dev/null | grep -q .; then
     info "Building '%s'" "create-boot-image:$__arch"
     docker run --rm -ti \
+      --platform "linux/$__arch" \
       -v "$PKGROOT/workloads/common-context:/workspace/common-context:ro" \
       -v "$PKGROOT/workloads/node/containers/create-boot-image:/workspace/context:ro" \
       -v "$PKGROOT/images:/workspace/images:rw" \
@@ -68,6 +69,7 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
 
   info "Building '%s'" "node:$__arch"
   docker run --rm -ti \
+      --platform "linux/$__arch" \
     -v "$PKGROOT/workloads/node/bootstrap/Dockerfile:/workspace/context/Dockerfile:ro" \
     -v "$bundle:/workspace/home-cluster.tar.gz:ro" \
     -v "$PKGROOT/workloads/common-context:/workspace/common-context:ro" \
@@ -88,6 +90,7 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
       printf "%s\n" "$node" >"$node_settings/$mac.json"
   done
   docker run --rm -ti \
+    --platform "linux/$__arch" \
     -v "$node_settings:/node-settings:ro" \
     -v "$PKGROOT/workloads/node/bootstrap/create-boot-image-assets:/assets:ro" \
     -v "$PKGROOT/workloads/node/bootstrap/scripts:/scripts:ro" \
