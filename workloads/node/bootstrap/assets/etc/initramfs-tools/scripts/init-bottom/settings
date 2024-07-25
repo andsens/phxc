@@ -36,4 +36,10 @@ for mac in $(ip -o link show | grep -v ' lo: ' | grep -Eo 'link/[^ ]+ [^ ]+' | c
     exit 0
   fi
 done
+err=''
+for link in $(ip -o link show | grep -v ' lo: ' | grep -Eo '^[0-9]: [^ :]+' | cut -d ' ' -f2); do
+  err=${err}$(printf "%s: %s" "$link" "$(ip -o link show "$link" | grep -Eo 'link/[^ ]+ [^ ]+' | cut -d ' ' -f2)")
+done
+panic "None of the following MAC addresses match a node in settings:
+$err"
 exit 1
