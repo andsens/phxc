@@ -58,34 +58,27 @@ EOF
       '.[$rasn].neighbor[$ip]={"remote-as": $casn, "address-family":{"ipv6-unicast": $emptystr}}' <<<"$bgp_config")
   done
 
-  local pxe_config
-  pxe_config=$(cat <<EOF
-next-server $_BOOTSERVER_IPV4;
+  local dhcp_config
+  # Append linenumber to the end of each line, unifi for some stupid reason makes the list values unique...
+  dhcp_config=$(cat <<EOF | ( while IFS= read -r -d $'\n' line; do printf "%-45s #%.2d\n" "$line" "$((++i))"; done ) | jq -s --raw-input '
+{
+  "global-parameters": (.[0:-1] | gsub("\"";"&quot;") | split("\n"))
+}'
+option arch code 93 = unsigned integer 16;
+next-server "$_BOOTSERVER_IPV4";
+option tftp-server-name "$_BOOTSERVER_IPV4";
 if option arch = 00:06 {
   option bootfile-name "x86.efi";
   filename "x86.efi";
-} elsif option arch = 00:07 {
-  option bootfile-name "x64.efi";
-  filename "x64.efi";
 } elsif option arch = 00:0a {
   option bootfile-name "arm32.efi";
   filename "arm32.efi";
 } elsif option arch = 00:0b {
-  option bootfile-name "arm64.efi";
-  filename "arm64.efi";
-}
-EOF
-  )
-  pxe_config=${pxe_config//'"'/'&quot;'}
-  pxe_config=${pxe_config//$'\n'/}
-
-  local dhcp_config
-  dhcp_config=$(cat <<EOF
-{
-  "global-parameters": [
-    "option arch code 93 = unsigned integer 16;",
-    "${pxe_config}"
-  ]
+  option bootfile-name "aa64.efi";
+  filename "aa64.efi";
+} elsif option vendor-class-identifier = "PXEClient:Arch:00000:UNDI:002001" {
+  option bootfile-name "aa64.efi";
+  filename "aa64.efi";
 }
 EOF
   )
@@ -98,7 +91,7 @@ EOF
       "This part needs to be merged with your existing dns options. Unifi does not merge it automatically.",
       "Run: \`ssh ubnt@$CLUSTER_ROUTER_FIXEDIPV4 -- mca-ctrl -t dump-cfg | jq .service.dns.forwarding.options\`",
       "and replace these comment lines with the output (except the 'host-record=unifi' part, which is always appended).",
-      "Do keep the server=... line below",
+      "Then append the server=... line below",
       "server=/$CLUSTER_DOMAIN/$CLUSTER_COREDNS_LB_FIXEDIPV4"
     ],
     "ERROR": "Remove this line once you have followed the guide above"
