@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: build-create-boot-image
+  name: build-create-boot-image-arm64
   labels:
     app.kubernetes.io/name: bootstrap
     app.kubernetes.io/component: create-boot-image
