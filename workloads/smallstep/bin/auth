@@ -119,9 +119,7 @@ local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
     kubectl config --kubeconfig "$kube_config_path" set-cluster home-cluster \
       --server="$kube_api_addr" \
       --embed-certs \
-      --certificate-authority=<(
-        c=$(step certificate inspect --insecure --format pem "$kube_api_addr") && printf -- "-%s\n" "${c##*$'-\n-'}" # TOFU again :-/
-      )
+      --certificate-authority=<(step certificate inspect --insecure --format pem "$kube_api_addr") # TOFU again :-/
     kubectl config --kubeconfig "$kube_config_path" set-credentials "$__username@$kube_cluster" \
       --exec-api-version="client.authentication.k8s.io/v1beta1" \
       --exec-command="$PKGROOT/workloads/smallstep/bin/auth" \
