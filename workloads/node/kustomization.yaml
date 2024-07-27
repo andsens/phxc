@@ -19,6 +19,7 @@ configMapGenerator:
   - config/tftpd-map-file
   name: boot-server-config
 - files:
+  - scripts/tftpd.sh
   - scripts/safeboot-attest/attest-server.py
   - scripts/safeboot-attest/attest-verify
   name: boot-server-scripts

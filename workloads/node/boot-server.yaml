@@ -140,18 +140,20 @@ spec:
         imagePullPolicy: Never
         securityContext:
           readOnlyRootFilesystem: true
-          capabilities:
-            drop: [ALL]
-            add:
-            - NET_BIND_SERVICE
-            - SETUID
-            - SETGID
-            - SYS_CHROOT
+        env:
+        # Used to select which interface tcpdump should filter for
+        - name: HOST_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
         ports:
         - name: tftp
           containerPort: 69
           hostPort: 69
         volumeMounts:
+        - name: scripts
+          mountPath: /tftpd.sh
+          subPath: tftpd.sh
         - name: config
           mountPath: /config/map-file
           subPath: tftpd-map-file
