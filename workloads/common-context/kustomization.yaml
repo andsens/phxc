@@ -3,6 +3,8 @@ kind: Kustomization
 configMapGenerator:
 - files:
   - common.upkg.json
+  - kubectl.upkg.json
+  - smallstep.upkg.json
   - setup-alpine.sh
   - setup-debian.sh
   name: common-context
