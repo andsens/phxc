@@ -12,6 +12,7 @@ main() {
 
   # Enable backports
   sed -i 's/Suites: bookworm bookworm-updates/Suites: bookworm bookworm-updates bookworm-backports/' /etc/apt/sources.list.d/debian.sources
+  sed -i 's/Components: main/Components: main contrib non-free non-free-firmware/' /etc/apt/sources.list.d/debian.sources
   # Disable update-initramfs
   cp_tpl --raw /etc/initramfs-tools/update-initramfs.conf
   # Keep old/default config when there is a conflict (i.e. update-initramfs.conf)

@@ -14,26 +14,34 @@ main() {
 
   DOC="bootstrap - Bootstrap images
 Usage:
-  bootstrap [-a ARCH]
+  bootstrap VARIANT
 
-Options:
-  -a --arch ARCH  Processor architecture of the image [default: amd64]
+Supported variants:
+  amd64 - Standard x86_64 image
+  arm64 - ARM 64-bit image
+  rpi - ARM 64-bit image with modifications for Raspberry PI
 "
 # docopt parser below, refresh this parser with `docopt.sh bootstrap`
 # shellcheck disable=2016,2086,2317,1090,1091,2034
 docopt() { local v='2.0.1'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
-%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:138};usage=${DOC:29:28}
-digest=00c86;options=('-a --arch 1');node_0(){ value __arch 0;};node_1(){
-optional 0;};cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2
-printf "%s\n" "${DOC:29:28}" >&2;exit 1;}';local varnames=(__arch) varname;for \
-varname in "${varnames[@]}"; do unset "var_$varname";done;parse 1 "$@";local \
-p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset "$p$varname"
-done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
-=~ ^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for varname in \
-"${varnames[@]}"; do declare -p "$p$varname";done;done;}
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:196};usage=${DOC:29:26}
+digest=edb8e;options=();node_0(){ value VARIANT a;};cat <<<' docopt_exit() {
+[[ -n $1 ]] && printf "%s\n" "$1" >&2;printf "%s\n" "${DOC:29:26}" >&2;exit 1;}'
+local varnames=(VARIANT) varname;for varname in "${varnames[@]}"; do unset \
+"var_$varname";done;parse 0 "$@";local p=${DOCOPT_PREFIX:-''};for varname in \
+"${varnames[@]}"; do unset "$p$varname";done;eval $p'VARIANT=${var_VARIANT:-};'
+local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
+((;docopt_i>0;docopt_i--)); do for varname in "${varnames[@]}"; do declare -p \
+"$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' bootstrap`
   eval "$(docopt "$@")"
+
+  case $VARIANT in
+    amd64) DOCKER_PLATFORM=linux/amd64 ;;
+    arm64|rpi) DOCKER_PLATFORM=linux/arm64 ;;
+    default) fatal "Unknown variant: %s" "$ARCH" ;;
+  esac
 
   local bundle
   bundle=$(mktemp --suffix .tar.gz)
@@ -42,45 +50,45 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
   "$PKGROOT/workloads/node/bin/bundle" "$bundle"
 
   # shellcheck disable=SC2154
-  rm -rf "$PKGROOT/images/$__arch.new"
-  mkdir "$PKGROOT/images/$__arch.new"
+  rm -rf "$PKGROOT/images/$VARIANT.new"
+  mkdir "$PKGROOT/images/$VARIANT.new"
 
-  if [[ ! -e "$PKGROOT/images/$__arch/create-boot-image.tar" ]] || \
+  if [[ ! -e "$PKGROOT/images/$VARIANT/create-boot-image.tar" ]] || \
      find "$PKGROOT/workloads/node/containers/create-boot-image" "$PKGROOT/workloads/common-context" \
-       -newer "$PKGROOT/images/$__arch/create-boot-image.tar" 2>/dev/null | grep -q .; then
-    info "Building '%s'" "create-boot-image:$__arch"
+       -newer "$PKGROOT/images/$VARIANT/create-boot-image.tar" 2>/dev/null | grep -q .; then
+    info "Building '%s'" "create-boot-image:$VARIANT"
     docker run --rm -ti \
-      --platform "linux/$__arch" \
+      --platform "$DOCKER_PLATFORM" \
       -v "$PKGROOT/workloads/common-context:/workspace/common-context:ro" \
       -v "$PKGROOT/workloads/node/containers/create-boot-image:/workspace/context:ro" \
       -v "$PKGROOT/images:/workspace/images:rw" \
       gcr.io/kaniko-project/executor:latest \
       --dockerfile context/Dockerfile \
-      --build-arg "ARCH=$__arch" \
-      --custom-platform="linux/$__arch" \
-      --destination "cluster.local/create-boot-image:$__arch" \
-      --tar-path "/workspace/images/$__arch.new/create-boot-image.tar" \
+      --build-arg "VARIANT=$VARIANT" \
+      --custom-platform="$DOCKER_PLATFORM" \
+      --destination "cluster.local/create-boot-image:$VARIANT" \
+      --tar-path "/workspace/images/$VARIANT.new/create-boot-image.tar" \
       --no-push
-    docker load -i "$PKGROOT/images/$__arch.new/create-boot-image.tar"
+    docker load -i "$PKGROOT/images/$VARIANT.new/create-boot-image.tar"
   else
     info "Not building '%s', no files have changed since last run" "create-boot-image"
-    cp "$PKGROOT/images/$__arch/create-boot-image.tar" "$PKGROOT/images/$__arch.new/create-boot-image.tar"
+    cp "$PKGROOT/images/$VARIANT/create-boot-image.tar" "$PKGROOT/images/$VARIANT.new/create-boot-image.tar"
   fi
 
-  info "Building '%s'" "node:$__arch"
+  info "Building '%s'" "node:$VARIANT"
   docker run --rm -ti \
-      --platform "linux/$__arch" \
+    --platform "$DOCKER_PLATFORM" \
     -v "$PKGROOT/workloads/node/bootstrap/Dockerfile:/workspace/context/Dockerfile:ro" \
     -v "$bundle:/workspace/home-cluster.tar.gz:ro" \
     -v "$PKGROOT/workloads/common-context:/workspace/common-context:ro" \
     -v "$PKGROOT/images:/workspace/images:rw" \
     gcr.io/kaniko-project/executor:latest \
     --dockerfile context/Dockerfile \
-    --build-arg "ARCH=$__arch" \
-    --custom-platform="linux/$__arch" \
-    --destination "cluster.local/node:$__arch" \
+    --build-arg "VARIANT=$VARIANT" \
+    --custom-platform="$DOCKER_PLATFORM" \
+    --destination "cluster.local/node:$VARIANT" \
     --insecure-registry=cluster.local \
-    --tar-path "/workspace/images/$__arch.new/node.tar" \
+    --tar-path "/workspace/images/$VARIANT.new/node.tar" \
     --no-push
 
   local node_settings
@@ -90,7 +98,7 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
       printf "%s\n" "$node" >"$node_settings/$mac.json"
   done
   docker run --rm -ti \
-    --platform "linux/$__arch" \
+    --platform "$DOCKER_PLATFORM" \
     -v "$node_settings:/node-settings:ro" \
     -v "$PKGROOT/workloads/node/bootstrap/create-boot-image-assets:/assets:ro" \
     -v "$PKGROOT/workloads/node/bootstrap/scripts:/scripts:ro" \
@@ -98,7 +106,7 @@ done;eval $p'__arch=${var___arch:-amd64};';local docopt_i=1;[[ $BASH_VERSION \
     --device=/dev/kvm \
     --group-add "$(stat -c %g /dev/kvm)" \
     -e CHOWN=$UID:$UID \
-    "cluster.local/create-boot-image:$__arch"
+    "cluster.local/create-boot-image:$VARIANT"
 }
 
 main "$@"

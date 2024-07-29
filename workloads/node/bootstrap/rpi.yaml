@@ -2,40 +2,40 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: build-amd64
+  name: build-rpi
   labels:
     app.kubernetes.io/name: bootstrap
-    app.kubernetes.io/component: amd64
+    app.kubernetes.io/component: rpi
 spec:
   template:
     metadata:
       labels:
         app.kubernetes.io/name: bootstrap
-        app.kubernetes.io/component: amd64
+        app.kubernetes.io/component: rpi
         cluster.local/allow-internet-egress: "true"
     spec:
       restartPolicy: Never
       nodeSelector:
-        kubernetes.io/arch: amd64
+        kubernetes.io/arch: arm64
       initContainers:
       - name: initialize-new-run
         image: busybox
         command: [bash, -c, rm -rf /images/$(VARIANT).new; mkdir /images/$(VARIANT).new]
         env:
         - name: VARIANT
-          value: amd64
+          value: arm64
       - name: kaniko
         image: gcr.io/kaniko-project/executor:latest
         args:
         - --dockerfile=context/Dockerfile
         - --build-arg=VARIANT=$(VARIANT)
-        - --custom-platform=linux/amd64
+        - --custom-platform=linux/arm64
         - --destination=cluster.local/non-existent
         - --tar-path=/images/$(VARIANT).new/node.tar
         - --no-push
         env:
         - name: VARIANT
-          value: amd64
+          value: rpi
         volumeMounts:
         - name: context
           mountPath: /workspace/context
@@ -48,7 +48,7 @@ spec:
           mountPath: /images
       containers:
       - name: create-boot-image
-        image: cluster.local/create-boot-image:amd64
+        image: cluster.local/create-boot-image:rpi
         imagePullPolicy: Never
         volumeMounts:
         - name: scripts
@@ -57,6 +57,8 @@ spec:
           mountPath: /assets
         - name: node-settings
           mountPath: /node-settings
+        - name: rpi-config
+          mountPath: /rpi-config
         - name: workspace
           mountPath: /workspace
         - name: images
@@ -79,6 +81,9 @@ spec:
       - name: node-settings
         configMap:
           name: node-settings
+      - name: rpi-config
+        configMap:
+          name: rpi-config
       - name: bundle
         configMap:
           name: bundle

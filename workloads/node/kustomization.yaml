@@ -15,6 +15,7 @@ resources:
 - resourcegroup.yaml
 configMapGenerator:
 - files:
+  - config/rpi-config.txt
   - config/nginx.conf
   - config/tftpd-map-file
   name: boot-server-config

@@ -1,6 +1,6 @@
 FROM debian:bookworm
 SHELL ["/usr/bin/bash", "-Eeo", "pipefail", "-c"]
-ARG ARCH
+ARG VARIANT
 
 RUN \
   /workspace/common-context/setup-debian.sh; \

@@ -1,12 +1,15 @@
 #!/bin/sh
+################################################################################
+# Don't use any bash variables in this file ("$VAR" or "${VAR}").
+# It is rendered with `envsubst` in order to inline "${VARIANT}"
+################################################################################
+
 set -e
-# We need udev to create the by-uuid links
-PREREQS=""
 case $1 in
-	prereqs) echo "${PREREQS}"; exit 0;;
+	prereqs) echo ""; exit 0;;
 esac
 
 # shellcheck disable=SC1091
 . /scripts/functions
 
-printf "{}" >/run/initramfs/boot-state.json
+printf '{"variant": "%s"}' "${VARIANT}" >/run/initramfs/boot-state.json

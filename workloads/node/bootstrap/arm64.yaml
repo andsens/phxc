@@ -20,21 +20,21 @@ spec:
       initContainers:
       - name: initialize-new-run
         image: busybox
-        command: [bash, -c, rm -rf /images/$(ARCH).new; mkdir /images/$(ARCH).new]
+        command: [bash, -c, rm -rf /images/$(VARIANT).new; mkdir /images/$(VARIANT).new]
         env:
-        - name: ARCH
+        - name: VARIANT
           value: arm64
       - name: kaniko
         image: gcr.io/kaniko-project/executor:latest
         args:
         - --dockerfile=context/Dockerfile
-        - --build-arg=ARCH=$(ARCH)
-        - --custom-platform=linux/$(ARCH)
+        - --build-arg=VARIANT=$(VARIANT)
+        - --custom-platform=linux/arm64
         - --destination=cluster.local/non-existent
-        - --tar-path=/images/$(ARCH).new/node.tar
+        - --tar-path=/images/$(VARIANT).new/node.tar
         - --no-push
         env:
-        - name: ARCH
+        - name: VARIANT
           value: arm64
         volumeMounts:
         - name: context
@@ -57,6 +57,8 @@ spec:
           mountPath: /assets
         - name: node-settings
           mountPath: /node-settings
+        - name: rpi-config
+          mountPath: /rpi-config
         - name: workspace
           mountPath: /workspace
         - name: images
@@ -79,6 +81,9 @@ spec:
       - name: node-settings
         configMap:
           name: node-settings
+      - name: rpi-config
+        configMap:
+          name: rpi-config
       - name: bundle
         configMap:
           name: bundle

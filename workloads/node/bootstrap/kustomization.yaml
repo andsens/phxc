@@ -4,12 +4,14 @@ namespace: node
 resources:
 - amd64.yaml
 - arm64.yaml
+- rpi.yaml
 - ../../settings/node
 configMapGenerator:
 - files:
   - Dockerfile
   name: node
 - files:
+  - create-boot-image-assets/config.txt
   - create-boot-image-assets/etc-hosts
   - create-boot-image-assets/etc-initramfs-tools-update-initramfs.conf
   name: create-boot-image-assets

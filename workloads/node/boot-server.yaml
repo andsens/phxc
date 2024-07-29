@@ -97,12 +97,12 @@ spec:
           containerPort: 80
         volumeMounts:
         - name: node-settings
-          mountPath: /node-settings
+          mountPath: /var/www/node-settings
         - name: config
           mountPath: /etc/nginx/nginx.conf
           subPath: nginx.conf
         - name: images
-          mountPath: /images
+          mountPath: /var/www/images
           readOnly: true
         - name: nginx-cache
           mountPath: /var/cache/nginx
@@ -160,6 +160,9 @@ spec:
         - name: images
           mountPath: /tftp/images
           readOnly: true
+        - name: config
+          mountPath: /tftp/config.txt
+          subPath: rpi-config.txt
       volumes:
       - name: config
         configMap:

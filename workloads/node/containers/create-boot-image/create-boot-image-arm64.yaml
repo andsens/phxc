@@ -21,13 +21,13 @@ spec:
         image: gcr.io/kaniko-project/executor:latest
         args:
         - --dockerfile=context/Dockerfile
-        - --destination=cluster.local/create-boot-image:$(ARCH)
-        - --build-arg=ARCH=$(ARCH)
-        - --custom-platform=linux/$(ARCH)
-        - --tar-path=/workspace/images/create-boot-image:$(ARCH).tar.tmp
+        - --destination=cluster.local/create-boot-image:$(VARIANT)
+        - --build-arg=VARIANT=$(VARIANT)
+        - --custom-platform=linux/arm64
+        - --tar-path=/workspace/images/create-boot-image:$(VARIANT).tar.tmp
         - --no-push
         env:
-        - name: ARCH
+        - name: VARIANT
           value: arm64
         - name: GGCR_EXPERIMENT_ESTARGZ
           value: "1"
@@ -41,9 +41,9 @@ spec:
       containers:
       - name: move-image
         image: busybox
-        args: [mv, /images/create-boot-image:$(ARCH).tar.tmp, /images/create-boot-image:$(ARCH).tar]
+        args: [mv, /images/create-boot-image:$(VARIANT).tar.tmp, /images/create-boot-image:$(VARIANT).tar]
         env:
-        - name: ARCH
+        - name: VARIANT
           value: arm64
         volumeMounts:
         - name: images

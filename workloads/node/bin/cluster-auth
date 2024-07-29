@@ -88,7 +88,7 @@ done;eval $p'__debug_response=${var___debug_response:-false};'$p'__retry=${var'\
 
 get_attestation_url() {
   local boot_server_ip
-  boot_server_ip=$(jq -r .next_server /run/initramfs/boot-state.json)
+  boot_server_ip=$(jq -r .boot_server /run/initramfs/boot-state.json)
   [[ -n $boot_server_ip ]] || fatal "Unable to retrieve boot-server IP from /run/initramfs/boot-state.json"
   printf "http://%s/attest" "$boot_server_ip"
 }

@@ -4,7 +4,6 @@
 PACKAGES+=(
   systemd-sysv systemd-boot # systemd bootup
   initramfs-tools busybox util-linux zstd # initrd
-  "linux-image-${ARCH?}"
   python3-pefile # UKI creation
   dosfstools # Used for mounting ESP
   iproute2 curl # Used in settings to determine MAC address and then fetching settings
@@ -12,6 +11,13 @@ PACKAGES+=(
   systemd-resolved # DNS resolution setup
   avahi-daemon libnss-mdns # System reachability through mdns
 )
+
+case $VARIANT in
+  amd64) PACKAGES+=(linux-image-amd64) ;;
+  arm64) PACKAGES+=(linux-image-amd64) ;;
+  rpi) PACKAGES+=(linux-image-rpi-v8 raspi-firmware) ;;
+  default) fatal "Unknown variant: %s" "$VARIANT" ;;
+esac
 
 boot() {
   # Enable serial console
@@ -21,7 +27,7 @@ boot() {
   cp_tpl --raw --chmod=0755 /etc/initramfs-tools/hooks/home-cluster
 
   # Setup boot-state.json
-  cp_tpl --raw --chmod=0755 /etc/initramfs-tools/scripts/init-top/create-boot-state
+  cp_tpl --chmod=0755 /etc/initramfs-tools/scripts/init-top/create-boot-state
 
   # Clear machine-id, let systemd generate one on first boot
   rm /var/lib/dbus/machine-id /etc/machine-id
@@ -44,6 +50,7 @@ boot() {
 
   # Root
   printf "squashfs\n" >>/etc/initramfs-tools/modules
+  cp_tpl --raw /etc/initramfs-tools/initramfs.conf
   cp_tpl --raw --chmod=0755 /etc/initramfs-tools/scripts/local-premount/rootimg
   cp_tpl /etc/overlayroot.conf
   # root disk is a squashfs image, none of these are needed
