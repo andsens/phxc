@@ -149,7 +149,7 @@ spec:
           mountPath: /home/step/config
       containers:
       - name: step-certificates
-        image: cr.step.sm/smallstep/step-ca:0.26.2
+        image: cr.step.sm/smallstep/step-ca:0.27.2
         command: [/usr/local/bin/step-ca]
         args: [/home/step/config/ca.json]
         securityContext:
