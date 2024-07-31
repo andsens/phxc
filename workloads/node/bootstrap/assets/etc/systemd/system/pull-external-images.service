@@ -5,7 +5,7 @@ After=workload-ready@k3s.target
 Before=apply-all-manifests.service
 
 [Install]
-WantedBy=k3s@server.service k3s@agent.service
+WantedBy=k3s.target
 
 [Service]
 Type=oneshot

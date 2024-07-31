@@ -4,7 +4,7 @@ Requires=workload-ready@step-ca.target
 After=workload-ready@step-ca.target
 
 [Install]
-WantedBy=k3s@server.service k3s@agent.service
+WantedBy=multi-user.target
 
 [Service]
 Type=oneshot

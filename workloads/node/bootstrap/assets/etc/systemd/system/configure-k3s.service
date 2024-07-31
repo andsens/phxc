@@ -3,10 +3,10 @@ Description=Set k3s node-label & token
 ConditionPathExists=/run/initramfs/node-settings.json
 Wants=cluster-auth.service
 After=cluster-auth.service
-Before=k3s@server.service k3s@agent.service
+Before=k3s.target
 
 [Install]
-RequiredBy=k3s@server.service k3s@agent.service
+RequiredBy=k3s.target
 
 [Service]
 Type=oneshot

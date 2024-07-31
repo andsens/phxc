@@ -1,11 +1,12 @@
 [Unit]
 Description=/etc/rancher/node
+DefaultDependencies=no
 Requires=setup-persistent.service
 After=setup-persistent.service
-Before=k3s@server.service k3s@agent.service
+Before=k3s.target
 
 [Install]
-RequiredBy=k3s@server.service k3s@agent.service
+RequiredBy=k3s.target
 
 [Mount]
 What=/var/lib/persistent/node-password

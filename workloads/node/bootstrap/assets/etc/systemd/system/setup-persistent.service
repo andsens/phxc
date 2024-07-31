@@ -5,7 +5,7 @@ Wants=cluster-auth.service
 After=cluster-auth.service
 
 [Install]
-WantedBy=k3s@server.service k3s@agent.service
+WantedBy=multi-user.target
 
 [Service]
 Type=oneshot
