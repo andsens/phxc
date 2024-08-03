@@ -20,23 +20,21 @@ Options:
 
 if __name__ == '__main__':
   params = docopt.docopt(__doc__)
-  try:
-    with open(params['PEFILE'], 'rb') as f:
-      fp = SignedPEFile(f).get_fingerprinter()
-      fp.add_authenticode_hashers(*map(lambda h: getattr(hashlib, h), params['--algo']))
-      digests_binary = fp.hash()
-      digests = OrderedDict()
-      for algo in params['--algo']:
-        digest = hexlify(digests_binary[algo]).decode('ascii')
-        if params['--json']:
-          digests[algo] = digest
-        else:
-          if params['--batch']:
-            print(digest)
-          else:
-            print(f'{algo}: {digest}')
+  with open(params['PEFILE'], 'rb') as f:
+    fp = SignedPEFile(f).get_fingerprinter()
+    fp.add_authenticode_hashers(*map(lambda h: getattr(hashlib, h), params['--algo']))
+    digests_binary = fp.hashes()
+    if 'authentihash' not in digests_binary:
+      raise Exception(f'Unable to find any authentihashes in {params['PEFILE']}')
+    digests = OrderedDict()
+    for algo in params['--algo']:
+      digest = hexlify(digests_binary['authentihash'][algo]).decode('ascii')
       if params['--json']:
-        print(json.dumps(digests, indent=(2 if sys.stdout.isatty() else None)))
-  except Exception as e:
-    sys.stderr.write(f'{e}\n')
-    sys.exit(1)
+        digests[algo] = digest
+      else:
+        if params['--batch']:
+          print(digest)
+        else:
+          print(f'{algo}: {digest}')
+    if params['--json']:
+      print(json.dumps(digests, indent=(2 if sys.stdout.isatty() else None)))
