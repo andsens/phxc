@@ -3,8 +3,12 @@
 set -Eeo pipefail; shopt -s inherit_errexit
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../..")
 
+DISK_UUID=caf66bff-edab-4fb1-8ad9-e570be5415d7
+ESP_UUID=c12a7328-f81f-11d2-ba4b-00a0c93ec93b
+DATA_UUID=6f07821d-bb94-4d0f-936e-4060cadf18d8
+
 main() {
-  source "$PKGROOT/.upkg/records.sh/records.sh"
+  source "$PKGROOT/workloads/node/lib/common.sh"
 
   DOC="setup-persistent - Setup the persistent disk
 Usage:
@@ -25,38 +29,92 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' setup-persistent`
   eval "$(docopt "$@")"
 
-  local data_devpath
-  data_devpath=$(jq -re '.data.devPath' /run/initramfs/node-settings.json)
-  [[ $data_devpath != "$(jq -re .esp_device /run/initramfs/boot-state.json 2>/dev/null)" ]] || \
-    fatal "Potential mis-configuration: The ESP device path and the data device path are the same (%s)" "$data_devpath"
+  [[ -e /run/initramfs/cluster-secrets.json ]] || fatal "/run/initramfs/cluster-secrets.json does not exist"
+  local disk_encryption_key
+  disk_encryption_key=$(jq -j '.["disk-encryption-key"]' /run/initramfs/cluster-secrets.json)
 
-  if [[ -e /var/lib/persistent ]]; then
-    warning "/var/lib/persistent already exists, assuming persistent disk is already set up, aborting..."
-    exit 0
-  fi
-  mkdir /var/lib/persistent
-  if jq -re '.data.encrypted==true' /run/initramfs/node-settings.json >/dev/null; then
-    [[ -e /run/initramfs/cluster-secrets.json ]] || fatal "/run/initramfs/cluster-secrets.json does not exist"
-
-    local disk_encryption_key
-    disk_encryption_key=$(jq -j '.["disk-encryption-key"]' /run/initramfs/cluster-secrets.json)
-    if ! cryptsetup isLuks "$data_devpath" 2>/dev/null; then
-      info "%s not initialized, formatting" "$data_devpath"
-      cryptsetup luksFormat --batch-mode "$data_devpath" <(printf "%s" "$disk_encryption_key")
-      cryptsetup open --type luks2 --key-file <(printf "%s" "$disk_encryption_key") "$data_devpath" persistent
-      mkfs.ext4 /dev/mapper/persistent
-    else
-      cryptsetup open --type luks2 --key-file <(printf "%s" "$disk_encryption_key") "$data_devpath" persistent
-    fi
+  local devpath
+  devpath=$(find_persistent_disk)
+  if [[ -n $devpath ]]; then
+    set_bootstate devpath "$devpath"
+    mount "$(get_boot_devpath)" /boot
+    cryptsetup open --type luks2 --key-file <(printf "%s" "$disk_encryption_key") "$devpath" persistent
     mount /dev/mapper/persistent /var/lib/persistent
   else
-    if lsblk --json --output FSTYPE "$data_devpath" | jq -re '.blockdevices[0].fstype == null' >/dev/null; then
-      info "%s not initialized, formatting" "$data_devpath"
-      mkfs.ext4 "$data_devpath"
-    fi
-    mount "$data_devpath" /var/lib/persistent
+    info "No persistent disk found"
+    devpath=$(find_largest_blank_disk)
+    partition_disk "$devpath"
+
+    local boot_devpath
+    boot_devpath=$(get_boot_devpath)
+    mkfs.vfat "$boot_devpath"
+    mount "$boot_devpath" /boot
+
+    cryptsetup luksFormat --batch-mode "$devpath" <(printf "%s" "$disk_encryption_key")
+    cryptsetup open --type luks2 --key-file <(printf "%s" "$disk_encryption_key") "$devpath" persistent
+    mkfs.ext4 /dev/mapper/persistent
+    set_bootstate devpath "$devpath"
+    mount /dev/mapper/persistent /var/lib/persistent
   fi
   mkdir -p /var/lib/persistent/containerd /var/lib/persistent/longhorn /var/lib/persistent/node-password
+}
+
+get_boot_devpath() {
+  printf "/dev/%s" "$(lsblk -J "$devpath" | jq -r '.blockdevices[0].children[0].name')"
+}
+
+find_persistent_disk() {
+  local devnames=()
+  readarray -t -d $'\n' < <(lsblk --json -ndo PTUUID,NAME -a | jq -r --arg disk_uuid $DISK_UUID '.blockdevices[] | select(.ptuuid==$disk_uuid) | .name')
+  if [[ ${#devnames[@]} -eq 1 ]]; then
+    info "Persistent disk found at %s" "$devpath"
+    printf "/dev/%s" "${#devnames[0]}"
+  elif [[ ${#devnames[@]} -gt 1 ]]; then
+    fatal "Found multiple disks marked with the UUID '%s'" "$DISK_UUID"
+  fi
+}
+
+find_largest_blank_disk() {
+  info "Finding blank disk to persist data"
+  local devname devnames=()
+  for devname in $(lsblk --json --output NAME,FSTYPE,TYPE,MAJ:MIN | jq -r '.blockdevices[] | select(.fstype==null and .type=="disk" and (.["maj:min"] | endswith(":0"))) | .name'); do
+    sfdisk -J "/dev/$devname" &>/dev/null || devnames+=("$devname")
+  done
+
+  [[ ${#devnames[@]} -ne 0 ]] || fatal "No blank disks for persisting data found (use \`wipefs -a /dev/..\` to prepare a disk)"
+
+  if [[ ${#devnames[@]} -eq 1 ]]; then
+    info "Choosing /dev/%s for persisting data" "${devnames[0]}"
+    printf "/dev/%s" "${devnames[0]}"
+  else
+    warning 'Multiple blank disks for persisting data found (%s), determining the largest' "${devnames[*]}"
+    local largest_devsize=0 largest_devname devsize
+    for devname in "${devnames[@]}"; do
+      devsize=$(lsblk -nb --output SIZE "/dev/$devname")
+      if (( devsize > largest_devsize )); then
+        largest_devsize=$devsize
+        largest_devname=$devname
+      fi
+    done
+    info "Choosing /dev/%s for persisting data" "$largest_devname"
+    printf "/dev/%s" "$largest_devname"
+  fi
+}
+
+partition_disk() {
+  local devpath=$1
+  local sector_size_b sectors_per_mib
+  sector_size_b=$(lsblk --json -o phy-sec /dev/mmcblk0 | jq -r '.blockdevices[0]["phy-sec"]')
+  sectors_per_mib=$((1024 * 1024 / sector_size_b))
+
+  boot_partition_size_mib=1024 # 1 GiB
+  sfdisk "$devpath" <<EOF
+label: gpt
+label-id: $DISK_UUID
+
+start=$(( 1 * sectors_per_mib )), size=$(( boot_partition_size_mib * sectors_per_mib )), type=U, bootable, uuid=$ESP_UUID
+start=$(( ( 1 + boot_partition_size_mib ) * sectors_per_mib )), uuid=$DATA_UUID
+EOF
 }
 
 main "$@"

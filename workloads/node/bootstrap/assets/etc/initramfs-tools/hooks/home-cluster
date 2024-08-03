@@ -16,3 +16,4 @@ copy_exec /usr/bin/basename /bin
 copy_exec /usr/bin/readlink /bin
 copy_exec /usr/bin/cp /bin
 copy_exec /usr/bin/bash /bin
+copy_exec /usr/bin/lsblk /bin

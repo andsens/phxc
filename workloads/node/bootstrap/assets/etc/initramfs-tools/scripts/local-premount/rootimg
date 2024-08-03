@@ -32,10 +32,9 @@ verify_rootimg() {
   fi
 }
 
-esp=/run/initramfs/efi
-root_img_path=$esp/home-cluster/root.img
+root_img_path=/run/initramfs/boot/home-cluster/root.img
 if [ -e $root_img_path ]; then
-  log_begin_msg "Copying root.img from ESP to RAM"
+  log_begin_msg "Copying root.img from boot partition to RAM"
   if cp $root_img_path $rootimg_path.tmp; then
     boot_state=$(jq --arg src "$root_img_path" '.rootimg_src=$src' /run/initramfs/boot-state.json)
     printf "%s\n" "$boot_state" >/run/initramfs/boot-state.json

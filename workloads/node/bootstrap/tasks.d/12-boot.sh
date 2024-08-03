@@ -41,12 +41,12 @@ boot() {
   # Clear machine-id, let systemd generate one on first boot
   rm /var/lib/dbus/machine-id /etc/machine-id
 
-  # ESP mounting
+  # FAT32 boot partition mounting
   local modules=(vfat nls_cp437 nls_ascii)
   printf "%s\n" "${modules[@]}" >>/etc/initramfs-tools/modules
   cp_tpl --raw --chmod=0755 \
-    /etc/initramfs-tools/scripts/init-top/mount-efi \
-    /etc/initramfs-tools/scripts/init-bottom/umount-efi
+    /etc/initramfs-tools/scripts/init-top/mount-boot \
+    /etc/initramfs-tools/scripts/init-bottom/umount-boot
 
   # Settings
   cp_tpl --raw --chmod=0755 /etc/initramfs-tools/scripts/init-bottom/settings

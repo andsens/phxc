@@ -1,0 +1,18 @@
+#!/bin/sh
+set -e
+# Make sure the settings have been downloaded or copied from the boot partition before unmounting
+PREREQS="settings"
+case $1 in
+	prereqs) echo "${PREREQS}"; exit 0;;
+esac
+
+# shellcheck disable=SC1091
+. /scripts/functions
+
+boot=/run/initramfs/boot
+if [ -e $boot ]; then
+  log_success_msg "Boot partition mount detected, unmounting"
+  umount "$boot"
+  rm -rf "$boot"
+  log_end_msg
+fi

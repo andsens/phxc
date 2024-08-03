@@ -2,6 +2,7 @@
 
 PACKAGES+=(
   git # kpt dep
+  fdisk # setup-persistent
   open-iscsi nfs-common # longhorn deps
   tpm2-tools openssl xxd curl systemd-timesyncd # Remote attestation for cluster authentication
 )

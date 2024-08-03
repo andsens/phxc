@@ -7,7 +7,8 @@ main() {
   source "$PKGROOT/.upkg/records.sh/records.sh"
 
   declare -A artifacts
-  declare -A digests
+  declare -A authentihashes
+  declare -A sha256sums
 
   mkdir -p /workspace/root
 
@@ -27,22 +28,36 @@ main() {
 
   info "Creating squashfs image"
 
-  # Move boot dir out of the way before creating squashfs image
+  # Move boot dir out of the way before creating squashfs image, but keep the mountpoint itself
   mv /workspace/root/boot /workspace/boot
+  mkdir /workspace/root/boot
 
   local noprogress=
   [[ -t 1 ]] || noprogress=-no-progress
   mksquashfs /workspace/root /workspace/root.img -noappend -quiet $noprogress
 
   # Move boot dir back into place
+  rm -rf /workspace/root/boot
   mv /workspace/boot /workspace/root/boot
 
   # Hash the root image so we can verify it during boot
-  local rootimg_checksum
-  rootimg_checksum=$(sha256sum /workspace/root.img | cut -d ' ' -f1)
+  sha256sums[root.img]=$(sha256sum /workspace/root.img | cut -d ' ' -f1)
 
   artifacts[/workspace/root.img]=/images/$VARIANT.new/root.img
   artifacts[/workspace/root/boot/initrd.img]=/images/$VARIANT.new/initrd.img
+
+
+  #####################
+  ### node-settings ###
+  #####################
+
+  info "Generating node settings"
+  mkdir /workspace/node-settings
+  local file node_settings_size_b=0
+  for file in /node-settings/*; do
+    node_settings_size_b=$(( node_settings_size_b + $(stat -c %s "$file") ))
+    cp "$file" "/workspace/node-settings/$(basename "$file" | sed s/:/-/g)"
+  done
 
   ######################
   ### Build boot.img ###
@@ -50,7 +65,13 @@ main() {
 
   if [[ $VARIANT = rpi* ]]; then
 
-    printf "console=ttyS0,115200 console=tty0 root=/run/initramfs/root.img root_sha256=%s noresume" "$rootimg_checksum" > /workspace/cmdline.txt
+    # The last "console=" wins with respect to initramfs stdout/stderr output
+    printf "console=ttyS0,115200 console=tty0 root=/run/initramfs/root.img root_sha256=%s noresume" "${sha256sums[root.img]}" > /workspace/cmdline.txt
+
+    # Adjust config.txt for being embedded in boot.img
+    sed 's/boot_ramdisk=1/auto_initramfs=1/' <"/assets/config-${VARIANT}.txt" >/workspace/config.txt
+    cp "/assets/config-${VARIANT}.txt" /workspace/config-netboot.txt
+    artifacts[/workspace/config-netboot.txt]=/images/$VARIANT.new/config.txt
 
     local file_size fs_table_size_b firmware_size_b=0
     fs_table_size_b=$(( 1024 * 1024 )) # Total guess, but should be enough
@@ -62,6 +83,7 @@ main() {
         fs_table_size_b +
         $(stat -c %s "/assets/config-${VARIANT}.txt") +
         $(stat -c %s /workspace/cmdline.txt) +
+        node_settings_size_b +
         firmware_size_b +
         (1024 * 1024) +
         1023
@@ -75,14 +97,16 @@ main() {
 mkfs fat /dev/sda
 mount /dev/sda /
 
-copy-in /assets/config-${VARIANT}.txt /
-mv /config-${VARIANT}.txt /config.txt
+copy-in /workspace/config.txt /
 copy-in /workspace/cmdline.txt /
 copy-in /workspace/root/boot/firmware /
 glob mv /firmware/* /
 rm-rf /firmware
+mkdir-p /home-cluster
+copy-in /workspace/node-settings /home-cluster/
 EOF
 
+    sha256sums[boot.img]=$(sha256sum /workspace/boot.img | cut -d ' ' -f1)
     artifacts[/workspace/boot.img]=/images/$VARIANT.new/boot.img
 
   fi
@@ -104,7 +128,7 @@ EOF
       --uname="$kernver" \
       --linux="boot/vmlinuz" \
       --initrd="boot/initrd" \
-      --cmdline="root=/run/initramfs/root.img root_sha256=$rootimg_checksum noresume" \
+      --cmdline="root=/run/initramfs/root.img root_sha256=${sha256sums[root.img]} noresume" \
       --output=/boot/uki.efi
 
     local uki_size_b
@@ -114,12 +138,13 @@ EOF
 
     artifacts[/workspace/root/boot/uki.efi]=/images/$VARIANT.new/uki.efi
 
-    # Extract digests used for PE signatures so we can use them for remote attestation
-    digests[uki]=$(/signify/bin/python3 /scripts/get-pe-digest.py --json /workspace/root/boot/uki.efi)
+    # Extract authentihashes used for PE signatures so we can use them for remote attestation
+    authentihashes[uki.efi]=$(/signify/bin/python3 /scripts/get-pe-digest.py --json /workspace/root/boot/uki.efi)
+    sha256sums[uki.efi]=$(sha256sum /workspace/root/boot/uki.efi | cut -d ' ' -f1)
     # See https://lists.freedesktop.org/archives/systemd-devel/2022-December/048694.html
     # as to why we also measure the embedded kernel
-    objcopy -O binary --only-section=.linux /workspace/root/boot/uki.efi /workspace/uki-kernel
-    digests[kernel]=$(/signify/bin/python3 /scripts/get-pe-digest.py --json /workspace/uki-kernel)
+    objcopy -O binary --only-section=.linux /workspace/root/boot/uki.efi /workspace/uki-vmlinuz
+    authentihashes[vmlinuz]=$(/signify/bin/python3 /scripts/get-pe-digest.py --json /workspace/uki-vmlinuz)
   fi
 
   ######################
@@ -132,16 +157,8 @@ EOF
     case $VARIANT in
       amd64) efisuffix=x64 ;;
       arm64) efisuffix=aa64 ;;
-      default) fatal "Unknown variant: %s" "$VARIANT" ;;
+      *) fatal "Unknown variant: %s" "$VARIANT" ;;
     esac
-
-    info "Generating node settings"
-    mkdir /workspace/node-settings
-    local file node_settings_size_b=0
-    for file in /node-settings/*; do
-      node_settings_size_b=$(( node_settings_size_b + $(stat -c %s "$file") ))
-      cp "$file" "/workspace/node-settings/$(basename "$file" | sed s/:/-/g)"
-    done
 
     local sector_size_b=512 gpt_size_b partition_offset_b partition_size_b disk_size_kib
     gpt_size_b=$((33 * sector_size_b))
@@ -197,16 +214,21 @@ EOF
   fi
 
   ################################
-  ### Generate/extract digests ###
+  ### Generate/extract authentihashes ###
   ################################
 
-  local digest_key digests_doc={}
-  for digest_key in "${!digests[@]}"; do
-    digests_doc=$(jq --arg digest_key "$digest_key" --argjson digests "${digests[$digest_key]}" '
-      .[$digest_key] = $digests' <<<"$digests_doc"
+  local key digests='{"sha256sums": {}, "authentihashes": {}}'
+  for key in "${!sha256sums[@]}"; do
+    digests=$(jq --arg key "$key" --arg sha256sums "${sha256sums[$key]}" '
+      .sha256sums[$key] = $sha256sums' <<<"$digests"
     )
   done
-  printf "%s\n" "$digests_doc" >/workspace/digests.json
+  for key in "${!authentihashes[@]}"; do
+    digests=$(jq --arg key "$key" --argjson authentihashes "${authentihashes[$key]}" '
+      .authentihashes[$key] = $authentihashes' <<<"$digests"
+    )
+  done
+  printf "%s\n" "$digests" >/workspace/digests.json
 
   artifacts[/workspace/digests.json]=/images/$VARIANT.new/digests.json
 

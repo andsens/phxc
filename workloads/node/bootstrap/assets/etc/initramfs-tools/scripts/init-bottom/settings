@@ -17,17 +17,18 @@ boot_state=$(jq --arg boot_server "$ROOTSERVER" '.boot_server=$boot_server' /run
 printf "%s\n" "$boot_state" >/run/initramfs/boot-state.json
 
 settings_path=/run/initramfs/node-settings.json
-esp=/run/initramfs/efi
 # Run through all NIC MACs (except loopback) and find one that matches a node setting
-log_begin_msg "Copying/downloading settings from ESP and/or boot-server"
+log_begin_msg "Copying/downloading settings from boot partition and/or boot-server"
 for mac in $(ip -o link show | grep -v ' lo: ' | grep -Eo 'link/[^ ]+ [^ ]+' | cut -d ' ' -f2); do
   settings_filename=$(printf "%s" "$mac" | sed s/:/-/g).json
-  if cp "$esp/home-cluster/node-settings/$settings_filename" "$settings_path.tmp" 2>/dev/null; then
+  if cp "/run/initramfs/boot/home-cluster/node-settings/$settings_filename" "$settings_path.tmp" 2>/dev/null; then
     mv "$settings_path.tmp" "$settings_path"
   fi
-  # Download settings from boot-server, there might be a newer version (but keep the one from the ESP if it exists if we don't succeed)
+  # Download settings from boot-server, there might be a newer version (but keep the one from the boot partition so we have a fallback if we don't succeed)
   if curl -fsL --connect-timeout 5 --retry 3 -o "$settings_path.tmp" "http://$ROOTSERVER/node-settings/$settings_filename"; then
     mv "$settings_path.tmp" "$settings_path"
+    # Update the node-settings for this machine on the boot partition
+    cp "$settings_path" "/run/initramfs/boot/home-cluster/node-settings/$settings_filename"
   fi
 
   # Quit as soon as we have a node-settings.json
