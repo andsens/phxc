@@ -1,10 +1,9 @@
 FROM debian:bookworm
 SHELL ["/usr/bin/bash", "-Eeo", "pipefail", "-c"]
-ARG VARIANT
-ENV VARIANT=$VARIANT
+ARG ARCH
+ENV ARCH=$ARCH
 
 RUN /workspace/common-context/setup-debian.sh; \
-  case $VARIANT in amd64) ARCH=amd64 ;; arm64|rpi) ARCH=arm64 ;; esac; \
   apt-get -y update; apt-get -y install --no-install-recommends \
   squashfs-tools guestfish ipxe-qemu dosfstools linux-image-${ARCH} python3-venv binutils \
   ; rm -rf /var/cache/apt/lists/*; \

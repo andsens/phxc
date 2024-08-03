@@ -19,8 +19,7 @@ camera_auto_detect=1
 # Automatically load overlays for detected DSI displays
 display_auto_detect=1
 
-kernel=vmlinuz.gz
-initramfs initrd.cpio.zst
+auto_initramfs=1
 
 # Enable DRM VC4 V3D driver
 dtoverlay=vc4-kms-v3d
@@ -38,6 +37,10 @@ disable_overscan=1
 
 # Run as fast as firmware / board allows
 arm_boost=1
+
+# Enable Let's Trust TPM
+dtparam=spi=on
+dtoverlay=tpm-slb9670
 
 [cm4]
 # Enable host mode on the 2711 built-in XHCI USB controller.

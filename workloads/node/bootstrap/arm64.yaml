@@ -49,6 +49,9 @@ spec:
       containers:
       - name: create-boot-image
         image: cluster.local/create-boot-image:arm64
+        env:
+        - name: VARIANT
+          value: arm64
         imagePullPolicy: Never
         volumeMounts:
         - name: scripts

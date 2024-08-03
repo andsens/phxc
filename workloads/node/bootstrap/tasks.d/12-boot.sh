@@ -15,7 +15,16 @@ PACKAGES+=(
 case $VARIANT in
   amd64) PACKAGES+=(linux-image-amd64) ;;
   arm64) PACKAGES+=(linux-image-amd64) ;;
-  rpi) PACKAGES+=(linux-image-rpi-v8 raspi-firmware) ;;
+  rpi*)
+  wget -qO/etc/apt/trusted.gpg.d/raspberrypi.asc http://archive.raspberrypi.com/debian/raspberrypi.gpg.key
+  cat <<EOF >/etc/apt/sources.list.d/raspberrypi.sources
+Types: deb
+URIs: http://archive.raspberrypi.com/debian
+Suites: bookworm
+Components: main
+EOF
+  PACKAGES+=(linux-image-rpi-2712 raspi-firmware raspi-config rpi-update rpi-eeprom)
+  ;;
   default) fatal "Unknown variant: %s" "$VARIANT" ;;
 esac
 
@@ -55,4 +64,8 @@ boot() {
   cp_tpl /etc/overlayroot.conf
   # root disk is a squashfs image, none of these are needed
   systemctl disable fstrim e2scrub_all e2scrub_reap
+  if [[ $VARIANT = rpi5 ]]; then
+    # Remove Raspberry Pi 4 boot code
+    rm boot/firmware/bootcode.bin boot/firmware/fixup*.dat boot/firmware/start*.elf
+  fi
 }
