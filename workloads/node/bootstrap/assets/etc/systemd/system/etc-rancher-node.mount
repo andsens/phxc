@@ -1,8 +1,8 @@
 [Unit]
 Description=/etc/rancher/node
 DefaultDependencies=no
-Requires=setup-persistent.service
-After=setup-persistent.service
+Requires=create-persistent-dir@node-password.service
+After=create-persistent-dir@node-password.service
 Before=k3s.target
 
 [Install]

@@ -2,7 +2,6 @@
 
 PACKAGES+=(
   git # kpt dep
-  fdisk # setup-persistent
   open-iscsi nfs-common # longhorn deps
   tpm2-tools openssl xxd curl systemd-timesyncd # Remote attestation for cluster authentication
 )
@@ -12,7 +11,10 @@ k3s() {
   cp_tpl --raw \
     /etc/systemd/system/cluster-auth.service \
     /etc/systemd/system/configure-k3s.service \
-    /etc/systemd/system/setup-persistent.service \
+    /etc/systemd/system/setup-data.service \
+    /etc/systemd/system/var-lib-persistent.mount \
+    /etc/systemd/system/create-persistent-dir@.service \
+    /etc/systemd/system/create-persistent-dir@.service \
     /etc/systemd/system/var-lib-rancher-k3s.mount \
     /etc/systemd/system/var-lib-longhorn.mount \
     /etc/systemd/system/etc-rancher-node.mount \
@@ -32,7 +34,8 @@ k3s() {
   systemctl enable \
     systemd-timesyncd.service \
     cluster-auth.service \
-    setup-persistent.service \
+    setup-data.service \
+    var-lib-persistent.mount \
     var-lib-rancher-k3s.mount \
     var-lib-longhorn.mount \
     etc-rancher-node.mount \
@@ -41,4 +44,6 @@ k3s() {
     pull-external-images.service \
     apply-all-manifests.service \
     import-container-images.path
+
+  mkdir /var/lib/persistent
 }

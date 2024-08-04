@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# shellcheck source-path=../../..
+set -Eeo pipefail; shopt -s inherit_errexit
+PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../..")
+
+main() {
+  source "$PKGROOT/workloads/node/lib/common.sh"
+
+  DOC="setup-data - Initialize and mount the persistent data partition
+Usage:
+  setup-data
+"
+# docopt parser below, refresh this parser with `docopt.sh setup-data`
+# shellcheck disable=2016,2086,2317,1090,1091,2034
+docopt() { local v='2.0.1'; source \
+"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:83};usage=${DOC:64:19}
+digest=16ad4;options=();node_0(){ return 0;};cat <<<' docopt_exit() { [[ -n $1 \
+]] && printf "%s\n" "$1" >&2;printf "%s\n" "${DOC:64:19}" >&2;exit 1;}';local \
+varnames=() varname;for varname in "${varnames[@]}"; do unset "var_$varname"
+done;parse 0 "$@";return 0;local p=${DOCOPT_PREFIX:-''};for varname in \
+"${varnames[@]}"; do unset "$p$varname";done;eval ;local docopt_i=1;[[ \
+$BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for \
+varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
+# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' setup-data`
+  eval "$(docopt "$@")"
+
+  [[ -e /run/initramfs/cluster-secrets.json ]] || fatal "/run/initramfs/cluster-secrets.json does not exist"
+  local disk_encryption_key
+  disk_encryption_key=$(jq -j '.["disk-encryption-key"]' /run/initramfs/cluster-secrets.json)
+
+  local devpath data_devpath
+  devpath=$(get_bootstate devpath)
+  data_devpath=/dev/$(lsblk -Jno Name "$devpath" | jq -re '.blockdevices[0].children[1].name')
+  if cryptsetup isLuks "$data_devpath" 2>/dev/null; then
+    cryptsetup open --type luks2 --key-file <(printf "%s" "$disk_encryption_key") "$data_devpath" persistent
+  else
+    info "Setting up encrypted data partition"
+    cryptsetup luksFormat --batch-mode "$data_devpath" <(printf "%s" "$disk_encryption_key")
+    cryptsetup open --type luks2 --key-file <(printf "%s" "$disk_encryption_key") "$data_devpath" persistent
+    mkfs.ext4 /dev/mapper/persistent
+  fi
+}
+
+main "$@"

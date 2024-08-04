@@ -1,0 +1,11 @@
+[Unit]
+Description=Update the boot partition with the latest image
+Requires=setup-disk.service
+After=setup-disk.service
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/upkg/.upkg/home-cluster/workloads/node/bin/update-boot

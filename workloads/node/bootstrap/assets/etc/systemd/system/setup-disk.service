@@ -1,0 +1,10 @@
+[Unit]
+Description=Initialize the disk and mount /boot
+ConditionPathIsMountPoint=!/boot
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/upkg/.upkg/home-cluster/workloads/node/bin/setup-disk --retry 15

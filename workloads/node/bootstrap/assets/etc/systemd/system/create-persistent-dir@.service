@@ -1,0 +1,6 @@
+[Unit]
+Description=Create data directory for bind mounts
+RequiresMountsFor=/var/lib/persistent
+
+[Service]
+ExecStart=mkdir -p /var/lib/persistent/%i

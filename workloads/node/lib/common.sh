@@ -7,8 +7,8 @@ source "$PKGROOT/.upkg/records.sh/records.sh"
 set_bootstate() {
   local key=$1 val=$2
   LOGPROGRAM=boot-state.json verbose 'Setting "%s" to "%s"' "$key" "$val"
-  # shellcheck disable=SC2016
-  flock -x "$BOOT_STATE" bash -c <<<EOR
+  # shellcheck disable=SC2016,SC2097,SC2098
+  BOOT_STATE=$BOOT_STATE key=$key val=$val flock -x "$BOOT_STATE" bash <<'EOR'
 new_boot_state=$(jq -re --arg key "$key" --arg val "$val" '.[$key]=$val' "$BOOT_STATE")
 printf "%s\n" "$new_boot_state" > "$BOOT_STATE"
 EOR

@@ -1,0 +1,143 @@
+#!/usr/bin/env bash
+# shellcheck source-path=../../..
+set -Eeo pipefail; shopt -s inherit_errexit
+PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../..")
+
+DISK_UUID=caf66bff-edab-4fb1-8ad9-e570be5415d7
+ESP_UUID=c12a7328-f81f-11d2-ba4b-00a0c93ec93b
+DATA_UUID=6f07821d-bb94-4d0f-936e-4060cadf18d8
+
+main() {
+  source "$PKGROOT/workloads/node/lib/common.sh"
+
+  DOC="setup-disk - Initialize the disk and mount /boot
+Usage:
+  setup-disk [options]
+
+Options:
+  -r --retry=SEC  If no disk was found, retry every SEC seconds
+"
+# docopt parser below, refresh this parser with `docopt.sh setup-disk`
+# shellcheck disable=2016,2086,2317,1090,1091,2034
+docopt() { local v='2.0.1'; source \
+"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:152};usage=${DOC:49:29}
+digest=276aa;options=('-r --retry 1');node_0(){ value __retry 0;};node_1(){
+optional 0;};cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2
+printf "%s\n" "${DOC:49:29}" >&2;exit 1;}';local varnames=(__retry) varname
+for varname in "${varnames[@]}"; do unset "var_$varname";done;parse 1 "$@"
+local p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset \
+"$p$varname";done;eval $p'__retry=${var___retry:-};';local docopt_i=1;[[ \
+$BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for \
+varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
+# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' setup-disk`
+  eval "$(docopt "$@")"
+
+  local blank_disk=false devpath boot_devpath
+  info "Looking for initialized or blank disk to persist data"
+  devpath=$(find_disk)
+  if [[ -z $devpath ]]; then
+    # No existing disk found, check for blank disks
+    devpath=$(find_largest_blank_disk)
+    if [[ -z $devpath ]]; then
+      # No blank disk found, check if we should retry or fail
+      if [[ -n $__retry ]]; then
+        # Retry, run until we find a disk
+        while true; do
+          devpath=$(find_disk)
+          if [[ -z $devpath ]]; then
+            # No existing disk found, check for blank disks
+            devpath=$(find_largest_blank_disk)
+            if [[ -z $devpath ]]; then
+              # No blank disk found, retry after delay
+              info "Found neither initialized or blank disk to persist data, retrying in %d seconds" "$__retry"
+              sleep "$__retry"
+            else
+              # Blank disk found, exit retry loop
+              blank_disk=true
+              break
+            fi
+          else
+            # Existing disk found, exit retry loop
+            break
+          fi
+        done
+      else
+        # No retry, fail
+        fatal "Found neither initialized or blank disk to persist data"
+      fi
+    else
+      # Blank disk found
+      blank_disk=true
+    fi
+  fi
+  if $blank_disk; then
+    partition_disk "$devpath"
+
+    boot_devpath=$(get_boot_devpath "$devpath")
+    mkfs.vfat "$boot_devpath"
+  else
+    boot_devpath=$(get_boot_devpath "$devpath")
+  fi
+  set_bootstate devpath "$devpath"
+  verbose "Mounting boot partition"
+  mount "$boot_devpath" /boot
+}
+
+get_boot_devpath() {
+  local devpath=$1
+  printf "/dev/%s" "$(lsblk -Jno Name "$devpath" | jq -re '.blockdevices[0].children[0].name')"
+}
+
+find_disk() {
+  local devnames=()
+  readarray -t -d $'\n' devnames < <(lsblk -Jndo PTUUID,NAME -a | jq -r --arg disk_uuid $DISK_UUID '.blockdevices[] | select(.ptuuid==$disk_uuid) | .name')
+  if [[ ${#devnames[@]} -eq 1 ]]; then
+    info "Disk found at %s" "$devpath"
+    printf "/dev/%s" "${devnames[0]}"
+  elif [[ ${#devnames[@]} -gt 1 ]]; then
+    fatal "Found multiple disks marked with the UUID '%s'" "$DISK_UUID"
+  fi
+}
+
+find_largest_blank_disk() {
+  local devname devnames=()
+  for devname in $(lsblk --json --output NAME,FSTYPE,TYPE,MAJ:MIN | jq -r '.blockdevices[] | select(.fstype==null and .type=="disk" and (.["maj:min"] | endswith(":0"))) | .name'); do
+    sfdisk -J "/dev/$devname" &>/dev/null || devnames+=("$devname")
+  done
+
+  if [[ ${#devnames[@]} -eq 1 ]]; then
+    info "Choosing /dev/%s for persisting data" "${devnames[0]}"
+    printf "/dev/%s" "${devnames[0]}"
+  elif [[ ${#devnames[@]} -gt 1 ]]; then
+    warning 'Multiple blank disks for persisting data found (%s), determining the largest' "${devnames[*]}"
+    local largest_devsize=0 largest_devname devsize
+    for devname in "${devnames[@]}"; do
+      devsize=$(lsblk -nb --output SIZE "/dev/$devname")
+      if (( devsize > largest_devsize )); then
+        largest_devsize=$devsize
+        largest_devname=$devname
+      fi
+    done
+    info "Choosing /dev/%s for persisting data" "$largest_devname"
+    printf "/dev/%s" "$largest_devname"
+  fi
+}
+
+partition_disk() {
+  local devpath=$1
+  local sector_size_b sectors_per_mib
+  sector_size_b=$(lsblk --json -o phy-sec "$devpath" | jq -r '.blockdevices[0]["phy-sec"]')
+  sectors_per_mib=$((1024 * 1024 / sector_size_b))
+
+  boot_partition_size_mib=1024 # 1 GiB
+  sfdisk "$devpath" <<EOF
+label: gpt
+label-id: $DISK_UUID
+
+start=$(( 1 * sectors_per_mib )), size=$(( boot_partition_size_mib * sectors_per_mib )), type=U, bootable, uuid=$ESP_UUID
+start=$(( ( 1 + boot_partition_size_mib ) * sectors_per_mib )), uuid=$DATA_UUID
+EOF
+}
+
+main "$@"

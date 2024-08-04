@@ -6,7 +6,7 @@ PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../..")
 main() {
   source "$PKGROOT/workloads/node/lib/common.sh"
 
-  DOC="update-boot - Update the boot partition with the latest bootstrapped image
+  DOC="update-boot - Update the boot partition with the latest image
 Usage:
   update-boot
 "
@@ -14,9 +14,9 @@ Usage:
 # shellcheck disable=2016,2086,2317,1090,1091,2034
 docopt() { local v='2.0.1'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
-%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:95};usage=${DOC:75:20}
-digest=8c1b2;options=();node_0(){ return 0;};cat <<<' docopt_exit() { [[ -n $1 \
-]] && printf "%s\n" "$1" >&2;printf "%s\n" "${DOC:75:20}" >&2;exit 1;}';local \
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:82};usage=${DOC:62:20}
+digest=52055;options=();node_0(){ return 0;};cat <<<' docopt_exit() { [[ -n $1 \
+]] && printf "%s\n" "$1" >&2;printf "%s\n" "${DOC:62:20}" >&2;exit 1;}';local \
 varnames=() varname;for varname in "${varnames[@]}"; do unset "var_$varname"
 done;parse 0 "$@";return 0;local p=${DOCOPT_PREFIX:-''};for varname in \
 "${varnames[@]}"; do unset "$p$varname";done;eval ;local docopt_i=1;[[ \
@@ -25,8 +25,8 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' update-boot`
   eval "$(docopt "$@")"
 
-  local boot_server VARIANT digests
-  VARIANT=$(get_bootstate VARIANT)
+  local boot_server digests
+  VARIANT=$(get_bootstate variant)
   if boot_server=$(get_bootstate boot_server); then
     if digests=$(curl -fsLo- "http://$boot_server/images/$VARIANT/digests.json"); then
       if [[ $VARIANT = rpi* ]]; then
@@ -35,13 +35,13 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
         if [[ -e /boot/boot.img && $latest_boot_img_sha256 = "$(/boot/boot.img | cut -d ' ' -f1)" ]]; then
           info "boot.img is up-to-date"
         else
-          info "boot.img is outdated"
+          info "boot.img is outdated, updating now"
           mkdir -p /boot/home-cluster
           curl -fsLo/boot/home-cluster/root.img.new "http://$boot_server/images/$VARIANT/root.img"
           curl -fsLo/boot/boot.img.new "http://$boot_server/images/$VARIANT/boot.img"
           curl -fsLo/boot/config.txt.new "http://$boot_server/images/$VARIANT/config.txt"
           mv /boot/home-cluster/root.img.new /boot/home-cluster/root.img
-          mv /boot.img.new /boot.img
+          mv /boot/boot.img.new /boot/boot.img
           mv /boot/config.txt.new /boot/config.txt
         fi
       else
@@ -55,7 +55,7 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
         if [[ -e /EFI/BOOT/BOOT${efisuffix}.EFI && $latest_uki_sha256 = "$(sha256sum | cut -d ' ' -f1)" ]]; then
           info "uki.efi is up-to-date"
         else
-          info "uki.efi is outdated"
+          info "uki.efi is outdated, updating now"
           mkdir -p /boot/home-cluster /EFI/BOOT
           curl -fsLo/boot/home-cluster/root.img.new "http://$boot_server/images/$VARIANT/root.img"
           curl -fsLo/boot/EFI/BOOT/BOOT${efisuffix}.EFI.new "http://$boot_server/images/$VARIANT/uki.efi"

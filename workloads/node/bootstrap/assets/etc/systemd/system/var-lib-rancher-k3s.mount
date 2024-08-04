@@ -1,8 +1,8 @@
 [Unit]
-Description=/var/lib/rancher/k3s/agent/containerd
+Description=/var/lib/rancher/k3s
 DefaultDependencies=no
-Requires=setup-persistent.service
-After=setup-persistent.service
+Requires=create-persistent-dir@k3s.service
+After=create-persistent-dir@k3s.service
 Before=k3s.target
 
 [Install]

@@ -1,8 +1,8 @@
 [Unit]
 Description=/var/lib/longhorn
 DefaultDependencies=no
-Requires=setup-persistent.service
-After=setup-persistent.service
+Requires=create-persistent-dir@longhorn.service
+After=create-persistent-dir@longhorn.service
 Before=k3s.target
 
 [Install]

@@ -10,6 +10,7 @@ PACKAGES+=(
   overlayroot # Used for making ro-root writeable
   systemd-resolved # DNS resolution setup
   avahi-daemon libnss-mdns # System reachability through mdns
+  fdisk # setup-disk
 )
 
 case $VARIANT in
@@ -68,4 +69,10 @@ boot() {
     # Remove Raspberry Pi 4 boot code
     rm boot/firmware/bootcode.bin boot/firmware/fixup*.dat boot/firmware/start*.elf
   fi
+
+  # Disk creation
+  cp_tpl --raw \
+    /etc/systemd/system/setup-disk.service \
+    /etc/systemd/system/update-boot.service
+  systemctl enable setup-disk.service update-boot.service
 }

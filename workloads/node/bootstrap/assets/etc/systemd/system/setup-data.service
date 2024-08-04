@@ -1,0 +1,13 @@
+[Unit]
+Description=Initialize and mount the persistent data partition
+ConditionPathExists=/run/initramfs/node-settings.json
+ConditionPathIsMountPoint=!/var/lib/persistent
+Requires=cluster-auth.service setup-disk.service
+After=cluster-auth.service setup-disk.service
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/upkg/.upkg/home-cluster/workloads/node/bin/setup-data
