@@ -49,7 +49,7 @@ fi
 set +e; configure_networking; set -e
 if [ -n "$ROOTSERVER" ]; then
   VARIANT=$(jq -r .variant /run/initramfs/boot-state.json)
-  root_img_addr=http://${ROOTSERVER}/images/${VARIANT}/root.img
+  root_img_addr=http://${ROOTSERVER}:8020/images/${VARIANT}/root.img
   log_begin_msg "Downloading root image to RAM from $root_img_addr"
   if curl -fsL --connect-timeout 5 --retry 3 -o $rootimg_path.tmp "$root_img_addr"; then
     boot_state=$(jq --arg src "$root_img_addr" '.rootimg_src=$src' /run/initramfs/boot-state.json)

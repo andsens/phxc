@@ -90,7 +90,7 @@ get_attestation_url() {
   local boot_server_ip
   boot_server_ip=$(jq -r .boot_server /run/initramfs/boot-state.json)
   [[ -n $boot_server_ip ]] || fatal "Unable to retrieve boot-server IP from /run/initramfs/boot-state.json"
-  printf "http://%s/attest" "$boot_server_ip"
+  printf "http://%s:8020/attest" "$boot_server_ip"
 }
 
 tpm2_flushall() {

@@ -51,12 +51,9 @@ main() {
   ### node-settings ###
   #####################
 
-  info "Generating node settings"
-  mkdir /workspace/node-settings
   local file node_settings_size_b=0
   for file in /node-settings/*; do
     node_settings_size_b=$(( node_settings_size_b + $(stat -c %s "$file") ))
-    cp "$file" "/workspace/node-settings/$(basename "$file" | sed s/:/-/g)"
   done
 
   ######################
@@ -103,7 +100,7 @@ copy-in /workspace/root/boot/firmware /
 glob mv /firmware/* /
 rm-rf /firmware
 mkdir-p /home-cluster
-copy-in /workspace/node-settings /home-cluster/
+copy-in /node-settings /home-cluster/
 EOF
 
     sha256sums[boot.img]=$(sha256sum /workspace/boot.img | cut -d ' ' -f1)
@@ -206,7 +203,7 @@ mv /EFI/BOOT/uki.efi /EFI/BOOT/BOOT${efisuffix^^}.EFI
 
 mkdir-p /home-cluster
 copy-in /workspace/root.img /home-cluster/
-copy-in /workspace/node-settings /home-cluster/
+copy-in /node-settings /home-cluster/
 EOF
 
     artifacts[/workspace/node.raw]=/images/$VARIANT.new/node.raw

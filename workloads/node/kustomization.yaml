@@ -5,6 +5,7 @@ resources:
 - ../settings/replacements
 - ../common-context
 - containers/create-boot-image
+- containers/dnsmasq
 - containers/safeboot-attest
 - containers/tftpd
 - bootstrap
@@ -15,11 +16,12 @@ resources:
 - resourcegroup.yaml
 configMapGenerator:
 - files:
-  - config/rpi-config.txt
+  - config/dnsmasq.conf
   - config/nginx.conf
   - config/tftpd-map-file
   name: boot-server-config
 - files:
+  - scripts/dnsmasq.sh
   - scripts/tftpd.sh
   - scripts/safeboot-attest/attest-server.py
   - scripts/safeboot-attest/attest-verify

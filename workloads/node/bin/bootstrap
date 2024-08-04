@@ -6,6 +6,8 @@ export DOCKER_CLI_HINTS=false
 
 main() {
   source "$PKGROOT/.upkg/records.sh/records.sh"
+  source "$PKGROOT/.upkg/bgpid/bgpid.sh"
+  source "$PKGROOT/.upkg/trap.sh/trap.sh"
   source "$PKGROOT/.upkg/path-tools/path-tools.sh"
   PATH=$(path_prepend "$PKGROOT/.upkg/.bin")
   # shellcheck source=workloads/settings/env/settings.shellcheck.sh
@@ -37,6 +39,7 @@ local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' bootstrap`
   eval "$(docopt "$@")"
 
+  local DOCKER_PLATFORM ARCH
   case $VARIANT in
     amd64)
     DOCKER_PLATFORM=linux/amd64
@@ -46,23 +49,23 @@ local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
     DOCKER_PLATFORM=linux/arm64
     ARCH=arm64
     ;;
-    *) fatal "Unknown variant: %s" "$ARCH" ;;
+    *) fatal "Unknown variant: %s" "$VARIANT" ;;
   esac
 
   local bundle
   bundle=$(mktemp --suffix .tar.gz)
-  # shellcheck disable=SC2064
-  trap "rm \"$bundle\"" EXIT
+  trap_append "rm \"$bundle\"" EXIT
   "$PKGROOT/workloads/node/bin/bundle" "$bundle"
 
   # shellcheck disable=SC2154
   rm -rf "$PKGROOT/images/$VARIANT.new"
   mkdir "$PKGROOT/images/$VARIANT.new"
 
-  if [[ ! -e "$PKGROOT/images/.create-boot-image/$ARCH.tar" ]] || \
+  if [[ ! -e "$PKGROOT/images/containers/create-boot-image-$ARCH.tar" ]] || \
      find "$PKGROOT/workloads/node/containers/create-boot-image" "$PKGROOT/workloads/common-context" \
-       -newer "$PKGROOT/images/.create-boot-image/$ARCH.tar" 2>/dev/null | grep -q .; then
+       -newer "$PKGROOT/images/containers/create-boot-image-$ARCH.tar" 2>/dev/null | grep -q .; then
     info "Building '%s'" "create-boot-image:$ARCH"
+    mkdir -p "$PKGROOT/images/containers"
     docker run --rm -ti \
       --platform "$DOCKER_PLATFORM" \
       -v "$PKGROOT/workloads/common-context:/workspace/common-context:ro" \
@@ -73,11 +76,11 @@ local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
       --build-arg "ARCH=$ARCH" \
       --custom-platform="$DOCKER_PLATFORM" \
       --destination "cluster.local/create-boot-image:$ARCH" \
-      --tar-path "/workspace/images/.create-boot-image/$ARCH.tar" \
+      --tar-path "/workspace/images/containers/create-boot-image-$ARCH.tar" \
       --no-push
-    docker load -i "$PKGROOT/images/.create-boot-image/$ARCH.tar"
+    docker load -i "$PKGROOT/images/containers/create-boot-image-$ARCH.tar"
   else
-    info "Not building '%s', no files have changed since last run" "create-boot-image"
+    info "Not building '%s', no files have changed since last run" "create-boot-image:$ARCH"
   fi
 
   info "Building '%s'" "node:$VARIANT"
@@ -96,15 +99,16 @@ local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
     --tar-path "/workspace/images/$VARIANT.new/node.tar" \
     --no-push
 
-  local node_settings
-  node_settings=$(mktemp -d)
+  local node_settings_tmp node mac
+  node_settings_tmp=$(mktemp -d)
+  trap_append "rm -rf \"$node_settings_tmp\"" EXIT
   for node in $(yq -c '.nodes[]' "$PKGROOT/settings.yaml"); do
     ! mac=$(yq -re '.mac' <<<"$node") || \
-      printf "%s\n" "$node" >"$node_settings/$mac.json"
+      printf "%s\n" "$node" > "$node_settings_tmp/${mac//:/-}.json"
   done
   docker run --rm -ti \
     --platform "$DOCKER_PLATFORM" \
-    -v "$node_settings:/node-settings:ro" \
+    -v "$node_settings_tmp:/node-settings:ro" \
     -v "$PKGROOT/workloads/node/bootstrap/create-boot-image-assets:/assets:ro" \
     -v "$PKGROOT/workloads/node/bootstrap/scripts:/scripts:ro" \
     -v "$PKGROOT/images:/images:rw" \

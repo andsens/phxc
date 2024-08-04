@@ -1,0 +1,144 @@
+#!/usr/bin/env bash
+# shellcheck source-path=../../..
+set -Eeo pipefail; shopt -s inherit_errexit
+PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../..")
+export DOCKER_CLI_HINTS=false
+
+main() {
+  source "$PKGROOT/.upkg/records.sh/records.sh"
+  source "$PKGROOT/.upkg/path-tools/path-tools.sh"
+  source "$PKGROOT/.upkg/bgpid/bgpid.sh"
+  source "$PKGROOT/.upkg/trap.sh/trap.sh"
+  PATH=$(path_prepend "$PKGROOT/.upkg/.bin")
+  # shellcheck source=workloads/settings/env/settings.shellcheck.sh
+  source "$PKGROOT/workloads/settings/env/settings.sh"
+  eval_settings
+
+  DOC="boot-server - Run the boot-server locally (untested)
+Usage:
+  boot-server
+"
+# docopt parser below, refresh this parser with `docopt.sh boot-server`
+# shellcheck disable=2016,2086,2317,1090,1091,2034
+docopt() { local v='2.0.1'; source \
+"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:73};usage=${DOC:53:20}
+digest=6f317;options=();node_0(){ return 0;};cat <<<' docopt_exit() { [[ -n $1 \
+]] && printf "%s\n" "$1" >&2;printf "%s\n" "${DOC:53:20}" >&2;exit 1;}';local \
+varnames=() varname;for varname in "${varnames[@]}"; do unset "var_$varname"
+done;parse 0 "$@";return 0;local p=${DOCOPT_PREFIX:-''};for varname in \
+"${varnames[@]}"; do unset "$p$varname";done;eval ;local docopt_i=1;[[ \
+$BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for \
+varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
+# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' boot-server`
+  eval "$(docopt "$@")"
+
+  [[ $EUID = 0 ]] || fatal "Must be root to run"
+  checkdeps subnetcalc in.tftpd tcpdump dnsmasq
+
+  local addrs=() addr_count selected_addr
+  readarray -t -d $'\n' addrs < <(ip --json a | jq -c '.[] | select(.ifname!="lo") | . as $if | .addr_info[] | {"if":$if,"addr":.}')
+  addr_count=${#addrs[@]}
+  if [[ $addr_count -eq 0 ]]; then
+    fatal 'Unable to find any networks'
+  elif [[ $addr_count -gt 1 ]]; then
+    info 'Found multiple networks, please select:'
+    local addr_idx=1 addr_json
+    for addr_json in "${addrs[@]}"; do
+      printf "[%d] %s: %s\n" $(( addr_idx++ )) "$(jq -r '.if.ifname' <<<"$addr_json")" "$(jq -r '.addr.local' <<<"$addr_json")" >&2
+    done
+    local selected_addr_idx
+    while [[ -z $selected_addr ]]; do
+      printf "address: " >&2
+      read -r selected_addr_idx
+      if (( selected_addr_idx > 0 && selected_addr_idx <= addr_count )); then
+        selected_addr=${addrs[$((selected_addr_idx-1))]}
+      else
+        info "Invalid selection"
+      fi
+    done
+  else
+    selected_addr=${addrs[0]}
+  fi
+
+  build_image tftpd
+  build_image dnsmasq
+
+  export HOST_IP TFTP_SERVER_IP
+  HOST_IP=$(jq -re '.addr.local' <<<"$selected_addr")
+  TFTP_SERVER_IP=$HOST_IP
+
+  local node_settings_tmp
+  node_settings_tmp=$(mktemp -d)
+  trap_append "rm -rf \"$node_settings_tmp\"" EXIT
+  local node mac
+  for node in $(yq -c '.nodes[]' "$PKGROOT/settings.yaml"); do
+    ! mac=$(yq -re '.mac' <<<"$node") || \
+      printf "%s\n" "$node" > "$node_settings_tmp/${mac//:/-}.json"
+  done
+
+  mkdir -p "$PKGROOT/mnt/boot-server/images"
+  mount --bind "$PKGROOT/images" "$PKGROOT/mnt/boot-server/images"
+  trap_append "umount \"$PKGROOT/mnt/boot-server/images\"" EXIT
+
+  trap_prepend "bg_killall" TERM
+  trap_prepend "bg_killall" INT
+  trap_prepend "bg_killall" EXIT
+
+  bg_run docker run --rm --name home-cluster-tftpd  \
+    -v "$PKGROOT/workloads/node/scripts/tftpd.sh:/tftpd.sh:ro" \
+    -v "$PKGROOT/workloads/node/config/tftpd-map-file:/etc/nginx/nginx.conf:ro" \
+    -v "$PKGROOT/images:/tftp/images:ro" \
+    -e HOST_IP \
+    --network host \
+    cluster.local/tftpd
+
+  bg_run docker run --rm --name home-cluster-dnsmasq  \
+    -v "$PKGROOT/workloads/node/scripts/dnsmasq.sh:/dnsmasq.sh:ro" \
+    -v "$PKGROOT/workloads/node/config/dnsmasq.conf:/etc/dnsmasq.conf:ro" \
+    -e HOST_IP -e TFTP_SERVER_IP \
+    --cap-add NET_ADMIN \
+    --network host \
+    cluster.local/dnsmasq
+
+  bg_run docker run --rm --name home-cluster-nginx  \
+    -v "$node_settings_tmp:/var/www/node-settings:ro" \
+    -v "$PKGROOT/workloads/node/config/nginx.conf:/etc/nginx/nginx.conf:ro" \
+    -v "$PKGROOT/images:/var/www/images:ro" \
+    -e NGINX_ENTRYPOINT_QUIET_LOGS=true \
+    --mount type=tmpfs,destination=/var/cache/nginx \
+    --network host \
+    nginx:1.27-alpine-slim
+
+  bg_block
+}
+
+build_image() {
+  local DOCKER_PLATFORM
+  case $(uname -m) in
+    x86_64) DOCKER_PLATFORM=linux/amd64 ;;
+    aarch64) DOCKER_PLATFORM=linux/arm64 ;;
+  esac
+  local name=$1
+  if [[ ! -e "$PKGROOT/images/containers/$name.tar" ]] || \
+      find "$PKGROOT/workloads/node/containers/$name" "$PKGROOT/workloads/common-context" \
+        -newer "$PKGROOT/images/containers/$name.tar" 2>/dev/null | grep -q .; then
+    info "Building '%s'" "$name:latest"
+    mkdir -p "$PKGROOT/images/containers"
+    docker run --rm -ti \
+      --platform "$DOCKER_PLATFORM" \
+      -v "$PKGROOT/workloads/common-context:/workspace/common-context:ro" \
+      -v "$PKGROOT/workloads/node/containers/$name:/workspace/context:ro" \
+      -v "$PKGROOT/images:/workspace/images:rw" \
+      gcr.io/kaniko-project/executor:latest \
+      --dockerfile context/Dockerfile \
+      --destination "cluster.local/$name:latest" \
+      --tar-path "/workspace/images/containers/$name.tar" \
+      --no-push
+    docker load -i "$PKGROOT/images/containers/$name.tar"
+  else
+    info "Not building '%s', no files have changed since last run" "$name"
+  fi
+}
+
+main "$@"

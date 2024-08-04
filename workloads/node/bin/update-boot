@@ -28,7 +28,7 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   local boot_server digests
   VARIANT=$(get_bootstate variant)
   if boot_server=$(get_bootstate boot_server); then
-    if digests=$(curl -fsLo- "http://$boot_server/images/$VARIANT/digests.json"); then
+    if digests=$(curl -fsLo- "http://${boot_server}:8020/images/$VARIANT/digests.json"); then
       if [[ $VARIANT = rpi* ]]; then
         local latest_boot_img_sha256
         latest_boot_img_sha256=$(jq -re '.sha256sums["boot.img"]' <<<"$digests")
@@ -37,9 +37,9 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
         else
           info "boot.img is outdated, updating now"
           mkdir -p /boot/home-cluster
-          curl -fsLo/boot/home-cluster/root.img.new "http://$boot_server/images/$VARIANT/root.img"
-          curl -fsLo/boot/boot.img.new "http://$boot_server/images/$VARIANT/boot.img"
-          curl -fsLo/boot/config.txt.new "http://$boot_server/images/$VARIANT/config.txt"
+          curl -fsLo/boot/home-cluster/root.img.new "http://${boot_server}:8020/images/$VARIANT/root.img"
+          curl -fsLo/boot/boot.img.new "http://${boot_server}:8020/images/$VARIANT/boot.img"
+          curl -fsLo/boot/config.txt.new "http://${boot_server}:8020/images/$VARIANT/config.txt"
           mv /boot/home-cluster/root.img.new /boot/home-cluster/root.img
           mv /boot/boot.img.new /boot/boot.img
           mv /boot/config.txt.new /boot/config.txt
@@ -57,8 +57,8 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
         else
           info "uki.efi is outdated, updating now"
           mkdir -p /boot/home-cluster /EFI/BOOT
-          curl -fsLo/boot/home-cluster/root.img.new "http://$boot_server/images/$VARIANT/root.img"
-          curl -fsLo/boot/EFI/BOOT/BOOT${efisuffix}.EFI.new "http://$boot_server/images/$VARIANT/uki.efi"
+          curl -fsLo/boot/home-cluster/root.img.new "http://${boot_server}:8020/images/$VARIANT/root.img"
+          curl -fsLo/boot/EFI/BOOT/BOOT${efisuffix}.EFI.new "http://${boot_server}:8020/images/$VARIANT/uki.efi"
           mv /boot/home-cluster/root.img.new /boot/home-cluster/root.img
           mv /boot/EFI/BOOT/BOOT${efisuffix}.EFI.new /boot/EFI/BOOT/BOOT${efisuffix}.EFI
         fi
