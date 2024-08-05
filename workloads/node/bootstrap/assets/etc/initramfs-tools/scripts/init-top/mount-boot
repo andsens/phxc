@@ -10,13 +10,15 @@ esac
 . /scripts/functions
 
 DISK_UUID=caf66bff-edab-4fb1-8ad9-e570be5415d7
-devpath=$(lsblk -Jndo PTUUID,NAME -a | jq -r --arg disk_uuid $DISK_UUID '[.blockdevices[] | select(.ptuuid==$disk_uuid) | .name] | first')
+devpath=/dev/$(lsblk -Jndo PTUUID,NAME -a | jq -r --arg disk_uuid $DISK_UUID '[.blockdevices[] | select(.ptuuid==$disk_uuid) | .name] | first')
 if [ -n "$devpath" ]; then
   log_begin_msg "Disk detected at $devpath, mounting boot partition"
   boot_devpath=/dev/$(lsblk -Jno NAME "$devpath" | jq -re '.blockdevices[0].children[0].name')
   boot_path=/run/initramfs/boot
   mkdir $boot_path
-  mount -rt vfat "$boot_devpath" $boot_path
+  if mount -rt vfat "$boot_devpath" $boot_path; then
+    log_failure_msg "Failed to mount boot partition"
+  fi
   log_end_msg
   boot_state=$(jq --arg devpath "$devpath" '.devpath=$devpath' /run/initramfs/boot-state.json)
   printf "%s\n" "$boot_state" >/run/initramfs/boot-state.json
