@@ -63,7 +63,7 @@ main() {
   if [[ $VARIANT = rpi* ]]; then
 
     # The last "console=" wins with respect to initramfs stdout/stderr output
-    printf "console=ttyS0,115200 console=tty0 root=/run/initramfs/root.img root_sha256=%s noresume" "${sha256sums[root.img]}" > /workspace/cmdline.txt
+    printf "console=ttyS0,115200 console=tty0 root=/run/initramfs/root.img root_sha256=%s panic=300 noresume" "${sha256sums[root.img]}" > /workspace/cmdline.txt
 
     # Adjust config.txt for being embedded in boot.img
     sed 's/boot_ramdisk=1/auto_initramfs=1/' <"/assets/config-${VARIANT}.txt" >/workspace/config.txt
@@ -125,7 +125,7 @@ EOF
       --uname="$kernver" \
       --linux="boot/vmlinuz" \
       --initrd="boot/initrd" \
-      --cmdline="root=/run/initramfs/root.img root_sha256=${sha256sums[root.img]} noresume" \
+      --cmdline="root=/run/initramfs/root.img root_sha256=${sha256sums[root.img]} panic=300 noresume" \
       --output=/boot/uki.efi
 
     local uki_size_b
