@@ -28,8 +28,17 @@ formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(name)s %(message)s'
 handler.setFormatter(formatter)
 log.addHandler(handler)
 
-TYPE_53_DHCPDISCOVER = 1
-TYPE_53_DHCPREQUEST = 3
+OPT_MSG_TYPE = 53
+MSG_TYPE_DHCPDISCOVER = 1
+MSG_TYPE_DHCPOFFER = 2
+MSG_TYPE_DHCPREQUEST = 3
+MSG_TYPE_DHCPACK = 5
+OPT_DHCP_SRV_ID = 54
+OPT_SERVER_NAME = 66
+OPT_BOOTFILE_NAME = 67
+OPT_ARCH = 93
+OPT_UUID = 97
+OPT_VENDOR_CLIENT = 60
 
 def main():
   params = docopt.docopt(__doc__)
@@ -69,62 +78,63 @@ def main():
   signal.signal(signal.SIGTERM, shutdown)
   signal.signal(signal.SIGINT, shutdown)
 
-  opt93_memo = {}
+  opt_arch_memo = {}
   memo_expiry = 60  # Remember client arch from a discover message for a minute
 
   log.info('Startup completed')
   try:
     while True:
       message, address = sock.recvfrom(1024)
-      # try:
-      now = time.time()
-      for mac, memo in list(opt93_memo.items()):
-        if now - memo['time'] > memo_expiry:
-          del opt93_memo[mac]
-      [raw_client_mac] = struct.unpack('!28x6s', message[:34])
-      client_mac = ':'.join(map(lambda x: hex(x)[2:].zfill(2), struct.unpack('BBBBBB', raw_client_mac))).upper()
-      log.debug(f'Received message: {repr(message)}')
-      options = tlv_parse(message[240:])
-      log.debug(f'Parsed received options: {repr(options)}')
-      # client request is valid only if contains Vendor-Class = PXEClient
-      if 60 not in options or 'PXEClient'.encode() not in options[60][0]:
-        log.debug(f'Non-PXE client request received from {client_mac}')
-        continue
+      try:
+        now = time.time()
+        for mac, memo in list(opt_arch_memo.items()):
+          if now - memo['time'] > memo_expiry:
+            del opt_arch_memo[mac]
+        [raw_client_mac] = struct.unpack('!28x6s', message[:34])
+        client_mac = ':'.join(map(lambda x: hex(x)[2:].zfill(2), struct.unpack('BBBBBB', raw_client_mac))).upper()
+        log.debug(f'Received message: {repr(message)}')
+        options = tlv_parse(message[240:])
+        log.debug(f'Parsed received options: {repr(options)}')
+        # client request is valid only if contains Vendor-Class = PXEClient
+        if OPT_VENDOR_CLIENT not in options or 'PXEClient'.encode() not in options[OPT_VENDOR_CLIENT][0]:
+          log.debug(f'Non-PXE client request received from {client_mac}')
+          continue
 
-      log.info(f'PXE client request received from {client_mac}')
+        log.info(f'PXE client request received from {client_mac}')
 
-      msg_type = ord(options[53][0]) # see RFC2131, page 10
-      if msg_type not in [TYPE_53_DHCPDISCOVER, TYPE_53_DHCPREQUEST]:
-        log.debug(f'Unhandled DHCP message type {msg_type} from {client_mac}')
-        continue
-      if msg_type == TYPE_53_DHCPDISCOVER:
-        response_type = { 'name': 'DHCPOFFER', 'opt53': 2 }
-        opt93 = options.get(93, None)
-        opt93_memo[raw_client_mac] = { 'time': now, 'value': opt93 }
-      elif msg_type == TYPE_53_DHCPREQUEST:
-        response_type = { 'name': 'DHCPACK', 'opt53': 5 }
-        opt93 = options.get(93, opt93_memo.get(raw_client_mac, {'value': None})['value'])
+        opt_msg_type = ord(options[OPT_MSG_TYPE][0]) # see RFC2131, page 10
+        if opt_msg_type not in [MSG_TYPE_DHCPDISCOVER, MSG_TYPE_DHCPREQUEST]:
+          log.debug(f'Unhandled DHCP message type {opt_msg_type} from {client_mac}')
+          continue
+        if opt_msg_type == MSG_TYPE_DHCPDISCOVER:
+          response_name = 'DHCPOFFER'
+          opt_arch = options.get(OPT_ARCH, None)
+          opt_arch_memo[raw_client_mac] = { 'time': now, 'value': opt_arch }
+        elif opt_msg_type == MSG_TYPE_DHCPREQUEST:
+          response_name = 'DHCPACK'
+          opt_arch = options.get(OPT_ARCH, opt_arch_memo.get(raw_client_mac, {'value': None})['value'])
+          continue
 
-      vendor_client = options[60][0].decode('ascii')
-      arch = '' if opt93 is None else f'0x{struct.unpack('!H', opt93[0])[0]:02x}'
-      match_string = f'{vendor_client}/{arch}'
-      file_path = None
-      for matcher, _file_path in boot_map.items():
-        if matcher.search(match_string) is not None:
-          # No break, last match wins
-          file_path = _file_path
+        vendor_client = options[OPT_VENDOR_CLIENT][0].decode('ascii')
+        arch = '' if opt_arch is None else f'0x{struct.unpack('!H', opt_arch[0])[0]:02x}'
+        match_string = f'{vendor_client}/{arch}'
+        file_path = None
+        for matcher, _file_path in boot_map.items():
+          if matcher.search(match_string) is not None:
+            # No break, last match wins
+            file_path = _file_path
 
-      if file_path is None:
-        log.info(f'No match found in {params["--boot-map"]} for {match_string}, not sending {response_type['name']}')
+        if file_path is None:
+          log.info(f'No match found in {params["--boot-map"]} for {match_string}, not sending {response_name}')
 
-      header_response = craft_header(message, tftpd_addr, file_path)
-      options_response = craft_options(proxy_ip, response_type['opt53'], tftpd_addr, file_path)
-      log.debug(f'''Sending {response_type['name']} with file path {file_path} to {client_mac}
-Header: {repr(header_response)}
-Options: {repr(options_response)}''')
-      sock.sendto(header_response + options_response, (broadcast, 68))
-      # except Exception as e:
-      #   log.error(e)
+        header_response = craft_header(message, tftpd_addr, file_path)
+        options_response = craft_options(proxy_ip, options, tftpd_addr, file_path)
+        log.debug(f'''Sending {response_name} with file path {file_path} to {client_mac}
+  Header: {repr(header_response)}
+  Options: {repr(options_response)}''')
+        sock.sendto(header_response + options_response, (broadcast, 68))
+      except Exception as e:
+        log.error(e)
   finally:
     sock.close()
 
@@ -147,7 +157,7 @@ def craft_header(message, tftpd_addr, file_path):
   response += struct.pack('!I', 0x63825363) # magic cookie/section
   return response
 
-def craft_options(proxy_ip, opt53, tftpd_addr, file_path):
+def craft_options(proxy_ip, options, tftpd_addr, file_path):
   '''
     This method crafts the DHCP option fields
     opt53:
@@ -155,13 +165,21 @@ def craft_options(proxy_ip, opt53, tftpd_addr, file_path):
       5 - DHCPACK
     See RFC2132 9.6 for details.
   '''
-  response = tlv_encode(53, struct.pack('!B', opt53))
-  response += tlv_encode(54, socket.inet_aton(proxy_ip)) # DHCP Server
+  msg_type_req = ord(options[OPT_MSG_TYPE][0])
 
-  response += tlv_encode(66, tftpd_addr)
+  if msg_type_req == MSG_TYPE_DHCPDISCOVER:
+    msg_type_resp = MSG_TYPE_DHCPOFFER
+  elif msg_type_req == MSG_TYPE_DHCPREQUEST:
+    msg_type_resp = MSG_TYPE_DHCPACK
+  response = tlv_encode(OPT_MSG_TYPE, struct.pack('!B', msg_type_resp))
+  response += tlv_encode(OPT_DHCP_SRV_ID, socket.inet_aton(proxy_ip)) # DHCP Server
 
-  response += tlv_encode(67, file_path.encode('ascii') + b'\x00')
-  response += tlv_encode(60, 'PXEClient')
+  response += tlv_encode(OPT_SERVER_NAME, tftpd_addr)
+
+  response += tlv_encode(OPT_BOOTFILE_NAME, file_path.encode('ascii') + b'\x00')
+  response += tlv_encode(OPT_VENDOR_CLIENT, 'PXEClient')
+  # if OPT_UUID in options:
+  #   response += tlv_encode(OPT_UUID, options[OPT_UUID][0])
   response += struct.pack('!BBBBBBB4sB', 43, 10, 6, 1, 0b1000, 10, 4, b'\x00' + b'PXE', 0xff)
   response += b'\xff'
   return response
