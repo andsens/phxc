@@ -5,7 +5,7 @@ resources:
 - ../settings/replacements
 - ../common-context
 - containers/create-boot-image
-- containers/dnsmasq
+- containers/dhcp-proxy
 - containers/safeboot-attest
 - containers/tftpd
 - bootstrap
@@ -16,12 +16,12 @@ resources:
 - resourcegroup.yaml
 configMapGenerator:
 - files:
-  - config/dnsmasq.conf
+  - config/boot-map.yaml.conf
   - config/nginx.conf
   - config/tftpd-map-file
   name: boot-server-config
 - files:
-  - scripts/dnsmasq.sh
+  - scripts/dhcp-proxy.py
   - scripts/tftpd.sh
   - scripts/safeboot-attest/attest-server.py
   - scripts/safeboot-attest/attest-verify

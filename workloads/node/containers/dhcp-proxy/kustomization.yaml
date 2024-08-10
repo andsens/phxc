@@ -1,8 +1,10 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+namespace: bootstrap
 resources:
-- dnsmasq.yaml
+- dhcp-proxy.yaml
 configMapGenerator:
 - files:
   - Dockerfile
-  name: dnsmasq
+  - requirements.txt
+  name: dhcp-proxy

@@ -47,7 +47,6 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 
   local \
     boot_server_root=$PKGROOT/mnt/boot-server \
-    dhcp_proxy_home=$PKGROOT/workloads/node/containers/dhcp-proxy \
     dhcp_proxy_venv=$PKGROOT/.venv/dhcp-proxy
   mkdir -p "$boot_server_root/images" "$dhcp_proxy_venv"
 
@@ -67,9 +66,9 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   trap_prepend "bg_killall" EXIT
 
   python3 -m venv "$dhcp_proxy_venv"
-  "$dhcp_proxy_venv/bin/pip3" install -r "$dhcp_proxy_home/requirements.txt"
+  "$dhcp_proxy_venv/bin/pip3" install -r "$PKGROOT/workloads/node/containers/dhcp-proxy/requirements.txt"
 
-  bg_run "$dhcp_proxy_venv/bin/python3" "$dhcp_proxy_home/dhcp-proxy.py" --boot-map "$dhcp_proxy_home/boot-map.yaml" "$HOST_IP" "$TFTP_SERVER_IP"
+  bg_run "$dhcp_proxy_venv/bin/python3" "$PKGROOT/workloads/node/scripts/dhcp-proxy.py" --boot-map "$PKGROOT/workloads/node/config/boot-map.yaml" "$HOST_IP" "$TFTP_SERVER_IP"
   bg_run in.tftpd --foreground --user tftp --address "$HOST_IP:69" --map-file "$PKGROOT/workloads/node/config/tftpd-map-file" --secure "$boot_server_root" --blocksize 1468
   bg_run "$dhcp_proxy_venv/bin/python3" -m http.server -d "$boot_server_root" -b "$HOST_IP" 8020
   bg_run tcpdump -i "$ifname" -nl port 69 and udp

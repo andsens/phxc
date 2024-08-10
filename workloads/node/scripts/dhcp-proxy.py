@@ -5,6 +5,8 @@ Usage:
 Options:
   -b --boot-map PATH  Path to YAML regex map of "vendor-client/arch" DHCP
                       options to TFTP boot file paths [default: boot-map.yaml]
+  -u --user NAME      Drop privileges after binding sockets and run as
+                      specified user [default: nobody]
 '''
 
 import socket
@@ -17,6 +19,7 @@ import select
 import yaml
 import docopt
 import dhcppython
+import pwd
 
 log = logging.getLogger('dhcp-proxy.py')
 log.setLevel(getattr(logging, os.getenv('LOGLEVEL', 'INFO').upper(), 'INFO'))
@@ -67,6 +70,10 @@ sock_4011.setsockopt(socket.IPPROTO_IP, IP_MTU_DISCOVER, IP_PMTUDISC_DONT) # Rem
 sock_4011.setsockopt(socket.IPPROTO_IP, socket.IP_TOS, DSCP_TOS_ROUTING_CONTROL)
 sock_4011.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 sock_4011.bind(('', 4011 ))
+
+user_uid = pwd.getpwnam(params['--user']).pw_uid
+log.debug(f'Sockets bound, dropping to user {params['--user']} (UID: {user_uid})')
+os.setuid(user_uid)
 
 base_option_list = [
   dhcppython.options.ServerIdentifier(code=54, length=len(proxy_ip.packed), data=proxy_ip.packed),

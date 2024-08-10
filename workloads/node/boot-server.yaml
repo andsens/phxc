@@ -119,10 +119,10 @@ spec:
           containerPort: 8000
         volumeMounts:
         - name: scripts
-          mountPath: /usr/local/lib/safeboot-attest/attest-server.py
+          mountPath: /safeboot-attest/attest-server.py
           subPath: attest-server.py
         - name: scripts
-          mountPath: /usr/local/lib/safeboot-attest/attest-verify
+          mountPath: /safeboot-attest/attest-verify
           subPath: attest-verify
         - name: images
           mountPath: /images
@@ -152,6 +152,7 @@ spec:
             - SETUID
             - SETGID
             - SYS_CHROOT
+            - SIGNAL
         env:
         # Used to select which interface tcpdump should filter for
         - name: HOST_IP
@@ -172,9 +173,12 @@ spec:
         - name: images
           mountPath: /tftp/images
           readOnly: true
-      - name: dnsmasq
-        image: cluster.local/dnsmasq:latest
+      - name: dhcp-proxy
+        image: cluster.local/dhcp-proxy:latest
         imagePullPolicy: Never
+        arguments:
+        - $(HOST_IP)
+        - $(TFTPD_ADDR)
         securityContext:
           readOnlyRootFilesystem: true
           capabilities:
@@ -191,7 +195,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        - name: TFTP_SERVER_IP
+        - name: TFTPD_ADDR
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
@@ -199,15 +203,16 @@ spec:
         - name: dhcp
           containerPort: 67
           hostPort: 67
+        - name: dhcp-proxy
+          containerPort: 4011
+          hostPort: 4011
         volumeMounts:
         - name: scripts
-          mountPath: /dnsmasq.sh
-          subPath: dnsmasq.sh
+          mountPath: /dhcp-proxy/dhcp-proxy.py
+          subPath: dhcp-proxy.py
         - name: config
-          mountPath: /etc/dnsmasq.conf
-          subPath: dnsmasq.conf
-        - name: dnsmasq-leases
-          mountPath: /var/lib/misc
+          mountPath: /dhcp-proxy/boot-map.yaml
+          subPath: boot-map.yaml
       volumes:
       - name: config
         configMap:

@@ -1,16 +1,16 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: build-dnsmasq
+  name: build-dhcp-proxy
   labels:
-    app.kubernetes.io/name: pxe
-    app.kubernetes.io/component: dnsmasq
+    app.kubernetes.io/name: bootstrap
+    app.kubernetes.io/component: dhcp-proxy
 spec:
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: pxe
-        app.kubernetes.io/component: dnsmasq
+        app.kubernetes.io/name: bootstrap
+        app.kubernetes.io/component: dhcp-proxy
         cluster.local/allow-internet-egress: "true"
     spec:
       restartPolicy: Never
@@ -19,8 +19,8 @@ spec:
         image: gcr.io/kaniko-project/executor:latest
         args:
         - --dockerfile=context/Dockerfile
-        - --destination=cluster.local/dnsmasq:latest
-        - --tar-path=/workspace/images/dnsmasq.tar.tmp
+        - --destination=cluster.local/dhcp-proxy:latest
+        - --tar-path=/workspace/images/dhcp-proxy:latest.tar.tmp
         - --no-push
         env:
         - name: GGCR_EXPERIMENT_ESTARGZ
@@ -35,14 +35,14 @@ spec:
       containers:
       - name: move-image
         image: busybox
-        args: [mv, /images/dnsmasq.tar.tmp, /images/dnsmasq.tar]
+        args: [mv, /images/dhcp-proxy:latest.tar.tmp, /images/dhcp-proxy:latest.tar]
         volumeMounts:
         - name: images
           mountPath: /images
       volumes:
       - name: context
         configMap:
-          name: dnsmasq
+          name: dhcp-proxy
       - name: common-context
         configMap:
           name: common-context
