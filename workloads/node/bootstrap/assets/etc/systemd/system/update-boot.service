@@ -1,7 +1,7 @@
 [Unit]
 Description=Update the boot partition with the latest image
-Requires=setup-disk.service
-After=setup-disk.service
+Requires=create-persistent-dir@boot-tmp.service
+After=create-persistent-dir@boot-tmp.service
 
 [Install]
 WantedBy=multi-user.target

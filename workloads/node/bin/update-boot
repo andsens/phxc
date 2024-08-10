@@ -4,6 +4,7 @@ set -Eeo pipefail; shopt -s inherit_errexit
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../..")
 
 main() {
+  source "$PKGROOT/.upkg/trap.sh/trap.sh"
   source "$PKGROOT/workloads/node/lib/common.sh"
 
   DOC="update-boot - Update the boot partition with the latest image
@@ -25,50 +26,62 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' update-boot`
   eval "$(docopt "$@")"
 
-  local boot_server digests
+  trap_append clear_boot_tmp EXIT
+
+  BOOT_TMP=/var/lib/persistent/boot-tmp
+  local boot_server
   VARIANT=$(get_bootstate variant)
-  if boot_server=$(get_bootstate boot_server); then
-    if digests=$(curl -fsLo- "http://${boot_server}:8020/images/$VARIANT/digests.json"); then
-      if [[ $VARIANT = rpi* ]]; then
-        local latest_boot_img_sha256
-        latest_boot_img_sha256=$(jq -re '.sha256sums["boot.img"]' <<<"$digests")
-        if [[ -e /boot/boot.img && $latest_boot_img_sha256 = "$(/boot/boot.img | cut -d ' ' -f1)" ]]; then
-          info "boot.img is up-to-date"
-        else
-          info "boot.img is outdated, updating now"
-          mkdir -p /boot/home-cluster
-          curl -fsLo/boot/home-cluster/root.img.new "http://${boot_server}:8020/images/$VARIANT/root.img"
-          curl -fsLo/boot/boot.img.new "http://${boot_server}:8020/images/$VARIANT/boot.img"
-          curl -fsLo/boot/config.txt.new "http://${boot_server}:8020/images/$VARIANT/config.txt"
-          mv /boot/home-cluster/root.img.new /boot/home-cluster/root.img
-          mv /boot/boot.img.new /boot/boot.img
-          mv /boot/config.txt.new /boot/config.txt
-        fi
-      else
-        local efisuffix latest_uki_sha256
-        case $VARIANT in
-          amd64) efisuffix=X64 ;;
-          arm64) efisuffix=AA64 ;;
-          *) fatal "Unknown variant: %s" "$VARIANT" ;;
-        esac
-        latest_uki_sha256=$(jq -re '.sha256sums["uki"]' <<<"$digests")
-        if [[ -e /EFI/BOOT/BOOT${efisuffix}.EFI && $latest_uki_sha256 = "$(sha256sum | cut -d ' ' -f1)" ]]; then
-          info "uki.efi is up-to-date"
-        else
-          info "uki.efi is outdated, updating now"
-          mkdir -p /boot/home-cluster /EFI/BOOT
-          curl -fsLo/boot/home-cluster/root.img.new "http://${boot_server}:8020/images/$VARIANT/root.img"
-          curl -fsLo/boot/EFI/BOOT/BOOT${efisuffix}.EFI.new "http://${boot_server}:8020/images/$VARIANT/uki.efi"
-          mv /boot/home-cluster/root.img.new /boot/home-cluster/root.img
-          mv /boot/EFI/BOOT/BOOT${efisuffix}.EFI.new /boot/EFI/BOOT/BOOT${efisuffix}.EFI
-        fi
-      fi
-    else
-      fatal "Unable to retrieve image digests from boot server"
-    fi
-  else
+  if ! boot_server=$(get_bootstate boot_server); then
     fatal "Unable to retrieve boot_server from boot-state.json"
   fi
+  clear_boot_tmp
+  if ! curl -fsLo$BOOT_TMP/digests.json "http://${boot_server}:8020/images/$VARIANT/digests.json"; then
+    fatal "Unable to retrieve image digests from boot server"
+  fi
+  if [[ $VARIANT = rpi* ]]; then
+    local current_boot_img_sha256 latest_boot_img_sha256
+    current_boot_img_sha256=$(jq -re '.sha256sums["boot.img"]' /boot/digests.json)
+    latest_boot_img_sha256=$(jq -re '.sha256sums["boot.img"]' $BOOT_TMP/digests.json)
+    if [[ -e /boot/boot.img && $current_boot_img_sha256 = "$latest_boot_img_sha256" ]]; then
+      info "boot.img is up-to-date"
+    else
+      info "boot.img is outdated, updating now"
+      curl -fsLo$BOOT_TMP/root.img "http://${boot_server}:8020/images/$VARIANT/root.img"
+      curl -fsLo$BOOT_TMP/boot.img "http://${boot_server}:8020/images/$VARIANT/boot.img"
+      mkdir $BOOT_TMP/boot-img
+      mount $BOOT_TMP/boot.img $BOOT_TMP/boot-img
+      trap_append "umount $BOOT_TMP/boot-img" EXIT
+      # shellcheck disable=SC2115
+      rm -rf /boot/*
+      cp -r $BOOT_TMP/boot-img/. /boot/
+      mkdir /boot/home-cluster
+      mv /boot/home-cluster/root.img.new /boot/home-cluster/root.img
+    fi
+  else
+    local efisuffix latest_uki_sha256
+    case $VARIANT in
+      amd64) efisuffix=X64 ;;
+      arm64) efisuffix=AA64 ;;
+      *) fatal "Unknown variant: %s" "$VARIANT" ;;
+    esac
+    latest_uki_sha256=$(jq -re '.sha256sums["uki"]' $BOOT_TMP/digests.json)
+    if [[ -e /EFI/BOOT/BOOT${efisuffix}.EFI && $latest_uki_sha256 = "$(sha256sum | cut -d ' ' -f1)" ]]; then
+      info "uki.efi is up-to-date"
+    else
+      info "uki.efi is outdated, updating now"
+      curl -fsLo$BOOT_TMP/root.img "http://${boot_server}:8020/images/$VARIANT/root.img"
+      curl -fsLo$BOOT_TMP/EFI/BOOT/BOOT${efisuffix}.EFI "http://${boot_server}:8020/images/$VARIANT/uki.efi"
+      mkdir -p /boot/home-cluster /EFI/BOOT
+      cp $BOOT_TMP/root.img /boot/home-cluster/root.img.new
+      cp $BOOT_TMP/EFI/BOOT/BOOT${efisuffix}.EFI /boot/EFI/BOOT/BOOT${efisuffix}.EFI.new
+      mv /boot/home-cluster/root.img.new /boot/home-cluster/root.img
+      mv /boot/EFI/BOOT/BOOT${efisuffix}.EFI.new /boot/EFI/BOOT/BOOT${efisuffix}.EFI
+    fi
+  fi
+}
+
+clear_boot_tmp() {
+  rm -rf ${BOOT_TMP:?}/*
 }
 
 main "$@"

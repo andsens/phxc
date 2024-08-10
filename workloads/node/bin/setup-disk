@@ -33,52 +33,33 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' setup-disk`
   eval "$(docopt "$@")"
 
-  local blank_disk=false devpath boot_devpath
-  info "Looking for initialized or blank disk to persist data"
+  local devpath boot_devpath
+  info "Looking for initialized disk for persisting data"
   devpath=$(find_disk)
   if [[ -z $devpath ]]; then
-    # No existing disk found, check for blank disks
-    devpath=$(find_largest_blank_disk)
-    if [[ -z $devpath ]]; then
-      # No blank disk found, check if we should retry or fail
-      if [[ -n $__retry ]]; then
-        # Retry, run until we find a disk
-        while true; do
-          devpath=$(find_disk)
-          if [[ -z $devpath ]]; then
-            # No existing disk found, check for blank disks
-            devpath=$(find_largest_blank_disk)
-            if [[ -z $devpath ]]; then
-              # No blank disk found, retry after delay
-              info "Found neither initialized or blank disk to persist data, retrying in %d seconds" "$__retry"
-              sleep "$__retry"
-            else
-              # Blank disk found, exit retry loop
-              blank_disk=true
-              break
-            fi
-          else
-            # Existing disk found, exit retry loop
-            break
-          fi
-        done
-      else
-        # No retry, fail
-        fatal "Found neither initialized or blank disk to persist data"
-      fi
+    if [[ -n $__retry ]]; then
+      # Retry, run until we find a disk
+      while true; do
+        devpath=$(find_disk)
+        if [[ -z $devpath ]]; then
+          # No existing disk found, retry after delay
+          info "No initialized disk for persisting data found, retrying in %d seconds" "$__retry"
+          sleep "$__retry"
+        else
+          # Existing disk found, exit retry loop
+          break
+        fi
+      done
     else
-      # Blank disk found
-      blank_disk=true
+      # No retry, fail
+      fatal "No initialized disk for persisting data found"
     fi
   fi
-  if $blank_disk; then
-    partition_disk "$devpath"
 
-    boot_devpath=$(get_boot_devpath "$devpath")
-    mkfs.vfat "$boot_devpath"
-  else
-    boot_devpath=$(get_boot_devpath "$devpath")
-  fi
+  # partition_disk "$devpath"
+  # boot_devpath=$(get_boot_devpath "$devpath")
+  # mkfs.vfat "$boot_devpath"
+  boot_devpath=$(get_boot_devpath "$devpath")
   set_bootstate devpath "$devpath"
   verbose "Mounting boot partition"
   mount "$boot_devpath" /boot
