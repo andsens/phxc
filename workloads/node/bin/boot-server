@@ -33,8 +33,14 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' boot-server`
   eval "$(docopt "$@")"
 
-  [[ $EUID = 0 ]] || fatal "Must be root to run"
-  checkdeps in.tftpd tcpdump python3
+  failures=''
+  [[ $EUID = 0 ]] || failures="* Must be root to run\n"
+  checkdeps in.tftpd tcpdump python3 &>/dev/null || failures="* tftpd-hpa, tcpdump, and python3 must be installed\n"
+
+  export STEPPATH=$PKGROOT/.step
+  [[ -e $STEPPATH ]] || failures="* PKI not initialized. Run \`bin/certs init\`\n"
+
+  [[ -z $failures ]] || fatal "The following checks failed:\n%s" "$failures"
 
   local selected_addr
   selected_addr=$(select_addr)
@@ -45,10 +51,24 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   HOST_IP=$(jq -re '.addr.local' <<<"$selected_addr")
   TFTP_SERVER_IP=$HOST_IP
 
+  INTERMEDIATE_CRT=$STEPPATH/certs/intermediate_ca.crt
+  INTERMEDIATE_KEY=$STEPPATH/secrets/intermediate_ca_key
+  TLS_CRT=$STEPPATH/certs/boot-server.crt
+  TLS_KEY=$STEPPATH/certs/boot-server.key
+  if [[ ! -e $TLS_KEY ]] || \
+        ! step certificate verify "$TLS_CRT" --roots="$INTERMEDIATE_CRT" &>/dev/null || \
+          step certificate needs-renewal "$TLS_CRT" &>/dev/null; then
+    step certificate create \
+      --ca "$INTERMEDIATE_CRT" --ca-key "$INTERMEDIATE_KEY" \
+      --no-password --insecure \
+      "$HOST_IP" "$TLS_CRT" "$TLS_KEY"
+    chown "$SUDO_UID:$SUDO_UID" "$TLS_CRT" "$TLS_KEY"
+  fi
+
   local \
     boot_server_root=$PKGROOT/mnt/boot-server \
-    dhcp_proxy_venv=$PKGROOT/.venv/dhcp-proxy
-  mkdir -p "$boot_server_root/images" "$dhcp_proxy_venv"
+    boot_server_venv=$PKGROOT/.venv/boot-server
+  mkdir -p "$boot_server_root/images" "$boot_server_venv"
 
   rm -rf "$boot_server_root/node-config"
   mkdir "$boot_server_root/node-config"
@@ -65,14 +85,19 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   trap_prepend "bg_killall" INT
   trap_prepend "bg_killall" EXIT
 
-  python3 -m venv "$dhcp_proxy_venv"
-  "$dhcp_proxy_venv/bin/pip3" install -r "$PKGROOT/workloads/node/containers/dhcp-proxy/requirements.txt"
+  python3 -m venv "$boot_server_venv"
+  "$boot_server_venv/bin/pip3" install -r "$PKGROOT/workloads/node/containers/dhcp-proxy/requirements.txt"
 
-  bg_run "$dhcp_proxy_venv/bin/python3" "$PKGROOT/workloads/node/scripts/dhcp-proxy.py" --boot-map "$PKGROOT/workloads/node/config/boot-map.yaml" "$HOST_IP" "$TFTP_SERVER_IP"
-  bg_run in.tftpd --foreground --user tftp --address "$HOST_IP:69" --map-file "$PKGROOT/workloads/node/config/tftpd-map-file" --secure "$boot_server_root" --blocksize 1468
-  bg_run "$dhcp_proxy_venv/bin/python3" -m http.server -d "$boot_server_root" -b "$HOST_IP" 8020
+  bg_run "$boot_server_venv/bin/python3" "$PKGROOT/workloads/node/scripts/dhcp-proxy.py" \
+    --boot-map "$PKGROOT/workloads/node/config/boot-map.yaml" "$HOST_IP" "$TFTP_SERVER_IP"
+  bg_run in.tftpd \
+    --foreground --user tftp --address "$HOST_IP:69" \
+    --map-file "$PKGROOT/workloads/node/config/tftpd-map-file" --secure "$boot_server_root" --blocksize 1468
+  bg_run "$boot_server_venv/bin/python3" "$PKGROOT/workloads/node/scripts/httpd.py" \
+    --tls-bundle <(step certificate bundle --force "$TLS_CRT" "$INTERMEDIATE_CRT" /dev/stdout) \
+    --tls-key "$TLS_KEY" \
+    "$HOST_IP" "$boot_server_root"
   bg_run tcpdump -i "$ifname" -nl port 69 and udp
-
   info "boot-server is ready"
   bg_block
 }

@@ -48,9 +48,9 @@ fi
 
 if boot_server=$(get_boot_state boot-server); then
   VARIANT=$(get_boot_state variant)
-  rootimg_src_addr=http://${boot_server}:8020/images/${VARIANT}/root.img
+  rootimg_src_addr=https://${boot_server}:8020/images/${VARIANT}/root.img
   info "Downloading root image to RAM from $rootimg_src_addr"
-  if curl -fsL --connect-timeout 5 --retry 3 -o $rootimg_path.tmp "$rootimg_src_addr"; then
+  if curl --cacert /etc/home-cluster/root_ca.crt -fsL --connect-timeout 5 --retry 3 -o $rootimg_path.tmp "$rootimg_src_addr"; then
     set_boot_state rootimg-src "$rootimg_src_addr"
     verify_rootimg
     exit 0

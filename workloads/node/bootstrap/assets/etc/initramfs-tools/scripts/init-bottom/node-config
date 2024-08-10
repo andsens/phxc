@@ -21,9 +21,9 @@ if [[ -e /run/initramfs/boot ]]; then
   fi
 fi
 if boot_server=$(get_boot_state boot-server) && primary_mac=$(get_boot_state primary-mac); then
-  config_src_addr=http://${boot_server}:8020/node-config/${primary_mac//:/-}.json
+  config_src_addr=https://${boot_server}:8020/node-config/${primary_mac//:/-}.json
   # Download config from boot-server, there might be a newer version (but keep the one from the boot partition so we have a fallback if we don't succeed)
-  if curl -fsL --connect-timeout 5 --retry 3 -o $config_path.tmp "$config_src_addr"; then
+  if curl --cacert /usr/local/share/ca-certificates/home-cluster-root.crt -fsL --connect-timeout 5 --retry 3 -o $config_path.tmp "$config_src_addr"; then
     mv $config_path.tmp $config_path
     # Update the node-config for this machine on the boot partition
     [[ ! -e /run/initramfs/boot ]] || cp "$config_path" "/run/initramfs/boot/node-config.json"

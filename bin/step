@@ -2,5 +2,5 @@
 # shellcheck source-path=..
 set -Eeo pipefail; shopt -s inherit_errexit
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
-PATH=$(path_prepend "$PKGROOT/.upkg/.bin")
+PATH=$("$PKGROOT/.upkg/path-tools/bin/path_prepend" "$PKGROOT/.upkg/.bin")
 exec step "$@"

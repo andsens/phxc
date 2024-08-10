@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+# shellcheck source-path=../../..
+set -Eeo pipefail; shopt -s inherit_errexit
+PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../..")
+
+main() {
+  source "$PKGROOT/.upkg/records.sh/records.sh"
+  source "$PKGROOT/.upkg/path-tools/path-tools.sh"
+  PATH=$(path_prepend "$PKGROOT/.upkg/.bin")
+  # shellcheck source=workloads/settings/env/settings.shellcheck.sh
+  source "$PKGROOT/workloads/settings/env/settings.sh"
+  eval_settings
+
+  DOC="root-cert - Manage cluster certificates & keys
+Usage:
+  certs [options] init PKINAME
+  certs [options] step -- STEPARGS...
+"
+# docopt parser below, refresh this parser with `docopt.sh certs`
+# shellcheck disable=2016,2086,2317,1090,1091,2034,2154
+docopt() { local v='2.0.1'; source \
+"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:122};usage=${DOC:47:75}
+digest=0dedc;options=();node_0(){ value PKINAME a;};node_1(){ value STEPARGS a \
+true;};node_2(){ switch init a:init;};node_3(){ switch step a:step;};node_4(){
+switch __ a:--;};node_5(){ sequence 2 0;};node_6(){ sequence 3 4 7;};node_7(){
+repeatable 1;};node_8(){ choice 5 6;};cat <<<' docopt_exit() { [[ -n $1 ]] && \
+printf "%s\n" "$1" >&2;printf "%s\n" "${DOC:47:75}" >&2;exit 1;}';local \
+varnames=(PKINAME STEPARGS init step __) varname;for varname in \
+"${varnames[@]}"; do unset "var_$varname";done;parse 8 "$@";local \
+p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset "$p$varname"
+done;if declare -p var_STEPARGS >/dev/null 2>&1; then eval $p'STEPARGS=("${var'\
+'_STEPARGS[@]}")';else eval $p'STEPARGS=()';fi;eval $p'PKINAME=${var_PKINAME:-'\
+'};'$p'init=${var_init:-false};'$p'step=${var_step:-false};'$p'__=${var___:-fa'\
+'lse};';local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
+((;docopt_i>0;docopt_i--)); do for varname in "${varnames[@]}"; do declare -p \
+"$p$varname";done;done;}
+# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' certs`
+  eval "$(docopt "$@")"
+
+  export STEPPATH=$PKGROOT/.step
+  mkdir -p "$STEPPATH/certs" "$STEPPATH/secrets" "$STEPPATH/config"
+  ROOT_CRT=$STEPPATH/certs/root_ca.crt
+  ROOT_KEY=$STEPPATH/secrets/root_ca_key
+  INTERMEDIATE_CRT=$STEPPATH/certs/intermediate_ca.crt
+  INTERMEDIATE_KEY=$STEPPATH/secrets/intermediate_ca_key
+
+  # shellcheck disable=SC2154
+  if $init; then
+    # local selected_addr
+    # selected_addr=$(select_addr)
+    # HOST_IP=$(jq -re '.addr.local' <<<"$selected_addr")
+    info "Setting up root and intermediate certificates"
+    if [[ ! -e $ROOT_KEY ]] || \
+          ! step certificate lint "$ROOT_CRT" &>/dev/null || \
+            step certificate needs-renewal "$ROOT_CRT" &>/dev/null; then
+      step certificate create --profile root-ca \
+        --force --no-password --insecure \
+        --not-after 87600h \
+        "$PKINAME Root" "$ROOT_CRT" "$ROOT_KEY" &>/dev/null
+    fi
+
+    if [[ ! -e $INTERMEDIATE_KEY ]] || \
+          ! step certificate verify "$INTERMEDIATE_CRT" --roots="$ROOT_CRT" &>/dev/null || \
+            step certificate needs-renewal "$INTERMEDIATE_CRT" &>/dev/null; then
+      step certificate create --profile intermediate-ca \
+        --force --no-password --insecure \
+        --not-after 87600h \
+        --ca "$ROOT_CRT" --ca-key "$ROOT_KEY" \
+        "$PKINAME" "$INTERMEDIATE_CRT" "$INTERMEDIATE_KEY" &>/dev/null
+    fi
+    jq -n --arg steppath "$STEPPATH" --arg root_fp "$(step certificate fingerprint "$ROOT_CRT")" --arg root_crt "$ROOT_CRT" '{
+        "ca-config": "\($steppath)/config/ca.json",
+        "fingerprint": $root_fp,
+        "root": $root_crt
+    }' >"$STEPPATH/config/defaults.json"
+    jq -n --arg root_crt "$ROOT_CRT" --arg intermediate_crt "$INTERMEDIATE_CRT" --arg intermediate_key "$INTERMEDIATE_KEY" '{
+      "root": $root_crt,
+      "crt": $intermediate_crt,
+      "key": $intermediate_key
+    }' >"$STEPPATH/config/ca.json"
+  elif $step; then
+    step "${STEPARGS[@]}"
+  fi
+}
+
+main "$@"

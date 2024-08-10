@@ -57,6 +57,23 @@ local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
   trap_append "rm \"$bundle\"" EXIT
   "$PKGROOT/workloads/node/bin/bundle" "$bundle"
 
+  export STEPPATH=$PKGROOT/.step
+  ROOT_CRT=$STEPPATH/certs/root_ca.crt
+  INTERMEDIATE_CRT=$STEPPATH/certs/intermediate_ca.crt
+  INTERMEDIATE_KEY=$STEPPATH/secrets/intermediate_ca_key
+  SB_CRT=$STEPPATH/certs/boot-server.crt
+  SB_KEY=$STEPPATH/certs/boot-server.key
+  if [[ ! -e $SB_CRT ]] || step certificate needs-renewal "$SB_CRT" 2>&1 | pipe_verbose; then
+    # Key *must* be RSA. When sbsign signs the UKI it always specifies that the key is RSA regardless of the facts.
+    step certificate create --template <(printf '{
+  "subject": {{ toJson .Subject }},
+  "keyUsage": ["digitalSignature"],
+  "extKeyUsage": ["codeSigning"]
+}') --force --insecure --no-password --not-after $((10*365*24))h --kty RSA \
+    --ca "$INTERMEDIATE_CRT" --ca-key "$INTERMEDIATE_KEY" \
+    "home-cluster Secure Boot" "$SB_CRT" "$SB_KEY"
+  fi
+
   # shellcheck disable=SC2154
   rm -rf "$PKGROOT/images/$VARIANT.new"
   mkdir "$PKGROOT/images/$VARIANT.new"
@@ -88,6 +105,7 @@ local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
     --platform "$DOCKER_PLATFORM" \
     -v "$PKGROOT/workloads/node/bootstrap/Dockerfile:/workspace/context/Dockerfile:ro" \
     -v "$bundle:/workspace/home-cluster.tar.gz:ro" \
+    -v "$ROOT_CRT:/workspace/root_ca.crt:ro" \
     -v "$PKGROOT/workloads/common-context:/workspace/common-context:ro" \
     -v "$PKGROOT/images:/workspace/images:rw" \
     gcr.io/kaniko-project/executor:latest \
@@ -109,6 +127,8 @@ local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
   docker run --rm -ti \
     --platform "$DOCKER_PLATFORM" \
     -v "$node_settings_tmp:/node-settings:ro" \
+    --mount type=bind,src="$SB_KEY",dst=/secureboot/tls.key,readonly \
+    --mount type=bind,src="$SB_CRT",dst=/secureboot/tls.crt,readonly \
     -v "$PKGROOT/workloads/node/bootstrap/create-boot-image-assets:/assets:ro" \
     -v "$PKGROOT/workloads/node/bootstrap/scripts:/scripts:ro" \
     -v "$PKGROOT/images:/images:rw" \
