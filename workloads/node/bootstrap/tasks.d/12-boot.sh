@@ -11,6 +11,7 @@ PACKAGES+=(
   systemd-resolved # DNS resolution setup
   avahi-daemon libnss-mdns # System reachability through mdns
   fdisk # setup-disk
+  socat #  find-boot-server
 )
 
 case $VARIANT in
@@ -33,11 +34,17 @@ boot() {
   # Enable serial console
   systemctl enable serial-getty@ttyS0
 
-  # Hook for copying tooling into intramfs
+  # Tooling foor intramfs
   cp_tpl --raw --chmod=0755 /etc/initramfs-tools/hooks/home-cluster
+  cp_tpl --raw --chmod=0755 /etc/initramfs-tools/scripts/common.sh
+  cp_tpl --raw --chmod=0755 /etc/initramfs-tools/scripts/boot-state.sh
+  cp "$PKGROOT/.upkg/records.sh/records.sh" "/etc/initramfs-tools/scripts/records.sh"
 
   # Setup boot-state.json
-  cp_tpl --chmod=0755 /etc/initramfs-tools/scripts/init-top/create-boot-state
+  cp_tpl --var VARIANT --chmod=0755 /etc/initramfs-tools/scripts/init-top/create-boot-state
+
+  # Setup script for finding the boot-server
+  cp_tpl --raw --chmod=0755 /etc/initramfs-tools/scripts/init-premount/find-boot-server
 
   # Clear machine-id, let systemd generate one on first boot
   rm /var/lib/dbus/machine-id /etc/machine-id

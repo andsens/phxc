@@ -8,7 +8,8 @@ ESP_UUID=c12a7328-f81f-11d2-ba4b-00a0c93ec93b
 DATA_UUID=6f07821d-bb94-4d0f-936e-4060cadf18d8
 
 main() {
-  source "$PKGROOT/workloads/node/lib/common.sh"
+  source "$PKGROOT/.upkg/records.sh/records.sh"
+  source "$PKGROOT/workloads/node/bootstrap/assets/etc/initramfs-tools/scripts/boot-state.sh"
 
   DOC="setup-disk - Initialize the disk and mount /boot
 Usage:
@@ -60,7 +61,7 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   # boot_devpath=$(get_boot_devpath "$devpath")
   # mkfs.vfat "$boot_devpath"
   boot_devpath=$(get_boot_devpath "$devpath")
-  set_bootstate devpath "$devpath"
+  set_boot_state devpath "$devpath"
   verbose "Mounting boot partition"
   mount "$boot_devpath" /boot
 }

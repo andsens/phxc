@@ -1,15 +1,13 @@
-#!/bin/sh
-################################################################################
-# Don't use any bash variables in this file ("$VAR" or "${VAR}").
-# It is rendered with `envsubst` in order to inline "${VARIANT}"
-################################################################################
-
-set -e
+#!/usr/bin/env bash
+set -Eeo pipefail; shopt -s inherit_errexit
 case $1 in
-	prereqs) echo ""; exit 0;;
+  prereqs) echo ""; exit 0;;
 esac
+PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
+# shellcheck source=../common.sh
+source "$PKGROOT/common.sh"
 
-# shellcheck disable=SC1091
-. /scripts/functions
-
-printf '{"variant": "%s"}' "${VARIANT}" >/run/initramfs/boot-state.json
+printf '{}\n' > "$BOOT_STATE"
+chmod 0600 "$BOOT_STATE"
+# shellcheck disable=SC2153
+set_boot_state variant "$VARIANT"  # VARIANT will be replaced with the actual variant string during bootstrapping

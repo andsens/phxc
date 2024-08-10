@@ -1,26 +1,26 @@
-#!/bin/sh
-set -e
-# Download the settings first and make sure we can write the networking config
-PREREQS="settings overlayroot"
+#!/usr/bin/env bash
+set -Eeo pipefail; shopt -s inherit_errexit
 case $1 in
-	prereqs) echo "${PREREQS}"; exit 0;;
+  # Download the settings first and make sure we can write the networking config
+  prereqs) echo "settings overlayroot"; exit 0;;
 esac
 
-# shellcheck disable=SC1091
-. /scripts/functions
+PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
+# shellcheck source=../common.sh
+source "$PKGROOT/common.sh"
 
 settings_path=/run/initramfs/node-settings.json
 if [ ! -e "$settings_path" ]; then
-  log_warning_msg "Skipping networking setup. $settings_path does not exist"
+  warning "Skipping networking setup. $settings_path does not exist"
   exit 0
 fi
 
 hostname=$(jq -r '.hostname // "node"' "$settings_path")
 
 for network in $(jq -r '(.networks // []) | keys[]' "$settings_path"); do
-  log_begin_msg "Configuring network $network"
+  info "Configuring network $network"
   if ! nic_name=$(jq -re --arg network "$network" '.networks[$network].nic' "$settings_path"); then
-    log_failure_msg "$network has no nic defined, skipping"
+    warning "$network has no nic defined, skipping"
     continue
   fi
   net_conf=$(printf '[Match]\nName=%s\n\n[Network]' "$nic_name")
@@ -34,12 +34,11 @@ DHCP=yes"
   fi
   # shellcheck disable=SC2154
   printf "%s\n" "$net_conf" >"$rootmnt/etc/systemd/network/$network.network"
-  log_end_msg
 done
 
 if hostname=$(jq -re '.hostname' "$settings_path"); then
   printf "%s\n" "$hostname" >"$rootmnt/etc/hostname"
-  log_success_msg "Configured hostname for $hostname as $hostname"
+  info "Configured hostname for node as $hostname"
 else
-  log_failure_msg "$hostname has no hostname defined, skipping"
+  warning "node has no hostname defined"
 fi

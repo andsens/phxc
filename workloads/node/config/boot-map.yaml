@@ -51,3 +51,5 @@
 ^PXEClient:Arch:00000:UNDI:002001/0x00 0x00$: images/rpi5/boot.img
 /0x00 0x1[68]$: images/rpi5/boot.img
 ^PXEClient:Arch:00000:UNDI:002001/$: images/rpi5/boot.img
+# home-cluster initramfs boot-server discovery
+^PXEClient:home-cluster/$: ""

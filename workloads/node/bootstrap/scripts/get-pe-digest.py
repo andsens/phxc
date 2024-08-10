@@ -25,7 +25,7 @@ if __name__ == '__main__':
     fp.add_authenticode_hashers(*map(lambda h: getattr(hashlib, h), params['--algo']))
     digests_binary = fp.hashes()
     if 'authentihash' not in digests_binary:
-      raise Exception(f'Unable to find any authentihashes in {params['PEFILE']}')
+      raise Exception(f"Unable to find any authentihashes in {params['PEFILE']}")
     digests = OrderedDict()
     for algo in params['--algo']:
       digest = hexlify(digests_binary['authentihash'][algo]).decode('ascii')

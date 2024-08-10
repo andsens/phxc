@@ -4,8 +4,9 @@ set -Eeo pipefail; shopt -s inherit_errexit
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../..")
 
 main() {
+  source "$PKGROOT/.upkg/records.sh/records.sh"
   source "$PKGROOT/.upkg/trap.sh/trap.sh"
-  source "$PKGROOT/workloads/node/lib/common.sh"
+  source "$PKGROOT/workloads/node/bootstrap/assets/etc/initramfs-tools/scripts/boot-state.sh"
 
   DOC="update-boot - Update the boot partition with the latest image
 Usage:
@@ -30,9 +31,9 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 
   BOOT_TMP=/var/lib/persistent/boot-tmp
   local boot_server
-  VARIANT=$(get_bootstate variant)
-  if ! boot_server=$(get_bootstate boot_server); then
-    fatal "Unable to retrieve boot_server from boot-state.json"
+  VARIANT=$(get_boot_state variant)
+  if ! boot_server=$(get_boot_state boot-server); then
+    fatal "Unable to retrieve boot-server from boot-state.json"
   fi
   clear_boot_tmp
   if ! curl -fsLo$BOOT_TMP/digests.json "http://${boot_server}:8020/images/$VARIANT/digests.json"; then

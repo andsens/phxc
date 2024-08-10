@@ -1,12 +1,14 @@
-#!/bin/sh
-set -e
-PREREQS=""
+#!/usr/bin/env bash
+set -Eeo pipefail; shopt -s inherit_errexit
 case $1 in
-	prereqs) echo "${PREREQS}"; exit 0;;
+  prereqs) echo ""; exit 0;;
 esac
 
 # shellcheck disable=SC1091
-. /scripts/functions
+source /scripts/functions
+PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
+# shellcheck source=../common.sh
+source "$PKGROOT/common.sh"
 
 rootimg_path=/run/initramfs/root.img
 # shellcheck disable=SC2013
@@ -15,16 +17,15 @@ for x in $(cat /proc/cmdline); do
   root_sha256=*) root_sha256=${x#root_sha256=} ;;
   esac
 done
-if [ -z "${root_sha256}" ]; then
+if [[ -z "${root_sha256}" ]]; then
   panic "Unable to mount root disk. Boot argument root_sha256= not specified"
   exit 1
 fi
 
 verify_rootimg() {
-  log_begin_msg "Verifying checksum of root.img"
+  info "Verifying checksum of root.img"
   if printf "%s  %s" "$root_sha256" $rootimg_path.tmp | sha256sum -c -; then
-    boot_state=$(jq --arg rootimg_sha256 "$root_sha256" '.rootimg_sha256=$rootimg_sha256' /run/initramfs/boot-state.json)
-    printf "%s\n" "$boot_state" >/run/initramfs/boot-state.json
+    set_boot_state rootimg-sha256 "$root_sha256"
     mv $rootimg_path.tmp $rootimg_path
   else
     panic "root.img checksum is incorrect"
@@ -32,29 +33,25 @@ verify_rootimg() {
   fi
 }
 
-root_img_path=/run/initramfs/boot/home-cluster/root.img
-if [ -e $root_img_path ]; then
-  log_begin_msg "Copying root.img from boot partition to RAM"
-  if cp $root_img_path $rootimg_path.tmp; then
-    boot_state=$(jq --arg src "$root_img_path" '.rootimg_src=$src' /run/initramfs/boot-state.json)
-    printf "%s\n" "$boot_state" >/run/initramfs/boot-state.json
-    log_end_msg
+rootimg_src_path=/run/initramfs/boot/home-cluster/root.img
+if [[ -e $rootimg_src_path ]]; then
+  info "Copying root.img from boot partition to RAM"
+  if cp $rootimg_src_path $rootimg_path.tmp; then
+    set_boot_state rootimg-src "$rootimg_src_path"
     verify_rootimg
     exit 0
   else
-    log_failure_msg "Failed to copy root.img, falling back to downloading from boot-server"
+    error "Failed to copy root.img, falling back to downloading from boot-server"
+    # Try to download root.img instead, the sha256 might not match though
   fi
-  # Try to download root.img instead, the sha256 might not match though
 fi
-set +e; configure_networking; set -e
-if [ -n "$ROOTSERVER" ]; then
-  VARIANT=$(jq -r .variant /run/initramfs/boot-state.json)
-  root_img_addr=http://${ROOTSERVER}:8020/images/${VARIANT}/root.img
-  log_begin_msg "Downloading root image to RAM from $root_img_addr"
-  if curl -fsL --connect-timeout 5 --retry 3 -o $rootimg_path.tmp "$root_img_addr"; then
-    boot_state=$(jq --arg src "$root_img_addr" '.rootimg_src=$src' /run/initramfs/boot-state.json)
-    printf "%s\n" "$boot_state" >/run/initramfs/boot-state.json
-    log_end_msg
+
+if boot_server=$(get_boot_state boot-server); then
+  VARIANT=$(get_boot_state variant)
+  rootimg_src_addr=http://${boot_server}:8020/images/${VARIANT}/root.img
+  info "Downloading root image to RAM from $rootimg_src_addr"
+  if curl -fsL --connect-timeout 5 --retry 3 -o $rootimg_path.tmp "$rootimg_src_addr"; then
+    set_boot_state rootimg-src "$rootimg_src_addr"
     verify_rootimg
     exit 0
   else
@@ -62,6 +59,6 @@ if [ -n "$ROOTSERVER" ]; then
     exit 1
   fi
 else
-  panic "Failed to download root.img: ROOTSERVER/NEXT_SERVER not found in DHCP lease"
+  panic "Failed to download root.img: boot-server not present in boot-state.json"
   exit 1
 fi

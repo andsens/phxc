@@ -1,18 +1,17 @@
-#!/bin/sh
-set -e
-# Make sure the settings have been downloaded or copied from the boot partition before unmounting
-PREREQS="settings"
+#!/usr/bin/env bash
+set -Eeo pipefail; shopt -s inherit_errexit
 case $1 in
-	prereqs) echo "${PREREQS}"; exit 0;;
+  # Make sure the settings have been downloaded or copied from the boot partition before unmounting
+  prereqs) echo "settings"; exit 0;;
 esac
 
-# shellcheck disable=SC1091
-. /scripts/functions
+PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
+# shellcheck source=../common.sh
+source "$PKGROOT/common.sh"
 
 boot=/run/initramfs/boot
-if [ -e $boot ]; then
-  log_success_msg "Boot partition mount detected, unmounting"
+if [[ -e $boot ]]; then
+  info "Boot partition mount detected, unmounting"
   umount "$boot"
   rm -rf "$boot"
-  log_end_msg
 fi

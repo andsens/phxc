@@ -4,7 +4,8 @@ set -Eeo pipefail; shopt -s inherit_errexit
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../..")
 
 main() {
-  source "$PKGROOT/workloads/node/lib/common.sh"
+  source "$PKGROOT/.upkg/records.sh/records.sh"
+  source "$PKGROOT/workloads/node/bootstrap/assets/etc/initramfs-tools/scripts/boot-state.sh"
 
   DOC="setup-data - Initialize, expand, and mount the persistent data partition
 Usage:
@@ -30,7 +31,7 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   disk_encryption_key=$(jq -j '.["disk-encryption-key"]' /run/initramfs/cluster-secrets.json)
 
   local devpath data_devpath
-  devpath=$(get_bootstate devpath)
+  devpath=$(get_boot_state devpath)
   data_devpath=/dev/$(lsblk -Jno Name "$devpath" | jq -re '.blockdevices[0].children[1].name')
   sfdisk -N 2 "$data_devpath" <<<', +'
 

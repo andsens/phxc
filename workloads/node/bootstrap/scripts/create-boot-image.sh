@@ -46,7 +46,6 @@ main() {
   artifacts[/workspace/root.img]=/images/$VARIANT.new/root.img
   artifacts[/workspace/root/boot/initrd.img]=/images/$VARIANT.new/initrd.img
 
-
   #####################
   ### node-settings ###
   #####################
@@ -124,7 +123,7 @@ EOF
     chroot /workspace/root /lib/systemd/ukify build \
       --uname="$kernver" \
       --linux="boot/vmlinuz" \
-      --initrd="boot/initrd" \
+      --initrd="boot/initrd.img" \
       --cmdline="root=/run/initramfs/root.img root_sha256=${sha256sums[root.img]} panic=300 noresume" \
       --output=/boot/uki.efi
 
@@ -136,12 +135,12 @@ EOF
     artifacts[/workspace/root/boot/uki.efi]=/images/$VARIANT.new/uki.efi
 
     # Extract authentihashes used for PE signatures so we can use them for remote attestation
-    authentihashes[uki.efi]=$(/signify/bin/python3 /scripts/get-pe-digest.py --json /workspace/root/boot/uki.efi)
+    # authentihashes[uki.efi]=$(/signify/bin/python3 /scripts/get-pe-digest.py --json /workspace/root/boot/uki.efi)
     sha256sums[uki.efi]=$(sha256sum /workspace/root/boot/uki.efi | cut -d ' ' -f1)
     # See https://lists.freedesktop.org/archives/systemd-devel/2022-December/048694.html
     # as to why we also measure the embedded kernel
     objcopy -O binary --only-section=.linux /workspace/root/boot/uki.efi /workspace/uki-vmlinuz
-    authentihashes[vmlinuz]=$(/signify/bin/python3 /scripts/get-pe-digest.py --json /workspace/uki-vmlinuz)
+    # authentihashes[vmlinuz]=$(/signify/bin/python3 /scripts/get-pe-digest.py --json /workspace/uki-vmlinuz)
   fi
 
   ######################
@@ -160,9 +159,8 @@ EOF
     local sector_size_b=512 gpt_size_b partition_offset_b partition_size_b disk_size_kib
     gpt_size_b=$((33 * sector_size_b))
     partition_offset_b=$((1024 * 1024))
-    # efi * 2 : The EFI boot loader is copied to two different destinations
     # stat -c %s : Size in bytes of the file
-    # ... (sector_size_b - 1) ) / sector_size_b * sector_size_b : Round to next sector
+    # ... (sector_size_b - 1) ) / sector_size_b * sector_size_b : Round up to next sector
     partition_size_b=$((
       (
         fs_table_size_b +
@@ -210,9 +208,9 @@ EOF
 
   fi
 
-  ################################
-  ### Generate/extract authentihashes ###
-  ################################
+  ###########################
+  ### Create digests.json ###
+  ###########################
 
   local key digests='{"sha256sums": {}, "authentihashes": {}}'
   for key in "${!sha256sums[@]}"; do

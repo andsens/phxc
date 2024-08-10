@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+set -Eeo pipefail; shopt -s inherit_errexit
+case $1 in
+  prereqs) echo ""; exit 0;;
+esac
+
+PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
+# shellcheck source=../common.sh
+source "$PKGROOT/common.sh"
+
+sh -c '. /scripts/functions; configure_networking'
+
+# Broadcast a DHCPDISCOVER packet on port 4011 to get an answer from dhcp-proxy
+# Built with make-req.py
+dhcp_discover_head='01010600'
+# XID goes here
+dhcp_discover_xid_tail=\
+'0000800000000000'\
+'000000000000000000000000'
+# MAC address goes here
+dhcp_discover_mac_tail=\
+'0000000000000000000000000000'\
+'00000000000000000000000000000000'\
+'00000000000000000000000000000000'\
+'00000000000000000000000000000000'\
+'00000000000000000000000000000000'\
+'00000000000000000000000000000000'\
+'00000000000000000000000000000000'\
+'00000000000000000000000000000000'\
+'00000000000000000000000000000000'\
+'00000000000000000000000000000000'\
+'00000000000000000000000000000000'\
+'00000000000000000000000000000000'\
+'00000000000000000000000063825363'\
+'3501033c16505845436c69656e743a68'\
+'6f6d652d636c7573746572ff'
+
+info "Looking for boot-server"
+for mac in $(ip -o link show | grep -v ' lo: ' | grep -Eo 'link/[^ ]+ [^ ]+' | cut -d ' ' -f2); do
+  xid=$(xxd -p -l4 /dev/random)
+  if boot_server=$(
+      printf "%s%s%s%s%s" \
+        "$dhcp_discover_head" \
+        "$xid" \
+        "$dhcp_discover_xid_tail" \
+        "${mac//:/}" \
+        "$dhcp_discover_mac_tail" | \
+      xxd -r -p | \
+      socat - udp-datagram:255.255.255.255:4011,bind=:0,broadcast,reuseaddr | \
+      dd skip=1 count=1 ibs=44 obs=64 status=none | tr -d '\000'
+    ) && [[ -n "$boot_server" ]]; then
+    info "Found boot-server at $boot_server"
+    set_boot_state boot-server "$boot_server"
+    break
+  fi
+done
+[[ -n "$boot_server" ]] || warning "Unable to find the boot-server"
