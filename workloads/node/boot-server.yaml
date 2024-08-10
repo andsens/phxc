@@ -47,9 +47,12 @@ spec:
     app.kubernetes.io/name: node
     app.kubernetes.io/component: boot-server
   ports:
-  - name: http
+  - name: boot-assets
     port: 8020
-    targetPort: http
+    targetPort: boot-assets
+  - name: remote-attestation
+    port: 8021
+    targetPort: remote-attestation
 ---
 apiVersion: secretgenerator.mittwald.de/v1alpha1
 kind: StringSecret
@@ -93,7 +96,7 @@ spec:
         securityContext:
           readOnlyRootFilesystem: true
         ports:
-        - name: http
+        - name: boot-assets
           containerPort: 8020
         volumeMounts:
         - name: node-settings
@@ -112,7 +115,7 @@ spec:
         securityContext:
           readOnlyRootFilesystem: true
         ports:
-        - name: http
+        - name: remote-attestation
           containerPort: 8000
         volumeMounts:
         - name: scripts
