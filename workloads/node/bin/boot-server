@@ -34,8 +34,51 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   eval "$(docopt "$@")"
 
   [[ $EUID = 0 ]] || fatal "Must be root to run"
-  checkdeps subnetcalc in.tftpd tcpdump dnsmasq
+  checkdeps in.tftpd tcpdump python3
 
+  local selected_addr
+  selected_addr=$(select_addr)
+
+  local ifname
+  ifname=$(jq -re '.if.ifname' <<<"$selected_addr")
+  export HOST_IP TFTP_SERVER_IP
+  HOST_IP=$(jq -re '.addr.local' <<<"$selected_addr")
+  TFTP_SERVER_IP=$HOST_IP
+
+  local \
+    boot_server_root=$PKGROOT/mnt/boot-server \
+    dhcp_proxy_home=$PKGROOT/workloads/node/containers/dhcp-proxy \
+    dhcp_proxy_venv=$PKGROOT/.venv/dhcp-proxy
+  mkdir -p "$boot_server_root/images" "$dhcp_proxy_venv"
+
+  rm -rf "$boot_server_root/node-settings"
+  mkdir "$boot_server_root/node-settings"
+  local node mac
+  for node in $(yq -c '.nodes[]' "$PKGROOT/settings.yaml"); do
+    ! mac=$(yq -re '.mac' <<<"$node") || \
+      printf "%s\n" "$node" > "$boot_server_root/node-settings/${mac//:/-}.json"
+  done
+
+  mount --bind "$PKGROOT/images" "$boot_server_root/images"
+  trap_append "umount \"$boot_server_root/images\"" EXIT
+
+  trap_prepend "bg_killall" TERM
+  trap_prepend "bg_killall" INT
+  trap_prepend "bg_killall" EXIT
+
+  python3 -m venv "$dhcp_proxy_venv"
+  "$dhcp_proxy_venv/bin/pip3" install -r "$dhcp_proxy_home/requirements.txt"
+
+  bg_run "$dhcp_proxy_venv/bin/python3" "$dhcp_proxy_home/dhcp-proxy.py" --boot-map "$dhcp_proxy_home/boot-map.yaml" "$HOST_IP" "$TFTP_SERVER_IP"
+  bg_run in.tftpd --foreground --user tftp --address "$HOST_IP:69" --map-file "$PKGROOT/workloads/node/config/tftpd-map-file" --secure "$boot_server_root" --blocksize 1468
+  bg_run "$dhcp_proxy_venv/bin/python3" -m http.server -d "$boot_server_root" -b "$HOST_IP" 8020
+  bg_run tcpdump -i "$ifname" -nl port 69 and udp
+
+  info "boot-server is ready"
+  bg_block
+}
+
+select_addr() {
   local addrs=() addr_count selected_addr
   readarray -t -d $'\n' addrs < <(ip --json a | jq -c '.[] | select(.ifname!="lo") | . as $if | .addr_info[] | {"if":$if,"addr":.}')
   addr_count=${#addrs[@]}
@@ -60,85 +103,7 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   else
     selected_addr=${addrs[0]}
   fi
-
-  build_image tftpd
-  build_image dnsmasq
-
-  export HOST_IP TFTP_SERVER_IP
-  HOST_IP=$(jq -re '.addr.local' <<<"$selected_addr")
-  TFTP_SERVER_IP=$HOST_IP
-
-  local node_settings_tmp
-  node_settings_tmp=$(mktemp -d)
-  trap_append "rm -rf \"$node_settings_tmp\"" EXIT
-  local node mac
-  for node in $(yq -c '.nodes[]' "$PKGROOT/settings.yaml"); do
-    ! mac=$(yq -re '.mac' <<<"$node") || \
-      printf "%s\n" "$node" > "$node_settings_tmp/${mac//:/-}.json"
-  done
-
-  mkdir -p "$PKGROOT/mnt/boot-server/images"
-  mount --bind "$PKGROOT/images" "$PKGROOT/mnt/boot-server/images"
-  trap_append "umount \"$PKGROOT/mnt/boot-server/images\"" EXIT
-
-  trap_prepend "bg_killall" TERM
-  trap_prepend "bg_killall" INT
-  trap_prepend "bg_killall" EXIT
-
-  bg_run docker run --rm --name home-cluster-tftpd  \
-    -v "$PKGROOT/workloads/node/scripts/tftpd.sh:/tftpd.sh:ro" \
-    -v "$PKGROOT/workloads/node/config/tftpd-map-file:/etc/nginx/nginx.conf:ro" \
-    -v "$PKGROOT/images:/tftp/images:ro" \
-    -e HOST_IP \
-    --network host \
-    cluster.local/tftpd
-
-  bg_run docker run --rm --name home-cluster-dnsmasq  \
-    -v "$PKGROOT/workloads/node/scripts/dnsmasq.sh:/dnsmasq.sh:ro" \
-    -v "$PKGROOT/workloads/node/config/dnsmasq.conf:/etc/dnsmasq.conf:ro" \
-    -e HOST_IP -e TFTP_SERVER_IP \
-    --cap-add NET_ADMIN \
-    --network host \
-    cluster.local/dnsmasq
-
-  bg_run docker run --rm --name home-cluster-nginx  \
-    -v "$node_settings_tmp:/var/www/node-settings:ro" \
-    -v "$PKGROOT/workloads/node/config/nginx.conf:/etc/nginx/nginx.conf:ro" \
-    -v "$PKGROOT/images:/var/www/images:ro" \
-    -e NGINX_ENTRYPOINT_QUIET_LOGS=true \
-    --mount type=tmpfs,destination=/var/cache/nginx \
-    --network host \
-    nginx:1.27-alpine-slim
-
-  bg_block
-}
-
-build_image() {
-  local DOCKER_PLATFORM
-  case $(uname -m) in
-    x86_64) DOCKER_PLATFORM=linux/amd64 ;;
-    aarch64) DOCKER_PLATFORM=linux/arm64 ;;
-  esac
-  local name=$1
-  if [[ ! -e "$PKGROOT/images/containers/$name.tar" ]] || \
-      find "$PKGROOT/workloads/node/containers/$name" "$PKGROOT/workloads/common-context" \
-        -newer "$PKGROOT/images/containers/$name.tar" 2>/dev/null | grep -q .; then
-    info "Building '%s'" "$name:latest"
-    mkdir -p "$PKGROOT/images/containers"
-    docker run --rm -ti \
-      --platform "$DOCKER_PLATFORM" \
-      -v "$PKGROOT/workloads/common-context:/workspace/common-context:ro" \
-      -v "$PKGROOT/workloads/node/containers/$name:/workspace/context:ro" \
-      -v "$PKGROOT/images:/workspace/images:rw" \
-      gcr.io/kaniko-project/executor:latest \
-      --dockerfile context/Dockerfile \
-      --destination "cluster.local/$name:latest" \
-      --tar-path "/workspace/images/containers/$name.tar" \
-      --no-push
-    docker load -i "$PKGROOT/images/containers/$name.tar"
-  else
-    info "Not building '%s', no files have changed since last run" "$name"
-  fi
+  printf "%s\n" "$selected_addr"
 }
 
 main "$@"
