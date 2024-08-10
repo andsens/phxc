@@ -90,7 +90,7 @@ done;eval $p'__debug_response=${var___debug_response:-false};'$p'__retry=${var'\
 get_attestation_url() {
   local boot_server
   boot_server=$(get_boot_state boot-server) || fatal "Unable to retrieve boot-server from /run/initramfs/boot-state.json"
-  printf "http://%s:8021/" "$boot_server"
+  printf "http://%s:8021/attest" "$boot_server"
 }
 
 tpm2_flushall() {

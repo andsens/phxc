@@ -56,8 +56,8 @@ boot() {
     /etc/initramfs-tools/scripts/init-top/mount-boot \
     /etc/initramfs-tools/scripts/init-bottom/umount-boot
 
-  # Settings
-  cp_tpl --raw --chmod=0755 /etc/initramfs-tools/scripts/init-bottom/settings
+  # Node configuration
+  cp_tpl --raw --chmod=0755 /etc/initramfs-tools/scripts/init-bottom/node-config
 
   # Networking setup
   systemctl enable systemd-networkd

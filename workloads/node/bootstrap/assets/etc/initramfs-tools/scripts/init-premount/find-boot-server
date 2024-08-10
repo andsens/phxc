@@ -50,6 +50,7 @@ for mac in $(ip -o link show | grep -v ' lo: ' | grep -Eo 'link/[^ ]+ [^ ]+' | c
       dd skip=1 count=1 ibs=44 obs=64 status=none | tr -d '\000'
     ) && [[ -n "$boot_server" ]]; then
     info "Found boot-server at $boot_server"
+    set_boot_state primary-mac "$mac"
     set_boot_state boot-server "$boot_server"
     break
   fi

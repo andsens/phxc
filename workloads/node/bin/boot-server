@@ -50,12 +50,12 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
     dhcp_proxy_venv=$PKGROOT/.venv/dhcp-proxy
   mkdir -p "$boot_server_root/images" "$dhcp_proxy_venv"
 
-  rm -rf "$boot_server_root/node-settings"
-  mkdir "$boot_server_root/node-settings"
+  rm -rf "$boot_server_root/node-config"
+  mkdir "$boot_server_root/node-config"
   local node mac
   for node in $(yq -c '.nodes[]' "$PKGROOT/settings.yaml"); do
     ! mac=$(yq -re '.mac' <<<"$node") || \
-      printf "%s\n" "$node" > "$boot_server_root/node-settings/${mac//:/-}.json"
+      printf "%s\n" "$node" > "$boot_server_root/node-config/${mac//:/-}.json"
   done
 
   mount --bind "$PKGROOT/images" "$boot_server_root/images"

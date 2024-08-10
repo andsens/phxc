@@ -20,14 +20,14 @@ import yaml
 import docopt
 import dhcppython
 import pwd
+import sys
 
 log = logging.getLogger('dhcp-proxy.py')
 log.setLevel(getattr(logging, os.getenv('LOGLEVEL', 'INFO').upper(), 'INFO'))
-handler = logging.StreamHandler()
+handler = logging.StreamHandler(sys.stderr)
 formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(name)s %(message)s')
 handler.setFormatter(formatter)
 log.addHandler(handler)
-
 
 params = docopt.docopt(__doc__)
 

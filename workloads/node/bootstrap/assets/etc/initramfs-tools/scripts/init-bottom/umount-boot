@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -Eeo pipefail; shopt -s inherit_errexit
 case $1 in
-  # Make sure the settings have been downloaded or copied from the boot partition before unmounting
-  prereqs) echo "settings"; exit 0;;
+  # Make sure the node configuration has been downloaded or copied from the boot partition before unmounting
+  prereqs) echo "node-config"; exit 0;;
 esac
 
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")

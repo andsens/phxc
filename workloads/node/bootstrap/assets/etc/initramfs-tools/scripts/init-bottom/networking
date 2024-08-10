@@ -1,44 +1,66 @@
 #!/usr/bin/env bash
 set -Eeo pipefail; shopt -s inherit_errexit
 case $1 in
-  # Download the settings first and make sure we can write the networking config
-  prereqs) echo "settings overlayroot"; exit 0;;
+  # Download the node configuration first and make sure we can write the networking config
+  prereqs) echo "node-config overlayroot"; exit 0;;
 esac
 
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
 # shellcheck source=../common.sh
 source "$PKGROOT/common.sh"
 
-settings_path=/run/initramfs/node-settings.json
-if [ ! -e "$settings_path" ]; then
-  warning "Skipping networking setup. $settings_path does not exist"
-  exit 0
-fi
-
-hostname=$(jq -r '.hostname // "node"' "$settings_path")
-
-for network in $(jq -r '(.networks // []) | keys[]' "$settings_path"); do
-  info "Configuring network $network"
-  if ! nic_name=$(jq -re --arg network "$network" '.networks[$network].nic' "$settings_path"); then
-    warning "$network has no nic defined, skipping"
-    continue
-  fi
-  net_conf=$(printf '[Match]\nName=%s\n\n[Network]' "$nic_name")
-  addrs=$(jq -r --arg network "$network" '(.networks[$network].addrs // [])[]' "$settings_path")
-  if [ -n "$addrs" ]; then
-    # shellcheck disable=SC2086
-    net_conf="${net_conf}$(printf "\nAddress=%s" $addrs)"
+config_path=/run/initramfs/node-config.json
+if [[ -e $config_path ]]; then
+  if hostname=$(jq -re '.hostname' "$config_path"); then
+    :
+  elif primary_mac=$(get_boot_state primary-mac); then
+    warning "No hostname defined in node-config, using primary-mac from boot-state.json"
+    hostname=${primary_mac//:/-}
   else
-    net_conf="${net_conf}
-DHCP=yes"
+    warning "No hostname defined in node-config and primary-mac not found in boot-state, generating random hostname"
+    hostname=$(xxd -p -l4 /dev/random)
   fi
-  # shellcheck disable=SC2154
-  printf "%s\n" "$net_conf" >"$rootmnt/etc/systemd/network/$network.network"
-done
+  for network in $(jq -r '(.networks // []) | keys[]' "$config_path"); do
+    info "Configuring network $network"
+    if ! nic_name=$(jq -re --arg network "$network" '.networks[$network].nic' "$config_path"); then
+      warning "$network has no nic defined, skipping"
+      continue
+    fi
+    addrs=$(jq -r --arg network "$network" '(.networks[$network].addrs // [])[] | "Address=\(.)"' "$config_path")
+    if [[ -n $addrs ]]; then
+      # shellcheck disable=SC2154
+      cat <<EOF >"$rootmnt/etc/systemd/network/$network.network"
+[Match]
+Name=$nic_name
 
-if hostname=$(jq -re '.hostname' "$settings_path"); then
-  printf "%s\n" "$hostname" >"$rootmnt/etc/hostname"
-  info "Configured hostname for node as $hostname"
+[Network]$addrs
+EOF
+    else
+      # shellcheck disable=SC2154
+      cat <<EOF >"$rootmnt/etc/systemd/network/$network.network"
+[Match]
+Name=$nic_name
+
+[Network]
+DHCP=yes
+EOF
+    fi
+  done
+elif primary_mac=$(get_boot_state primary-mac); then
+  warning "No node-config found, using primary-mac from boot-state.json to configure primary network interface and hostname"
+  # shellcheck disable=SC2154
+  cat <<EOF >"$rootmnt/etc/systemd/network/primary.network"
+[Match]
+MACAddress=$primary_mac
+
+[Network]
+DHCP=yes
+EOF
+  hostname=${primary_mac//:/-}
 else
-  warning "node has no hostname defined"
+  panic "Failed to configure networking: No node-config found primary-nic not present in boot-state.json"
 fi
+
+info "Configuring hostname for node as %s" "$hostname"
+# shellcheck disable=SC2154
+printf "%s\n" "$hostname" >"$rootmnt/etc/hostname"
