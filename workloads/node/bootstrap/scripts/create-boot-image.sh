@@ -46,6 +46,8 @@ main() {
   artifacts[/workspace/root.img]=/images/$VARIANT.new/root.img
   artifacts[/workspace/root/boot/initrd.img]=/images/$VARIANT.new/initrd.img
 
+  local kernel_cmdline="root=/run/initramfs/root.img root_sha256=${sha256sums[root.img]} panic=300 noresume"
+
   #####################
   ### node-settings ###
   #####################
@@ -62,7 +64,7 @@ main() {
   if [[ $VARIANT = rpi* ]]; then
 
     # The last "console=" wins with respect to initramfs stdout/stderr output
-    printf "console=ttyS0,115200 console=tty0 root=/run/initramfs/root.img root_sha256=%s panic=300 noresume" "${sha256sums[root.img]}" > /workspace/cmdline.txt
+    printf "console=ttyS0,115200 console=tty0 %s" "$kernel_cmdline" > /workspace/cmdline.txt
 
     # Adjust config.txt for being embedded in boot.img
     sed 's/boot_ramdisk=1/auto_initramfs=1/' <"/assets/config-${VARIANT}.txt" >/workspace/config.txt
@@ -124,7 +126,7 @@ EOF
       --uname="$kernver" \
       --linux="boot/vmlinuz" \
       --initrd="boot/initrd.img" \
-      --cmdline="root=/run/initramfs/root.img root_sha256=${sha256sums[root.img]} panic=300 noresume" \
+      --cmdline="$kernel_cmdline" \
       --output=/boot/uki.efi
 
     local uki_size_b
@@ -141,71 +143,6 @@ EOF
     # as to why we also measure the embedded kernel
     objcopy -O binary --only-section=.linux /workspace/root/boot/uki.efi /workspace/uki-vmlinuz
     # authentihashes[vmlinuz]=$(/signify/bin/python3 /scripts/get-pe-digest.py --json /workspace/uki-vmlinuz)
-  fi
-
-  ######################
-  ### Build node.raw ###
-  ######################
-
-  if [[ $VARIANT != rpi* ]]; then
-
-    local efisuffix
-    case $VARIANT in
-      amd64) efisuffix=x64 ;;
-      arm64) efisuffix=aa64 ;;
-      *) fatal "Unknown variant: %s" "$VARIANT" ;;
-    esac
-
-    local sector_size_b=512 gpt_size_b partition_offset_b partition_size_b disk_size_kib
-    gpt_size_b=$((33 * sector_size_b))
-    partition_offset_b=$((1024 * 1024))
-    # stat -c %s : Size in bytes of the file
-    # ... (sector_size_b - 1) ) / sector_size_b * sector_size_b : Round up to next sector
-    partition_size_b=$((
-      (
-        fs_table_size_b +
-        node_settings_size_b +
-        $(stat -c %s /workspace/root/boot/uki.efi) +
-        $(stat -c %s /workspace/root.img) +
-        (sector_size_b - 1)
-      ) / sector_size_b * sector_size_b
-    ))
-    disk_size_kib=$((
-      (
-        partition_offset_b +
-        partition_size_b +
-        gpt_size_b +
-        1023
-      ) / 1024
-    ))
-
-    # Fixed, so we can find it when we need to mount the EFI partition during init
-    DISK_UUID=caf66bff-edab-4fb1-8ad9-e570be5415d7
-    ESP_UUID=c12a7328-f81f-11d2-ba4b-00a0c93ec93b
-
-    info "Creating UEFI boot image"
-
-    guestfish -xN /workspace/node.raw=disk:${disk_size_kib}K -- <<EOF
-part-init /dev/sda gpt
-part-add /dev/sda primary $(( partition_offset_b / sector_size_b )) $(( (partition_offset_b + partition_size_b ) / sector_size_b - 1 ))
-part-set-bootable /dev/sda 1 true
-part-set-disk-guid /dev/sda $DISK_UUID
-part-set-gpt-guid /dev/sda 1 $ESP_UUID
-
-mkfs vfat /dev/sda1
-mount /dev/sda1 /
-
-mkdir-p /EFI/BOOT
-copy-in /workspace/root/boot/uki.efi /EFI/BOOT/
-mv /EFI/BOOT/uki.efi /EFI/BOOT/BOOT${efisuffix^^}.EFI
-
-mkdir-p /home-cluster
-copy-in /workspace/root.img /home-cluster/
-copy-in /node-settings /home-cluster/
-EOF
-
-    artifacts[/workspace/node.raw]=/images/$VARIANT.new/node.raw
-
   fi
 
   ###########################
