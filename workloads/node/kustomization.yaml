@@ -11,6 +11,7 @@ resources:
 - bootstrap
 - images.yaml
 - boot-server.yaml
+- secureboot.yaml
 - namespace.yaml
 - Kptfile
 - resourcegroup.yaml

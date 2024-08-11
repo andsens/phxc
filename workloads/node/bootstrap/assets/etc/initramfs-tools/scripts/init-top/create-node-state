@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -Eeo pipefail; shopt -s inherit_errexit
+[[ $1 != prereqs ]] || { echo ""; exit 0; }
+
+PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
+# shellcheck source=../common.sh
+source "$PKGROOT/common.sh"
+
+main() {
+  printf '{}\n' > "$NODE_STATE"
+  chmod 0600 "$NODE_STATE"
+  # shellcheck disable=SC2153
+  set_node_state variant "$VARIANT"  # VARIANT will be replaced with the actual variant string during bootstrapping
+}
+
+main "$@"

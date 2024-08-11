@@ -4,7 +4,7 @@
 PACKAGES+=(
   systemd-sysv systemd-boot # systemd bootup
   initramfs-tools busybox util-linux zstd # initrd
-  python3-pefile # UKI creation
+  python3-pefile sbsigntool # UKI creation & signing
   dosfstools # Used for mounting ESP
   iproute2 curl # Used in settings to determine MAC address and then fetching settings
   overlayroot # Used for making ro-root writeable
@@ -35,13 +35,15 @@ boot() {
   systemctl enable serial-getty@ttyS0
 
   # Tooling foor intramfs
-  cp_tpl --raw --chmod=0755 /etc/initramfs-tools/hooks/home-cluster
-  cp_tpl --raw --chmod=0755 /etc/initramfs-tools/scripts/common.sh
-  cp_tpl --raw --chmod=0755 /etc/initramfs-tools/scripts/boot-state.sh
+  cp_tpl --raw --chmod=0755 \
+    /etc/initramfs-tools/hooks/home-cluster \
+    /etc/initramfs-tools/scripts/common.sh \
+    /etc/initramfs-tools/scripts/node-state.sh \
+    /etc/initramfs-tools/scripts/node-config.sh
   cp "$PKGROOT/.upkg/records.sh/records.sh" "/etc/initramfs-tools/scripts/records.sh"
 
-  # Setup boot-state.json
-  cp_tpl --var VARIANT --chmod=0755 /etc/initramfs-tools/scripts/init-top/create-boot-state
+  # Setup node-state.json
+  cp_tpl --var VARIANT --chmod=0755 /etc/initramfs-tools/scripts/init-top/create-node-state
 
   # Setup script for finding the boot-server
   cp_tpl --raw --chmod=0755 /etc/initramfs-tools/scripts/init-premount/find-boot-server
@@ -76,10 +78,4 @@ boot() {
     # Remove Raspberry Pi 4 boot code
     rm boot/firmware/bootcode.bin boot/firmware/fixup*.dat boot/firmware/start*.elf
   fi
-
-  # Disk creation
-  cp_tpl --raw \
-    /etc/systemd/system/setup-disk.service \
-    /etc/systemd/system/update-boot.service
-  systemctl enable setup-disk.service update-boot.service
 }

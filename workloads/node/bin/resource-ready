@@ -8,40 +8,43 @@ main() {
   source "$PKGROOT/.upkg/path-tools/path-tools.sh"
   PATH=$(path_prepend "$PKGROOT/.upkg/.bin")
 
-  DOC="workload-ready - Determine whether a workload is ready
+  DOC="resource-ready - Determine whether a resource is ready
 Usage:
-  workload-ready [options] WORKLOAD
+  resource-ready [options] RESOURCE
 
 Options:
-  -w --wait  Block until the workload is ready
+  -w --wait  Block until the resource is ready
 
-Recognized workloads are:
+Recognized resources are:
+* node-config
+* disk
+* boot-mount
 * k3s
 * cilium
 * coredns
 * step-ca
 "
-# docopt parser below, refresh this parser with `docopt.sh workload-ready`
+# docopt parser below, refresh this parser with `docopt.sh resource-ready`
 # shellcheck disable=2016,2086,2317,1090,1091,2034
 docopt() { local v='2.0.1'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
-%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:216};usage=${DOC:55:42}
-digest=2961a;options=('-w --wait 0');node_0(){ switch __wait 0;};node_1(){
-value WORKLOAD a;};node_2(){ optional 0;};node_3(){ sequence 2 1;};cat <<<' \
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:250};usage=${DOC:55:42}
+digest=74b51;options=('-w --wait 0');node_0(){ switch __wait 0;};node_1(){
+value RESOURCE a;};node_2(){ optional 0;};node_3(){ sequence 2 1;};cat <<<' \
 docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2;printf "%s\n" \
-"${DOC:55:42}" >&2;exit 1;}';local varnames=(__wait WORKLOAD) varname;for \
+"${DOC:55:42}" >&2;exit 1;}';local varnames=(__wait RESOURCE) varname;for \
 varname in "${varnames[@]}"; do unset "var_$varname";done;parse 3 "$@";local \
 p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset "$p$varname"
-done;eval $p'__wait=${var___wait:-false};'$p'WORKLOAD=${var_WORKLOAD:-};'
+done;eval $p'__wait=${var___wait:-false};'$p'RESOURCE=${var_RESOURCE:-};'
 local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
 ((;docopt_i>0;docopt_i--)); do for varname in "${varnames[@]}"; do declare -p \
 "$p$varname";done;done;}
-# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' workload-ready`
+# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' resource-ready`
   eval "$(docopt "$@")"
 
   # shellcheck disable=SC2153
-  local workload=${WORKLOAD//[^A-Za-z0-9_]/_}
-  type "${workload}_ready" &>/dev/null || fatal "Unknown workload: '%s'" "$WORKLOAD"
+  local resource=${RESOURCE//[^A-Za-z0-9_]/_}
+  type "${resource}_ready" &>/dev/null || fatal "Unknown resource: '%s'" "$RESOURCE"
   # Slightly different check than in the other scripts.
   # k3s.yaml may not have been created yet when this runs.
   # We use the presence of the k3s dir and the executing user ID as an indicator
@@ -50,17 +53,29 @@ local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
 
   # shellcheck disable=SC2154
   if $__wait; then
-    until eval "${workload}_ready" 2> >(pipe_verbose); do
+    until eval "${resource}_ready" 2> >(pipe_verbose); do
       sleep 1
     done
-    info "%s is ready" "$workload"
+    info "%s is ready" "$resource"
   else
-    if eval "${workload}_ready" 2> >(pipe_verbose); then
-      info "%s is ready" "$workload"
+    if eval "${resource}_ready" 2> >(pipe_verbose); then
+      info "%s is ready" "$resource"
     else
-      fatal $? "%s is not ready" "$workload"
+      fatal $? "%s is not ready" "$resource"
     fi
   fi
+}
+
+node_config_ready() {
+  test -e /run/initramfs/node-config.json
+}
+
+disk_ready() {
+  "$PKGROOT/workloads/node/bin/disk" find-disk &>/dev/null
+}
+
+boot_mount_ready() {
+  mountpoint -q /boot
 }
 
 k3s_ready() {

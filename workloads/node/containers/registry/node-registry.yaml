@@ -1,16 +1,16 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: build-safeboot-attest
+  name: build-registry
   labels:
     app.kubernetes.io/name: bootstrap
-    app.kubernetes.io/component: safeboot-attest
+    app.kubernetes.io/component: registry
 spec:
   template:
     metadata:
       labels:
         app.kubernetes.io/name: bootstrap
-        app.kubernetes.io/component: safeboot-attest
+        app.kubernetes.io/component: registry
         cluster.local/allow-internet-egress: "true"
     spec:
       restartPolicy: Never
@@ -19,8 +19,8 @@ spec:
         image: gcr.io/kaniko-project/executor:latest
         args:
         - --dockerfile=context/Dockerfile
-        - --destination=cluster.local/safeboot-attest:latest
-        - --tar-path=/workspace/images/safeboot-attest:latest.tar.tmp
+        - --destination=cluster.local/registry:latest
+        - --tar-path=/workspace/images/registry:latest.tar.tmp
         - --no-push
         env:
         - name: GGCR_EXPERIMENT_ESTARGZ
@@ -35,14 +35,14 @@ spec:
       containers:
       - name: move-image
         image: busybox
-        args: [mv, /images/safeboot-attest:latest.tar.tmp, /images/safeboot-attest:latest.tar]
+        args: [mv, /images/registry:latest.tar.tmp, /images/registry:latest.tar]
         volumeMounts:
         - name: images
           mountPath: /images
       volumes:
       - name: context
         configMap:
-          name: safeboot-attest
+          name: registry
       - name: common-context
         configMap:
           name: common-context

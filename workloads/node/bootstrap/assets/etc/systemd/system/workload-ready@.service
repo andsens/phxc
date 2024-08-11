@@ -1,6 +1,0 @@
-[Unit]
-Description=Waits until %i is ready
-
-[Service]
-Type=oneshot
-ExecStart=/usr/local/lib/upkg/.upkg/home-cluster/workloads/node/bin/workload-ready --wait %i

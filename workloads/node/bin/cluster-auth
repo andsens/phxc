@@ -17,7 +17,7 @@ export LC_ALL=C
 
 main() {
   source "$PKGROOT/.upkg/records.sh/records.sh"
-  source "$PKGROOT/workloads/node/bootstrap/assets/etc/initramfs-tools/scripts/boot-state.sh"
+  source "$PKGROOT/workloads/node/bootstrap/assets/etc/initramfs-tools/scripts/node-state.sh"
   DOC="cluster-auth - Use remote attestation to authenticate with the cluster
 Usage:
   cluster-auth [-d -r S] login
@@ -89,7 +89,7 @@ done;eval $p'__debug_response=${var___debug_response:-false};'$p'__retry=${var'\
 
 get_attestation_url() {
   local boot_server
-  boot_server=$(get_boot_state boot-server) || fatal "Unable to retrieve boot-server from /run/initramfs/boot-state.json"
+  boot_server=$(get_node_state boot-server) || fatal "Unable to retrieve boot-server from /run/initramfs/node-state.json"
   printf "http://%s:8021/attest" "$boot_server"
 }
 

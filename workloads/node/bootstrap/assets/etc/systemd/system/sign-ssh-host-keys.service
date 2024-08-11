@@ -1,7 +1,7 @@
 [Unit]
 Description=Sign SSH host keys
-Requires=workload-ready@step-ca.target
-After=workload-ready@step-ca.target
+Requires=resource-ready@step-ca.target
+After=resource-ready@step-ca.target
 
 [Install]
 WantedBy=multi-user.target

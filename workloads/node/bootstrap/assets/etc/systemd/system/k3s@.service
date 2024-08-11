@@ -5,7 +5,7 @@ Wants=network-online.target
 After=network-online.target
 
 [Service]
-ExecCondition=yq -re --arg type %i 'any((.["node-label"] // [])[]; . == "node-role.kubernetes.io/control-plane=true") == ($type == "server")' /run/initramfs/node-settings.json
+ExecCondition=yq -re --arg type %i 'any((.["node-label"] // [])[]; . == "node-role.kubernetes.io/control-plane=true") == ($type == "server")' /run/initramfs/node-config.json
 Type=notify
 EnvironmentFile=-/etc/default/%N
 EnvironmentFile=-/etc/sysconfig/%N

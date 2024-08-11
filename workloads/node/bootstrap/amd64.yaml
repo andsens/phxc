@@ -55,12 +55,12 @@ spec:
           mountPath: /scripts
         - name: assets
           mountPath: /assets
-        - name: node-settings
-          mountPath: /node-settings
         - name: workspace
           mountPath: /workspace
         - name: images
           mountPath: /images
+        - name: secureboot
+          mountPath: /secureboot
       volumes:
       - name: context
         configMap:
@@ -76,9 +76,6 @@ spec:
         configMap:
           name: common-context
           defaultMode: 0755
-      - name: node-settings
-        configMap:
-          name: node-settings
       - name: bundle
         configMap:
           name: bundle

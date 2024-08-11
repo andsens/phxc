@@ -1,4 +1,0 @@
-[Unit]
-Description=Reached when %i is ready
-Wants=workload-ready@%i.service
-After=workload-ready@%i.service

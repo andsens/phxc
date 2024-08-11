@@ -18,4 +18,5 @@ copy_exec /usr/bin/cp /bin
 copy_exec /usr/bin/bash /bin
 copy_exec /usr/bin/lsblk /bin
 copy_exec /usr/bin/socat /bin
+copy_exec /usr/bin/flock /bin
 copy_file root-certificate /usr/local/share/ca-certificates/home-cluster-root.crt /etc/home-cluster/root_ca.crt

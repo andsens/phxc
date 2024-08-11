@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 set -Eeo pipefail; shopt -s inherit_errexit
-case $1 in
-  prereqs) echo ""; exit 0;;
-esac
+[[ $1 != prereqs ]] || { echo "create-node-state"; exit 0; }
 
 # shellcheck disable=SC1091
 source /scripts/functions
@@ -10,55 +8,60 @@ PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
 # shellcheck source=../common.sh
 source "$PKGROOT/common.sh"
 
-rootimg_path=/run/initramfs/root.img
+ROOTIMG_PATH=/run/initramfs/root.img
 # shellcheck disable=SC2013
-for x in $(cat /proc/cmdline); do
-  case $x in
-  root_sha256=*) root_sha256=${x#root_sha256=} ;;
+for kernel_arg in $(cat /proc/cmdline); do
+  case $kernel_arg in
+  root_sha256=*) ROOT_SHA256=${kernel_arg#root_sha256=} ;;
   esac
 done
-if [[ -z "${root_sha256}" ]]; then
+if [[ -z "${ROOT_SHA256}" ]]; then
   panic "Unable to mount root disk. Boot argument root_sha256= not specified"
-  exit 1
+  return 1
 fi
 
 verify_rootimg() {
   info "Verifying checksum of root.img"
-  if printf "%s  %s" "$root_sha256" $rootimg_path.tmp | sha256sum -c -; then
-    set_boot_state rootimg-sha256 "$root_sha256"
-    mv $rootimg_path.tmp $rootimg_path
+  if printf "%s  %s" "$ROOT_SHA256" $ROOTIMG_PATH.tmp | sha256sum -c -; then
+    set_node_state rootimg-sha256 "$ROOT_SHA256"
+    mv $ROOTIMG_PATH.tmp $ROOTIMG_PATH
   else
     panic "root.img checksum is incorrect"
-    exit 1
+    return 1
   fi
 }
 
-rootimg_src_path=/run/initramfs/boot/home-cluster/root.img
-if [[ -e $rootimg_src_path ]]; then
-  info "Copying root.img from boot partition to RAM"
-  if cp $rootimg_src_path $rootimg_path.tmp; then
-    set_boot_state rootimg-src "$rootimg_src_path"
-    verify_rootimg
-    exit 0
-  else
-    error "Failed to copy root.img, falling back to downloading from boot-server"
-    # Try to download root.img instead, the sha256 might not match though
+main() {
+  local rootimg_src_path=/run/initramfs/boot/home-cluster/root.img
+  if [[ -e $rootimg_src_path ]]; then
+    info "Copying root.img from boot partition to RAM"
+    if cp $rootimg_src_path $ROOTIMG_PATH.tmp; then
+      set_node_state rootimg-src "$rootimg_src_path"
+      verify_rootimg
+      return 0
+    else
+      error "Failed to copy root.img, falling back to downloading from boot-server"
+      # Try to download root.img instead, the sha256 might not match though
+    fi
   fi
-fi
 
-if boot_server=$(get_boot_state boot-server); then
-  VARIANT=$(get_boot_state variant)
-  rootimg_src_addr=https://${boot_server}:8020/images/${VARIANT}/root.img
-  info "Downloading root image to RAM from $rootimg_src_addr"
-  if curl --cacert /etc/home-cluster/root_ca.crt -fsL --connect-timeout 5 --retry 3 -o $rootimg_path.tmp "$rootimg_src_addr"; then
-    set_boot_state rootimg-src "$rootimg_src_addr"
-    verify_rootimg
-    exit 0
+  local boot_server rootimg_src_addr
+  if boot_server=$(get_node_state boot-server); then
+    VARIANT=$(get_node_state variant)
+    rootimg_src_addr=https://${boot_server}:8020/images/${VARIANT}/root.img
+    info "Downloading root image to RAM from $rootimg_src_addr"
+    if curl --cacert /etc/home-cluster/root_ca.crt -fsL --connect-timeout 5 --retry 3 -o $ROOTIMG_PATH.tmp "$rootimg_src_addr"; then
+      set_node_state rootimg-src "$rootimg_src_addr"
+      verify_rootimg
+      return 0
+    else
+      panic "Failed to download root.img: Download failed"
+      return 1
+    fi
   else
-    panic "Failed to download root.img: Download failed"
-    exit 1
+    panic "Failed to download root.img: boot-server not present in node-state.json"
+    return 1
   fi
-else
-  panic "Failed to download root.img: boot-server not present in boot-state.json"
-  exit 1
-fi
+}
+
+main "$@"

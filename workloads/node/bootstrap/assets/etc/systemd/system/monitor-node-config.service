@@ -1,0 +1,9 @@
+[Unit]
+Description=Retrieve the node configuration
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/lib/upkg/.upkg/home-cluster/workloads/node/bin/monitor-node-config

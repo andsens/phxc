@@ -1,25 +1,28 @@
 #!/usr/bin/env bash
 set -Eeo pipefail; shopt -s inherit_errexit
-case $1 in
-  prereqs) echo "create-boot-state"; exit 0;;
-esac
+[[ $1 != prereqs ]] || { echo "create-node-state"; exit 0; }
 
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
 # shellcheck source=../common.sh
 source "$PKGROOT/common.sh"
 
 DISK_UUID=caf66bff-edab-4fb1-8ad9-e570be5415d7
-devname=$(lsblk -Jndo PTUUID,NAME -a | jq -r --arg disk_uuid $DISK_UUID '[.blockdevices[] | select(.ptuuid==$disk_uuid) | .name] | first // empty')
-if [[ -n "$devname" ]]; then
-  devpath=/dev/$devname
-  info "Disk detected at $devpath, mounting boot partition"
-  boot_devpath=/dev/$(lsblk -Jno NAME "$devpath" | jq -re '.blockdevices[0].children[0].name')
-  boot_path=/run/initramfs/boot
-  mkdir $boot_path
-  if mount -rt vfat "$boot_devpath" $boot_path; then
-    error "Failed to mount boot partition"
+
+main() {
+  devname=$(lsblk -Jndo PTUUID,NAME -a | jq -r --arg disk_uuid $DISK_UUID '[.blockdevices[] | select(.ptuuid==$disk_uuid) | .name] | first // empty')
+  if [[ -n "$devname" ]]; then
+    devpath=/dev/$devname
+    info "Disk detected at $devpath, mounting boot partition"
+    boot_devpath=/dev/$(lsblk -Jno NAME "$devpath" | jq -re '.blockdevices[0].children[0].name')
+    boot_path=/run/initramfs/boot
+    mkdir $boot_path
+    if mount -rt vfat "$boot_devpath" $boot_path; then
+      error "Failed to mount boot partition"
+    fi
+    set_node_state devpath "$devpath"
+  else
+    warning "No disk detected"
   fi
-  set_boot_state devpath "$devpath"
-else
-  warning "No disk detected"
-fi
+}
+
+main "$@"

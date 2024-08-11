@@ -9,7 +9,7 @@ items:
 - apiVersion: v1
   kind: ConfigMap
   metadata:
-    name: node-settings
+    name: node-config
   data:
 '
   # shellcheck disable=SC2016

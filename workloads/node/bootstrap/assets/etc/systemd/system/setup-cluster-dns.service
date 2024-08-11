@@ -1,7 +1,7 @@
 [Unit]
 Description=Setup Cluster DNS
-Requires=workload-ready@coredns.target
-After=workload-ready@coredns.target
+Requires=resource-ready@coredns.target
+After=resource-ready@coredns.target
 
 [Install]
 WantedBy=multi-user.target

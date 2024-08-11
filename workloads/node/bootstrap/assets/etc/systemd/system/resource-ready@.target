@@ -1,0 +1,4 @@
+[Unit]
+Description=Reached when %i is ready
+Wants=resource-ready@%i.service
+After=resource-ready@%i.service

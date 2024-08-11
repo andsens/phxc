@@ -1,7 +1,7 @@
 [Unit]
 Description=Pull external images to containerd
-Requires=workload-ready@k3s.target
-After=workload-ready@k3s.target
+Requires=resource-ready@k3s.target
+After=resource-ready@k3s.target
 Before=apply-all-manifests.service
 
 [Install]

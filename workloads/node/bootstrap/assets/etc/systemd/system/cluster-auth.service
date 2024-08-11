@@ -1,6 +1,6 @@
 [Unit]
 Description=Use remote attestation to authenticate with the cluster
-ConditionPathExists=/run/initramfs/boot-state.json
+ConditionPathExists=/run/initramfs/node-state.json
 Before=k3s@agent.service
 
 [Install]

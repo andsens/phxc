@@ -28,7 +28,7 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   mkdir -p /etc/rancher/k3s/config.yaml.d
 
   local label label_config="node-label: []" k3s_type=agent
-  for label in $(jq -r '(.["node-label"] // [])[]' /run/initramfs/node-settings.json); do
+  for label in $(jq -r '(.["node-label"] // [])[]' /run/initramfs/node-config.json); do
     if [[ $label = 'node-role.kubernetes.io/control-plane=true' ]]; then
       k3s_type=server
       # Filter out the label, it's not a valid label we can set

@@ -48,15 +48,6 @@ main() {
 
   local kernel_cmdline="root=/run/initramfs/root.img root_sha256=${sha256sums[root.img]} panic=300 noresume"
 
-  #####################
-  ### node-settings ###
-  #####################
-
-  local file node_settings_size_b=0
-  for file in /node-settings/*; do
-    node_settings_size_b=$(( node_settings_size_b + $(stat -c %s "$file") ))
-  done
-
   ######################
   ### Build boot.img ###
   ######################
@@ -81,7 +72,6 @@ main() {
         fs_table_size_b +
         $(stat -c %s "/assets/config-${VARIANT}.txt") +
         $(stat -c %s /workspace/cmdline.txt) +
-        node_settings_size_b +
         firmware_size_b +
         (1024 * 1024) +
         1023
@@ -100,8 +90,6 @@ copy-in /workspace/cmdline.txt /
 copy-in /workspace/root/boot/firmware /
 glob mv /firmware/* /
 rm-rf /firmware
-mkdir-p /home-cluster
-copy-in /node-settings /home-cluster/
 EOF
 
     sha256sums[boot.img]=$(sha256sum /workspace/boot.img | cut -d ' ' -f1)
@@ -122,11 +110,15 @@ EOF
     kernver=$(echo /workspace/root/lib/modules/*)
     kernver=${kernver#'/workspace/root/lib/modules/'}
 
+    cp -r /secureboot /workspace/root/secureboot
     chroot /workspace/root /lib/systemd/ukify build \
       --uname="$kernver" \
       --linux="boot/vmlinuz" \
       --initrd="boot/initrd.img" \
       --cmdline="$kernel_cmdline" \
+      --signtool=sbsign \
+      --secureboot-private-key=/secureboot/tls.key \
+      --secureboot-certificate=/secureboot/tls.crt \
       --output=/boot/uki.efi
 
     local uki_size_b

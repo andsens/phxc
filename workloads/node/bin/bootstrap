@@ -117,16 +117,8 @@ local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
     --tar-path "/workspace/images/$VARIANT.new/node.tar" \
     --no-push
 
-  local node_settings_tmp node mac
-  node_settings_tmp=$(mktemp -d)
-  trap_append "rm -rf \"$node_settings_tmp\"" EXIT
-  for node in $(yq -c '.nodes[]' "$PKGROOT/settings.yaml"); do
-    ! mac=$(yq -re '.mac' <<<"$node") || \
-      printf "%s\n" "$node" > "$node_settings_tmp/${mac//:/-}.json"
-  done
   docker run --rm -ti \
     --platform "$DOCKER_PLATFORM" \
-    -v "$node_settings_tmp:/node-settings:ro" \
     --mount type=bind,src="$SB_KEY",dst=/secureboot/tls.key,readonly \
     --mount type=bind,src="$SB_CRT",dst=/secureboot/tls.crt,readonly \
     -v "$PKGROOT/workloads/node/bootstrap/create-boot-image-assets:/assets:ro" \

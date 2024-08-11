@@ -1,66 +1,72 @@
 #!/usr/bin/env bash
 set -Eeo pipefail; shopt -s inherit_errexit
-case $1 in
-  # Download the node configuration first and make sure we can write the networking config
-  prereqs) echo "node-config overlayroot"; exit 0;;
-esac
+# Download the node configuration first and make sure we can write the networking config
+[[ $1 != prereqs ]] || { echo "config overlayroot"; exit 0; }
 
+# shellcheck disable=SC1091
+source /scripts/functions
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
 # shellcheck source=../common.sh
 source "$PKGROOT/common.sh"
 
-config_path=/run/initramfs/node-config.json
-if [[ -e $config_path ]]; then
-  if hostname=$(jq -re '.hostname' "$config_path"); then
-    :
-  elif primary_mac=$(get_boot_state primary-mac); then
-    warning "No hostname defined in node-config, using primary-mac from boot-state.json"
-    hostname=${primary_mac//:/-}
-  else
-    warning "No hostname defined in node-config and primary-mac not found in boot-state, generating random hostname"
-    hostname=$(xxd -p -l4 /dev/random)
-  fi
-  for network in $(jq -r '(.networks // []) | keys[]' "$config_path"); do
-    info "Configuring network $network"
-    if ! nic_name=$(jq -re --arg network "$network" '.networks[$network].nic' "$config_path"); then
-      warning "$network has no nic defined, skipping"
-      continue
+main() {
+  local hostname primary_mac
+  if [[ -e $NODE_CONFIG ]]; then
+    if hostname=$(jq -re '.hostname' "$NODE_CONFIG"); then
+      :
+    elif primary_mac=$(get_node_state primary-mac); then
+      warning "No hostname defined in node-config, using primary-mac from node-state.json"
+      hostname=${primary_mac//:/-}
+    else
+      warning "No hostname defined in node-config and primary-mac not found in node-state, generating random hostname"
+      hostname=$(xxd -p -l4 /dev/random)
     fi
-    addrs=$(jq -r --arg network "$network" '(.networks[$network].addrs // [])[] | "Address=\(.)"' "$config_path")
-    if [[ -n $addrs ]]; then
-      # shellcheck disable=SC2154
-      cat <<EOF >"$rootmnt/etc/systemd/network/$network.network"
+    local network nic_name
+    for network in $(jq -r '(.networks // []) | keys[]' "$NODE_CONFIG"); do
+      info "Configuring network $network"
+      if ! nic_name=$(jq -re --arg network "$network" '.networks[$network].nic' "$NODE_CONFIG"); then
+        warning "$network has no nic defined, skipping"
+        continue
+      fi
+      local addrs
+      addrs=$(jq -r --arg network "$network" '(.networks[$network].addrs // [])[] | "Address=\(.)"' "$NODE_CONFIG")
+      if [[ -n $addrs ]]; then
+        # shellcheck disable=SC2154
+        cat <<EOF >"$rootmnt/etc/systemd/network/$network.network"
 [Match]
 Name=$nic_name
 
 [Network]$addrs
 EOF
-    else
-      # shellcheck disable=SC2154
-      cat <<EOF >"$rootmnt/etc/systemd/network/$network.network"
+      else
+        # shellcheck disable=SC2154
+        cat <<EOF >"$rootmnt/etc/systemd/network/$network.network"
 [Match]
 Name=$nic_name
 
 [Network]
 DHCP=yes
 EOF
-    fi
-  done
-elif primary_mac=$(get_boot_state primary-mac); then
-  warning "No node-config found, using primary-mac from boot-state.json to configure primary network interface and hostname"
-  # shellcheck disable=SC2154
-  cat <<EOF >"$rootmnt/etc/systemd/network/primary.network"
+      fi
+    done
+  elif primary_mac=$(get_node_state primary-mac); then
+    warning "No node-config found, using primary-mac from node-state.json to configure primary network interface and hostname"
+    # shellcheck disable=SC2154
+    cat <<EOF >"$rootmnt/etc/systemd/network/primary.network"
 [Match]
 MACAddress=$primary_mac
 
 [Network]
 DHCP=yes
 EOF
-  hostname=${primary_mac//:/-}
-else
-  panic "Failed to configure networking: No node-config found primary-nic not present in boot-state.json"
-fi
+    hostname=${primary_mac//:/-}
+  else
+    panic "Failed to configure networking: No node-config found primary-nic not present in node-state.json"
+  fi
 
-info "Configuring hostname for node as %s" "$hostname"
-# shellcheck disable=SC2154
-printf "%s\n" "$hostname" >"$rootmnt/etc/hostname"
+  info "Configuring hostname for node as %s" "$hostname"
+  # shellcheck disable=SC2154
+  printf "%s\n" "$hostname" >"$rootmnt/etc/hostname"
+}
+
+main "$@"

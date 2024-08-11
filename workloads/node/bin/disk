@@ -9,61 +9,51 @@ DATA_UUID=6f07821d-bb94-4d0f-936e-4060cadf18d8
 
 main() {
   source "$PKGROOT/.upkg/records.sh/records.sh"
-  source "$PKGROOT/workloads/node/bootstrap/assets/etc/initramfs-tools/scripts/boot-state.sh"
+  source "$PKGROOT/workloads/node/bootstrap/assets/etc/initramfs-tools/scripts/node-state.sh"
 
-  DOC="setup-disk - Initialize the disk and mount /boot
+  DOC="disk - Manage the disk for persisting data
 Usage:
-  setup-disk [options]
-
-Options:
-  -r --retry=SEC  If no disk was found, retry every SEC seconds
+  disk get-devpath
+  disk mount-boot
+  disk setup DEVPATH
 "
-# docopt parser below, refresh this parser with `docopt.sh setup-disk`
+# docopt parser below, refresh this parser with `docopt.sh disk`
 # shellcheck disable=2016,2086,2317,1090,1091,2034
 docopt() { local v='2.0.1'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
-%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:152};usage=${DOC:49:29}
-digest=276aa;options=('-r --retry 1');node_0(){ value __retry 0;};node_1(){
-optional 0;};cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2
-printf "%s\n" "${DOC:49:29}" >&2;exit 1;}';local varnames=(__retry) varname
-for varname in "${varnames[@]}"; do unset "var_$varname";done;parse 1 "$@"
-local p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset \
-"$p$varname";done;eval $p'__retry=${var___retry:-};';local docopt_i=1;[[ \
-$BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for \
-varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
-# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' setup-disk`
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:107};usage=${DOC:43:64}
+digest=af59f;options=();node_0(){ value DEVPATH a;};node_1(){ switch \
+get_devpath a:get-devpath;};node_2(){ switch mount_boot a:mount-boot;};node_3(){
+switch setup a:setup;};node_4(){ sequence 3 0;};node_5(){ choice 1 2 4;};cat \
+<<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2;printf "%s\n" \
+"${DOC:43:64}" >&2;exit 1;}';local varnames=(DEVPATH get_devpath mount_boot \
+setup) varname;for varname in "${varnames[@]}"; do unset "var_$varname";done
+parse 5 "$@";local p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do
+unset "$p$varname";done;eval $p'DEVPATH=${var_DEVPATH:-};'$p'get_devpath=${var'\
+'_get_devpath:-false};'$p'mount_boot=${var_mount_boot:-false};'$p'setup=${var_'\
+'setup:-false};';local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2
+for ((;docopt_i>0;docopt_i--)); do for varname in "${varnames[@]}"; do declare \
+-p "$p$varname";done;done;}
+# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' disk`
   eval "$(docopt "$@")"
 
   local devpath boot_devpath
-  info "Looking for initialized disk for persisting data"
-  devpath=$(find_disk)
-  if [[ -z $devpath ]]; then
-    if [[ -n $__retry ]]; then
-      # Retry, run until we find a disk
-      while true; do
-        devpath=$(find_disk)
-        if [[ -z $devpath ]]; then
-          # No existing disk found, retry after delay
-          info "No initialized disk for persisting data found, retrying in %d seconds" "$__retry"
-          sleep "$__retry"
-        else
-          # Existing disk found, exit retry loop
-          break
-        fi
-      done
-    else
-      # No retry, fail
-      fatal "No initialized disk for persisting data found"
-    fi
-  fi
 
-  # partition_disk "$devpath"
-  # boot_devpath=$(get_boot_devpath "$devpath")
-  # mkfs.vfat "$boot_devpath"
-  boot_devpath=$(get_boot_devpath "$devpath")
-  set_boot_state devpath "$devpath"
-  verbose "Mounting boot partition"
-  mount "$boot_devpath" /boot
+  # shellcheck disable=SC2154
+  if $get_devpath; then
+    find_disk || fatal "No initialized disk for persisting data found"
+  elif $mount_boot; then
+    devpath=$(find_disk)
+    [[ -n $devpath ]] || fatal "No initialized disk for persisting data found"
+    boot_devpath=$(get_boot_devpath "$devpath")
+    verbose "Mounting boot partition"
+    mount "$boot_devpath" /boot
+  elif $setup; then
+    # shellcheck disable=SC2153
+    partition_disk "$DEVPATH"
+    boot_devpath=$(get_boot_devpath "$DEVPATH")
+    mkfs.vfat "$boot_devpath"
+  fi
 }
 
 get_boot_devpath() {
@@ -108,6 +98,11 @@ find_largest_blank_disk() {
 
 partition_disk() {
   local devpath=$1
+  ! sfdisk -J "$devpath" &>/dev/null || fatal "%s is partitioned, use \`wipefs -a\` to clear it first"
+  if lsblk -Jndo FSTYPE "$devpath" | jq -re '.blockdevices[0].fstype != null' &>/dev/null; then
+    fatal "%s contains a filesystem, use \`wipefs -a\` to clear it first"
+  fi
+
   local sector_size_b sectors_per_mib
   sector_size_b=$(lsblk --json -o phy-sec "$devpath" | jq -r '.blockdevices[0]["phy-sec"]')
   sectors_per_mib=$((1024 * 1024 / sector_size_b))

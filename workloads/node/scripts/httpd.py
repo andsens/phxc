@@ -12,7 +12,6 @@ import docopt
 import http.server
 import ssl
 import logging
-import pwd
 import sys
 import os
 import functools

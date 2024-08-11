@@ -55,23 +55,25 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   INTERMEDIATE_KEY=$STEPPATH/secrets/intermediate_ca_key
   TLS_CRT=$STEPPATH/certs/boot-server.crt
   TLS_KEY=$STEPPATH/certs/boot-server.key
+  TLS_BUNDLE=$STEPPATH/certs/boot-server.bundle.crt
   if [[ ! -e $TLS_KEY ]] || \
         ! step certificate verify "$TLS_CRT" --roots="$INTERMEDIATE_CRT" &>/dev/null || \
           step certificate needs-renewal "$TLS_CRT" &>/dev/null; then
     step certificate create \
       --ca "$INTERMEDIATE_CRT" --ca-key "$INTERMEDIATE_KEY" \
-      --no-password --insecure \
+      --force --no-password --insecure \
       "$HOST_IP" "$TLS_CRT" "$TLS_KEY"
     chown "$SUDO_UID:$SUDO_UID" "$TLS_CRT" "$TLS_KEY"
   fi
+  step certificate bundle --force "$TLS_CRT" "$INTERMEDIATE_CRT" "$TLS_BUNDLE"
 
   local \
     boot_server_root=$PKGROOT/mnt/boot-server \
     boot_server_venv=$PKGROOT/.venv/boot-server
   mkdir -p "$boot_server_root/images" "$boot_server_venv"
 
-  rm -rf "$boot_server_root/node-config"
-  mkdir "$boot_server_root/node-config"
+  rm -rf "$boot_server_root/node-config" "$boot_server_root/node-state"
+  mkdir "$boot_server_root/node-config" "$boot_server_root/node-state"
   local node mac
   for node in $(yq -c '.nodes[]' "$PKGROOT/settings.yaml"); do
     ! mac=$(yq -re '.mac' <<<"$node") || \
@@ -86,18 +88,26 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   trap_prepend "bg_killall" EXIT
 
   python3 -m venv "$boot_server_venv"
-  "$boot_server_venv/bin/pip3" install -r "$PKGROOT/workloads/node/containers/dhcp-proxy/requirements.txt"
+  "$boot_server_venv/bin/pip3" install -qr "$PKGROOT/workloads/node/containers/dhcp-proxy/requirements.txt"
+  "$boot_server_venv/bin/pip3" install -qr "$PKGROOT/workloads/node/containers/registry/requirements.txt"
+  chown -R "$SUDO_UID:$SUDO_UID" "$boot_server_venv"
 
+  BG_MAXPARALLEL=-1 BG_SIGNAL=TERM
   bg_run "$boot_server_venv/bin/python3" "$PKGROOT/workloads/node/scripts/dhcp-proxy.py" \
     --boot-map "$PKGROOT/workloads/node/config/boot-map.yaml" "$HOST_IP" "$TFTP_SERVER_IP"
   bg_run in.tftpd \
     --foreground --user tftp --address "$HOST_IP:69" \
     --map-file "$PKGROOT/workloads/node/config/tftpd-map-file" --secure "$boot_server_root" --blocksize 1468
+  bg_run tcpdump -i "$ifname" -nl port 69 and udp
   bg_run "$boot_server_venv/bin/python3" "$PKGROOT/workloads/node/scripts/httpd.py" \
-    --tls-bundle <(step certificate bundle --force "$TLS_CRT" "$INTERMEDIATE_CRT" /dev/stdout) \
+    --tls-bundle "$TLS_BUNDLE" \
     --tls-key "$TLS_KEY" \
     "$HOST_IP" "$boot_server_root"
-  bg_run tcpdump -i "$ifname" -nl port 69 and udp
+  PYTHONPATH=$PKGROOT/workloads/node/scripts \
+    bg_run "$boot_server_venv/bin/gunicorn" \
+      -b "$HOST_IP:8021" \
+      --certfile "$TLS_BUNDLE" --keyfile "$TLS_KEY" --ssl-version TLSv1_2 \
+      "registry:gunicorn(root=\"$boot_server_root\")"
   info "boot-server is ready"
   bg_block
 }

@@ -1,6 +1,3 @@
-#!/usr/bin/python3
-# Source: https://github.com/osresearch/safeboot-attest
-
 """
 Quote validating Attestation Server.
 
@@ -19,15 +16,16 @@ meets the policy requirements, and will return any output from this
 handler to the attesting machine.
 
 """
-import flask
-from flask import request, abort, send_file
+# Source: https://github.com/osresearch/safeboot-attest
+
+from flask import abort, send_file
 import subprocess
-import os, sys
-from stat import *
+import os
+import sys
+import stat
 import tempfile
 import logging
 import yaml
-import hashlib
 import time
 from Crypto.Hash import SHA256, HMAC
 from Crypto.Cipher import AES
@@ -35,34 +33,21 @@ from Crypto.PublicKey import RSA
 from Crypto.Random import get_random_bytes
 from Crypto.Util.Padding import pad
 
-
-stderr = logging.StreamHandler(sys.stderr)
 log = logging.getLogger(__name__)
-log.setLevel(level=logging.INFO)
-log.addHandler(stderr)
+ak_type = 'fixedtpm|stclear|fixedparent|sensitivedataorigin|userwithauth|restricted|sign'
 
 attest_verify_script = os.environ.get('ATTEST_VERIFY')
 if not attest_verify_script:
   attest_verify_script = './attest-verify'
 
-ak_type = 'fixedtpm|stclear|fixedparent|sensitivedataorigin|userwithauth|restricted|sign'
-
-app = flask.Flask(__name__)
-app.config['DEBUG'] = True
-
-@app.route('/', methods=['GET'])
-def home_get():
-  abort(405)
-
-@app.route('/', methods=['POST'])
-def home_post():
+def verify_attestation(request_files):
   _tmp = None
   try:
     # at a minimum there must be:
     required = ('quote', 'sig', 'pcr', 'nonce', 'ak.pub', 'ek.pem')
 
     for f in required:
-      if f not in request.files:
+      if f not in request_files:
         log.error(f'{f} not present in form data')
         abort(403)
 
@@ -75,12 +60,12 @@ def home_post():
     _tmp = tempfile.TemporaryDirectory()
     tmpdir = _tmp.name
     s = os.stat(tmpdir)
-    os.chmod(tmpdir, s.st_mode | S_IROTH | S_IXOTH)
+    os.chmod(tmpdir, s.st_mode | stat.S_IROTH | stat.S_IXOTH)
 
     # store the required files in variables, as well as into the directory
     files = {}
     for f in required:
-      files[f] = request.files[f].read()
+      files[f] = request_files[f].read()
       with open(os.path.join(tmpdir, f), 'wb') as fd:
         fd.write(files[f])
 
@@ -218,6 +203,3 @@ def home_post():
   finally:
     if _tmp is not None:
       _tmp.cleanup()
-
-if __name__ == '__main__':
-  app.run()

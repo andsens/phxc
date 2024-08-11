@@ -3,3 +3,4 @@
 /mnt
 /.venv
 /.step
+__pycache__

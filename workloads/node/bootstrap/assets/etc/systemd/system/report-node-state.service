@@ -1,0 +1,11 @@
+[Unit]
+Description=Report node state to the registry
+
+[Service]
+Type=oneshot
+Restart=on-failure
+RestartSec=15s
+ExecStart=/usr/local/lib/upkg/.upkg/home-cluster/workloads/node/bin/node-state report
+
+[Install]
+WantedBy=multi-user.target
