@@ -21,33 +21,12 @@ main() {
       warning "No hostname defined in node-config and primary-mac not found in node-state, generating random hostname"
       hostname=$(xxd -p -l4 /dev/random)
     fi
-    local network nic_name
+    local network
     for network in $(jq -r '(.networks // []) | keys[]' "$NODE_CONFIG"); do
       info "Configuring network $network"
-      if ! nic_name=$(jq -re --arg network "$network" '.networks[$network].nic' "$NODE_CONFIG"); then
-        warning "$network has no nic defined, skipping"
-        continue
-      fi
-      local addrs
-      addrs=$(jq -r --arg network "$network" '(.networks[$network].addrs // [])[] | "Address=\(.)"' "$NODE_CONFIG")
-      if [[ -n $addrs ]]; then
-        # shellcheck disable=SC2154
-        cat <<EOF >"$rootmnt/etc/systemd/network/$network.network"
-[Match]
-Name=$nic_name
-
-[Network]$addrs
-EOF
-      else
-        # shellcheck disable=SC2154
-        cat <<EOF >"$rootmnt/etc/systemd/network/$network.network"
-[Match]
-Name=$nic_name
-
-[Network]
-DHCP=yes
-EOF
-      fi
+      config=$(jq -r --arg network "$network" '.networks[$network]' "$NODE_CONFIG")
+      # shellcheck disable=SC2154
+      printf "%s\n" "$config" >"$rootmnt/etc/systemd/network/$network.network"
     done
   elif primary_mac=$(get_node_state primary-mac); then
     warning "No node-config found, using primary-mac from node-state.json to configure primary network interface and hostname"
