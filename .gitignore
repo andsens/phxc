@@ -1,6 +1,5 @@
 /.upkg
 /settings.yaml
 /mnt
-/.venv
-/.step
+/startup
 __pycache__

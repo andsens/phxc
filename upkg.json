@@ -35,18 +35,14 @@
     },
     {
       "name": "kustomize",
-      "bin": [
-        "kustomize"
-      ],
+      "bin": ["kustomize"],
       "os/arch": "Linux/x86_64",
       "tar": "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.4.2/kustomize_v5.4.2_linux_amd64.tar.gz",
       "sha256": "881c6e9007c7ea2b9ecc214d13f4cdd1f837635dcf4db49ce4479898f7d911a3"
     },
     {
       "name": "kustomize",
-      "bin": [
-        "kustomize"
-      ],
+      "bin": ["kustomize"],
       "os/arch": "Linux/aarch64",
       "tar": "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.4.2/kustomize_v5.4.2_linux_arm64.tar.gz",
       "sha256": "175af88af8a7d8d7d6b1f26659060950f0764d00b9979b4e11b61b8b212b7c22"
@@ -75,36 +71,28 @@
     },
     {
       "name": "step-kms-plugin",
-      "bin": [
-        "step-kms-plugin_0.11.4/step-kms-plugin"
-      ],
+      "bin": ["step-kms-plugin_0.11.4/step-kms-plugin"],
       "os/arch": "Linux/x86_64",
       "tar": "https://github.com/smallstep/step-kms-plugin/releases/download/v0.11.4/step-kms-plugin_0.11.4_linux_amd64.tar.gz",
       "sha256": "e4bd82f4a4b0dab84cbbc7c267ccbee0aced807d92bae4ee4bee32e063584964"
     },
     {
       "name": "step-kms-plugin",
-      "bin": [
-        "step-kms-plugin_0.11.4/step-kms-plugin"
-      ],
+      "bin": ["step-kms-plugin_0.11.4/step-kms-plugin"],
       "os/arch": "Linux/aarch64",
       "tar": "https://github.com/smallstep/step-kms-plugin/releases/download/v0.11.4/step-kms-plugin_0.11.4_linux_arm64.tar.gz",
       "sha256": "8c4fbc2338b372a079fcef17454689ed3eaf4eadaa9304f21bb89e28f39fd34f"
     },
     {
       "name": "step",
-      "bin": [
-        "step_0.27.1/bin/step"
-      ],
+      "bin": ["step_0.27.1/bin/step"],
       "os/arch": "Linux/x86_64",
       "tar": "https://dl.smallstep.com/gh-release/cli/gh-release-header/v0.27.1/step_linux_0.27.1_amd64.tar.gz",
       "sha256": "d93c520f549c0949521b008f410fc67bc430e7452e88f0d287eb2e3d5c43187a"
     },
     {
       "name": "step",
-      "bin": [
-        "step_0.27.1/bin/step"
-      ],
+      "bin": ["step_0.27.1/bin/step"],
       "os/arch": "Linux/aarch64",
       "tar": "https://dl.smallstep.com/gh-release/cli/gh-release-header/v0.27.1/step_linux_0.27.1_arm64.tar.gz",
       "sha256": "f68634f6cdef281b4985bf3b18bccdc560307bf3421ece54811231cf3b577252"
