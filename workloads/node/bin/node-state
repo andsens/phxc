@@ -36,7 +36,7 @@ varnames=(report collect) varname;for varname in "${varnames[@]}"; do unset \
     boot_server=$(get_node_state boot-server) || fatal "Unable to report node state: boot-server not present in node-state.json"
     primary_mac=$(get_node_state primary-mac) || fatal "Unable to report node state: primary-mac not present in node-state.json"
     node_state_addr=https://${boot_server}:8021/node-state/${primary_mac//:/-}.json
-    if curl -XPUT --cacert /usr/local/share/ca-certificates/home-cluster-root.crt -fsL -d @$NODE_STATE --connect-timeout 5 --retry 3 "$node_state_addr" &>/dev/null; then
+    if curl -XPUT --cacert /usr/local/share/ca-certificates/home-cluster-root.crt -fL --no-progress-meter --connect-timeout 5 --retry 3 -d@$NODE_STATE "$node_state_addr" &>/dev/null; then
       info "The node state has been reported"
     else
       # shellcheck disable=SC2154

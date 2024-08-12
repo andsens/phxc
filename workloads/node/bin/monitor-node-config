@@ -38,7 +38,7 @@ varnames=(__pollrate) varname;for varname in "${varnames[@]}"; do unset \
   primary_mac=$(get_node_state primary-mac) || fatal "Unable to download node configuration: primary-mac not present in node-state.json"
   config_src_addr=https://${boot_server}:8020/node-config/${primary_mac//:/-}.json
   while true; do
-    if config=$(curl --cacert /usr/local/share/ca-certificates/home-cluster-root.crt -fsL --connect-timeout 5 --retry 3 "$config_src_addr"); then
+    if config=$(curl --cacert /usr/local/share/ca-certificates/home-cluster-root.crt -fL --no-progress-meter --connect-timeout 5 --retry 3 "$config_src_addr"); then
       if [[ ! -e $config_path ]] || ! diff $config_path <(printf "%s\n" "$config") &>/dev/null; then
         # Update the node-config on the boot partition
         ! mountpoint -q /boot || printf "%s\n" "$config" > "/boot/node-config.json"

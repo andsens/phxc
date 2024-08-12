@@ -36,7 +36,7 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
     fatal "Unable to retrieve boot-server from node-state.json"
   fi
   clear_boot_tmp
-  if ! curl -fsLo$BOOT_TMP/digests.json "http://${boot_server}:8020/images/$VARIANT/digests.json"; then
+  if ! curl --cacert /usr/local/share/ca-certificates/home-cluster-root.crt -fL --no-progress-meter --connect-timeout 5 --retry 3o$BOOT_TMP/digests.json "https://${boot_server}:8020/images/$VARIANT/digests.json"; then
     fatal "Unable to retrieve image digests from boot server"
   fi
   if [[ $VARIANT = rpi* ]]; then
@@ -47,8 +47,8 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
       info "boot.img is up-to-date"
     else
       info "boot.img is outdated, updating now"
-      curl -fsLo$BOOT_TMP/root.img "http://${boot_server}:8020/images/$VARIANT/root.img"
-      curl -fsLo$BOOT_TMP/boot.img "http://${boot_server}:8020/images/$VARIANT/boot.img"
+      curl --cacert /usr/local/share/ca-certificates/home-cluster-root.crt -fL --no-progress-meter --connect-timeout 5 --retry 3o$BOOT_TMP/root.img "https://${boot_server}:8020/images/$VARIANT/root.img"
+      curl --cacert /usr/local/share/ca-certificates/home-cluster-root.crt -fL --no-progress-meter --connect-timeout 5 --retry 3o$BOOT_TMP/boot.img "https://${boot_server}:8020/images/$VARIANT/boot.img"
       mkdir $BOOT_TMP/boot-img
       mount $BOOT_TMP/boot.img $BOOT_TMP/boot-img
       trap_append "umount $BOOT_TMP/boot-img" EXIT
@@ -70,8 +70,8 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
       info "uki.efi is up-to-date"
     else
       info "uki.efi is outdated, updating now"
-      curl -fsLo$BOOT_TMP/root.img "http://${boot_server}:8020/images/$VARIANT/root.img"
-      curl -fsLo$BOOT_TMP/EFI/BOOT/BOOT${efisuffix}.EFI "http://${boot_server}:8020/images/$VARIANT/uki.efi"
+      curl --cacert /usr/local/share/ca-certificates/home-cluster-root.crt -fL --no-progress-meter --connect-timeout 5 --retry 3 -o$BOOT_TMP/root.img "http://${boot_server}:8020/images/$VARIANT/root.img"
+      curl --cacert /usr/local/share/ca-certificates/home-cluster-root.crt -fL --no-progress-meter --connect-timeout 5 --retry 3 -o$BOOT_TMP/EFI/BOOT/BOOT${efisuffix}.EFI "http://${boot_server}:8020/images/$VARIANT/uki.efi"
       mkdir -p /boot/home-cluster /EFI/BOOT
       cp $BOOT_TMP/root.img /boot/home-cluster/root.img.new
       cp $BOOT_TMP/EFI/BOOT/BOOT${efisuffix}.EFI /boot/EFI/BOOT/BOOT${efisuffix}.EFI.new

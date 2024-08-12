@@ -50,7 +50,7 @@ main() {
     VARIANT=$(get_node_state variant)
     rootimg_src_addr=https://${boot_server}:8020/images/${VARIANT}/root.img
     info "Downloading root image to RAM from $rootimg_src_addr"
-    if curl --cacert /etc/home-cluster/root_ca.crt -fsL --connect-timeout 5 --retry 3 -o $ROOTIMG_PATH.tmp "$rootimg_src_addr"; then
+    if curl --cacert /etc/home-cluster/root_ca.crt -fL --no-progress-meter --connect-timeout 5 --retry 3 -o $ROOTIMG_PATH.tmp "$rootimg_src_addr"; then
       set_node_state rootimg-src "$rootimg_src_addr"
       verify_rootimg
       return 0
