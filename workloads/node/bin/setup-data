@@ -6,6 +6,7 @@ PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../..")
 main() {
   source "$PKGROOT/.upkg/records.sh/records.sh"
   source "$PKGROOT/workloads/node/bootstrap/assets/etc/initramfs-tools/scripts/node-state.sh"
+  source "$PKGROOT/workloads/node/bootstrap/assets/etc/initramfs-tools/scripts/disk.sh"
 
   DOC="setup-data - Initialize, expand, and mount the persistent data partition
 Usage:
@@ -26,26 +27,36 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' setup-data`
   eval "$(docopt "$@")"
 
-  [[ -e /run/initramfs/cluster-secrets.json ]] || fatal "/run/initramfs/cluster-secrets.json does not exist"
-  local disk_encryption_key
-  disk_encryption_key=$(jq -j '.["disk-encryption-key"]' /run/initramfs/cluster-secrets.json)
-
   local devpath data_devpath
-  devpath=$("$PKGROOT/workloads/node/bin/disk" get-devpath)
+  devpath=$(jq -re '.disk.devpath' "$NODE_STATE")
   data_devpath=/dev/$(lsblk -Jno Name "$devpath" | jq -re '.blockdevices[0].children[1].name')
   sfdisk -N 2 "$data_devpath" <<<', +'
 
-  if cryptsetup isLuks "$data_devpath" 2>/dev/null; then
-    cryptsetup open --type luks2 --key-file <(printf "%s" "$disk_encryption_key") "$data_devpath" persistent
+  if jq -re '.disk.encrypted' "$NODE_STATE" >/dev/null; then
+    [[ -e /run/initramfs/cluster-secrets.json ]] || fatal "/run/initramfs/cluster-secrets.json does not exist"
+    local disk_encryption_key
+    disk_encryption_key=$(jq -j '.["disk-encryption-key"]' /run/initramfs/cluster-secrets.json)
+
+    if cryptsetup isLuks "$data_devpath" 2>/dev/null; then
+      cryptsetup open --type luks2 --key-file <(printf "%s" "$disk_encryption_key") "$data_devpath" persistent
+    else
+      info "Setting up encrypted data partition"
+      cryptsetup luksFormat --batch-mode "$data_devpath" <(printf "%s" "$disk_encryption_key")
+      cryptsetup open --type luks2 --key-file <(printf "%s" "$disk_encryption_key") "$data_devpath" persistent
+      mkfs.ext4 /dev/mapper/persistent
+    fi
+    cryptsetup resize crypt-volume
+    e2fsck -f /dev/mapper/persistent
+    resize2fs /dev/mapper/persistent
+    mount /dev/mapper/persistent /var/lib/persistent
+    set_node_state disk.encrypted true
   else
-    info "Setting up encrypted data partition"
-    cryptsetup luksFormat --batch-mode "$data_devpath" <(printf "%s" "$disk_encryption_key")
-    cryptsetup open --type luks2 --key-file <(printf "%s" "$disk_encryption_key") "$data_devpath" persistent
-    mkfs.ext4 /dev/mapper/persistent
+    if lsblk -Jndo FSTYPE "$data_devpath" | jq -re '.blockdevices[0].fstype == null' >/dev/null; then
+      mkfs.ext4 "$data_devpath"
+    fi
+    mount "$data_devpath" /var/lib/persistent
+    set_node_state disk.encrypted false
   fi
-  cryptsetup resize crypt-volume
-  e2fsck -f /dev/mapper/persistent
-  resize2fs /dev/mapper/persistent
 }
 
 main "$@"

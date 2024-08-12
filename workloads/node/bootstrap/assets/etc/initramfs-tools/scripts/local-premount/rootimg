@@ -23,7 +23,7 @@ fi
 verify_rootimg() {
   info "Verifying checksum of root.img"
   if printf "%s  %s" "$ROOT_SHA256" $ROOTIMG_PATH.tmp | sha256sum -c -; then
-    set_node_state rootimg-sha256 "$ROOT_SHA256"
+    set_node_state rootimg.sha256 "$ROOT_SHA256"
     mv $ROOTIMG_PATH.tmp $ROOTIMG_PATH
   else
     panic "root.img checksum is incorrect"
@@ -36,7 +36,7 @@ main() {
   if [[ -e $rootimg_src_path ]]; then
     info "Copying root.img from boot partition to RAM"
     if cp $rootimg_src_path $ROOTIMG_PATH.tmp; then
-      set_node_state rootimg-src "$rootimg_src_path"
+      set_node_state rootimg.src "$rootimg_src_path"
       verify_rootimg
       return 0
     else
@@ -51,7 +51,7 @@ main() {
     rootimg_src_addr=https://${boot_server}:8020/images/${VARIANT}/root.img
     info "Downloading root image to RAM from $rootimg_src_addr"
     if curl --cacert /etc/home-cluster/root_ca.crt -fL --no-progress-meter --connect-timeout 5 --retry 3 -o $ROOTIMG_PATH.tmp "$rootimg_src_addr"; then
-      set_node_state rootimg-src "$rootimg_src_addr"
+      set_node_state rootimg.src "$rootimg_src_addr"
       verify_rootimg
       return 0
     else

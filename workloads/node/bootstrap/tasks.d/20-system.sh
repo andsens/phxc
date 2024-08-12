@@ -17,7 +17,6 @@ system() {
     /etc/systemd/system/report-node-state.service \
     /etc/systemd/system/update-boot.service \
     /etc/systemd/system/setup-data.service \
-    /etc/systemd/system/var-lib-persistent.mount \
     /etc/systemd/system/create-persistent-dir@.service \
     /etc/systemd/system/create-persistent-dir@.service \
     /etc/systemd/system/resource-ready@.service \
@@ -32,8 +31,7 @@ system() {
     report-node-state.service \
     update-boot.service \
     cluster-auth.service \
-    setup-data.service \
-    var-lib-persistent.mount
+    setup-data.service
 
   mkdir /var/lib/persistent
 }

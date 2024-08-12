@@ -5,6 +5,7 @@ PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../..")
 
 main() {
   source "$PKGROOT/.upkg/records.sh/records.sh"
+  source "$PKGROOT/workloads/node/bootstrap/assets/etc/initramfs-tools/scripts/disk.sh"
   source "$PKGROOT/.upkg/path-tools/path-tools.sh"
   PATH=$(path_prepend "$PKGROOT/.upkg/.bin")
 
@@ -19,6 +20,7 @@ Recognized resources are:
 * node-config
 * disk
 * boot-mount
+* persistent-mount
 * k3s
 * cilium
 * coredns
@@ -66,16 +68,22 @@ local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
   fi
 }
 
-node_config_ready() {
-  test -e /run/initramfs/node-config.json
-}
-
 disk_ready() {
-  "$PKGROOT/workloads/node/bin/disk" find-disk &>/dev/null
+  local devpaths=()
+  if devpath=$(get_node_config disk.devpath); then
+    readarray -t -d $'\n' devpaths < <(lsblk -Jndo PTUUID,NAME -a | jq -r --arg disk_uuid $DISK_UUID '.blockdevices[] | select(.ptuuid==$disk_uuid) | "/dev/\(.name)"')
+    contains_element "$devpath" "${devpaths[@]}"
+  else
+    return 1
+  fi
 }
 
 boot_mount_ready() {
   mountpoint -q /boot
+}
+
+persistent_mount_ready() {
+  mountpoint -q /var/lib/persistent
 }
 
 k3s_ready() {

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeo pipefail; shopt -s inherit_errexit
-# Download the node configuration first and make sure we can write the networking config
-[[ $1 != prereqs ]] || { echo "config overlayroot"; exit 0; }
+# Make sure we can write the networking config
+[[ $1 != prereqs ]] || { echo "overlayroot"; exit 0; }
 
 # shellcheck disable=SC1091
 source /scripts/functions
@@ -46,6 +46,7 @@ EOF
   info "Configuring hostname for node as %s" "$hostname"
   # shellcheck disable=SC2154
   printf "%s\n" "$hostname" >"$rootmnt/etc/hostname"
+  set_node_state hostname "$hostname"
 }
 
 main "$@"

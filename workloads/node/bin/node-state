@@ -43,11 +43,11 @@ varnames=(report collect) varname;for varname in "${varnames[@]}"; do unset \
       fatal "Reporting the node state failed"
     fi
   elif $collect; then
-    local blockdevices='[]' devname disk_filesystem disk_partitions
-    for devname in $(lsblk --json --output NAME,FSTYPE,TYPE,MAJ:MIN | jq -r '.blockdevices[] | select(.type=="disk" and (.["maj:min"] | endswith(":0"))) | .name'); do
-      disk_filesystem=$(lsblk -Jndo FSTYPE "/dev/$devname" | jq -re '.blockdevices[0].fstype')
-      disk_partitions=$(sfdisk -J "/dev/$devname" 2>/dev/null || printf "null")
-      blockdevices=$(jq --arg devname "$devname" --arg fs "$disk_filesystem" --argjson part "$disk_partitions" '. + [{"devname": $devname, "filesystem": $fs, "partitions": $part}]' <<<"$blockdevices")
+    local blockdevices='[]' devpath disk_filesystem disk_partitions
+    for devpath in $(lsblk --json --output NAME,FSTYPE,TYPE,MAJ:MIN | jq -r '.blockdevices[] | select(.type=="disk" and (.["maj:min"] | endswith(":0"))) | "/dev/\(.name)"'); do
+      disk_filesystem=$(lsblk -Jndo FSTYPE "$devpath" | jq -re '.blockdevices[0].fstype')
+      disk_partitions=$(sfdisk -J "$devpath" 2>/dev/null || printf "null")
+      blockdevices=$(jq --arg devpath "$devpath" --arg fs "$disk_filesystem" --argjson part "$disk_partitions" '. + [{"devpath": $devpath, "filesystem": $fs, "partitions": $part}]' <<<"$blockdevices")
     done
     set_node_state blockdevices "$blockdevices" true
 

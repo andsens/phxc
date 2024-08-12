@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -Eeo pipefail; shopt -s inherit_errexit
-# We don't have any prerequirements
-[[ $1 != prereqs ]] || { echo ""; exit 0; }
+[[ $1 != prereqs ]] || { echo "find-boot-server"; exit 0; }
 
 # shellcheck disable=SC1091
 source /scripts/functions
@@ -22,7 +21,7 @@ main() {
   if boot_server=$(get_node_state boot-server) && primary_mac=$(get_node_state primary-mac); then
     config_src_addr=https://${boot_server}:8020/node-config/${primary_mac//:/-}.json
     # Download config from boot-server, there might be a newer version (but keep the one from the boot partition so we have a fallback if we don't succeed)
-    if curl --cacert /usr/local/share/ca-certificates/home-cluster-root.crt -fL --no-progress-meter --connect-timeout 5 --retry 3 -o "$NODE_CONFIG.tmp" "$config_src_addr"; then
+    if curl --cacert /etc/home-cluster/root_ca.crt -fL --no-progress-meter --connect-timeout 5 --retry 3 -o "$NODE_CONFIG.tmp" "$config_src_addr"; then
       mv "$NODE_CONFIG.tmp" "$NODE_CONFIG"
       # Update the node-config for this machine on the boot partition
       [[ ! -e /run/initramfs/boot ]] || cp "$NODE_CONFIG" "/run/initramfs/boot/node-config.json"
