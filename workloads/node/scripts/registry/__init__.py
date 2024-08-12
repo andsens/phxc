@@ -5,6 +5,7 @@ import os
 import sys
 import re
 import logging
+import json
 from registry.verify_attestation import verify_attestation
 
 log = logging.getLogger(__name__)
@@ -21,12 +22,21 @@ app.config['DEBUG'] = os.getenv('LOGLEVEL', 'INFO').upper() == 'DEBUG'
 def root_get():
   flask.abort(405)
 
+@app.route('/node-config/<mac>.json', methods=['GET'])
+def get_node_config(mac):
+  if re.match(r'^([0-9a-f]{2}-){5}[0-9a-f]{2}$', mac) is None:
+    flask.abort(400)
+  with open(os.path.join(app.config['root'], f'node-state/{mac}.json'), 'r') as h:
+    json.load(h)
+    return {'result': 'OK'}
+
 @app.route('/node-state/<mac>.json', methods=['PUT'])
 def put_node_state(mac):
   if re.match(r'^([0-9a-f]{2}-){5}[0-9a-f]{2}$', mac) is None:
     flask.abort(400)
   with open(os.path.join(app.config['root'], f'node-state/{mac}.json'), 'w') as h:
-    h.write(flask.request.get_data().decode())
+    node_state = json.loads(flask.request.get_data())
+    h.write(json.dumps(node_state, indent=2))
   return {'result': 'OK'}
 
 @app.route('/attest', methods=['POST'])
