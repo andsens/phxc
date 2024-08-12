@@ -163,7 +163,7 @@ EOF
   # Finish up by moving everything to the right place in the most atomic way possible
   # as to avoid leaving anything in an incomplete state
 
-  info "Moving UEFI disk, squashfs root, shim bootloader, mok manager, and unified kernel image EFI to shared volume"
+  info "Moving all assets to shared images/"
 
   # Move all artifacts into the /images mount
   local src mv_failed=0
