@@ -39,7 +39,8 @@ boot() {
     /etc/initramfs-tools/hooks/home-cluster \
     /etc/initramfs-tools/scripts/common.sh \
     /etc/initramfs-tools/scripts/node-state.sh \
-    /etc/initramfs-tools/scripts/node-config.sh
+    /etc/initramfs-tools/scripts/node-config.sh \
+    /etc/initramfs-tools/scripts/curl-boot-server.sh
   cp "$PKGROOT/.upkg/records.sh/records.sh" "/etc/initramfs-tools/scripts/records.sh"
 
   # Setup node-state.json
@@ -59,7 +60,7 @@ boot() {
     /etc/initramfs-tools/scripts/init-bottom/umount-boot
 
   # Node configuration
-  cp_tpl --raw --chmod=0755 /etc/initramfs-tools/scripts/init-bottom/node-config
+  cp_tpl --raw --chmod=0755 /etc/initramfs-tools/scripts/init-premount/node-config
 
   # Networking setup
   systemctl enable systemd-networkd

@@ -20,7 +20,8 @@ system() {
     /etc/systemd/system/create-persistent-dir@.service \
     /etc/systemd/system/create-persistent-dir@.service \
     /etc/systemd/system/resource-ready@.service \
-    /etc/systemd/system/resource-ready@.target
+    /etc/systemd/system/resource-ready@.target \
+    /etc/systemd/system.conf.d/variant.conf
 
   systemctl enable \
     systemd-timesyncd.service \
@@ -34,4 +35,7 @@ system() {
     setup-data.service
 
   mkdir /var/lib/persistent
+  if [[ $VARIANT = rpi* ]]; then
+    ln -s ../persistent/home-cluster/systemd-credential.secret /var/lib/systemd/credential.secret
+  fi
 }

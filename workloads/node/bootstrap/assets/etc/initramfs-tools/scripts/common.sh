@@ -7,3 +7,5 @@ source "$PKGROOT/records.sh"
 source "$PKGROOT/node-state.sh"
 # shellcheck source=./node-config.sh
 source "$PKGROOT/node-config.sh"
+# shellcheck source=./curl-boot-server.sh
+source "$PKGROOT/curl-boot-server.sh"

@@ -106,35 +106,48 @@ EOF
 
     info "Creating unified kernel image"
 
+    printf "%s" "$kernel_cmdline" > /workspace/root/boot/cmdline.txt
+
     local kernver
     kernver=$(echo /workspace/root/lib/modules/*)
     kernver=${kernver#'/workspace/root/lib/modules/'}
 
+    chroot /workspace/root /lib/systemd/systemd-measure calculate \
+      --linux=boot/vmlinuz \
+      --initrd=boot/initrd.img \
+      --cmdline=boot/cmdline.txt \
+      --osrel=/etc/os-release \
+      --json=pretty \
+      >/boot/pcr11.json
+
+    artifacts[/boot/pcr11.json]=/images/$VARIANT.new/pcr11.json
+
     cp -r /secureboot /workspace/root/secureboot
     chroot /workspace/root /lib/systemd/ukify build \
       --uname="$kernver" \
-      --linux="boot/vmlinuz" \
-      --initrd="boot/initrd.img" \
+      --linux=boot/vmlinuz \
+      --initrd=boot/initrd.img \
       --cmdline="$kernel_cmdline" \
       --signtool=sbsign \
       --secureboot-private-key=/secureboot/tls.key \
       --secureboot-certificate=/secureboot/tls.crt \
       --output=/boot/uki.efi
 
+    artifacts[/workspace/root/boot/uki.efi]=/images/$VARIANT.new/uki.efi
+
     local uki_size_b
     uki_size_b=$(stat -c %s /workspace/root/boot/uki.efi)
     (( uki_size_b <= 1024 * 1024 * 64 )) || \
       warning "uki.efi size exceeds 64MiB (%dMiB). Transferring the image via TFTP will result in its truncation" "$((uki_size_b / 1024 / 1024))"
 
-    artifacts[/workspace/root/boot/uki.efi]=/images/$VARIANT.new/uki.efi
 
     # Extract authentihashes used for PE signatures so we can use them for remote attestation
-    # authentihashes[uki.efi]=$(/signify/bin/python3 /scripts/get-pe-digest.py --json /workspace/root/boot/uki.efi)
+    authentihashes[uki.efi]=$(/signify/bin/python3 /scripts/get-pe-digest.py --json /workspace/root/boot/uki.efi)
     sha256sums[uki.efi]=$(sha256sum /workspace/root/boot/uki.efi | cut -d ' ' -f1)
     # See https://lists.freedesktop.org/archives/systemd-devel/2022-December/048694.html
     # as to why we also measure the embedded kernel
     objcopy -O binary --only-section=.linux /workspace/root/boot/uki.efi /workspace/uki-vmlinuz
-    # authentihashes[vmlinuz]=$(/signify/bin/python3 /scripts/get-pe-digest.py --json /workspace/uki-vmlinuz)
+    authentihashes[vmlinuz]=$(/signify/bin/python3 /scripts/get-pe-digest.py --json /workspace/uki-vmlinuz)
   fi
 
   ###########################
