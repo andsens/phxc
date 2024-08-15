@@ -1,9 +1,11 @@
 [Unit]
-Description=Retrieve the node configuration
+Description=Monitor the node configuration
+
+[Service]
+Restart=always
+RestartSec=1m
+Type=simple
+ExecStart=/usr/local/lib/upkg/.upkg/home-cluster/workloads/node/bin/download-node-config
 
 [Install]
 WantedBy=multi-user.target
-
-[Service]
-Type=simple
-ExecStart=/usr/local/lib/upkg/.upkg/home-cluster/workloads/node/bin/monitor-node-config

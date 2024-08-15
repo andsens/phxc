@@ -27,8 +27,11 @@ def get_node_config(mac):
   if re.match(r'^([0-9a-f]{2}-){5}[0-9a-f]{2}$', mac) is None:
     flask.abort(400)
   with open(os.path.join(app.config['root'], f'node-state/{mac}.json'), 'r') as h:
-    json.load(h)
-    return {'result': 'OK'}
+    try:
+      return json.load(h)
+    except Exception as e:
+      log.error(e)
+      flask.abort(500)
 
 @app.route('/node-state/<mac>.json', methods=['PUT'])
 def put_node_state(mac):
