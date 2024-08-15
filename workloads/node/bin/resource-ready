@@ -30,8 +30,8 @@ Recognized resources are:
 # shellcheck disable=2016,2086,2317,1090,1091,2034
 docopt() { local v='2.0.1'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
-%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:250};usage=${DOC:55:42}
-digest=74b51;options=('-w --wait 0');node_0(){ switch __wait 0;};node_1(){
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:269};usage=${DOC:55:42}
+digest=aaa63;options=('-w --wait 0');node_0(){ switch __wait 0;};node_1(){
 value RESOURCE a;};node_2(){ optional 0;};node_3(){ sequence 2 1;};cat <<<' \
 docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2;printf "%s\n" \
 "${DOC:55:42}" >&2;exit 1;}';local varnames=(__wait RESOURCE) varname;for \

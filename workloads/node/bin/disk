@@ -17,19 +17,16 @@ Usage:
 # shellcheck disable=2016,2086,2317,1090,1091,2034
 docopt() { local v='2.0.1'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
-%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:107};usage=${DOC:43:64}
-digest=af59f;options=();node_0(){ value DEVPATH a;};node_1(){ switch \
-get_devpath a:get-devpath;};node_2(){ switch mount_boot a:mount-boot;};node_3(){
-switch setup a:setup;};node_4(){ sequence 3 0;};node_5(){ choice 1 2 4;};cat \
-<<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2;printf "%s\n" \
-"${DOC:43:64}" >&2;exit 1;}';local varnames=(DEVPATH get_devpath mount_boot \
-setup) varname;for varname in "${varnames[@]}"; do unset "var_$varname";done
-parse 5 "$@";local p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do
-unset "$p$varname";done;eval $p'DEVPATH=${var_DEVPATH:-};'$p'get_devpath=${var'\
-'_get_devpath:-false};'$p'mount_boot=${var_mount_boot:-false};'$p'setup=${var_'\
-'setup:-false};';local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2
-for ((;docopt_i>0;docopt_i--)); do for varname in "${varnames[@]}"; do declare \
--p "$p$varname";done;done;}
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:80};usage=${DOC:43:37}
+digest=60319;options=();node_0(){ switch mount_boot a:mount-boot;};node_1(){
+switch setup a:setup;};node_2(){ choice 0 1;};cat <<<' docopt_exit() { [[ -n \
+$1 ]] && printf "%s\n" "$1" >&2;printf "%s\n" "${DOC:43:37}" >&2;exit 1;}'
+local varnames=(mount_boot setup) varname;for varname in "${varnames[@]}"; do
+unset "var_$varname";done;parse 2 "$@";local p=${DOCOPT_PREFIX:-''};for \
+varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'mount_boot=${v'\
+'ar_mount_boot:-false};'$p'setup=${var_setup:-false};';local docopt_i=1;[[ \
+$BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for \
+varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' disk`
   eval "$(docopt "$@")"
 
