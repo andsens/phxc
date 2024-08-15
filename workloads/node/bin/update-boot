@@ -66,14 +66,14 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
       arm64) efisuffix=AA64 ;;
       *) fatal "Unknown variant: %s" "$VARIANT" ;;
     esac
-    latest_uki_sha256=$(jq -re '.sha256sums["uki"]' $BOOT_TMP/digests.json)
-    if [[ -e /EFI/BOOT/BOOT${efisuffix}.EFI && $latest_uki_sha256 = "$(sha256sum | cut -d ' ' -f1)" ]]; then
+    latest_uki_sha256=$(jq -re '.sha256sums["uki.efi"]' $BOOT_TMP/digests.json)
+    if [[ -e /boot/EFI/BOOT/BOOT${efisuffix}.EFI && $latest_uki_sha256 = "$(sha256sum | cut -d ' ' -f1)" ]]; then
       info "uki.efi is up-to-date"
     else
       info "uki.efi is outdated, updating now"
-      curl_boot_server -o$BOOT_TMP/root.img "http://${boot_server}:8020/images/$VARIANT/root.img"
-      curl_boot_server -o$BOOT_TMP/uki.efi "http://${boot_server}:8020/images/$VARIANT/uki.efi"
-      curl_boot_server -o$BOOT_TMP/pcr11.json "http://${boot_server}:8020/images/$VARIANT/pcr11.json"
+      curl_boot_server -o$BOOT_TMP/root.img "https://${boot_server}:8020/images/$VARIANT/root.img"
+      curl_boot_server -o$BOOT_TMP/uki.efi "https://${boot_server}:8020/images/$VARIANT/uki.efi"
+      curl_boot_server -o$BOOT_TMP/pcr11.json "https://${boot_server}:8020/images/$VARIANT/pcr11.json"
       mkdir -p /boot/home-cluster /boot/EFI/BOOT
       mv $BOOT_TMP/root.img /boot/home-cluster/root.img.new
       mv $BOOT_TMP/uki.efi /boot/EFI/BOOT/BOOT${efisuffix}.EFI.new
