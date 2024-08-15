@@ -10,8 +10,7 @@ eval_settings
 main() {
   export DEBIAN_FRONTEND=noninteractive
 
-  # Enable backports
-  sed -i 's/Suites: bookworm bookworm-updates/Suites: bookworm bookworm-updates bookworm-backports/' /etc/apt/sources.list.d/debian.sources
+  # Enable non-free components
   sed -i 's/Components: main/Components: main contrib non-free non-free-firmware/' /etc/apt/sources.list.d/debian.sources
   # Disable update-initramfs
   cp_tpl --raw /etc/initramfs-tools/update-initramfs-disable.conf -d /etc/initramfs-tools/update-initramfs.conf
@@ -30,7 +29,7 @@ main() {
   readarray -t -d $'\n' -O ${#PACKAGES[@]} PACKAGES < <(printf "%s\n" "${PACKAGES[@]}" | sort -u)
   info "Installing packages: %s" "${PACKAGES[*]}"
   apt-get update -qq
-  apt-get install -y -t bookworm-backports --no-install-recommends "${PACKAGES[@]}"
+  apt-get install -y --no-install-recommends "${PACKAGES[@]}"
   rm -rf /var/cache/apt/lists/*
 
   upkg add -g "$PKGROOT/workloads/node/bootstrap/assets/system.upkg.json"

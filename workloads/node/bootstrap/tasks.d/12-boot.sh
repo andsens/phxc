@@ -2,7 +2,7 @@
 
 # klibc does not support loop device mounting
 PACKAGES+=(
-  systemd-sysv systemd-boot # systemd bootup
+  systemd-sysv systemd-boot systemd-ukify # systemd bootup
   initramfs-tools busybox util-linux zstd # initrd
   python3-pefile sbsigntool # UKI creation & signing
   dosfstools # Used for mounting ESP

@@ -1,4 +1,4 @@
-FROM debian:bookworm
+FROM debian:trixie
 SHELL ["/bin/bash", "-Eeo", "pipefail", "-c"]
 
 WORKDIR /safeboot-attest

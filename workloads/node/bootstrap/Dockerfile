@@ -1,4 +1,4 @@
-FROM debian:bookworm
+FROM debian:trixie
 SHELL ["/usr/bin/bash", "-Eeo", "pipefail", "-c"]
 ARG VARIANT
 
