@@ -32,7 +32,7 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 
   boot_server=$(get_node_state boot-server) || fatal "Unable to download node configuration: boot-server not present in node-state.json"
   primary_mac=$(get_node_state primary-mac) || fatal "Unable to download node configuration: primary-mac not present in node-state.json"
-  config_src_addr=https://${boot_server}:8021/node-config/${primary_mac//:/-}.json
+  config_src_addr=https://${boot_server}:8020/registry/node-config/${primary_mac//:/-}.json
   if config=$(curl_boot_server "$config_src_addr"); then
     if [[ ! -e $config_path ]] || ! diff $config_path <(printf "%s\n" "$config") &>/dev/null; then
       # Update the node-config on the boot partition

@@ -22,7 +22,7 @@ main() {
       hostname=$(xxd -p -l4 /dev/random)
     fi
     local network
-    for network in $(jq -r '(.networks // []) | keys[]' "$NODE_CONFIG"); do
+    for network in $(jq -r '(.networks // {}) | keys[]' "$NODE_CONFIG"); do
       info "Configuring network $network"
       config=$(jq -r --arg network "$network" '.networks[$network]' "$NODE_CONFIG")
       # shellcheck disable=SC2154

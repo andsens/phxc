@@ -36,7 +36,7 @@ varnames=(report collect) varname;for varname in "${varnames[@]}"; do unset \
     local boot_server primary_mac node_state_addr
     boot_server=$(get_node_state boot-server) || fatal "Unable to report node state: boot-server not present in node-state.json"
     primary_mac=$(get_node_state primary-mac) || fatal "Unable to report node state: primary-mac not present in node-state.json"
-    node_state_addr=https://${boot_server}:8021/node-state/${primary_mac//:/-}.json
+    node_state_addr=https://${boot_server}:8020/registry/node-state/${primary_mac//:/-}.json
     if curl_boot_server -XPUT -d@"$NODE_STATE" "$node_state_addr" &>/dev/null; then
       info "The node state has been reported"
     else

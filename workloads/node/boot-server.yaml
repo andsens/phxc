@@ -47,12 +47,9 @@ spec:
     app.kubernetes.io/name: node
     app.kubernetes.io/component: boot-server
   ports:
-  - name: boot-assets
+  - name: http
     port: 8020
-    targetPort: boot-assets
-  - name: remote-attestation
-    port: 8021
-    targetPort: remote-attestation
+    targetPort: http
 ---
 apiVersion: secretgenerator.mittwald.de/v1alpha1
 kind: StringSecret
@@ -117,8 +114,8 @@ spec:
           readOnlyRootFilesystem: true
         ports:
         - name: remote-attestation
-          containerPort: 8021
-          hostPort: 8021
+          containerPort: 8000
+          hostPort: 8000
         volumeMounts:
         - name: scripts
           mountPath: /safeboot-attest/attest-server.py

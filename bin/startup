@@ -205,8 +205,8 @@ boot_server() {
   mkdir -p \
     "$boot_server_root/registry/node-config" \
     "$boot_server_root/registry/node-state" \
+    "$boot_server_root/registry/images" \
     "$boot_server_root/tftpd/images" \
-    "$boot_server_root/httpd/images"
 
   trap_prepend "bg_killall" TERM
   trap_prepend "bg_killall" INT
@@ -219,8 +219,8 @@ boot_server() {
   info "Binding to port 67 & 69 and bind-mounting directories require administrator privileges, you might be asked for your sudo password"
   sudo mount --bind "$IMAGES" "$boot_server_root/tftpd/images"
   trap_append "info \"unmounting tftpd bind-mount\"; sudo umount \"$boot_server_root/tftpd/images\"" EXIT
-  sudo mount --bind "$IMAGES" "$boot_server_root/httpd/images"
-  trap_append "info \"unmounting httpd bind-mount\"; sudo umount \"$boot_server_root/httpd/images\"" EXIT
+  sudo mount --bind "$IMAGES" "$boot_server_root/registry/images"
+  trap_append "info \"unmounting registry bind-mount\"; sudo umount \"$boot_server_root/registry/images\"" EXIT
 
   BG_MAXPARALLEL=-1 BG_SIGNAL=TERM
   bg_run sudo "$boot_server_root/venv/bin/python3" "$PKGROOT/workloads/node/scripts/dhcp-proxy.py" \
@@ -229,17 +229,11 @@ boot_server() {
     --foreground --user tftp --address "$HOST_IP:69" \
     --map-file "$PKGROOT/workloads/node/config/tftpd-map-file" --secure "$boot_server_root/tftpd" --blocksize 1468
   bg_run sudo tcpdump -i "$ifname" -nl port 69 and udp
-  # We don't use the nginx docker image here because we need to listen on the current interface
-  # which in WSL even with --net=host is *not that*
-  bg_run "$boot_server_root/venv/bin/python3" "$PKGROOT/workloads/node/scripts/httpd.py" \
-    --tls-bundle "$BOOT_SERVER_BUNDLE" \
-    --tls-key "$BOOT_SERVER_KEY" \
-    "$HOST_IP" "$boot_server_root/httpd"
   PYTHONPATH=$PKGROOT/workloads/node/scripts \
     bg_run "$boot_server_root/venv/bin/gunicorn" \
-      -b "$HOST_IP:8021" \
+      -b "$HOST_IP:8020" \
       --certfile "$BOOT_SERVER_BUNDLE" --keyfile "$BOOT_SERVER_KEY" --ssl-version TLSv1_2 \
-      "registry:gunicorn(root=\"$boot_server_root/registry\")"
+      "registry:gunicorn(root=\"$boot_server_root/registry\",enable_images=True)"
   info "boot-server is ready"
   bg_block
 }
