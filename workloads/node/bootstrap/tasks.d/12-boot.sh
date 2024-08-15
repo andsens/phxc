@@ -38,8 +38,7 @@ boot() {
   cp_tpl --raw --chmod=0755 \
     /etc/initramfs-tools/hooks/home-cluster \
     /etc/initramfs-tools/scripts/common.sh \
-    /etc/initramfs-tools/scripts/node-state.sh \
-    /etc/initramfs-tools/scripts/node-config.sh \
+    /etc/initramfs-tools/scripts/node.sh \
     /etc/initramfs-tools/scripts/curl-boot-server.sh
   cp "$PKGROOT/.upkg/records.sh/records.sh" "/etc/initramfs-tools/scripts/records.sh"
 

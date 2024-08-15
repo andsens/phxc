@@ -7,7 +7,7 @@ export LC_ALL=C
 
 main() {
   source "$PKGROOT/.upkg/records.sh/records.sh"
-  source "$PKGROOT/workloads/node/bootstrap/assets/etc/initramfs-tools/scripts/node-state.sh"
+  source "$PKGROOT/workloads/node/bootstrap/assets/etc/initramfs-tools/scripts/node.sh"
   source "$PKGROOT/workloads/node/bootstrap/assets/etc/initramfs-tools/scripts/curl-boot-server.sh"
   DOC="monitor-node-config - Monitor the node configuration and reboot if it changes
 Usage:
