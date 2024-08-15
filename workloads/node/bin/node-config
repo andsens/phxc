@@ -52,16 +52,16 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 
   while true; do
 
-    while true; do
-      if hostname=$(jq -re '.hostname // empty' <<<"$node_config"); then
-        out "Enter a hostname for the node [%s]: " "$hostname"
-        hostname=$(get_text "$hostname")
-      else
-        out "Enter a hostname for the node: "
-        hostname=$(get_text)
-      fi
-      node_config=$(jq --arg hostname "$hostname" '.hostname=$hostname' <<<"$node_config")
+    if hostname=$(jq -re '.hostname // empty' <<<"$node_config"); then
+      out "Enter a hostname for the node [%s]: " "$hostname"
+      hostname=$(get_text "$hostname")
+    else
+      out "Enter a hostname for the node: "
+      hostname=$(get_text)
+    fi
+    node_config=$(jq --arg hostname "$hostname" '.hostname=$hostname' <<<"$node_config")
 
+    while true; do
       local node_label node_label_opts=() node_label_state
       for node_label in "${node_labels[@]}"; do
         node_label_state=' (selected)'
@@ -106,7 +106,8 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
     local encrypt_disk
     while true; do
       encrypt_disk=$(jq -r '.disk.encrypted' <<<"$node_config")
-      if [[ $encrypt_disk = null ]] || $encrypt_disk; then
+      if [[ $encrypt_disk = null || $encrypt_disk = true ]]; then
+        encrypt_disk=true
         out "Should the disk be encrypted? [Yn] "
       else
         out "Should the disk be encrypted? [yN] "
@@ -147,16 +148,18 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 
     local \
       nic nic_json nic_opts nic_in_network nic_configured_as \
-      network_name \
+      network_name network_name_primary_taken \
       addr_opts addr_setup addrs \
-      addr_opts=(dhcp DHCP fixed 'Fixed IP(s)')
+      addr_opts=(fixed 'Fixed IP(s)')
     while true; do
       nic_opts=()
+      network_name_primary_taken=false
       for nic_json in $(jq -rc '.nics[]' "$node_state_path"); do
-        nic_in_network=$(jq -r --argjson nic "$nic_json" '[.networks | to_entries[] | select(.value | contains("Name=\($nic.ifname)")) | .key] | first' <<<"$node_config")
+        nic_in_network=$(jq -r --argjson nic "$nic_json" '[.networks // {} | to_entries[] | select(.value | contains("Name=\($nic.ifname)")) | .key] | first // empty' <<<"$node_config")
         if [[ -n $nic_in_network ]]; then
           nic_json=$(jq --arg network "$nic_in_network" '.network=$network' <<<"$nic_json")
           nic_configured_as="configured as '$nic_in_network'"
+          [[ $nic_in_network != primary ]] || network_name_primary_taken=true
         else
           nic_configured_as=unconfigured
         fi
@@ -168,13 +171,16 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
         node_config=$(jq --arg name "$nic_in_network" 'del(.networks[$name])' <<<"$node_config")
         out "Enter a name for the network (e.g. primary, lan0, host) [%s]: " "$nic_in_network"
         network_name=$(get_text "$nic_in_network")
-      else
+      elif $network_name_primary_taken; then
         out "Enter a name for the network (e.g. primary, lan0, host): "
         network_name=$(get_text)
+      else
+        out "Enter a name for the network (e.g. primary, lan0, host) [primary]: "
+        network_name=$(get_text primary)
       fi
-      addr_setup=$(select_options "Network interface setup:" "" "${addr_opts[@]}")
+      addr_setup=$(select_options "Network interface setup:" "DHCP" "${addr_opts[@]}")
       case $addr_setup in
-        dhcp)
+        "")
           node_config=$(jq --arg name "$network_name" --argjson nic "$nic" '.networks[$name] = "[Match]
 Name=\($nic.ifname)
 [Network]
