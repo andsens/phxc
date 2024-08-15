@@ -30,32 +30,36 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   local devpath data_devpath
   devpath=$(jq -re '.disk.devpath' "$NODE_STATE")
   data_devpath=/dev/$(lsblk -Jno Name "$devpath" | jq -re '.blockdevices[0].children[1].name')
-  sfdisk -N 2 "$devpath" <<<', +'
-
-  if jq -re '.disk.encrypted' "$NODE_STATE" >/dev/null; then
-    [[ -e /run/initramfs/cluster-secrets.json ]] || fatal "/run/initramfs/cluster-secrets.json does not exist"
-    local disk_encryption_key
-    disk_encryption_key=$(jq -j '.["disk-encryption-key"]' /run/initramfs/cluster-secrets.json)
-
-    if cryptsetup isLuks "$data_devpath" 2>/dev/null; then
-      cryptsetup open --type luks2 --key-file <(printf "%s" "$disk_encryption_key") "$data_devpath" persistent
-    else
-      info "Setting up encrypted data partition"
-      cryptsetup luksFormat --batch-mode "$data_devpath" <(printf "%s" "$disk_encryption_key")
-      cryptsetup open --type luks2 --key-file <(printf "%s" "$disk_encryption_key") "$data_devpath" persistent
-      mkfs.ext4 /dev/mapper/persistent
-    fi
-    cryptsetup resize crypt-volume
-    e2fsck -f /dev/mapper/persistent
-    resize2fs /dev/mapper/persistent
-    mount /dev/mapper/persistent /var/lib/persistent
-    set_node_state disk.encrypted true
+  if lsblk -Jndo MOUNTPOINTS "$data_devpath" | jq -re '.blockdevices[0].mountpoints != [null]' &>/dev/null; then
+    info "%s is already mounted, assuming the persistent data partition is set up" "$data_devpath"
   else
-    if lsblk -Jndo FSTYPE "$data_devpath" | jq -re '.blockdevices[0].fstype == null' >/dev/null; then
-      mkfs.ext4 "$data_devpath"
+    sfdisk -N 2 "$devpath" <<<', +'
+
+    if jq -re '.disk.encrypted' "$NODE_STATE" >/dev/null; then
+      [[ -e /run/initramfs/cluster-secrets.json ]] || fatal "/run/initramfs/cluster-secrets.json does not exist"
+      local disk_encryption_key
+      disk_encryption_key=$(jq -j '.["disk-encryption-key"]' /run/initramfs/cluster-secrets.json)
+
+      if cryptsetup isLuks "$data_devpath" 2>/dev/null; then
+        cryptsetup open --type luks2 --key-file <(printf "%s" "$disk_encryption_key") "$data_devpath" persistent
+      else
+        info "Setting up encrypted data partition"
+        cryptsetup luksFormat --batch-mode "$data_devpath" <(printf "%s" "$disk_encryption_key")
+        cryptsetup open --type luks2 --key-file <(printf "%s" "$disk_encryption_key") "$data_devpath" persistent
+        mkfs.ext4 /dev/mapper/persistent
+      fi
+      cryptsetup resize crypt-volume
+      e2fsck -f /dev/mapper/persistent
+      resize2fs /dev/mapper/persistent
+      mount /dev/mapper/persistent /var/lib/persistent
+      set_node_state disk.encrypted true
+    else
+      if lsblk -Jndo FSTYPE "$data_devpath" | jq -re '.blockdevices[0].fstype == null' >/dev/null; then
+        mkfs.ext4 "$data_devpath"
+      fi
+      mount "$data_devpath" /var/lib/persistent
+      set_node_state disk.encrypted false
     fi
-    mount "$data_devpath" /var/lib/persistent
-    set_node_state disk.encrypted false
   fi
 }
 
