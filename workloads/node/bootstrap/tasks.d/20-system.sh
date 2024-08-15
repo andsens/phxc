@@ -15,6 +15,7 @@ system() {
     /etc/systemd/system/collect-node-state.service \
     /etc/systemd/system/report-node-state.path \
     /etc/systemd/system/report-node-state.service \
+    /etc/systemd/system/setup-disk.service \
     /etc/systemd/system/update-boot.service \
     /etc/systemd/system/setup-data.service \
     /etc/systemd/system/create-persistent-dir@.service \
@@ -30,6 +31,7 @@ system() {
     collect-node-state.service \
     report-node-state.path \
     report-node-state.service \
+    setup-disk.service \
     update-boot.service \
     cluster-auth.service \
     setup-data.service

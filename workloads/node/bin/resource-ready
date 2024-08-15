@@ -5,6 +5,7 @@ PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../..")
 
 main() {
   source "$PKGROOT/.upkg/records.sh/records.sh"
+  source "$PKGROOT/workloads/node/bootstrap/assets/etc/initramfs-tools/scripts/node.sh"
   source "$PKGROOT/workloads/node/bootstrap/assets/etc/initramfs-tools/scripts/disk.sh"
   source "$PKGROOT/.upkg/path-tools/path-tools.sh"
   PATH=$(path_prepend "$PKGROOT/.upkg/.bin")
@@ -55,7 +56,7 @@ local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
 
   # shellcheck disable=SC2154
   if $__wait; then
-    until eval "${resource}_ready" 2> >(pipe_verbose); do
+    until "${resource}_ready" 2> >(pipe_verbose); do
       sleep 1
     done
     info "%s is ready" "$resource"
@@ -70,12 +71,8 @@ local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
 
 disk_ready() {
   local devpaths=()
-  if devpath=$(get_node_config disk.devpath); then
-    readarray -t -d $'\n' devpaths < <(lsblk -Jndo PTUUID,NAME -a | jq -r --arg disk_uuid $DISK_UUID '.blockdevices[] | select(.ptuuid==$disk_uuid) | "/dev/\(.name)"')
-    contains_element "$devpath" "${devpaths[@]}"
-  else
-    return 1
-  fi
+  devpath=$(get_node_config disk.devpath)
+  lsblk -Jndo PTUUID "$devpath" | jq -re --arg disk_uuid $DISK_UUID '.blockdevices[0].ptuuid==$disk_uuid' &>/dev/null
 }
 
 boot_mount_ready() {

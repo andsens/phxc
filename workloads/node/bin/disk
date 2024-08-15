@@ -41,40 +41,29 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   elif $setup; then
     local devpaths=()
     devpath=$(get_node_config disk.devpath) || fatal "Unable to setup disk, no devpath provided in node-config.json"
-    if lsblk -Jndo PTUUID,NAME "$devpath" | jq -re --arg disk_uuid $DISK_UUID '.blockdevices[0].ptuuid==$disk_uuid' >/dev/null; then
+    if "$PKGROOT/workloads/node/bin/resource-ready" disk &>/dev/null; then
       info "disk at '%s' is already setup" "$devpath"
-    fi
-    if sfdisk -J "$devpath" 2>/dev/null || lsblk -Jndo FSTYPE "$devpath" | jq -re '.blockdevices[0].fstype != null' >/dev/null; then
-      get_node_config disk.force || fatal "Device %s is partitioned or contains a filesystem and .disk.force!=true, aborting disk setup"
-    fi
-    wipefs -a "$devpath"
-    # shellcheck disable=SC2153
-    partition_disk "$devpath"
-    boot_devpath=$(get_boot_devpath "$devpath")
-    mkfs.vfat "$boot_devpath"
-    set_node_state disk.devpath "$devpath"
-  fi
-}
+    else
+      if sfdisk -J "$devpath" 2>/dev/null || lsblk -Jndo FSTYPE "$devpath" | jq -re '.blockdevices[0].fstype != null' >/dev/null; then
+        [[ $(get_node_config disk.force) = true ]] || fatal "Device %s is partitioned or contains a filesystem and .disk.force!=true, aborting disk setup" "$devpath"
+      fi
+      wipefs -a "$devpath"
+      if lsblk -Jndo FSTYPE "$devpath" | jq -re '.blockdevices[0].fstype != null' &>/dev/null; then
+        fatal "%s contains a filesystem, use \`wipefs -a\` to clear it first"
+      fi
 
-partition_disk() {
-  local devpath=$1
-  ! sfdisk -J "$devpath" &>/dev/null || fatal "%s is partitioned, use \`wipefs -a\` to clear it first"
-  if lsblk -Jndo FSTYPE "$devpath" | jq -re '.blockdevices[0].fstype != null' &>/dev/null; then
-    fatal "%s contains a filesystem, use \`wipefs -a\` to clear it first"
-  fi
-
-  local sector_size_b sectors_per_mib
-  sector_size_b=$(lsblk --json -o phy-sec "$devpath" | jq -r '.blockdevices[0]["phy-sec"]')
-  sectors_per_mib=$((1024 * 1024 / sector_size_b))
-
-  boot_partition_size_mib=1024 # 1 GiB
-  sfdisk "$devpath" <<EOF
+      sfdisk "$devpath" <<EOF
 label: gpt
 label-id: $DISK_UUID
 
-start=$(( 1 * sectors_per_mib )), size=$(( boot_partition_size_mib * sectors_per_mib )), type=U, bootable, uuid=$ESP_UUID
-start=$(( ( 1 + boot_partition_size_mib ) * sectors_per_mib )), uuid=$DATA_UUID
+size=1GiB, type=U, bootable, uuid=$ESP_UUID
+uuid=$DATA_UUID
 EOF
+      boot_devpath=$(get_boot_devpath "$devpath")
+      mkfs.vfat "$boot_devpath"
+    fi
+    set_node_state disk.devpath "$devpath"
+  fi
 }
 
 main "$@"

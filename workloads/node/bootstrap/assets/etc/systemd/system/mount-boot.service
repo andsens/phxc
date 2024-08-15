@@ -9,4 +9,4 @@ WantedBy=multi-user.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/lib/upkg/.upkg/home-cluster/workloads/node/bin/setup-disk mount-boot
+ExecStart=/usr/local/lib/upkg/.upkg/home-cluster/workloads/node/bin/disk mount-boot

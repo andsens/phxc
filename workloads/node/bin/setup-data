@@ -30,7 +30,7 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   local devpath data_devpath
   devpath=$(jq -re '.disk.devpath' "$NODE_STATE")
   data_devpath=/dev/$(lsblk -Jno Name "$devpath" | jq -re '.blockdevices[0].children[1].name')
-  sfdisk -N 2 "$data_devpath" <<<', +'
+  sfdisk -N 2 "$devpath" <<<', +'
 
   if jq -re '.disk.encrypted' "$NODE_STATE" >/dev/null; then
     [[ -e /run/initramfs/cluster-secrets.json ]] || fatal "/run/initramfs/cluster-secrets.json does not exist"
