@@ -2,6 +2,7 @@
 
 # shellcheck source=../../../../../../../.upkg/records.sh/records.sh
 source "$PKGROOT/records.sh"
+# shellcheck disable=SC2034
 [[ ${debug:-n} != y ]] || LOGLEVEL=debug
 # shellcheck source=node.sh
 source "$PKGROOT/node.sh"

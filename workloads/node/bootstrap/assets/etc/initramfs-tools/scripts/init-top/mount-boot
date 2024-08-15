@@ -11,7 +11,7 @@ source "$PKGROOT/disk.sh"
 main() {
   local devpath
   if devpath=$(get_node_config disk.devname); then
-    if lsblk -Jndo PTUUID,NAME "$devpath" | jq -re --arg disk_uuid $DISK_UUID '.blockdevices[0].ptuuid==$disk_uuid' >/dev/null; then
+    if lsblk -Jndo PTUUID,NAME "$devpath" | jq -re --arg disk_uuid "$DISK_UUID" '.blockdevices[0].ptuuid==$disk_uuid' >/dev/null; then
       info "Mounting boot partition of disk at $devpath"
       boot_devpath=$(get_boot_devpath "$devpath")
       boot_path=/run/initramfs/boot
