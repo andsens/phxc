@@ -35,8 +35,12 @@ def put_node_state(mac):
   if re.match(r'^([0-9a-f]{2}-){5}[0-9a-f]{2}$', mac) is None:
     flask.abort(400)
   with open(os.path.join(app.config['root'], f'node-state/{mac}.json'), 'w') as h:
-    node_state = json.loads(flask.request.get_data())
-    h.write(json.dumps(node_state, indent=2))
+    try:
+      node_state = json.loads(flask.request.get_data())
+      h.write(json.dumps(node_state, indent=2))
+    except Exception as e:
+      log.error(e)
+      flask.abort(400)
   return {'result': 'OK'}
 
 @app.route('/attest', methods=['POST'])
