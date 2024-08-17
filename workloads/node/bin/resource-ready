@@ -25,7 +25,7 @@ Recognized resources are:
 "
 # docopt parser below, refresh this parser with `docopt.sh resource-ready`
 # shellcheck disable=2016,2086,2317,1090,1091,2034
-docopt() { local v='2.0.1'; source \
+docopt() { local v='2.0.2'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
 %d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:216};usage=${DOC:55:42}
 digest=d0134;options=('-w --wait 0');node_0(){ switch __wait 0;};node_1(){

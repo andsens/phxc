@@ -79,7 +79,7 @@ Options:
 "
 # docopt parser below, refresh this parser with `docopt.sh run-tasks.sh`
 # shellcheck disable=2016,2086,2317,1090,1091,2034,2154
-docopt() { local v='2.0.1'; source \
+docopt() { local v='2.0.2'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
 %d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:436};usage=${DOC:75:123}
 digest=dbf91;options=(' --raw 0' ' --var 1' ' --chmod 1' '-d --destination 1')

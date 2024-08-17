@@ -12,7 +12,7 @@ Usage:
 "
 # docopt parser below, refresh this parser with `docopt.sh configure-k3s`
 # shellcheck disable=2016,2086,2317,1090,1091,2034
-docopt() { local v='2.0.1'; source \
+docopt() { local v='2.0.2'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
 %d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:65};usage=${DOC:43:22}
 digest=065f4;options=();node_0(){ return 0;};cat <<<' docopt_exit() { [[ -n $1 \

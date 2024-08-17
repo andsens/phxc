@@ -31,7 +31,7 @@ Supported variants:
 "
 # docopt parser below, refresh this parser with `docopt.sh startup`
 # shellcheck disable=2016,2086,2317,1090,1091,2034
-docopt() { local v='2.0.1'; source \
+docopt() { local v='2.0.2'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
 %d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:416};usage=${DOC:50:69}
 digest=a261c;options=('-h --host-ip 1');node_0(){ value __host_ip 0;};node_1(){

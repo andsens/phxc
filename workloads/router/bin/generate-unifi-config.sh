@@ -16,7 +16,7 @@ Usage:
 "
 # docopt parser below, refresh this parser with `docopt.sh generate-unifi-config.sh`
 # shellcheck disable=2016,2086,2317,1090,1091,2034
-docopt() { local v='2.0.1'; source \
+docopt() { local v='2.0.2'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
 %d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:89};usage=${DOC:56:33}
 digest=ac04c;options=();node_0(){ return 0;};cat <<<' docopt_exit() { [[ -n $1 \
