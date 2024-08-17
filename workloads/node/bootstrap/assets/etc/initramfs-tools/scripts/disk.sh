@@ -10,3 +10,13 @@ get_boot_devpath() {
   local devpath=$1
   printf "/dev/%s" "$(lsblk -Jno Name "$devpath" | jq -re '.blockdevices[0].children[0].name')"
 }
+
+get_data_devpath() {
+  local devpath=$1
+  printf "/dev/%s" "$(lsblk -Jno Name "$devpath" | jq -re '.blockdevices[0].children[1].name')"
+}
+
+get_mountpoint() {
+  local devpath=$1
+  lsblk -Jndo MOUNTPOINTS "$devpath" | jq -re 'if .blockdevices[0].mountpoints != [null] then .blockdevices[0].mountpoints[0] else empty end'
+}

@@ -1,7 +1,7 @@
 [Unit]
 Description=Update the boot partition with the latest image
-Requires=mount-boot.service create-persistent-dir@boot-tmp.service network-online.target
-After=mount-boot.service create-persistent-dir@boot-tmp.service network-online.target
+Requires=disk-mount-boot.service create-persistent-dir@boot-tmp.service network-online.target
+After=disk-mount-boot.service create-persistent-dir@boot-tmp.service network-online.target
 
 [Install]
 WantedBy=multi-user.target

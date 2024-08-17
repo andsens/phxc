@@ -1,0 +1,11 @@
+[Unit]
+Description=Partition the disk
+ConditionPathExists=/run/initramfs/node-config.json
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/lib/upkg/.upkg/home-cluster/workloads/node/bin/disk partition

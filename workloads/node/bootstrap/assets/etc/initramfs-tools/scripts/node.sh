@@ -17,16 +17,23 @@ EOR
 
 get_node_state() {
   local key=$1
-  key=$(escape_key "$key")
-  # shellcheck disable=SC2016
-  flock -s "$NODE_STATE" jq -re ".$key" "$NODE_STATE"
+  if jq -r 'paths | join(".")' "$NODE_STATE" | grep -q "^$key$"; then
+    key=$(escape_key "$key")
+    # shellcheck disable=SC2016
+    flock -s "$NODE_STATE" jq -r ".$key" "$NODE_STATE"
+  else
+    return 1
+  fi
 }
 
 get_node_config() {
   local key=$1
-  key=$(escape_key "$1")
-  # shellcheck disable=SC2016
-  jq -re ".$key" "$NODE_CONFIG"
+  if jq -r 'paths | join(".")' "$NODE_CONFIG" | grep -q "^$key$"; then
+    key=$(escape_key "$key")
+    jq -r ".$key" "$NODE_CONFIG"
+  else
+    return 1
+  fi
 }
 
 escape_key() {

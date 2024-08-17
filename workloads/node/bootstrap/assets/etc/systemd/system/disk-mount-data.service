@@ -1,0 +1,14 @@
+[Unit]
+Description=Mount the data partition on /var/lib/persistent
+ConditionPathExists=/run/initramfs/node-config.json
+ConditionPathIsMountPoint=!/var/lib/persistent
+Requires=disk-format-data.service
+After=disk-format-data.service
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/lib/upkg/.upkg/home-cluster/workloads/node/bin/disk mount data

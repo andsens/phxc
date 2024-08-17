@@ -10,7 +10,7 @@ PACKAGES+=(
   overlayroot # Used for making ro-root writeable
   systemd-resolved # DNS resolution setup
   avahi-daemon libnss-mdns # System reachability through mdns
-  fdisk # setup-disk
+  fdisk # disk tooling
   socat #  find-boot-server
 )
 

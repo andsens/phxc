@@ -9,15 +9,17 @@ system() {
   update-ca-certificates
 
   cp_tpl --raw \
-    /etc/systemd/system/mount-boot.service \
+    /etc/systemd/system/disk-partition.service \
+    /etc/systemd/system/disk-format-boot.service \
+    /etc/systemd/system/disk-format-data.service \
+    /etc/systemd/system/disk-mount-boot.service \
+    /etc/systemd/system/disk-mount-data.service \
     /etc/systemd/system/monitor-node-config.service \
     /etc/systemd/system/cluster-auth.service \
     /etc/systemd/system/collect-node-state.service \
     /etc/systemd/system/report-node-state.path \
     /etc/systemd/system/report-node-state.service \
-    /etc/systemd/system/setup-disk.service \
     /etc/systemd/system/update-boot.service \
-    /etc/systemd/system/setup-data.service \
     /etc/systemd/system/create-persistent-dir@.service \
     /etc/systemd/system/create-persistent-dir@.service \
     /etc/systemd/system/resource-ready@.service \
@@ -25,16 +27,18 @@ system() {
     /etc/systemd/system.conf.d/variant.conf
 
   systemctl enable \
+    disk-partition.service \
+    disk-format-boot.service \
+    disk-format-data.service \
+    disk-mount-boot.service \
+    disk-mount-data.service \
     systemd-timesyncd.service \
-    mount-boot.service \
     monitor-node-config.service \
     collect-node-state.service \
     report-node-state.path \
     report-node-state.service \
-    setup-disk.service \
     update-boot.service \
     cluster-auth.service \
-    setup-data.service
 
   mkdir /var/lib/persistent
   if [[ $VARIANT = rpi* ]]; then

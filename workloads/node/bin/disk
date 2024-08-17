@@ -10,47 +10,52 @@ main() {
 
   DOC="disk - Manage the disk for persisting data
 Usage:
-  disk mount-boot
-  disk setup
+  disk partition
+  disk (mount|format) (boot|data)
 "
 # docopt parser below, refresh this parser with `docopt.sh disk`
 # shellcheck disable=2016,2086,2317,1090,1091,2034
 docopt() { local v='2.0.2'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
-%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:80};usage=${DOC:43:37}
-digest=60319;options=();node_0(){ switch mount_boot a:mount-boot;};node_1(){
-switch setup a:setup;};node_2(){ choice 0 1;};cat <<<' docopt_exit() { [[ -n \
-$1 ]] && printf "%s\n" "$1" >&2;printf "%s\n" "${DOC:43:37}" >&2;exit 1;}'
-local varnames=(mount_boot setup) varname;for varname in "${varnames[@]}"; do
-unset "var_$varname";done;parse 2 "$@";local p=${DOCOPT_PREFIX:-''};for \
-varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'mount_boot=${v'\
-'ar_mount_boot:-false};'$p'setup=${var_setup:-false};';local docopt_i=1;[[ \
-$BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for \
-varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:100};usage=${DOC:43:57}
+digest=ca890;options=();node_0(){ switch partition a:partition;};node_1(){
+switch mount a:mount;};node_2(){ switch format a:format;};node_3(){ switch \
+boot a:boot;};node_4(){ switch data a:data;};node_5(){ sequence 6 7;};node_6(){
+choice 1 2;};node_7(){ choice 3 4;};node_8(){ choice 0 5;};cat <<<' \
+docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2;printf "%s\n" \
+"${DOC:43:57}" >&2;exit 1;}';local varnames=(partition mount format boot data) \
+varname;for varname in "${varnames[@]}"; do unset "var_$varname";done;parse 8 \
+"$@";local p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset \
+"$p$varname";done;eval $p'partition=${var_partition:-false};'$p'mount=${var_mo'\
+'unt:-false};'$p'format=${var_format:-false};'$p'boot=${var_boot:-false};'$p'd'\
+'ata=${var_data:-false};';local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && \
+docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for varname in "${varnames[@]}"; \
+do declare -p "$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' disk`
   eval "$(docopt "$@")"
 
-  local devpath boot_devpath
+  local devpath boot_devpath data_devpath disk_encrypted mountpoint
+  devpath=$(get_node_config disk.devpath) || fatal "disk.devpath is not set in node-config.json"
+  # shellcheck disable=SC2154
+  if $boot; then
+    boot_devpath=$(get_boot_devpath "$devpath") || fatal "Unable to determined the boot devpath for '%s', is the disk partitioned?" "$devpath"
+  fi
+  # shellcheck disable=SC2154
+  if $data; then
+    data_devpath=$(get_data_devpath "$devpath") || fatal "Unable to determined the data devpath for '%s', is the disk partitioned?" "$devpath"
+    disk_encrypted=$(get_node_config disk.encrypted) || fatal 'disk.encrypted is not set in node-config.json'
+  fi
 
   # shellcheck disable=SC2154
-  if $mount_boot; then
-    devpath=$(get_node_config disk.devpath) || fatal "No initialized disk for persisting data found"
-    boot_devpath=$(get_boot_devpath "$devpath")
-    verbose "Mounting boot partition"
-    mount "$boot_devpath" /boot
-  elif $setup; then
-    devpath=$(get_node_config disk.devpath) || fatal "Unable to setup disk, no devpath provided in node-config.json"
+  if $partition; then
     if lsblk -Jndo PTUUID "$devpath" | jq -re --arg disk_uuid $DISK_UUID '.blockdevices[0].ptuuid==$disk_uuid' &>/dev/null; then
-      info "disk at '%s' is already setup" "$devpath"
+      info "disk at '%s' is already partitioned" "$devpath"
     else
       if sfdisk -J "$devpath" &>/dev/null || lsblk -Jndo FSTYPE "$devpath" | jq -re '.blockdevices[0].fstype != null' >/dev/null; then
-        [[ $(get_node_config disk.force) = true ]] || fatal "Device %s is partitioned or contains a filesystem and .disk.force!=true, aborting disk setup" "$devpath"
+        [[ $(get_node_config disk.force) = true ]] || fatal "Device %s is partitioned or contains a filesystem and .disk.force != true, aborting disk setup" "$devpath"
       fi
+      info "Partitioning disk at '%s'" "$devpath"
       wipefs -a "$devpath"
-      if lsblk -Jndo FSTYPE "$devpath" | jq -re '.blockdevices[0].fstype != null' &>/dev/null; then
-        fatal "%s contains a filesystem, use \`wipefs -a\` to clear it first"
-      fi
-
       sfdisk "$devpath" <<EOF
 label: gpt
 label-id: $DISK_UUID
@@ -58,10 +63,76 @@ label-id: $DISK_UUID
 size=1GiB, type=U, bootable, uuid=$ESP_UUID
 uuid=$DATA_UUID
 EOF
-      boot_devpath=$(get_boot_devpath "$devpath")
-      mkfs.vfat "$boot_devpath"
     fi
     set_node_state disk.devpath "$devpath"
+  elif $format && $boot; then
+    if mountpoint=$(get_mountpoint "$boot_devpath"); then
+      info "Boot partition at '%s' is already mounted at '%s'" "$boot_devpath" "$mountpoint"
+    else
+      if lsblk -Jndo FSTYPE "$boot_devpath" | jq -re '.blockdevices[0].fstype == null' >/dev/null; then
+        info "Formatting boot partition at '%s'" "$boot_devpath"
+        mkfs.vfat "$boot_devpath"
+      else
+        info "'%s' is already formatted" "$boot_devpath"
+      fi
+    fi
+  elif $mount && $boot; then
+    if mountpoint=$(get_mountpoint "$boot_devpath"); then
+      info "Boot partition at '%s' is already mounted at '%s'" "$boot_devpath" "$mountpoint"
+    else
+      info "Mounting boot partition at '%s'" "$boot_devpath"
+      mount "$boot_devpath" /boot
+    fi
+  elif $format && $data; then
+    if mountpoint=$(get_mountpoint "$data_devpath"); then
+      info "Data partition at '%s' is already mounted at '%s'" "$data_devpath" "$mountpoint"
+    else
+      sfdisk -N 2 "$devpath" <<<', +' 2>&1 > >(pipe_verbose)
+
+      if [[ $disk_encrypted = false ]]; then
+        if lsblk -Jndo FSTYPE "$data_devpath" | jq -re '.blockdevices[0].fstype == null' >/dev/null; then
+          info "Formatting unencrypted data partition at '%s'" "$data_devpath"
+          mkfs.ext4 "$data_devpath"
+        else
+          info "'%s' is already formatted" "$data_devpath"
+        fi
+        e2fsck -n "$data_devpath"
+        resize2fs "$data_devpath"
+      else
+        [[ -e /run/initramfs/cluster-secrets.json ]] || fatal "/run/initramfs/cluster-secrets.json does not exist"
+        local disk_encryption_key
+        disk_encryption_key=$(jq -j '.["disk-encryption-key"]' /run/initramfs/cluster-secrets.json)
+
+        if cryptsetup isLuks "$data_devpath" 2>/dev/null; then
+          info "'%s' is already formatted" "$data_devpath"
+        else
+          info "Formatting encrypted data partition at '%s'" "$data_devpath"
+          cryptsetup luksFormat --batch-mode "$data_devpath" <(printf "%s" "$disk_encryption_key")
+          cryptsetup open --type luks2 --key-file <(printf "%s" "$disk_encryption_key") "$data_devpath" persistent
+          mkfs.ext4 /dev/mapper/persistent
+        fi
+        cryptsetup resize crypt-volume
+        e2fsck -n /dev/mapper/persistent
+        resize2fs /dev/mapper/persistent
+      fi
+    fi
+  elif $mount && $data; then
+    if [[ $disk_encrypted = false ]]; then
+      if mountpoint=$(get_mountpoint "$data_devpath"); then
+        info "Unencrypted data partition at '%s' is already mounted at '%s'" "$data_devpath" "$mountpoint"
+      else
+        info "Mounting unencrypted data partition at '%s'" "$data_devpath"
+        mount "$data_devpath" /var/lib/persistent
+      fi
+    else
+      if mountpoint=$(get_mountpoint /dev/mapper/persistent); then
+        info "Encrypted data partition at '%s' is already mounted at '%s'" "$data_devpath" "$mountpoint"
+      else
+        info "Mounting encrypted data partition at '%s'" "$data_devpath"
+        cryptsetup open --type luks2 --key-file <(printf "%s" "$disk_encryption_key") "$data_devpath" persistent
+        mount /dev/mapper/persistent /var/lib/persistent
+      fi
+    fi
   fi
 }
 
