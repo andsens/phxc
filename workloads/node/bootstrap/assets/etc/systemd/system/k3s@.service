@@ -1,8 +1,8 @@
 [Unit]
 Description=Lightweight Kubernetes
 Documentation=https://k3s.io
-Wants=network-online.target
-After=network-online.target
+Wants=systemd-networkd-wait-online.service
+After=systemd-networkd-wait-online.service
 
 [Service]
 ExecCondition=yq -re --arg type %i 'any((.["node-label"] // [])[]; . == "node-role.kubernetes.io/control-plane=true") == ($type == "server")' /run/initramfs/node-config.json
