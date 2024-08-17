@@ -112,35 +112,25 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
       else
         out "Should the disk be encrypted? [yN] "
       fi
-      if jq -re --argjson node_config "$node_config" '.disk.devpath != null and .disk.devpath == $node_config.disk.devpath' "$node_state_path" >/dev/null; then
-        if jq -re '.disk.encrypted' "$node_state_path" >/dev/null; then
+      if [[ $encrypt_disk != null ]]; then
+        if yesno "$encrypt_disk"; then
           encrypt_disk=true
-          out "Yes (cannot change, disk is already initialized)\n"
         else
           encrypt_disk=false
-          out "No (cannot change, disk is already initialized)\n"
         fi
       else
-        if [[ $encrypt_disk != null ]]; then
-          if yesno "$encrypt_disk"; then
-            encrypt_disk=true
-          else
-            encrypt_disk=false
-          fi
-        else
-          while true; do
-            if ! yesno y; then
-              warning "ATTENTION! Not encrypting your disk leaves all your data open to anyone with physical access to the node!"
-              out "Are you sure you want to continue? [yN] "
-              if yesno n; then
-                encrypt_disk=false
-              else
-                continue 2
-              fi
+        while true; do
+          if ! yesno y; then
+            warning "ATTENTION! Not encrypting your disk leaves all your data open to anyone with physical access to the node!"
+            out "Are you sure you want to continue? [yN] "
+            if yesno n; then
+              encrypt_disk=false
+            else
+              continue 2
             fi
-            break
-          done
-        fi
+          fi
+          break
+        done
       fi
       break
     done
