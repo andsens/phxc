@@ -9,5 +9,5 @@ WantedBy=multi-user.target
 [Service]
 Restart=always
 RestartSec=1m
-Type=simple
+Type=oneshot
 ExecStart=/usr/local/lib/upkg/.upkg/home-cluster/workloads/node/bin/download-node-config
