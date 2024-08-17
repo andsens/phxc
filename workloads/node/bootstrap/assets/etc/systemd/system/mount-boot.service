@@ -1,12 +1,13 @@
 [Unit]
 Description=Initialize the disk and mount /boot
 ConditionPathIsMountPoint=!/boot
-Requires=resource-ready@disk.target
-After=resource-ready@disk.target
+Requires=setup-disk.service -.mount
+After=setup-disk.service -.mount
 
 [Install]
 WantedBy=multi-user.target
 
 [Service]
 Type=oneshot
+RemainAfterExit=yes
 ExecStart=/usr/local/lib/upkg/.upkg/home-cluster/workloads/node/bin/disk mount-boot

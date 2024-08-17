@@ -19,9 +19,11 @@ main() {
       if mount -rt vfat "$boot_devpath" $boot_path; then
         error "Failed to mount boot partition"
       fi
+    else
+      error "disk.devname '%s' specified in node-config.json but referenced disk does not have the UUID '%s'" "$devpath" "$DISK_UUID"
     fi
   else
-    warning "No disk detected"
+    warning "disk.devname not found in node-config.json"
   fi
 }
 

@@ -1,11 +1,13 @@
 [Unit]
 Description=Monitor the node configuration
+Requires=network-online.target
+After=network-online.target
+
+[Install]
+WantedBy=multi-user.target
 
 [Service]
 Restart=always
 RestartSec=1m
 Type=simple
 ExecStart=/usr/local/lib/upkg/.upkg/home-cluster/workloads/node/bin/download-node-config
-
-[Install]
-WantedBy=multi-user.target

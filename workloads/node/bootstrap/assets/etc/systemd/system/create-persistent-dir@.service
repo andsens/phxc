@@ -1,7 +1,9 @@
 [Unit]
 Description=Create data directory for bind mounts
-Requires=resource-ready@persistent-mount.target
-After=resource-ready@persistent-mount.target
+Requires=setup-disk.service
+After=setup-disk.service
 
 [Service]
+Type=oneshot
+RemainAfterExit=yes
 ExecStart=mkdir -p /var/lib/persistent/%i

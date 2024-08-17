@@ -1,9 +1,10 @@
 [Unit]
 Description=Collect system details and write them to the node state
 
-[Service]
-Type=oneshot
-ExecStart=/usr/local/lib/upkg/.upkg/home-cluster/workloads/node/bin/node-state collect
-
 [Install]
 WantedBy=multi-user.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/lib/upkg/.upkg/home-cluster/workloads/node/bin/node-state collect

@@ -7,4 +7,5 @@ RequiredBy=ssh.service
 
 [Service]
 Type=oneshot
+RemainAfterExit=yes
 ExecStart=/usr/bin/ssh-keygen -A

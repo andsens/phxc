@@ -34,17 +34,16 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 
   # shellcheck disable=SC2154
   if $mount_boot; then
-    devpath=$(get_node_config disk.devpath) || devpath=$(find_disk) || fatal "No initialized disk for persisting data found"
+    devpath=$(get_node_config disk.devpath) || fatal "No initialized disk for persisting data found"
     boot_devpath=$(get_boot_devpath "$devpath")
     verbose "Mounting boot partition"
     mount "$boot_devpath" /boot
   elif $setup; then
-    local devpaths=()
     devpath=$(get_node_config disk.devpath) || fatal "Unable to setup disk, no devpath provided in node-config.json"
-    if "$PKGROOT/workloads/node/bin/resource-ready" disk &>/dev/null; then
+    if lsblk -Jndo PTUUID "$devpath" | jq -re --arg disk_uuid $DISK_UUID '.blockdevices[0].ptuuid==$disk_uuid' &>/dev/null; then
       info "disk at '%s' is already setup" "$devpath"
     else
-      if sfdisk -J "$devpath" 2>/dev/null || lsblk -Jndo FSTYPE "$devpath" | jq -re '.blockdevices[0].fstype != null' >/dev/null; then
+      if sfdisk -J "$devpath" &>/dev/null || lsblk -Jndo FSTYPE "$devpath" | jq -re '.blockdevices[0].fstype != null' >/dev/null; then
         [[ $(get_node_config disk.force) = true ]] || fatal "Device %s is partitioned or contains a filesystem and .disk.force!=true, aborting disk setup" "$devpath"
       fi
       wipefs -a "$devpath"
