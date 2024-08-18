@@ -145,7 +145,7 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
       nic_opts=()
       network_name_primary_taken=false
       for nic_json in $(jq -rc '.nics[]' "$node_state_path"); do
-        nic_in_network=$(jq -r --argjson nic "$nic_json" '[.networks // {} | to_entries[] | select(.value | contains("Name=\($nic.ifname)")) | .key] | first // empty' <<<"$node_config")
+        nic_in_network=$(jq -r --argjson nic "$nic_json" '[.networks // {} | to_entries[] | select(.value | contains("MACAddress=\($nic.mac)")) | .key] | first // empty' <<<"$node_config")
         if [[ -n $nic_in_network ]]; then
           nic_json=$(jq --arg network "$nic_in_network" '.network=$network' <<<"$nic_json")
           nic_configured_as="configured as '$nic_in_network'"
@@ -168,11 +168,11 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
         out "Enter a name for the network (e.g. primary, lan0, host) [primary]: "
         network_name=$(get_text primary)
       fi
-      addr_setup=$(select_options "Network interface setup:" "DHCP" "${addr_opts[@]}")
+      addr_setup=$(select_options "Network interface setup [0]:" "DHCP" "${addr_opts[@]}")
       case $addr_setup in
         "")
           node_config=$(jq --arg name "$network_name" --argjson nic "$nic" '.networks[$name] = "[Match]
-Name=\($nic.ifname)
+MACAddress=\($nic.mac)
 [Network]
 DHCP=yes
 "' <<<"$node_config")
@@ -181,7 +181,7 @@ DHCP=yes
           out "Enter a comma-separated list of IP's you would like to assign to this network interface:\n"
           read -r addrs
           node_config=$(jq --arg name "$network_name" --argjson nic "$nic" --arg addrs "$addrs" '.networks[$name] = "[Match]
-Name=\($nic.ifname)
+MACAddress=\($nic.mac)
 [Network]
 \([$addrs | split(",")[] | "Address=\(.)"] | join("\n"))
 "' <<<"$node_config")
