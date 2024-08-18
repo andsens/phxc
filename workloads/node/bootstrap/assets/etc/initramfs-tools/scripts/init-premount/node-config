@@ -9,8 +9,9 @@ PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
 source "$PKGROOT/common.sh"
 
 main() {
-  local config_src_path=/run/initramfs/boot-disk/node-config.json
-  if [[ -e /run/initramfs/boot-disk ]]; then
+  local boot_path=/run/initramfs/boot
+  local config_src_path=$boot_path/node-config.json
+  if [[ -e $boot_path ]]; then
     info "Copying node-config from %s" "$config_src_path"
     if cp $config_src_path "$NODE_CONFIG.tmp" 2>/dev/null; then
       mv "$NODE_CONFIG.tmp" "$NODE_CONFIG"
@@ -26,7 +27,7 @@ main() {
     if curl_boot_server -o "$NODE_CONFIG.tmp" "$config_src_addr"; then
       mv "$NODE_CONFIG.tmp" "$NODE_CONFIG"
       # Update the node-config for this machine on the boot partition
-      [[ ! -e /run/initramfs/boot-disk ]] || cp "$NODE_CONFIG" "/run/initramfs/boot-disk/node-config.json"
+      [[ ! -e $boot_path ]] || cp "$NODE_CONFIG" $boot_path/node-config.json
     else
       warning "Failed to download node-config from %s" "$config_src_addr"
     fi
