@@ -26,7 +26,7 @@ verify_rootimg() {
     set_node_state rootimg.sha256 "$ROOT_SHA256"
     mv $ROOTIMG_PATH.tmp $ROOTIMG_PATH
   else
-    panic "root.img checksum is incorrect"
+    error "root.img checksum is incorrect"
     return 1
   fi
 }
@@ -37,8 +37,11 @@ main() {
     info "Copying root.img from boot partition to RAM"
     if cp $rootimg_src_path $ROOTIMG_PATH.tmp; then
       set_node_state rootimg.src "$rootimg_src_path"
-      verify_rootimg
-      return 0
+      if verify_rootimg; then
+        return 0
+      else
+        info "Falling back to downloading root.img from boot-server"
+      fi
     else
       error "Failed to copy root.img, falling back to downloading from boot-server"
       # Try to download root.img instead, the sha256 might not match though
@@ -52,8 +55,11 @@ main() {
     info "Downloading root image to RAM from $rootimg_src_addr"
     if curl_boot_server -o $ROOTIMG_PATH.tmp "$rootimg_src_addr"; then
       set_node_state rootimg.src "$rootimg_src_addr"
-      verify_rootimg
-      return 0
+      if ! verify_rootimg; then
+        panic "Unable to continue"
+      else
+        return 0
+      fi
     else
       panic "Failed to download root.img: Download failed"
       return 1
