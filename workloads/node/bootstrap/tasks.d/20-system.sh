@@ -25,7 +25,8 @@ system() {
 
   systemctl enable \
     systemd-timesyncd.service \
-    monitor-node-config.service \
+    download-node-config.service \
+    download-node-config.timer \
     collect-node-state.service \
     report-node-state.path \
     report-node-state.service \

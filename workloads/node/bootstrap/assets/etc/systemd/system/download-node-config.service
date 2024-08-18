@@ -1,5 +1,5 @@
 [Unit]
-Description=Monitor the node configuration
+Description=Download the node configuration
 Requires=systemd-networkd-wait-online.service
 After=systemd-networkd-wait-online.service
 
@@ -7,7 +7,5 @@ After=systemd-networkd-wait-online.service
 WantedBy=multi-user.target
 
 [Service]
-Restart=always
-RestartSec=1m
 Type=oneshot
 ExecStart=/usr/local/lib/upkg/.upkg/home-cluster/workloads/node/bin/download-node-config
