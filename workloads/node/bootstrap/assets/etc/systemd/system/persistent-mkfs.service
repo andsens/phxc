@@ -1,0 +1,16 @@
+[Unit]
+# This is a workaround for x-systemd.makefs not working in fstab
+# For some reason the dev-mapper-persistent.device hangs when relying on makefs
+Description=Format the persistent encrypted volume
+DefaultDependencies=no
+Requires=systemd-cryptsetup@persistent.service
+After=systemd-cryptsetup@persistent.service
+Before=var-lib-persistent.mount
+
+[Install]
+WantedBy=var-lib-persistent.mount
+
+[Service]
+Type=oneshot
+ExecCondition=bash -c 'lsblk -Jno FSTYPE /dev/mapper/persistent | jq -re ".blockdevices[0].fstype == null"'
+ExecStart=mkfs.ext4 /dev/mapper/persistent

@@ -39,6 +39,7 @@ boot() {
     /etc/initramfs-tools/hooks/home-cluster \
     /etc/initramfs-tools/scripts/common.sh \
     /etc/initramfs-tools/scripts/node.sh \
+    /etc/initramfs-tools/scripts/disk-uuids.sh \
     /etc/initramfs-tools/scripts/curl-boot-server.sh
   cp "$PKGROOT/.upkg/records.sh/records.sh" "/etc/initramfs-tools/scripts/records.sh"
 
@@ -61,19 +62,29 @@ boot() {
   # Node configuration
   cp_tpl --raw --chmod=0755 /etc/initramfs-tools/scripts/init-premount/node-config
 
+  # Root image
+  printf "squashfs\n" >>/etc/initramfs-tools/modules
+  cp_tpl --raw /etc/initramfs-tools/initramfs.conf
+  cp_tpl --raw --chmod=0755 /etc/initramfs-tools/scripts/local-premount/rootimg
+  cp_tpl /etc/overlayroot.conf
+
   # Networking setup
   systemctl enable systemd-networkd
   cp_tpl --raw --chmod=0755 /etc/initramfs-tools/scripts/init-bottom/networking
   cp_tpl /etc/systemd/system/setup-cluster-dns.service
   systemctl enable setup-cluster-dns.service
+  cp_tpl /etc/hosts.tmp
 
-  # Root
-  printf "squashfs\n" >>/etc/initramfs-tools/modules
-  cp_tpl --raw /etc/initramfs-tools/initramfs.conf
-  cp_tpl --raw --chmod=0755 /etc/initramfs-tools/scripts/local-premount/rootimg
-  cp_tpl /etc/overlayroot.conf
-  # root disk is a squashfs image, none of these are needed
-  systemctl disable fstrim e2scrub_all e2scrub_reap
+  # Disk setup
+  cp_tpl /etc/crypttab /etc/fstab.tmp
+  cp_tpl --raw --chmod=0755 /etc/initramfs-tools/scripts/init-bottom/disk-encryption-key
+  cp_tpl --raw \
+    /etc/systemd/system/setup-disk.service \
+    /etc/systemd/system/persistent-mkfs.service
+  systemctl enable \
+    setup-disk.service \
+    persistent-mkfs.service
+
   if [[ $VARIANT = rpi5 ]]; then
     # Remove Raspberry Pi 4 boot code
     rm boot/firmware/bootcode.bin boot/firmware/fixup*.dat boot/firmware/start*.elf

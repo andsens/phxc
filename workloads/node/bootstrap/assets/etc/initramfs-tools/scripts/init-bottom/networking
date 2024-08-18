@@ -12,7 +12,7 @@ source "$PKGROOT/common.sh"
 main() {
   local hostname primary_mac
   if [[ -e $NODE_CONFIG ]]; then
-    if hostname=$(jq -re '.hostname' "$NODE_CONFIG"); then
+    if hostname=$(get_node_config hostname); then
       :
     elif primary_mac=$(get_node_state primary-mac); then
       warning "No hostname defined in node-config, using primary-mac from node-state.json"

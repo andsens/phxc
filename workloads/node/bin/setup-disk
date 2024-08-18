@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# shellcheck source-path=../../..
+set -Eeo pipefail; shopt -s inherit_errexit
+PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../..")
+
+main() {
+  source "$PKGROOT/.upkg/records.sh/records.sh"
+  source "$PKGROOT/workloads/node/bootstrap/assets/etc/initramfs-tools/scripts/node.sh"
+  source "$PKGROOT/workloads/node/bootstrap/assets/etc/initramfs-tools/scripts/disk-uuids.sh"
+
+  local devpath
+  devpath=$(get_node_config disk.devpath) || fatal "disk.devpath is not set in node-config.json"
+
+  if lsblk -Jndo PTUUID "$devpath" | jq -re --arg disk_uuid $DISK_UUID '.blockdevices[0].ptuuid==$disk_uuid' &>/dev/null; then
+    info "disk at '%s' is already partitioned" "$devpath"
+  else
+    if sfdisk -J "$devpath" &>/dev/null || lsblk -Jndo FSTYPE "$devpath" | jq -re '.blockdevices[0].fstype != null' >/dev/null; then
+      [[ $(get_node_config disk.force) = true ]] || fatal "Device %s is partitioned or contains a filesystem and .disk.force != true, aborting disk setup" "$devpath"
+    fi
+    info "Partitioning disk at '%s'" "$devpath"
+    wipefs -a "$devpath"
+    sfdisk "$devpath" <<EOF
+label: gpt
+label-id: $DISK_UUID
+
+size=1GiB, type=U, bootable, uuid=$ESP_UUID
+uuid=$DATA_UUID
+EOF
+    local data_devpath
+    data_devpath=/dev/$(lsblk -Jno Name "$devpath" | jq -re '.blockdevices[0].children[1].name')
+    cryptsetup luksFormat --batch-mode "$data_devpath" /run/initramfs/disk-encryption-key
+  fi
+}
+
+main "$@"

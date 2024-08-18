@@ -1,14 +1,13 @@
 #!/usr/bin/env bash
 set -Eeo pipefail; shopt -s inherit_errexit
-# Make sure the node configuration has been downloaded or copied from the boot partition before unmounting
-[[ $1 != prereqs ]] || { echo "node-config"; exit 0; }
+[[ $1 != prereqs ]] || { echo ""; exit 0; }
 
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
 # shellcheck source=../common.sh
 source "$PKGROOT/common.sh"
 
 main() {
-  boot=/run/initramfs/boot
+  boot=/run/initramfs/boot-disk
   if [[ -e $boot ]]; then
     info "Boot partition mount detected, unmounting"
     umount "$boot"

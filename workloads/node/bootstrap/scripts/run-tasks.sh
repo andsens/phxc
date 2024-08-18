@@ -7,6 +7,8 @@ source "$PKGROOT/.upkg/records.sh/records.sh"
 source "$PKGROOT/workloads/settings/env/settings.sh"
 eval_settings
 
+source "$PKGROOT/workloads/node/bootstrap/assets/etc/initramfs-tools/scripts/disk-uuids.sh"
+
 main() {
   export DEBIAN_FRONTEND=noninteractive
 

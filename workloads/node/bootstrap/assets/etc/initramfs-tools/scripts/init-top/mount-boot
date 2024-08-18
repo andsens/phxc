@@ -5,25 +5,22 @@ set -Eeo pipefail; shopt -s inherit_errexit
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
 # shellcheck source=../common.sh
 source "$PKGROOT/common.sh"
-# shellcheck source=../disk.sh
-source "$PKGROOT/disk.sh"
+# shellcheck source=../disk-uuids.sh
+source "$PKGROOT/disk-uuids.sh"
 
 main() {
-  local devpath
-  if devpath=$(get_node_config disk.devname); then
-    if lsblk -Jndo PTUUID,NAME "$devpath" | jq -re --arg disk_uuid "$DISK_UUID" '.blockdevices[0].ptuuid==$disk_uuid' >/dev/null; then
-      info "Mounting boot partition of disk at $devpath"
-      boot_devpath=$(get_boot_devpath "$devpath")
-      boot_path=/run/initramfs/boot
-      mkdir $boot_path
-      if mount -rt vfat "$boot_devpath" $boot_path; then
-        error "Failed to mount boot partition"
-      fi
-    else
-      error "disk.devname '%s' specified in node-config.json but referenced disk does not have the UUID '%s'" "$devpath" "$DISK_UUID"
+  local boot_devpath
+  if boot_devpath=/dev/$(lsblk -Jno NAME,PTUUID,PARTUUID -a | jq -re --arg disk_uuid "$DISK_UUID" --arg part_uuid "$ESP_UUID" \
+    '[.blockdevices[] | select(.ptuuid==$disk_uuid) | .children[] | select(.partuuid=$part_uuid) | .name] | first'); then
+    info "Mounting boot partition"
+    boot_path=/run/initramfs/boot-disk
+    mkdir $boot_path
+    if mount -rt vfat "$boot_devpath" $boot_path; then
+      rm -rf "$boot_path"
+      error "Failed to mount boot partition"
     fi
   else
-    warning "disk.devname not found in node-config.json"
+    warning "boot partition not found, skipping mounting of /run/initramfs/boot-disk"
   fi
 }
 

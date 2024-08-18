@@ -1,7 +1,7 @@
 [Unit]
 Description=Create data directory for bind mounts
-Requires=disk-mount-data.service
-After=disk-mount-data.service
+Requires=var-lib-persistent.mount
+After=var-lib-persistent.mount
 
 [Service]
 Type=oneshot

@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -Eeo pipefail; shopt -s inherit_errexit
+# Make sure we can write to the fstab
+[[ $1 != prereqs ]] || { echo "overlayroot"; exit 0; }
+
+# shellcheck disable=SC1091
+source /scripts/functions
+PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
+# shellcheck source=../common.sh
+source "$PKGROOT/common.sh"
+
+main() {
+  touch /run/initramfs/disk-encryption-key
+  chmod 0600 /run/initramfs/disk-encryption-key
+  printf "test" >/run/initramfs/disk-encryption-key
+}
+
+main "$@"

@@ -103,39 +103,6 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
       break
     done
 
-    local encrypt_disk
-    while true; do
-      encrypt_disk=$(jq -r '.disk.encrypted' <<<"$node_config")
-      if [[ $encrypt_disk = null || $encrypt_disk = true ]]; then
-        encrypt_disk=true
-        out "Should the disk be encrypted? [Yn] "
-      else
-        out "Should the disk be encrypted? [yN] "
-      fi
-      if [[ $encrypt_disk != null ]]; then
-        if yesno "$encrypt_disk"; then
-          encrypt_disk=true
-        else
-          encrypt_disk=false
-        fi
-      else
-        while true; do
-          if ! yesno y; then
-            warning "ATTENTION! Not encrypting your disk leaves all your data open to anyone with physical access to the node!"
-            out "Are you sure you want to continue? [yN] "
-            if yesno n; then
-              encrypt_disk=false
-            else
-              continue 2
-            fi
-          fi
-          break
-        done
-      fi
-      break
-    done
-    node_config=$(jq --argjson encrypted "$encrypt_disk" '.disk.encrypted = $encrypted' <<<"$node_config")
-
     local \
       nic nic_json nic_opts nic_in_network nic_configured_as \
       network_name network_name_primary_taken \

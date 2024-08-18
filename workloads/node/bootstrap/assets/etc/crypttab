@@ -1,0 +1,2 @@
+# <target name> <source device>         <key file>      <options>
+persistent PARTUUID=$DATA_UUID /run/initramfs/disk-encryption-key luks,discard

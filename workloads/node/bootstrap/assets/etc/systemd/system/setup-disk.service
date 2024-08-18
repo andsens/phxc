@@ -1,0 +1,16 @@
+[Unit]
+Description=Setup the disk and encrypt the persistent partition
+DefaultDependencies=no
+Requires=-.mount
+After=-.mount
+Before=boot.mount var-lib-persistent.mount systemd-cryptsetup@persistent.service blockdev@dev-mapper-persistent.target dev-mapper-persistent.device
+ConditionPathExists=/run/initramfs/node-config.json
+ConditionPathExists=/run/initramfs/disk-encryption-key
+
+[Install]
+WantedBy=local-fs-pre.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/lib/upkg/.upkg/home-cluster/workloads/node/bin/setup-disk
