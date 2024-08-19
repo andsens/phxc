@@ -31,13 +31,16 @@ varnames=(report collect) varname;for varname in "${varnames[@]}"; do unset \
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' node-state`
   eval "$(docopt "$@")"
 
+  local node_key=/boot/home-cluster/node-key
   # shellcheck disable=SC2154
   if $report; then
-    local boot_server primary_mac node_state_addr
+    local boot_server primary_mac node_state_addr node_state_sig node_state
     boot_server=$(get_node_state boot-server) || fatal "Unable to report node state: boot-server not present in node-state.json"
     primary_mac=$(get_node_state primary-mac) || fatal "Unable to report node state: primary-mac not present in node-state.json"
+    node_state_sig=$(jq -c --sort-keys . $NODE_STATE_PATH | tr -d '\n' | openssl dgst -sha256 -sign $node_key | base64 -w0)
+    node_state=$(jq --arg sig "$node_state_sig" '.signature=$sig' $NODE_STATE_PATH)
     node_state_addr=https://${boot_server}:8020/registry/node-state/${primary_mac//:/-}.json
-    if curl_boot_server -XPUT -d@"$NODE_STATE" "$node_state_addr" &>/dev/null; then
+    if curl_boot_server -XPUT -d@<(printf "%s" "$node_state") "$node_state_addr" &>/dev/null; then
       info "The node state has been reported"
     else
       # shellcheck disable=SC2154
@@ -55,6 +58,8 @@ varnames=(report collect) varname;for varname in "${varnames[@]}"; do unset \
     local nics
     nics=$(ip --json link show | jq '[.[] | select(.ifname != "lo") | {"ifname": .ifname, "mac": .address}]')
     set_node_state nics "$nics" true
+
+    set_node_state node-key "$(cat "$node_key.pub")"
   fi
 }
 

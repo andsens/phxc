@@ -11,7 +11,7 @@ source "$PKGROOT/common.sh"
 
 main() {
   local hostname primary_mac
-  if [[ -e $NODE_CONFIG ]]; then
+  if [[ -e $NODE_CONFIG_PATH ]]; then
     if hostname=$(get_node_config hostname); then
       :
     elif primary_mac=$(get_node_state primary-mac); then
@@ -22,9 +22,9 @@ main() {
       hostname=$(xxd -p -l4 /dev/random)
     fi
     local network
-    for network in $(jq -r '(.networks // {}) | keys[]' "$NODE_CONFIG"); do
+    for network in $(jq -r '(.networks // {}) | keys[]' "$NODE_CONFIG_PATH"); do
       info "Configuring network $network"
-      config=$(jq -r --arg network "$network" '.networks[$network]' "$NODE_CONFIG")
+      config=$(jq -r --arg network "$network" '.networks[$network]' "$NODE_CONFIG_PATH")
       # shellcheck disable=SC2154
       printf "%s\n" "$config" >"$rootmnt/etc/systemd/network/$network.network"
     done

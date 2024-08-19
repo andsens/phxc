@@ -7,6 +7,7 @@ export LC_ALL=C
 
 main() {
   source "$PKGROOT/.upkg/records.sh/records.sh"
+  source "$PKGROOT/.upkg/trap.sh/trap.sh"
   source "$PKGROOT/workloads/node/bootstrap/assets/etc/initramfs-tools/scripts/node.sh"
   source "$PKGROOT/workloads/node/bootstrap/assets/etc/initramfs-tools/scripts/curl-boot-server.sh"
   DOC="download-node-config - Download the node configuration and reboot if it changes
@@ -28,17 +29,24 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' download-node-config`
   eval "$(docopt "$@")"
 
-  local config_path=/run/initramfs/node-config.json boot_server primary_mac config_src_addr config
+  local \
+    encrypted_node_config_path=/boot/node-config.enc.json \
+    node_key_path=/boot/home-cluster/node-key \
+    encrypted_node_config node_config
 
-  boot_server=$(get_node_state boot-server) || fatal "Unable to download node configuration: boot-server not present in node-state.json"
-  primary_mac=$(get_node_state primary-mac) || fatal "Unable to download node configuration: primary-mac not present in node-state.json"
-  config_src_addr=https://${boot_server}:8020/registry/node-config/${primary_mac//:/-}.json
-  if config=$(curl_boot_server "$config_src_addr"); then
-    if [[ ! -e $config_path ]] || ! diff $config_path <(printf "%s\n" "$config") &>/dev/null; then
-      # Update the node-config on the boot partition
-      ! mountpoint -q /boot || printf "%s\n" "$config" > "/boot/node-config.json"
-      info "The node configuration has changed, rebooting"
-      exec systemctl reboot
+  if encrypted_node_config=$(download_node_config); then
+    # shellcheck disable=SC2064
+    trap "rm -f $NODE_CONFIG_PATH.tmp" EXIT
+    if decrypt_node_config "$node_key_path" "$encrypted_node_config" >$NODE_CONFIG_PATH.tmp; then
+      if [[ ! -e $NODE_CONFIG_PATH ]] || ! diff $NODE_CONFIG_PATH $NODE_CONFIG_PATH.tmp &>/dev/null; then
+        mv $NODE_CONFIG_PATH.tmp $NODE_CONFIG_PATH
+        # Update the node-config on the boot partition
+        ! mountpoint -q /boot || printf "%s\n" "$encrypted_node_config" > $encrypted_node_config_path
+        info "The node configuration has changed, rebooting"
+        exec systemctl reboot
+      fi
+    else
+      fatal "Failed to decrypt downloaded node-config"
     fi
   else
     # shellcheck disable=SC2154

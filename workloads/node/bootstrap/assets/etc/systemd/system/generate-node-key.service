@@ -1,0 +1,11 @@
+[Unit]
+Description=Generate a node-key
+Requires=boot.mount
+After=boot.mount
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/upkg/.upkg/home-cluster/workloads/node/bin/node-key

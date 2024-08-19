@@ -10,9 +10,9 @@ system() {
   update-ca-certificates
 
   cp_tpl --raw \
+    /etc/systemd/system/generate-node-key.service \
     /etc/systemd/system/download-node-config.service \
     /etc/systemd/system/download-node-config.timer \
-    /etc/systemd/system/cluster-auth.service \
     /etc/systemd/system/collect-node-state.service \
     /etc/systemd/system/report-node-state.path \
     /etc/systemd/system/report-node-state.service \
@@ -25,13 +25,13 @@ system() {
 
   systemctl enable \
     systemd-timesyncd.service \
+    generate-node-key.service \
     download-node-config.service \
     download-node-config.timer \
     collect-node-state.service \
     report-node-state.path \
     report-node-state.service \
-    update-boot.service \
-    cluster-auth.service
+    update-boot.service
 
   mkdir /var/lib/persistent
   if [[ $VARIANT = rpi* ]]; then

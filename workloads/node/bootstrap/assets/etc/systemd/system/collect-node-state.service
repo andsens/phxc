@@ -1,5 +1,7 @@
 [Unit]
 Description=Collect system details and write them to the node state
+Requires=generate-node-key.service
+After=generate-node-key.service
 
 [Install]
 WantedBy=multi-user.target

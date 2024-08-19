@@ -1,7 +1,7 @@
 [Unit]
 Description=Report node state to the registry
-Requires=systemd-networkd-wait-online.service
-After=systemd-networkd-wait-online.service
+Requires=systemd-networkd-wait-online.service generate-node-key.service collect-node-state.service
+After=systemd-networkd-wait-online.service generate-node-key.service collect-node-state.service
 
 [Install]
 WantedBy=multi-user.target
