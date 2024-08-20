@@ -34,17 +34,19 @@ boot() {
   # Enable serial console
   systemctl enable serial-getty@ttyS0
 
-  # Tooling foor intramfs
+  # Tooling for intramfs
   cp_tpl --raw --chmod=0755 \
     /etc/initramfs-tools/hooks/home-cluster \
     /etc/initramfs-tools/scripts/common.sh \
     /etc/initramfs-tools/scripts/node.sh \
-    /etc/initramfs-tools/scripts/disk-uuids.sh \
-    /etc/initramfs-tools/scripts/curl-boot-server.sh
+    /etc/initramfs-tools/scripts/curl-boot-server.sh \
+    /etc/initramfs-tools/scripts/disk-uuids.sh
   cp "$PKGROOT/.upkg/records.sh/records.sh" "/etc/initramfs-tools/scripts/records.sh"
 
-  # Setup node-state.json
+  # Setup node-state.json & node-config.json
   cp_tpl --var VARIANT --chmod=0755 /etc/initramfs-tools/scripts/init-top/create-node-state
+  cp_tpl --raw /etc/systemd/system/init-node-config.service
+  systemctl enable init-node-config.service
 
   # Setup script for finding the boot-server
   cp_tpl --raw --chmod=0755 /etc/initramfs-tools/scripts/init-premount/find-boot-server
@@ -55,12 +57,6 @@ boot() {
   # FAT32 boot partition mounting
   local modules=(vfat nls_cp437 nls_ascii)
   printf "%s\n" "${modules[@]}" >>/etc/initramfs-tools/modules
-  cp_tpl --raw --chmod=0755 \
-    /etc/initramfs-tools/scripts/init-top/mount-boot \
-    /etc/initramfs-tools/scripts/init-bottom/umount-boot
-
-  # Node configuration
-  cp_tpl --raw --chmod=0755 /etc/initramfs-tools/scripts/init-premount/node-config
 
   # Root image
   printf "squashfs\n" >>/etc/initramfs-tools/modules
@@ -70,14 +66,13 @@ boot() {
 
   # Networking setup
   systemctl enable systemd-networkd
-  cp_tpl --raw --chmod=0755 /etc/initramfs-tools/scripts/init-bottom/networking
+  cp_tpl --raw /etc/systemd/system/setup-networking.service
   cp_tpl /etc/systemd/system/setup-cluster-dns.service
-  systemctl enable setup-cluster-dns.service
+  systemctl enable setup-cluster-dns.service setup-networking.service
   cp_tpl /etc/hosts.tmp
 
   # Disk setup
   cp_tpl /etc/crypttab /etc/fstab.tmp
-  cp_tpl --raw --chmod=0755 /etc/initramfs-tools/scripts/init-bottom/disk-encryption-key
   cp_tpl --raw \
     /etc/systemd/system/setup-disk.service \
     /etc/systemd/system/persistent-mkfs.service

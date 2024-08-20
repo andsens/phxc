@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -Eeo pipefail; shopt -s inherit_errexit
-[[ $1 != prereqs ]] || { echo "create-node-state"; exit 0; }
+[[ $1 != prereqs ]] || { echo ""; exit 0; }
 
 # shellcheck disable=SC1091
 source /scripts/functions
@@ -8,23 +8,21 @@ PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
 # shellcheck source=../common.sh
 source "$PKGROOT/common.sh"
 
-ROOTIMG_PATH=/run/initramfs/root.img
-# shellcheck disable=SC2013
-for kernel_arg in $(cat /proc/cmdline); do
-  case $kernel_arg in
-  root_sha256=*) ROOT_SHA256=${kernel_arg#root_sha256=} ;;
-  esac
-done
-if [[ -z "${ROOT_SHA256}" ]]; then
-  panic "Unable to mount root disk. Boot argument root_sha256= not specified"
-  return 1
+ROOT_BASENAME=${ROOT#'/run/initramfs/'}
+
+if [[ $ROOT_BASENAME =~ ^root.([0-9a-f]{64}).img$ ]]; then
+  ROOT_SHA256=${BASH_REMATCH[1]}
+  set_node_state rootimg.sha256 "$ROOT_SHA256"
+else
+  panic "root= argument is not of the form root.<sha256>.img, unable to continue"
+  exit 1
 fi
 
 verify_rootimg() {
   info "Verifying checksum of root.img"
-  if printf "%s  %s" "$ROOT_SHA256" $ROOTIMG_PATH.tmp | sha256sum -c -; then
+  if printf "%s  %s" "$ROOT_SHA256" "$ROOT.tmp" | sha256sum -c -; then
     set_node_state rootimg.sha256 "$ROOT_SHA256"
-    mv $ROOTIMG_PATH.tmp $ROOTIMG_PATH
+    mv "$ROOT.tmp" "$ROOT"
   else
     error "root.img checksum is incorrect"
     return 1
@@ -32,10 +30,10 @@ verify_rootimg() {
 }
 
 main() {
-  local rootimg_src_path=/run/initramfs/boot/home-cluster/root.img
+  local rootimg_src_path=/boot/home-cluster/$ROOT_BASENAME
   if [[ -e $rootimg_src_path ]]; then
     info "Copying root.img from boot partition to RAM"
-    if cp $rootimg_src_path $ROOTIMG_PATH.tmp; then
+    if cp "$rootimg_src_path" "$ROOT.tmp"; then
       set_node_state rootimg.src "$rootimg_src_path"
       if verify_rootimg; then
         return 0
@@ -51,9 +49,9 @@ main() {
   local boot_server rootimg_src_addr
   if boot_server=$(get_node_state boot-server); then
     VARIANT=$(get_node_state variant)
-    rootimg_src_addr=https://${boot_server}:8020/images/${VARIANT}/root.img
+    rootimg_src_addr=https://${boot_server}:8020/images/${VARIANT}/$ROOT_BASENAME
     info "Downloading root image to RAM from $rootimg_src_addr"
-    if curl_boot_server -o $ROOTIMG_PATH.tmp "$rootimg_src_addr"; then
+    if curl_boot_server -o"$ROOT.tmp" "$rootimg_src_addr"; then
       set_node_state rootimg.src "$rootimg_src_addr"
       if ! verify_rootimg; then
         panic "Unable to continue"

@@ -30,61 +30,42 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 
   trap_append clear_boot_tmp EXIT
 
-  BOOT_TMP=/var/lib/persistent/boot-tmp
   local boot_server
   VARIANT=$(get_node_state variant)
   if ! boot_server=$(get_node_state boot-server); then
     fatal "Unable to retrieve boot-server from node-state.json"
   fi
-  clear_boot_tmp
-  if ! curl_boot_server -o$BOOT_TMP/digests.json "https://${boot_server}:8020/images/$VARIANT/digests.json"; then
+  mkdir -p /boot/home-cluster
+  if ! curl_boot_server -o/boot/home-cluster/digests.json.new "https://${boot_server}:8020/images/$VARIANT/digests.json"; then
     fatal "Unable to retrieve image digests from boot server"
   fi
+  local current_root_img_sha256 new_root_img_sha256
+  current_root_img_sha256=$(jq -re '.sha256sums["root.img"]' /boot/home-cluster/digests.json 2>/dev/null || true)
+  new_root_img_sha256=$(jq -re '.sha256sums["root.img"]' /boot/home-cluster/digests.json.new)
+  if [[ $current_root_img_sha256 = "$new_root_img_sha256" ]]; then
+    info "boot partition is up-to-date"
+    return 0
+  fi
+  info "boot partition is outdated, updating now"
+  curl_boot_server -o"/boot/home-cluster/root.$new_root_img_sha256.img" "https://${boot_server}:8020/images/$VARIANT/root.$new_root_img_sha256.img"
   if [[ $VARIANT = rpi* ]]; then
-    local current_boot_img_sha256 latest_boot_img_sha256
-    current_boot_img_sha256=$(jq -re '.sha256sums["boot.img"]' /boot/digests.json)
-    latest_boot_img_sha256=$(jq -re '.sha256sums["boot.img"]' $BOOT_TMP/digests.json)
-    if [[ -e /boot/boot.img && $current_boot_img_sha256 = "$latest_boot_img_sha256" ]]; then
-      info "boot.img is up-to-date"
-    else
-      info "boot.img is outdated, updating now"
-      curl_boot_server -o$BOOT_TMP/root.img "https://${boot_server}:8020/images/$VARIANT/root.img"
-      curl_boot_server -o$BOOT_TMP/boot.img "https://${boot_server}:8020/images/$VARIANT/boot.img"
-      mkdir $BOOT_TMP/boot-img
-      mount $BOOT_TMP/boot.img $BOOT_TMP/boot-img
-      trap_append "umount $BOOT_TMP/boot-img" EXIT
-      # shellcheck disable=SC2115
-      rm -rf /boot/*
-      cp -r $BOOT_TMP/boot-img/. /boot/
-      mkdir /boot/home-cluster
-      mv /boot/home-cluster/root.img.new /boot/home-cluster/root.img
-    fi
+    curl_boot_server -o/boot/boot.img.new "https://${boot_server}:8020/images/$VARIANT/boot.img"
+    mv /boot/boot.img.new /boot/boot.img
   else
-    local efisuffix latest_uki_sha256
+    local efisuffix
     case $VARIANT in
       amd64) efisuffix=X64 ;;
       arm64) efisuffix=AA64 ;;
       *) fatal "Unknown variant: %s" "$VARIANT" ;;
     esac
-    latest_uki_sha256=$(jq -re '.sha256sums["uki.efi"]' $BOOT_TMP/digests.json)
-    if [[ -e /boot/EFI/BOOT/BOOT${efisuffix}.EFI && $latest_uki_sha256 = "$(sha256sum | cut -d ' ' -f1)" ]]; then
-      info "uki.efi is up-to-date"
-    else
-      info "uki.efi is outdated, updating now"
-      curl_boot_server -o$BOOT_TMP/root.img "https://${boot_server}:8020/images/$VARIANT/root.img"
-      curl_boot_server -o$BOOT_TMP/uki.efi "https://${boot_server}:8020/images/$VARIANT/uki.efi"
-      curl_boot_server -o$BOOT_TMP/pcr11.json "https://${boot_server}:8020/images/$VARIANT/pcr11.json"
-      mkdir -p /boot/home-cluster /boot/EFI/BOOT
-      mv $BOOT_TMP/root.img /boot/home-cluster/root.img.new
-      mv $BOOT_TMP/uki.efi /boot/EFI/BOOT/BOOT${efisuffix}.EFI.new
-      mv /boot/home-cluster/root.img.new /boot/home-cluster/root.img
-      mv /boot/EFI/BOOT/BOOT${efisuffix}.EFI.new /boot/EFI/BOOT/BOOT${efisuffix}.EFI
-    fi
+    mkdir -p /boot/EFI/BOOT
+    curl_boot_server -o/boot/EFI/BOOT/BOOT${efisuffix}.EFI.new "https://${boot_server}:8020/images/$VARIANT/uki.efi"
+    mv /boot/EFI/BOOT/BOOT${efisuffix}.EFI.new /boot/EFI/BOOT/BOOT${efisuffix}.EFI
   fi
-}
-
-clear_boot_tmp() {
-  rm -rf ${BOOT_TMP:?}/*
+  local rootimg
+  for rootimg in /boot/home-cluster/root.*.img; do
+    [[ $rootimg = "/boot/home-cluster/root.$new_root_img_sha256.img" ]] || rm "$rootimg"
+  done
 }
 
 main "$@"

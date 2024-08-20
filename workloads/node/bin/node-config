@@ -7,199 +7,115 @@ export LC_ALL=C
 
 main() {
   source "$PKGROOT/.upkg/records.sh/records.sh"
+  source "$PKGROOT/.upkg/trap.sh/trap.sh"
   source "$PKGROOT/workloads/node/bootstrap/assets/etc/initramfs-tools/scripts/node.sh"
-  source "$PKGROOT/.upkg/path-tools/path-tools.sh"
-  PATH=$(path_prepend "$PKGROOT/.upkg/.bin")
-  source "$PKGROOT/lib/options.sh"
-  DOC="node-config - Manage the node configs
+  source "$PKGROOT/workloads/node/bootstrap/assets/etc/initramfs-tools/scripts/curl-boot-server.sh"
+  DOC="download-node-config - Download the node configuration and reboot if it changes
 Usage:
-  node-config
+  download-node-config [--reboot|--boot]
+
+Options:
+  --reboot  Reboot if the downloaded node-config changes
+  --boot    Copy the config from the boot partition if downloading fails
 "
-# docopt parser below, refresh this parser with `docopt.sh node-config`
+# docopt parser below, refresh this parser with `docopt.sh download-node-config`
 # shellcheck disable=2016,2086,2317,1090,1091,2034
 docopt() { local v='2.0.2'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
-%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:58};usage=${DOC:38:20}
-digest=72777;options=();node_0(){ return 0;};cat <<<' docopt_exit() { [[ -n $1 \
-]] && printf "%s\n" "$1" >&2;printf "%s\n" "${DOC:38:20}" >&2;exit 1;}';local \
-varnames=() varname;for varname in "${varnames[@]}"; do unset "var_$varname"
-done;parse 0 "$@";return 0;local p=${DOCOPT_PREFIX:-''};for varname in \
-"${varnames[@]}"; do unset "$p$varname";done;eval ;local docopt_i=1;[[ \
-$BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for \
-varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
-# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' node-config`
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:267};usage=${DOC:80:47}
+digest=8bbea;options=(' --reboot 0' ' --boot 0');node_0(){ switch __reboot 0;}
+node_1(){ switch __boot 1;};node_2(){ choice 0 1;};node_3(){ optional 2;};cat \
+<<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2;printf "%s\n" \
+"${DOC:80:47}" >&2;exit 1;}';local varnames=(__reboot __boot) varname;for \
+varname in "${varnames[@]}"; do unset "var_$varname";done;parse 3 "$@";local \
+p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset "$p$varname"
+done;eval $p'__reboot=${var___reboot:-false};'$p'__boot=${var___boot:-false};'
+local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
+((;docopt_i>0;docopt_i--)); do for varname in "${varnames[@]}"; do declare -p \
+"$p$varname";done;done;}
+# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' download-node-config`
   eval "$(docopt "$@")"
 
-  local node_state_path node_opts=() node_config_state node_config_path node_display_name
-  for node_state_path in "$PKGROOT/startup/boot-server/registry/node-state"/*; do
-    node_config_state=configured
-    node_config_path=$PKGROOT/startup/boot-server/registry/node-config/$(basename "$node_state_path")
-    if ! node_display_name="$(jq -re '.hostname // empty' "$node_config_path") (configured)"; then
-      node_display_name=$(jq -r --arg node_config_state "$node_config_state" '"(\(.variant)) \(.["primary-mac"]) (\($node_config_state))"' "$node_state_path")
-    fi
-    [[ -e $PKGROOT/startup/boot-server/registry/node-config/$(basename "$node_state_path") ]] || node_config_state=unconfigured
-    node_opts+=("$node_state_path" "$node_display_name")
-  done
-  node_state_path=$(select_options "Select node to configure:" "" "${node_opts[@]}") \
-    || fatal "No nodes found"
-
-  local node_config_path node_config={} node_mac
-  node_mac=$(jq -r '.["primary-mac"]' "$node_state_path")
-  node_config_path=$PKGROOT/startup/boot-server/registry/node-config/$(basename "$node_state_path")
-  [[ ! -e $node_config_path ]] || node_config=$(cat "$node_config_path")
-
-  local node_labels=(node-role.kubernetes.io/control-plane)
-
-  while true; do
-
-    if hostname=$(jq -re '.hostname // empty' <<<"$node_config"); then
-      out "Enter a hostname for the node [%s]: " "$hostname"
-      hostname=$(get_text "$hostname")
-    else
-      out "Enter a hostname for the node: "
-      hostname=$(get_text)
-    fi
-    node_config=$(jq --arg hostname "$hostname" '.hostname=$hostname' <<<"$node_config")
-
-    while true; do
-      local node_label node_label_opts=() node_label_state
-      for node_label in "${node_labels[@]}"; do
-        node_label_state=' (selected)'
-        jq -re --arg label "$node_label" '(.["node-label"] // []) | contains([$label])' <<<"$node_config" >/dev/null || node_label_state=''
-        node_label_opts+=("$node_label" "${node_label}${node_label_state}")
-      done
-      node_label=$(select_options "Toggle any node labels you want to apply [0]:" "Done" "${node_label_opts[@]}")
-      [[ -n $node_label ]] || break
-      node_config=$(jq --arg label "$node_label" 'if (.["node-label"] // []) | contains([$label]) then .["node-label"] = (.["node-label"] | map(select(. != $label))) else .["node-label"] = (.["node-label"] // []) + [$label] end' <<<"$node_config")
-    done
-
-    while true; do
-      local blockdev blockdev_json blockdev_opts=() blockdev_selected
-      for blockdev_json in $(jq -rc '.blockdevices[]' "$node_state_path"); do
-        blockdev_selected=true
-        [[ $(jq -r '.devpath' <<<"$blockdev_json") = $(jq -r '.disk.devpath // empty' <<<"$node_config") ]] || blockdev_selected=false
-        blockdev_opts+=("$blockdev_json" "$(jq -r --argjson selected "$blockdev_selected" \
-          '"\(.devpath): \(if .filesystem == null then if .partitions == null then "blank" else "partitioned" end else .filesystem end)\(if $selected then " (selected)" else "" end)"' <<<"$blockdev_json")")
-      done
-      if [[ ${#blockdev_opts[@]} -gt 0 ]]; then
-        blockdev=$(select_options "Select boot- and datadisk:" "Done" "${blockdev_opts[@]}")
-      else
-        fatal "The node does not have any blockdevices."
-      fi
-      if [[ -z $blockdev ]]; then
-        [[ -z $(jq -r '.disk.devpath // empty' <<<"$node_config") ]] || break
-        warning "You must select a disk"
-        continue
-      fi
-      if jq -re '.filesystem != null or .partitions != null' <<<"$blockdev" &>/dev/null; then
-        warning "ATTENTION: You have selected a disk with an existing filesystem or partition. Doing this will wipe all data on that disk."
-        out "Are you sure you want to continue? [yN] "
-        yesno n || continue
-        node_config=$(jq '.disk.force=true' <<<"$node_config")
-      else
-        node_config=$(jq 'del(.disk.force)' <<<"$node_config")
-      fi
-      node_config=$(jq --argjson blockdev "$blockdev" '.disk.devpath = $blockdev.devpath' <<<"$node_config")
-      break
-    done
-
-    local \
-      nic nic_json nic_opts nic_in_network nic_configured_as \
-      network_name network_name_primary_taken \
-      addr_opts addr_setup addrs \
-      addr_opts=(fixed 'Fixed IP(s)')
-    while true; do
-      nic_opts=()
-      network_name_primary_taken=false
-      for nic_json in $(jq -rc '.nics[]' "$node_state_path"); do
-        nic_in_network=$(jq -r --argjson nic "$nic_json" '[.networks // {} | to_entries[] | select(.value | contains("MACAddress=\($nic.mac)")) | .key] | first // empty' <<<"$node_config")
-        if [[ -n $nic_in_network ]]; then
-          nic_json=$(jq --arg network "$nic_in_network" '.network=$network' <<<"$nic_json")
-          nic_configured_as="configured as '$nic_in_network'"
-          [[ $nic_in_network != primary ]] || network_name_primary_taken=true
-        else
-          nic_configured_as=unconfigured
+  local \
+    encrypted_node_config_path=/boot/node-config.enc.json \
+    node_key_path=/boot/home-cluster/node-key \
+    encrypted_node_config node_config \
+    boot_server primary_mac config_src_addr \
+    ret=0
+  boot_server=$(get_node_state boot-server) || fatal "Unable to download node configuration: boot-server not present in node-state.json"
+  primary_mac=$(get_node_state primary-mac) || fatal "Unable to download node configuration: primary-mac not present in node-state.json"
+  config_src_addr=https://${boot_server}:8020/registry/node-config/${primary_mac//:/-}.json
+  info "Downloading node-config from %s" "$config_src_addr"
+  if encrypted_node_config=$(curl_boot_server "$config_src_addr"); then
+    # shellcheck disable=SC2064
+    trap "rm -f $NODE_CONFIG_PATH.tmp" EXIT
+    if decrypt_node_config "$node_key_path" "$encrypted_node_config" >$NODE_CONFIG_PATH.tmp; then
+      if [[ ! -e $NODE_CONFIG_PATH ]] || ! diff $NODE_CONFIG_PATH $NODE_CONFIG_PATH.tmp &>/dev/null; then
+        mv $NODE_CONFIG_PATH.tmp $NODE_CONFIG_PATH
+        # Update the node-config on the boot partition
+        ! mountpoint -q /boot || printf "%s\n" "$encrypted_node_config" > $encrypted_node_config_path
+        # shellcheck disable=SC2154
+        if $__reboot; then
+          info "The node configuration has changed, rebooting"
+          exec systemctl reboot
         fi
-        nic_opts+=("$nic_json" "$(jq -r --arg config "$nic_configured_as" '"\(.ifname): \(.mac) (\($config))"' <<<"$nic_json")")
-      done
-      nic=$(select_options "Select network interface to configure [0]:" "Done" "${nic_opts[@]}")
-      [[ -n $nic ]] || break
-      if nic_in_network=$(jq -re '.network // empty' <<<"$nic_json"); then
-        node_config=$(jq --arg name "$nic_in_network" 'del(.networks[$name])' <<<"$node_config")
-        out "Enter a name for the network (e.g. primary, lan0, host) [%s]: " "$nic_in_network"
-        network_name=$(get_text "$nic_in_network")
-      elif $network_name_primary_taken; then
-        out "Enter a name for the network (e.g. primary, lan0, host): "
-        network_name=$(get_text)
-      else
-        out "Enter a name for the network (e.g. primary, lan0, host) [primary]: "
-        network_name=$(get_text primary)
       fi
-      addr_setup=$(select_options "Network interface setup [0]:" "DHCP" "${addr_opts[@]}")
-      case $addr_setup in
-        "")
-          node_config=$(jq --arg name "$network_name" --argjson nic "$nic" '.networks[$name] = "[Match]
-MACAddress=\($nic.mac)
-[Network]
-DHCP=yes
-"' <<<"$node_config")
-        ;;
-        fixed)
-          out "Enter a comma-separated list of IP's you would like to assign to this network interface:\n"
-          read -r addrs
-          node_config=$(jq --arg name "$network_name" --argjson nic "$nic" --arg addrs "$addrs" '.networks[$name] = "[Match]
-MACAddress=\($nic.mac)
-[Network]
-\([$addrs | split(",")[] | "Address=\(.)"] | join("\n"))
-"' <<<"$node_config")
-        ;;
-      esac
-    done
-
-    jq <<<"$node_config" >&2
-    out "The node configuration now looks like the above, would you like to reconfigure (n) or save (y)? [yN]"
-    ! yesno n || break
-  done
-  info "Saving node configuration for %s" "$node_mac"
-  printf "%s\n" "$node_config" >"$node_config_path"
-}
-
-get_text() {
-  local default=$1
-  while true; do
-    read -r input
-    [[ -z $input ]] || break
-    if [[ -n $default ]]; then
-      input=$default
-      break
     else
-      out "Invalid input"
+      ret=1
+      error "Failed to decrypt downloaded node-config"
     fi
-  done
-  printf "%s\n" "$input"
+  else
+    ret=1
+    error "Downloading the node configuration failed"
+  fi
+  # shellcheck disable=SC2154
+  if [[ ! -e $NODE_CONFIG_PATH ]] && $__boot; then
+    # shellcheck disable=SC2064
+    trap "rm -f $NODE_CONFIG_PATH.tmp" EXIT
+    if [[ -e $encrypted_node_config_path ]]; then
+      info "Decrypting node-config from %s" "$encrypted_node_config_path"
+      if decrypt_node_config "$node_key_path" "$(cat "$encrypted_node_config_path")" > "$NODE_CONFIG_PATH.tmp" 2>/dev/null; then
+        ret=0
+        mv "$NODE_CONFIG_PATH.tmp" "$NODE_CONFIG_PATH"
+      else
+        warning "Failed to decrypt node-config on boot partition"
+      fi
+    fi
+  fi
+  if [[ -e $NODE_CONFIG_PATH ]]; then
+    (umask 0077 get_node_config disk.encryption-key | base64 -d >/run/initramfs/disk-encryption-key)
+  fi
+  return $ret
 }
 
-yesno() {
-  local default=${1:-y} yesno
-  read -r yesno
-  while true; do
-    if [[ $yesno =~ ^[Nn]o?$ ]]; then
-      return 1
-    elif [[ $yesno =~ ^[Yy](es)?$ ]]; then
-      return 0
-    elif [[ $yesno = '' ]]; then
-      [[ $default = y || $default = true ]] || return 1
-      return 0
-    fi
-    out "Invalid response"
-  done
-}
+decrypt_node_config() {
+  local \
+    node_key_path=$1 node_config_response=$2 \
+    cipher encrypted_config calculated_hmac node_config
 
-out() {
-  local tpl=$1
-  shift
-  # shellcheck disable=SC2059
-  printf "$tpl" "$@" >&2
+  cipher=$(
+    jq -r '.["encrypted-chipher"]' <<<"$node_config_response" | \
+    base64 -d | \
+    openssl pkeyutl -pkeyopt rsa_padding_mode:oaep -inkey "$node_key_path" -decrypt | \
+    base64 -w0
+  )
+
+  encrypted_config=$(jq -r '.["encrypted-config"]' <<<"$node_config_response")
+  calculated_hmac=$(
+    base64 -d <<<"$encrypted_config" | \
+    openssl dgst -sha256 -binary -mac hmac -macopt hexkey:"$(base64 -d  <<<"$cipher" | tail -c +49 | xxd -p -c0)" | \
+    base64 -w0
+  )
+  [[ $calculated_hmac = "$(jq -r '.["encrypted-config-hmac"]' <<<"$node_config_response")" ]] || \
+    fatal "Calculated hmac does not match the hmac sent by the server"
+
+  node_config=$(
+    base64 -d <<<"$encrypted_config" |  openssl enc -d -aes-256-cbc \
+      -iv "$(base64 -d  <<<"$cipher" | tail -c +33 | head -c 16 | xxd -p -c128)" \
+      -K "$(base64 -d  <<<"$cipher" | head -c 32 | xxd -p -c128)"
+  )
+  set +x
+  printf "%s" "$node_config"
 }
 
 main "$@"

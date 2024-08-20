@@ -9,15 +9,17 @@ esac
 # shellcheck disable=SC1091
 . /usr/share/initramfs-tools/hook-functions
 
-copy_exec /sbin/blkid /bin
 copy_exec /usr/bin/curl /bin
 copy_exec /usr/bin/jq /bin
-copy_exec /usr/bin/basename /bin
-copy_exec /usr/bin/readlink /bin
-copy_exec /usr/bin/cp /bin
 copy_exec /usr/bin/bash /bin
-copy_exec /usr/bin/lsblk /bin
 copy_exec /usr/bin/socat /bin
 copy_exec /usr/bin/flock /bin
-copy_exec /usr/bin/openssl /bin
 copy_file root-certificate /usr/local/share/ca-certificates/home-cluster-root.crt /usr/local/share/ca-certificates/home-cluster-root.crt
+
+
+# copy_exec /sbin/blkid /bin
+# copy_exec /usr/bin/basename /bin
+# copy_exec /usr/bin/readlink /bin
+# copy_exec /usr/bin/cp /bin
+# copy_exec /usr/bin/lsblk /bin
+# copy_exec /usr/bin/openssl /bin

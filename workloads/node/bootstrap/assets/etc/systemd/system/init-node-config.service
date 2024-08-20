@@ -1,0 +1,11 @@
+[Unit]
+Description=Initialize the node configuration
+Requires=systemd-networkd-wait-online.service
+After=systemd-networkd-wait-online.service
+
+[Install]
+WantedBy=local-fs-pre.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/upkg/.upkg/home-cluster/workloads/node/bin/node-config --boot

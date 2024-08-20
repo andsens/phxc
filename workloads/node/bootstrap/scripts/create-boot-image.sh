@@ -44,10 +44,10 @@ main() {
   # Hash the root image so we can verify it during boot
   sha256sums[root.img]=$(sha256sum /workspace/root.img | cut -d ' ' -f1)
 
-  artifacts[/workspace/root.img]=/images/$VARIANT.new/root.img
+  artifacts[/workspace/root.img]=/images/$VARIANT.new/root.${sha256sums[root.img]}.img
   artifacts[/workspace/root/boot/initrd.img]=/images/$VARIANT.new/initrd.img
 
-  local kernel_cmdline="root=/run/initramfs/root.img root_sha256=${sha256sums[root.img]} panic=300 noresume"
+  local kernel_cmdline="root=/run/initramfs/root.${sha256sums[root.img]}.img panic=300 noresume"
 
   ######################
   ### Build boot.img ###

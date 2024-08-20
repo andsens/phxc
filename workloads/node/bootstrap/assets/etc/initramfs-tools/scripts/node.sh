@@ -36,49 +36,6 @@ get_node_config() {
   fi
 }
 
-download_node_config() {
-  local boot_server primary_mac config_src_addr encrypted_response
-  boot_server=$(get_node_state boot-server) || fatal "Unable to download node configuration: boot-server not present in node-state.json"
-  primary_mac=$(get_node_state primary-mac) || fatal "Unable to download node configuration: primary-mac not present in node-state.json"
-  config_src_addr=https://${boot_server}:8020/registry/node-config/${primary_mac//:/-}.json
-  info "Downloading node-config from %s" "$config_src_addr"
-  if encrypted_response=$(curl_boot_server "$config_src_addr"); then
-    printf "%s\n" "$encrypted_response"
-  else
-    fatal "Downloading the node configuration failed"
-  fi
-}
-
-decrypt_node_config() {
-  local \
-    node_key_path=$1 node_config_response=$2 \
-    cipher encrypted_config calculated_hmac node_config
-
-  cipher=$(
-    jq -r '.["encrypted-chipher"]' <<<"$node_config_response" | \
-    base64 -d | \
-    openssl pkeyutl -pkeyopt rsa_padding_mode:oaep -inkey "$node_key_path" -decrypt | \
-    base64 -w0
-  )
-
-  encrypted_config=$(jq -r '.["encrypted-config"]' <<<"$node_config_response")
-  calculated_hmac=$(
-    base64 -d <<<"$encrypted_config" | \
-    openssl dgst -sha256 -binary -mac hmac -macopt hexkey:"$(base64 -d  <<<"$cipher" | tail -c +49 | xxd -p -c0)" | \
-    base64 -w0
-  )
-  [[ $calculated_hmac = "$(jq -r '.["encrypted-config-hmac"]' <<<"$node_config_response")" ]] || \
-    fatal "Calculated hmac does not match the hmac sent by the server"
-
-  node_config=$(
-    base64 -d <<<"$encrypted_config" |  openssl enc -d -aes-256-cbc \
-      -iv "$(base64 -d  <<<"$cipher" | tail -c +33 | head -c 16 | xxd -p -c128)" \
-      -K "$(base64 -d  <<<"$cipher" | head -c 32 | xxd -p -c128)"
-  )
-  set +x
-  printf "%s" "$node_config"
-}
-
 escape_key() {
   # Converts any path like some-path.to-something.here
   # into ["some-path"]["to-something"]["here"]

@@ -32,6 +32,8 @@ def root_get():
 def send_report(image_path):
   if not app.config['enable_images']:
     flask.abort(500)
+  if not os.path.exists(os.path.join(app.config['root'], 'images', image_path)):
+    flask.abort(404)
   return flask.send_file(os.path.join(app.config['root'], 'images', image_path))
 
 @app.route('/registry/node-config/<path:node_mac_filename>', methods=['GET'])

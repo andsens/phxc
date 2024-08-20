@@ -3,6 +3,7 @@
 PACKAGES+=(
   systemd-cryptsetup # encrypted data
   tpm2-tools openssl xxd curl systemd-timesyncd # Remote attestation for cluster authentication
+  less nano # TODO: debug
 )
 
 system() {
@@ -11,8 +12,8 @@ system() {
 
   cp_tpl --raw \
     /etc/systemd/system/generate-node-key.service \
-    /etc/systemd/system/download-node-config.service \
-    /etc/systemd/system/download-node-config.timer \
+    /etc/systemd/system/update-node-config.service \
+    /etc/systemd/system/update-node-config.timer \
     /etc/systemd/system/collect-node-state.service \
     /etc/systemd/system/report-node-state.path \
     /etc/systemd/system/report-node-state.service \
@@ -26,8 +27,8 @@ system() {
   systemctl enable \
     systemd-timesyncd.service \
     generate-node-key.service \
-    download-node-config.service \
-    download-node-config.timer \
+    update-node-config.service \
+    update-node-config.timer \
     collect-node-state.service \
     report-node-state.path \
     report-node-state.service \
