@@ -28,42 +28,49 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' update-boot`
   eval "$(docopt "$@")"
 
-  trap_append clear_boot_tmp EXIT
-
-  local boot_server
+  local boot_server digests_json_new
   VARIANT=$(get_node_state variant)
   boot_server=$(get_node_state boot-server)
   mkdir -p /boot/home-cluster
-  if ! curl_boot_server -o/boot/home-cluster/digests.json.new "https://${boot_server}:8020/images/$VARIANT/digests.json"; then
+  if ! digests_json_new=$(curl_boot_server "https://${boot_server}:8020/images/$VARIANT/digests.json"); then
     fatal "Unable to retrieve image digests from boot server"
   fi
   local current_root_img_sha256 new_root_img_sha256
   current_root_img_sha256=$(jq -re '.sha256sums["root.img"]' /boot/home-cluster/digests.json 2>/dev/null || true)
-  new_root_img_sha256=$(jq -re '.sha256sums["root.img"]' /boot/home-cluster/digests.json.new)
+  new_root_img_sha256=$(jq -re '.sha256sums["root.img"]' <<<"$digests_json_new")
   if [[ $current_root_img_sha256 = "$new_root_img_sha256" ]]; then
     info "boot partition is up-to-date"
     return 0
   fi
   info "boot partition is outdated, updating now"
+  local rm_root_trap
+  trap_append "rm -f /boot/home-cluster/root.$new_root_img_sha256.img" EXIT; rm_root_trap=$TRAP_POINTER
   curl_boot_server -o"/boot/home-cluster/root.$new_root_img_sha256.img" "https://${boot_server}:8020/images/$VARIANT/root.$new_root_img_sha256.img"
   if [[ $VARIANT = rpi* ]]; then
-    curl_boot_server -o/boot/boot.img.new "https://${boot_server}:8020/images/$VARIANT/boot.img"
-    mv /boot/boot.img.new /boot/boot.img
+    if curl_boot_server -o/boot/boot.img.new "https://${boot_server}:8020/images/$VARIANT/boot.img"; then
+      mv /boot/boot.img.new /boot/boot.img
+    else
+      rm -f /boot/boot.img.new
+      fatal "Failed downloading boot.img from boot-server"
+    fi
   else
-    local efisuffix
+    local efipath
     case $VARIANT in
-      amd64) efisuffix=X64 ;;
-      arm64) efisuffix=AA64 ;;
+      amd64) efipath=/boot/EFI/BOOT/BOOTX64.efi ;;
+      arm64) efipath=/boot/EFI/BOOT/BOOTAA64.efi ;;
       *) fatal "Unknown variant: %s" "$VARIANT" ;;
     esac
     mkdir -p /boot/EFI/BOOT
-    curl_boot_server -o/boot/EFI/BOOT/BOOT${efisuffix}.EFI.new "https://${boot_server}:8020/images/$VARIANT/uki.efi"
-    mv /boot/EFI/BOOT/BOOT${efisuffix}.EFI.new /boot/EFI/BOOT/BOOT${efisuffix}.EFI
+    if curl_boot_server -o$efipath.new "https://${boot_server}:8020/images/$VARIANT/uki.efi"; then
+      mv $efipath.new $efipath
+    else
+      rm -f $efipath.new
+      fatal "Failed downloading uki.efi from boot-server"
+    fi
   fi
-  local rootimg
-  for rootimg in /boot/home-cluster/root.*.img; do
-    [[ $rootimg = "/boot/home-cluster/root.$new_root_img_sha256.img" ]] || rm "$rootimg"
-  done
+  trap_remove "$rm_root_trap"
+  printf "%s\n" "$digests_json_new" >/boot/home-cluster/digests.json
+  rm -f "/boot/home-cluster/root.$current_root_img_sha256.img"
 }
 
 main "$@"
