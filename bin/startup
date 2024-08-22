@@ -17,12 +17,13 @@ main() {
 
   DOC="startup - Bootstrap images or run the boot-server
 Usage:
-  startup bootstrap VARIANT
+  startup bootstrap [--debug] VARIANT
   startup boot-server [-h HOST_IP]
 
 Options:
   -h --host-ip HOST_IP  The host IP the boot-server should bind to.
                         Prompts if not set and more than one is available.
+  --debug  Enable debug build (installs less & nano, unlocks root, etc.)
 
 Supported variants:
   amd64 - Standard x86_64 image
@@ -33,27 +34,28 @@ Supported variants:
 # shellcheck disable=2016,2086,2317,1090,1091,2034
 docopt() { local v='2.0.2'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
-%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:416};usage=${DOC:50:69}
-digest=a261c;options=('-h --host-ip 1');node_0(){ value __host_ip 0;};node_1(){
-value VARIANT a;};node_2(){ switch bootstrap a:bootstrap;};node_3(){ switch \
-boot_server a:boot-server;};node_4(){ sequence 2 1;};node_5(){ sequence 3 6;}
-node_6(){ optional 0;};node_7(){ choice 4 5;};cat <<<' docopt_exit() { [[ -n \
-$1 ]] && printf "%s\n" "$1" >&2;printf "%s\n" "${DOC:50:69}" >&2;exit 1;}'
-local varnames=(__host_ip VARIANT bootstrap boot_server) varname;for varname \
-in "${varnames[@]}"; do unset "var_$varname";done;parse 7 "$@";local \
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:499};usage=${DOC:50:79}
+digest=b108f;options=(' --debug 0' '-h --host-ip 1');node_0(){ switch __debug 0
+};node_1(){ value __host_ip 1;};node_2(){ value VARIANT a;};node_3(){ switch \
+bootstrap a:bootstrap;};node_4(){ switch boot_server a:boot-server;};node_5(){
+sequence 3 6 2;};node_6(){ optional 0;};node_7(){ sequence 4 8;};node_8(){
+optional 1;};node_9(){ choice 5 7;};cat <<<' docopt_exit() { [[ -n $1 ]] && \
+printf "%s\n" "$1" >&2;printf "%s\n" "${DOC:50:79}" >&2;exit 1;}';local \
+varnames=(__debug __host_ip VARIANT bootstrap boot_server) varname;for varname \
+in "${varnames[@]}"; do unset "var_$varname";done;parse 9 "$@";local \
 p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset "$p$varname"
-done;eval $p'__host_ip=${var___host_ip:-};'$p'VARIANT=${var_VARIANT:-};'$p'boo'\
-'tstrap=${var_bootstrap:-false};'$p'boot_server=${var_boot_server:-false};'
-local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
-((;docopt_i>0;docopt_i--)); do for varname in "${varnames[@]}"; do declare -p \
-"$p$varname";done;done;}
+done;eval $p'__debug=${var___debug:-false};'$p'__host_ip=${var___host_ip:-};'\
+$p'VARIANT=${var_VARIANT:-};'$p'bootstrap=${var_bootstrap:-false};'$p'boot_ser'\
+'ver=${var_boot_server:-false};';local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] \
+&& docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for varname in \
+"${varnames[@]}"; do declare -p "$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' startup`
   eval "$(docopt "$@")"
 
   # shellcheck disable=SC2154
   if $bootstrap; then
     initialize
-    bootstrap "$VARIANT"
+    bootstrap "$VARIANT" "$__debug"
   elif $boot_server; then
     initialize
     boot_server "$__host_ip"
@@ -76,7 +78,7 @@ initialize() {
 }
 
 bootstrap() {
-  VARIANT=$1
+  local VARIANT=$1 DEBUG=$2
   local DOCKER_PLATFORM ARCH
   case $VARIANT in
     amd64)
@@ -145,6 +147,7 @@ bootstrap() {
     gcr.io/kaniko-project/executor:latest \
     --dockerfile context/Dockerfile \
     --build-arg "VARIANT=$VARIANT" \
+    --build-arg "DEBUG=$DEBUG" \
     --custom-platform="$DOCKER_PLATFORM" \
     --destination "cluster.local/node:$VARIANT" \
     --insecure-registry=cluster.local \
@@ -159,6 +162,7 @@ bootstrap() {
     -v "$PKGROOT/workloads/node/bootstrap/scripts:/scripts:ro" \
     -v "$IMAGES:/images:rw" \
     -e "VARIANT=$VARIANT" \
+    -e "DEBUG=$DEBUG" \
     --device=/dev/kvm \
     --group-add "$(stat -c %g /dev/kvm)" \
     -e CHOWN=$UID:$UID \

@@ -1,6 +1,7 @@
 FROM debian:trixie
 SHELL ["/usr/bin/bash", "-Eeo", "pipefail", "-c"]
 ARG VARIANT
+ARG DEBUG=false
 
 RUN \
   /workspace/common-context/setup-debian.sh; \

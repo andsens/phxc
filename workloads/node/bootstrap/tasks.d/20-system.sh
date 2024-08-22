@@ -3,7 +3,6 @@
 PACKAGES+=(
   systemd-cryptsetup # encrypted data
   tpm2-tools openssl xxd curl systemd-timesyncd # Remote attestation for cluster authentication
-  less nano # TODO: debug
 )
 
 system() {

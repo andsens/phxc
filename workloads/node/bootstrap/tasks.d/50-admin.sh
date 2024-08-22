@@ -4,9 +4,16 @@ PACKAGES+=(sudo "$(basename "${ADMIN_SHELL:?}")")
 if [[ -n $ADMIN_NFSHOME_ADDR ]]; then
   PACKAGES+=(nfs-client)
 fi
+if $DEBUG; then
+  PACKAGES+=(less nano)
+fi
 
 admin() {
-  usermod -L root
+  if $DEBUG; then
+    usermod -p "${ADMIN_PWHASH:?}" root
+  else
+    usermod -L root
+  fi
   useradd -m -s "$ADMIN_SHELL" -u "${ADMIN_UID:?}" "${ADMIN_USERNAME:?}"
   usermod -p "${ADMIN_PWHASH:?}" "$ADMIN_USERNAME"
   adduser "$ADMIN_USERNAME" adm
