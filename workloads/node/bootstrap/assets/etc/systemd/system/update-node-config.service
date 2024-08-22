@@ -8,4 +8,4 @@ WantedBy=multi-user.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/lib/upkg/.upkg/home-cluster/workloads/node/bin/node-config --reboot
+ExecStart=/usr/local/lib/upkg/.upkg/home-cluster/workloads/node/bin/update-node-config

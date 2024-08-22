@@ -32,9 +32,7 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 
   local boot_server
   VARIANT=$(get_node_state variant)
-  if ! boot_server=$(get_node_state boot-server); then
-    fatal "Unable to retrieve boot-server from node-state.json"
-  fi
+  boot_server=$(get_node_state boot-server)
   mkdir -p /boot/home-cluster
   if ! curl_boot_server -o/boot/home-cluster/digests.json.new "https://${boot_server}:8020/images/$VARIANT/digests.json"; then
     fatal "Unable to retrieve image digests from boot server"

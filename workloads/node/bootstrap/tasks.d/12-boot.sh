@@ -45,11 +45,13 @@ boot() {
 
   # Setup node-state.json & node-config.json
   cp_tpl --var VARIANT --chmod=0755 /etc/initramfs-tools/scripts/init-top/create-node-state
-  cp_tpl --raw /etc/systemd/system/init-node-config.service
-  systemctl enable init-node-config.service
 
   # Setup script for finding the boot-server
   cp_tpl --raw --chmod=0755 /etc/initramfs-tools/scripts/init-premount/find-boot-server
+
+  # Setup boot mounting & unmounting
+  cp_tpl --raw --chmod=0755 /etc/initramfs-tools/scripts/init-top/mount-boot
+  cp_tpl --raw --chmod=0755 /etc/initramfs-tools/scripts/init-bottom/umount-boot
 
   # Clear machine-id, let systemd generate one on first boot
   rm /var/lib/dbus/machine-id /etc/machine-id
@@ -66,18 +68,17 @@ boot() {
 
   # Networking setup
   systemctl enable systemd-networkd
-  cp_tpl --raw /etc/systemd/system/setup-networking.service
   cp_tpl /etc/systemd/system/setup-cluster-dns.service
-  systemctl enable setup-cluster-dns.service setup-networking.service
+  systemctl enable setup-cluster-dns.service
   cp_tpl /etc/hosts.tmp
 
   # Disk setup
   cp_tpl /etc/crypttab /etc/fstab.tmp
   cp_tpl --raw \
-    /etc/systemd/system/setup-disk.service \
+    /etc/systemd/system/setup-node.service \
     /etc/systemd/system/persistent-mkfs.service
   systemctl enable \
-    setup-disk.service \
+    setup-node.service \
     persistent-mkfs.service
 
   if [[ $VARIANT = rpi5 ]]; then

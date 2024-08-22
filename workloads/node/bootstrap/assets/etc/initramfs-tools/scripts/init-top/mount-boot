@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+set -Eeo pipefail; shopt -s inherit_errexit
+[[ $1 != prereqs ]] || { echo "create-node-state"; exit 0; }
+
+PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
+# shellcheck source=../common.sh
+source "$PKGROOT/common.sh"
+# shellcheck source=../disk-uuids.sh
+source "$PKGROOT/disk-uuids.sh"
+
+main() {
+  local boot_devpath boot_path=/run/initramfs/boot
+  if boot_devpath=/dev/$(lsblk -Jno NAME,PTUUID,PARTUUID -a | jq -re --arg disk_uuid "$DISK_UUID" --arg part_uuid "$BOOT_UUID" \
+    '[.blockdevices[] | select(.ptuuid==$disk_uuid) | .children[] | select(.partuuid=$part_uuid) | .name] | first'); then
+    info "Mounting boot partition"
+    mkdir $boot_path
+    if ! mount -t vfat "$boot_devpath" $boot_path; then
+      rmdir $boot_path
+      error "Failed to mount boot partition"
+    fi
+  else
+    warning "boot partition not found, skipping mounting of %s" $boot_path
+  fi
+}
+
+main "$@"

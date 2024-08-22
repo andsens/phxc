@@ -1,8 +1,0 @@
-[Unit]
-Description=Watch for node state changes
-
-[Install]
-WantedBy=paths.target
-
-[Path]
-PathModified=/run/initramfs/node-state.json

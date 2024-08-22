@@ -203,8 +203,9 @@ boot_server() {
   step certificate bundle --force "$BOOT_SERVER_CRT" "$INTERMEDIATE_CRT" "$BOOT_SERVER_BUNDLE"
 
   mkdir -p \
-    "$boot_server_root/registry/node-config" \
-    "$boot_server_root/registry/node-state" \
+    "$boot_server_root/registry/node-configs" \
+    "$boot_server_root/registry/disk-encryption-keys" \
+    "$boot_server_root/registry/node-states" \
     "$boot_server_root/registry/images" \
     "$boot_server_root/tftpd/images" \
 

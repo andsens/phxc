@@ -1,0 +1,13 @@
+[Unit]
+Description=Setup the disk and encrypt the persistent partition
+DefaultDependencies=no
+Requires=-.mount
+After=-.mount
+Before=boot.mount var-lib-persistent.mount systemd-networkd.service systemd-cryptsetup@persistent.service blockdev@dev-mapper-persistent.target dev-mapper-persistent.device
+
+[Install]
+WantedBy=local-fs-pre.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/upkg/.upkg/home-cluster/workloads/node/bin/setup-node

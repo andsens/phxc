@@ -11,12 +11,8 @@ system() {
   update-ca-certificates
 
   cp_tpl --raw \
-    /etc/systemd/system/generate-node-key.service \
     /etc/systemd/system/update-node-config.service \
     /etc/systemd/system/update-node-config.timer \
-    /etc/systemd/system/collect-node-state.service \
-    /etc/systemd/system/report-node-state.path \
-    /etc/systemd/system/report-node-state.service \
     /etc/systemd/system/update-boot.service \
     /etc/systemd/system/create-persistent-dir@.service \
     /etc/systemd/system/create-persistent-dir@.service \
@@ -26,12 +22,8 @@ system() {
 
   systemctl enable \
     systemd-timesyncd.service \
-    generate-node-key.service \
     update-node-config.service \
     update-node-config.timer \
-    collect-node-state.service \
-    report-node-state.path \
-    report-node-state.service \
     update-boot.service
 
   mkdir /var/lib/persistent

@@ -31,13 +31,13 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   eval "$(docopt "$@")"
 
   local node_state_path node_opts=() node_config_state node_config_path node_display_name
-  for node_state_path in "$PKGROOT/startup/boot-server/registry/node-state"/*; do
+  for node_state_path in "$PKGROOT/startup/boot-server/registry/node-states"/*; do
     node_config_state=configured
-    node_config_path=$PKGROOT/startup/boot-server/registry/node-config/$(basename "$node_state_path")
+    node_config_path=$PKGROOT/startup/boot-server/registry/node-configs/$(basename "$node_state_path")
     if ! node_display_name="$(jq -re '.hostname // empty' "$node_config_path") (configured)"; then
       node_display_name=$(jq -r --arg node_config_state "$node_config_state" '"(\(.variant)) \(.["primary-mac"]) (\($node_config_state))"' "$node_state_path")
     fi
-    [[ -e $PKGROOT/startup/boot-server/registry/node-config/$(basename "$node_state_path") ]] || node_config_state=unconfigured
+    [[ -e $PKGROOT/startup/boot-server/registry/node-configs/$(basename "$node_state_path") ]] || node_config_state=unconfigured
     node_opts+=("$node_state_path" "$node_display_name")
   done
   node_state_path=$(select_options "Select node to configure:" "" "${node_opts[@]}") \
@@ -45,7 +45,7 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 
   local node_config_path node_config={} node_mac
   node_mac=$(jq -r '.["primary-mac"]' "$node_state_path")
-  node_config_path=$PKGROOT/startup/boot-server/registry/node-config/$(basename "$node_state_path")
+  node_config_path=$PKGROOT/startup/boot-server/registry/node-configs/$(basename "$node_state_path")
   [[ ! -e $node_config_path ]] || node_config=$(cat "$node_config_path")
 
   local node_labels=(node-role.kubernetes.io/control-plane)

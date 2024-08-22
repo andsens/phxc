@@ -1,0 +1,156 @@
+#!/usr/bin/env bash
+# shellcheck source-path=../../..
+set -Eeo pipefail; shopt -s inherit_errexit
+PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../..")
+
+main() {
+  source "$PKGROOT/.upkg/records.sh/records.sh"
+  source "$PKGROOT/.upkg/trap.sh/trap.sh"
+  source "$PKGROOT/workloads/node/bootstrap/assets/etc/initramfs-tools/scripts/node.sh"
+  source "$PKGROOT/workloads/node/bootstrap/assets/etc/initramfs-tools/scripts/disk-uuids.sh"
+  source "$PKGROOT/workloads/node/bootstrap/assets/etc/initramfs-tools/scripts/curl-boot-server.sh"
+  source "$PKGROOT/.upkg/path-tools/path-tools.sh"
+  PATH=$(path_prepend "$PKGROOT/.upkg/.bin")
+
+  ### Mount boot partition
+  local boot_path=/run/initramfs/boot
+  local node_key_cache_path=$boot_path/home-cluster/node-key
+  # The boot partition will be mounted either now or after partitioning as taken place
+  # In any case, we will need to unmount it on exit
+  trap_append "umount $boot_path; rmdir $boot_path" EXIT
+  mkdir $boot_path
+  if mount -t vfat PARTUUID=$BOOT_UUID $boot_path; then
+    info "Mounted boot partition"
+  else
+    rmdir $boot_path # The boot mountpoint acts as a sentinel for successful mounting
+    info "Boot partition not found"
+  fi
+
+
+  ### Copy/generate node key
+  if [[ -e $node_key_cache_path ]]; then
+    info "node-key found on boot partition"
+    cp "$node_key_cache_path" "$NODE_KEY_PATH"
+    set_node_state node-key.persisted true true
+  else
+    info "node-key not found, generating now"
+    (umask 0077; openssl genrsa -out $NODE_KEY_PATH)
+    set_node_state node-key.persisted false true
+  fi
+  openssl rsa -in $NODE_KEY_PATH -pubout -out $NODE_KEY_PATH.pub
+  set_node_state node-key.public "$(cat "$NODE_KEY_PATH.pub")"
+
+
+  ### Collect, then report node state
+  local blockdevices='[]' devpath disk_filesystem disk_partitions
+  for devpath in $(lsblk --json --output NAME,FSTYPE,TYPE,MAJ:MIN | jq -r '.blockdevices[] | select(.type=="disk" and (.["maj:min"] | endswith(":0"))) | "/dev/\(.name)"'); do
+    disk_filesystem=$(lsblk -Jndo FSTYPE "$devpath" | jq '.blockdevices[0].fstype')
+    disk_partitions=$(sfdisk -J "$devpath" 2>/dev/null || printf "null")
+    blockdevices=$(jq --arg devpath "$devpath" --argjson fs "$disk_filesystem" --argjson part "$disk_partitions" '. + [{"devpath": $devpath, "filesystem": $fs, "partitions": $part}]' <<<"$blockdevices")
+  done
+  set_node_state blockdevices "$blockdevices" true
+
+  local nics
+  nics=$(ip --json link show | jq '[.[] | select(.ifname != "lo") | {"ifname": .ifname, "mac": .address}]')
+  set_node_state nics "$nics" true
+
+  report_node_state
+
+
+  # Retrieve node config
+  local encrypted_node_config node_config node_config_cache_path=$boot_path/home-cluster/node-config.json.enc
+  while boot_server_available; do
+    if encrypted_node_config=$(download_node_config) && node_config=$(decrypt_node_config "$encrypted_node_config"); then
+      if [[ -e $boot_path ]]; then
+        info "Node config received, caching to %s" $node_config_cache_path
+        mkdir -p $boot_path/home-cluster
+        printf "%s\n" "$encrypted_node_config" >$node_config_cache_path
+      fi
+      break
+    fi
+    warning "Failed to download node config, retrying in 15s"
+    sleep 15
+  done
+  if [[ -z $node_config ]]; then
+    if [[ ! -e $node_config_cache_path ]]; then
+        fatal "Failed to download node config and the boot partition could not be found or did not contain a cached version"
+    else
+      warning "Failed to download node config, falling back to cached version on boot partition"
+      node_config=$(decrypt_node_config "$(cat $node_config_cache_path)")
+    fi
+  fi
+  printf "%s\n" "$node_config" >"$NODE_CONFIG_PATH"
+
+
+  ### Partition disk
+  local devpath
+  devpath=$(get_node_config disk.devpath)
+  if ! lsblk -Jndo PTUUID "$devpath" | jq -re --arg disk_uuid $DISK_UUID '.blockdevices[0].ptuuid==$disk_uuid' &>/dev/null; then
+    if sfdisk -J "$devpath" &>/dev/null || lsblk -Jndo FSTYPE "$devpath" | jq -re '.blockdevices[0].fstype != null' >/dev/null; then
+      [[ $(get_node_config disk.force) = true ]] || fatal "Device %s is partitioned or contains a filesystem and .disk.force != true, aborting disk setup" "$devpath"
+    fi
+    info 'Partitioning disk at "%s"' "$devpath"
+    wipefs -a "$devpath"
+    sfdisk "$devpath" <<EOF
+label: gpt
+label-id: $DISK_UUID
+size=1GiB, type=U, bootable, uuid=$BOOT_UUID
+uuid=$DATA_UUID
+EOF
+    # Make sure to wipe leftover data before creating filesystems on the partitions
+    local part_devname
+    for part_devname in $(lsblk -Jno NAME "$devpath" | jq -re '.blockdevices[0].children[] | .name'); do
+      wipefs -a "/dev/$part_devname"
+    done
+    mkfs.vfat /dev/disk/by-partuuid/$BOOT_UUID
+    mkdir $boot_path
+    mount -t vfat PARTUUID=$BOOT_UUID $boot_path
+    mkdir $boot_path/home-cluster
+  fi
+
+  local disk_encryption_key_path=/run/initramfs/disk-encryption-key
+  (umask 0077; get_node_config disk.encryption-key | base64 -d >$disk_encryption_key_path)
+
+  # Setup encrypted data partition
+  local data_devpath
+  data_devpath=/dev/$(lsblk -Jno Name "$devpath" | jq -re '.blockdevices[0].children[1].name')
+  if ! cryptsetup isLuks "$data_devpath"; then
+    info "Encrypting data partition"
+    cryptsetup luksFormat --batch-mode "$data_devpath" $disk_encryption_key_path
+  fi
+
+  # Persist the node-key and tell the boot-server about it
+  if [[ $(get_node_state node-key.persisted) = false ]]; then
+    info "Caching node key to boot partition"
+    cp "$NODE_KEY_PATH" "$node_key_cache_path"
+    set_node_state node-key.persisted true true
+  fi
+
+  ### Configure networking
+  local hostname primary_mac
+  if hostname=$(get_node_config hostname); then
+    :
+  elif primary_mac=$(get_node_state primary-mac); then
+    warning "No hostname defined in node-config, using primary-mac from node-state.json"
+    hostname=${primary_mac//:/-}
+  else
+    warning "No hostname defined in node-config and primary-mac not found in node-state, generating random hostname"
+    hostname=$(xxd -p -l4 /dev/random)
+  fi
+  local network
+  for network in $(jq -r '(.networks // {}) | keys[]' "$NODE_CONFIG_PATH"); do
+    info 'Configuring network "%s"' "$network"
+    config=$(jq -r --arg network "$network" '.networks[$network]' "$NODE_CONFIG_PATH")
+    # shellcheck disable=SC2154
+    printf "%s\n" "$config" >"/etc/systemd/network/$network.network"
+  done
+
+  info "Configuring hostname for node as %s" "$hostname"
+  # shellcheck disable=SC2154
+  printf "%s\n" "$hostname" >/etc/hostname
+  hostname -F /etc/hostname
+  set_node_state hostname "$hostname"
+  report_node_state
+}
+
+main "$@"
