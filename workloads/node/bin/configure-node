@@ -30,6 +30,7 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' node-config`
   eval "$(docopt "$@")"
 
+  shopt -s nullglob
   local node_state_path node_opts=() node_config_state node_config_path node_display_name
   for node_state_path in "$PKGROOT/startup/boot-server/registry/node-states"/*; do
     node_config_state=configured
