@@ -2,7 +2,9 @@
 
 NODE_STATE_PATH=/run/initramfs/node-state.json
 NODE_CONFIG_PATH=/run/initramfs/node-config.json
+NODE_CONFIG_CACHE_PATH=/boot/home-cluster/node-config.json.enc
 NODE_KEY_PATH=/run/initramfs/node-key
+NODE_KEY_CACHE_PATH=/boot/home-cluster/node-key
 
 set_node_state() {
   local key=$1 val=$2 val_is_json=${3:-false} val_arg=--argjson

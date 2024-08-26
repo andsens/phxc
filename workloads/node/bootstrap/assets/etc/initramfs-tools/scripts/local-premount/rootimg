@@ -30,7 +30,7 @@ verify_rootimg() {
 }
 
 main() {
-  local rootimg_src_path=/run/initramfs/boot/home-cluster/$ROOT_BASENAME
+  local rootimg_src_path=/boot/home-cluster/$ROOT_BASENAME
   if [[ -e $rootimg_src_path ]]; then
     info "Copying root.img from boot partition to RAM"
     if cp "$rootimg_src_path" "$ROOT.tmp"; then

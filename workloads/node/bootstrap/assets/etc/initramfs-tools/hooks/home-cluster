@@ -10,6 +10,7 @@ esac
 . /usr/share/initramfs-tools/hook-functions
 
 copy_exec /usr/bin/bash /bin
+copy_exec /usr/bin/mountpoint /bin
 copy_exec /usr/bin/lsblk /bin
 copy_exec /usr/bin/jq /bin
 copy_exec /usr/bin/flock /bin

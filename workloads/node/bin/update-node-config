@@ -10,11 +10,11 @@ main() {
   source "$PKGROOT/.upkg/trap.sh/trap.sh"
   source "$PKGROOT/workloads/node/bootstrap/assets/etc/initramfs-tools/scripts/node.sh"
   source "$PKGROOT/workloads/node/bootstrap/assets/etc/initramfs-tools/scripts/curl-boot-server.sh"
-  local encrypted_node_config node_config node_config_cache_path=/boot/node-config.json.enc
+  local encrypted_node_config node_config
   if encrypted_node_config=$(download_node_config) && node_config=$(decrypt_node_config "$encrypted_node_config"); then
     if [[ ! -e $NODE_CONFIG_PATH ]] || ! diff $NODE_CONFIG_PATH <(printf "%s\n" "$node_config") &>/dev/null; then
-      info "New node config received, caching to %s and then rebooting" "$node_config_cache_path"
-      printf "%s\n" "$encrypted_node_config" >"$node_config_cache_path"
+      info "New node config received, caching to %s and then rebooting" "$NODE_CONFIG_CACHE_PATH"
+      printf "%s\n" "$encrypted_node_config" >"$NODE_CONFIG_CACHE_PATH"
       exec systemctl reboot
     fi
   else

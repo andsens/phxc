@@ -9,17 +9,17 @@ source "$PKGROOT/common.sh"
 source "$PKGROOT/disk-uuids.sh"
 
 main() {
-  local boot_devpath boot_path=/run/initramfs/boot
+  local boot_devpath
   if boot_devpath=/dev/$(lsblk -Jno NAME,PTUUID,PARTUUID -a | jq -re --arg disk_uuid "$DISK_UUID" --arg part_uuid "$BOOT_UUID" \
     '[.blockdevices[] | select(.ptuuid==$disk_uuid) | .children[] | select(.partuuid=$part_uuid) | .name] | first'); then
     info "Mounting boot partition"
-    mkdir $boot_path
-    if ! mount -t vfat "$boot_devpath" $boot_path; then
-      rmdir $boot_path
+    mkdir /boot
+    if ! mount -t vfat "$boot_devpath" /boot; then
+      rmdir /boot
       error "Failed to mount boot partition"
     fi
   else
-    warning "boot partition not found, skipping mounting of %s" $boot_path
+    warning "boot partition not found, skipping mounting of %s" /boot
   fi
 }
 

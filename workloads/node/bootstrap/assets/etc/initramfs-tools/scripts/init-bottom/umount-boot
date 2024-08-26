@@ -7,11 +7,10 @@ PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
 source "$PKGROOT/common.sh"
 
 main() {
-  local boot_path=/run/initramfs/boot
-  if [[ -e $boot_path ]]; then
-    info "Boot partition mount detected, unmounting"
-    umount $boot_path
-    rmdir $boot_path
+  if mountpoint -q /boot; then
+    info "Unmounting /boot"
+    umount /boot
+    rmdir /boot
   fi
 }
 
