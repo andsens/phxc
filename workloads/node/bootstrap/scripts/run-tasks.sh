@@ -7,18 +7,16 @@ source "$PKGROOT/.upkg/records.sh/records.sh"
 source "$PKGROOT/workloads/settings/env/settings.sh"
 eval_settings
 
-source "$PKGROOT/workloads/node/bootstrap/assets/etc/initramfs-tools/scripts/disk-uuids.sh"
+source "$PKGROOT/workloads/node/bootstrap/assets/usr/lib/dracut/modules.d/99home-cluster/lib/disk-uuids.sh"
 
 main() {
   export DEBIAN_FRONTEND=noninteractive
 
   # Enable non-free components
   sed -i 's/Components: main/Components: main contrib non-free non-free-firmware/' /etc/apt/sources.list.d/debian.sources
-  # Disable update-initramfs
-  cp_tpl --raw /etc/initramfs-tools/update-initramfs-disable.conf -d /etc/initramfs-tools/update-initramfs.conf
   # See corresponding file in assets for explanation
   cp_tpl --raw --chmod=0755 /usr/bin/ischroot
-  # Keep old/default config when there is a conflict (i.e. update-initramfs.conf)
+  # Keep old/default config when there is a conflict
   cp_tpl --raw /etc/apt/apt.conf.d/10-dpkg-keep-conf.conf
 
   PACKAGES=(apt-utils gettext jq yq)
@@ -53,18 +51,16 @@ main() {
   apt-get autoclean
 
   info "Building initrd"
-  # Re-enable update-initramfs and create initramfs
-  cp_tpl --raw /etc/initramfs-tools/update-initramfs.conf
   local kernver
   kernver=$(echo /lib/modules/*)
   kernver=${kernver#'/lib/modules/'}
-  update-initramfs -c -k "$kernver"
+  dracut --kver "$kernver"
   # Remove fake ischroot
   rm /usr/bin/ischroot
   # Remove kernel & initramfs symlinks and move real files to fixed location
   rm -f /vmlinuz* /initrd.img*
   mv "/boot/vmlinuz-${kernver}" /boot/vmlinuz
-  mv "/boot/initrd.img-${kernver}" /boot/initrd.img
+  mv "/boot/initramfs-${kernver}.img" /boot/initrd.img
 }
 
 cp_tpl() {

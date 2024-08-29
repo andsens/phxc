@@ -1,0 +1,9 @@
+[Unit]
+Description=Create /run/initramfs/node-state.json
+
+[Install]
+WantedBy=sysinit.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/create-node-state %i

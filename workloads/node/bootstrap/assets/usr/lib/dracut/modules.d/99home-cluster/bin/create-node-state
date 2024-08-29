@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -Eeo pipefail; shopt -s inherit_errexit
+# shellcheck source=../lib/shellcheck-common.sh
+source /usr/lib/home-cluster/common.sh
+
+main() {
+  local VARIANT=${1:?}
+  (umask 0177; printf '{}\n' > $NODE_STATE_PATH)
+  set_node_state variant "$VARIANT"
+}
+
+main "$@"

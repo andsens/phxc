@@ -2,8 +2,10 @@
 
 NODE_STATE_PATH=/run/initramfs/node-state.json
 NODE_CONFIG_PATH=/run/initramfs/node-config.json
+# shellcheck disable=SC2034
 NODE_CONFIG_CACHE_PATH=/boot/home-cluster/node-config.json.enc
 NODE_KEY_PATH=/run/initramfs/node-key
+# shellcheck disable=SC2034
 NODE_KEY_CACHE_PATH=/boot/home-cluster/node-key
 
 set_node_state() {

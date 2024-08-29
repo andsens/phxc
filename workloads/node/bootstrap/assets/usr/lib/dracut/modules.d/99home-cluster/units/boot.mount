@@ -1,0 +1,13 @@
+[Unit]
+Description=/boot
+Before=local-fs.target
+After=systemd-udevd.service
+
+[Install]
+WantedBy=local-fs.target
+
+[Mount]
+What=PARTUUID=$BOOT_UUID
+Where=/boot
+Type=vfat
+Options=defaults,x-initrd.mount,x-systemd.makefs,x-systemd.device-timeout=60s

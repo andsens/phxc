@@ -21,7 +21,6 @@ main() {
   rm /workspace/root/etc/hostname /workspace/root/etc/resolv.conf
   ln -sf ../run/systemd/resolve/stub-resolv.conf /workspace/root/etc/resolv.conf
   mv /workspace/root/etc/hosts.tmp /workspace/root/etc/hosts
-  mv /workspace/root/etc/fstab.tmp /workspace/root/etc/fstab
 
   #######################
   ### Create root.img ###
@@ -46,8 +45,8 @@ main() {
 
   artifacts[/workspace/root.img]=/images/$VARIANT.new/root.${sha256sums[root.img]}.img
   artifacts[/workspace/root/boot/initrd.img]=/images/$VARIANT.new/initrd.img
-
-  local kernel_cmdline="root=/run/initramfs/root.${sha256sums[root.img]}.img panic=300 noresume"
+  local kernel_cmdline="root_sha256=${sha256sums[root.img]} rd.neednet=1 rootovl"
+  ! $DEBUG || kernel_cmdline+=" rd.shell"
 
   ######################
   ### Build boot.img ###

@@ -1,0 +1,12 @@
+[Unit]
+Description=Mount the root squashfs image
+Before=initrd-root-fs.target
+
+[Install]
+WantedBy=initrd-root-fs.target
+
+[Mount]
+Where=/sysroot
+What=/run/initramfs/root.img
+Options=ro,loop
+Type=squashfs

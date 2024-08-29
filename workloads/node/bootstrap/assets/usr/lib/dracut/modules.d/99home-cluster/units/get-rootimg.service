@@ -1,0 +1,12 @@
+[Unit]
+Description=Download the root image from the boot-server or copy it from /boot
+Wants=boot.mount
+After=boot.mount find-boot-server.service systemd-networkd-wait-online.service
+Before=sysroot.mount
+
+[Install]
+WantedBy=sysinit.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/get-rootimg

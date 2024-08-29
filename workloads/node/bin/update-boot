@@ -6,8 +6,8 @@ PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../..")
 main() {
   source "$PKGROOT/.upkg/records.sh/records.sh"
   source "$PKGROOT/.upkg/trap.sh/trap.sh"
-  source "$PKGROOT/workloads/node/bootstrap/assets/etc/initramfs-tools/scripts/node.sh"
-  source "$PKGROOT/workloads/node/bootstrap/assets/etc/initramfs-tools/scripts/curl-boot-server.sh"
+  source "$PKGROOT/workloads/node/bootstrap/assets/usr/lib/dracut/modules.d/99home-cluster/lib/node.sh"
+  source "$PKGROOT/workloads/node/bootstrap/assets/usr/lib/dracut/modules.d/99home-cluster/lib/curl-boot-server.sh"
 
   DOC="update-boot - Update the boot partition with the latest image
 Usage:

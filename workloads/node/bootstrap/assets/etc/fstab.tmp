@@ -1,3 +1,0 @@
-# <device> <dir> <type> <options> <dump> <fsck>
-PARTUUID=$BOOT_UUID /boot vfat defaults,x-initrd.mount,x-systemd.makefs,x-systemd.device-timeout=60s 0 2
-/dev/mapper/persistent /var/lib/persistent ext4 defaults,x-systemd.growfs,x-systemd.device-timeout=60s 0 2

@@ -17,7 +17,7 @@ export LC_ALL=C
 
 main() {
   source "$PKGROOT/.upkg/records.sh/records.sh"
-  source "$PKGROOT/workloads/node/bootstrap/assets/etc/initramfs-tools/scripts/node.sh"
+  source "$PKGROOT/workloads/node/bootstrap/assets/usr/lib/dracut/modules.d/99home-cluster/lib/node.sh"
   DOC="cluster-auth - Use remote attestation to authenticate with the cluster
 Usage:
   cluster-auth [-d -r S] login
