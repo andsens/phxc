@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 set -Eeo pipefail; shopt -s inherit_errexit
-# shellcheck source=../lib/shellcheck-common.sh
-source /usr/lib/home-cluster/common.sh
 
 main() {
   # Broadcast a DHCPDISCOVER packet on port 4011 to get an answer from dhcp-proxy
@@ -29,7 +27,6 @@ main() {
 '3501033c16505845436c69656e743a68'\
 '6f6d652d636c7573746572ff'
 
-  info "Looking for boot-server"
   local mac xid boot_server
   for mac in $(ip -o link show | grep -v ' lo: ' | grep -Eo 'link/[^ ]+ [^ ]+' | cut -d ' ' -f2); do
     xid=$(xxd -p -l4 /dev/random)
@@ -44,13 +41,12 @@ main() {
         socat -4 - udp-datagram:255.255.255.255:4011,bind=:0,broadcast,reuseaddr | \
         dd skip=1 count=1 ibs=44 obs=64 status=none | tr -d '\000'
       ) && [[ -n "$boot_server" ]]; then
-      info "Found boot-server at $boot_server"
-      set_node_state primary-mac "$mac"
-      set_node_state boot-server "$boot_server"
+      set-node-state primary-mac "$mac"
+      set-node-state boot-server "$boot_server"
       break
     fi
   done
-  [[ -n "$boot_server" ]] || fatal "Unable to find the boot-server"
+  [[ -n "$boot_server" ]] || { printf "Unable to find the boot-server\n" >&2; return 1; }
 }
 
 main "$@"

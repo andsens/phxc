@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -Eeo pipefail; shopt -s inherit_errexit
+
+main() {
+  local addr
+  addr=https://$(get-node-state boot-server):8020/$1
+  shift
+  curl --cacert /usr/local/share/ca-certificates/home-cluster-root.crt \
+    -fL --no-progress-meter --connect-timeout 5 --retry 3 "$addr" "$@"
+}
+
+main "$@"

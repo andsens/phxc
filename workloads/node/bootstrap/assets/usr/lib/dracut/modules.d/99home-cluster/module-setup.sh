@@ -16,32 +16,35 @@ depends() {
 install() {
 # copy_exec /usr/bin/mountpoint /bin
 
-  inst_binary jq flock socat curl basename ip grep cut lsblk xxd dd sha256sum
-  inst /usr/local/share/ca-certificates/home-cluster-root.crt /usr/local/share/ca-certificates/home-cluster-root.crt
-  inst /usr/local/lib/upkg/.upkg/home-cluster/.upkg/records.sh/records.sh /usr/lib/home-cluster/records.sh
-  inst /usr/local/lib/upkg/.upkg/home-cluster/.upkg/trap.sh/trap.sh /usr/lib/home-cluster/trap.sh
-  inst "$moddir/lib/common.sh" /usr/lib/home-cluster/common.sh
-  inst "$moddir/lib/curl-boot-server.sh" /usr/lib/home-cluster/curl-boot-server.sh
-  inst "$moddir/lib/disk-uuids.sh" /usr/lib/home-cluster/disk-uuids.sh
-  inst "$moddir/lib/node.sh" /usr/lib/home-cluster/node.sh
+  inst_binary \
+    grep cut xxd dd sha256sum \
+    lsblk \
+    ip socat curl \
+    jq flock \
+    basename dirname realpath
+  inst /usr/local/share/ca-certificates/home-cluster-root.crt
+  inst \
+    /usr/local/lib/home-cluster/node.sh \
+    /usr/local/bin/curl-boot-server \
+    /usr/local/bin/find-boot-server \
+    /usr/local/bin/get-node-state \
+    /usr/local/bin/set-node-state \
+    /etc/systemd/system.conf.d/disk-uuids.conf \
+    /etc/systemd/system.conf.d/node.conf \
+    /etc/systemd/system.conf.d/variant.conf
 
-  inst "$moddir/bin/create-node-state" /usr/bin/create-node-state
-  inst "$moddir/bin/find-boot-server" /usr/bin/find-boot-server
-  inst "$moddir/bin/get-rootimg" /usr/bin/get-rootimg
+  inst "$moddir/system/boot.mount" "$systemdsystemconfdir/boot.mount"
+  inst "$moddir/system/copy-rootimg.service" "$systemdsystemconfdir/copy-rootimg.service"
+  inst "$moddir/system/create-node-state.service" "$systemdsystemconfdir/create-node-state.service"
+  inst "$moddir/system/download-rootimg.service" "$systemdsystemconfdir/download-rootimg.service"
+  inst "$moddir/system/find-boot-server.service" "$systemdsystemconfdir/find-boot-server.service"
+  inst "$moddir/system/move-rootimg.service" "$systemdsystemconfdir/move-rootimg.service"
+  inst "$moddir/system/rootimg.target" "$systemdsystemconfdir/rootimg.target"
+  inst "$moddir/system/sysroot.mount" "$systemdsystemconfdir/sysroot.mount"
+  inst "$moddir/system/verify-rootimg.service" "$systemdsystemconfdir/verify-rootimg.service"
 
-  inst "$moddir/units/find-boot-server.service" "$systemdsystemconfdir/find-boot-server.service"
-  inst "$moddir/units/create-node-state@.service" "$systemdsystemconfdir/create-node-state@.service"
-  # inst "$moddir/units/boot.mount" "$systemdsystemconfdir/boot.mount"
-  inst "$moddir/units/get-rootimg.service" "$systemdsystemconfdir/get-rootimg.service"
-  inst "$moddir/units/sysroot.mount" "$systemdsystemconfdir/sysroot.mount"
-
-  # Enable systemd type unit(s)
-  $SYSTEMCTL -q --root "$initdir" add-wants sysinit.target "create-node-state@${VARIANT:?}.service"
-  $SYSTEMCTL -q --root "$initdir" enable find-boot-server.service
-  $SYSTEMCTL -q --root "$initdir" enable "create-node-state@${VARIANT:?}.service"
-  $SYSTEMCTL -q --root "$initdir" enable get-rootimg.service
+  # Enable sysroot.mount, the rest of the chain follows
   $SYSTEMCTL -q --root "$initdir" enable sysroot.mount
-  # $SYSTEMCTL -q --root "$initdir" enable "boot.mount"
 
   inst_hook cmdline 00 "$moddir/parse-squashfs-root.sh"
   return 0

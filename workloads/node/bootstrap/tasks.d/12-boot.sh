@@ -35,23 +35,17 @@ boot() {
 
   cp_tpl --raw /etc/dracut.conf.d/home-cluster.conf
 
-  # Tooling for dracut
+  cp_tpl --raw -r /etc/systemd/system.conf.d
+  cp_tpl --raw -r --chmod=0755 /usr/local/bin
   cp_tpl --raw --chmod=0755 \
     /usr/lib/dracut/modules.d/99home-cluster/parse-squashfs-root.sh \
-    /usr/lib/dracut/modules.d/99home-cluster/bin/create-node-state \
-    /usr/lib/dracut/modules.d/99home-cluster/bin/find-boot-server \
-    /usr/lib/dracut/modules.d/99home-cluster/bin/get-rootimg \
     /usr/lib/dracut/modules.d/99home-cluster/module-setup.sh
-  cp_tpl --var BOOT_UUID /usr/lib/dracut/modules.d/99home-cluster/units/boot.mount
-  cp_tpl --raw \
-    /usr/lib/dracut/modules.d/99home-cluster/units/create-node-state@.service \
-    /usr/lib/dracut/modules.d/99home-cluster/units/find-boot-server.service \
-    /usr/lib/dracut/modules.d/99home-cluster/units/get-rootimg.service \
-    /usr/lib/dracut/modules.d/99home-cluster/units/sysroot.mount \
-    /usr/lib/dracut/modules.d/99home-cluster/lib/common.sh \
-    /usr/lib/dracut/modules.d/99home-cluster/lib/node.sh \
-    /usr/lib/dracut/modules.d/99home-cluster/lib/curl-boot-server.sh \
-    /usr/lib/dracut/modules.d/99home-cluster/lib/disk-uuids.sh
+  cp_tpl --raw -r \
+    /usr/lib/dracut/modules.d/99home-cluster/system \
+    /usr/local/lib/home-cluster
+  cp_tpl --var BOOT_UUID /usr/lib/dracut/modules.d/99home-cluster/system/boot.mount
+  cp_tpl --var VARIANT /etc/systemd/system.conf.d/variant.conf
+  cp_tpl --var DISK_UUID --var BOOT_UUID --var DATA_UUID /etc/systemd/system.conf.d/disk-uuids.conf
 
   # Clear machine-id, let systemd generate one on first boot
   rm /var/lib/dbus/machine-id /etc/machine-id

@@ -44,9 +44,30 @@ main() {
   sha256sums[root.img]=$(sha256sum /workspace/root.img | cut -d ' ' -f1)
 
   artifacts[/workspace/root.img]=/images/$VARIANT.new/root.${sha256sums[root.img]}.img
-  artifacts[/workspace/root/boot/initrd.img]=/images/$VARIANT.new/initrd.img
-  local kernel_cmdline="root_sha256=${sha256sums[root.img]} rd.neednet=1 rootovl"
+  local kernel_cmdline="rd.neednet=1 rootovl"
   ! $DEBUG || kernel_cmdline+=" rd.shell"
+
+  #########################################
+  ### Inject SHA-256 sum into initramfs ###
+  #########################################
+
+  mkdir /workspace/initramfs
+  (
+    cd /workspace/initramfs
+    zstd -cd /workspace/root/boot/initrd.img | cpio -id
+  )
+  cat <<EOF >/workspace/initramfs/etc/systemd/system.conf.d/rootimg.conf
+[Manager]
+DefaultEnvironment=\\
+  ROOT_IMG=/run/initramfs/root.img \\
+  ROOT_SHA256=${sha256sums[root.img]}
+EOF
+  (
+    cd /workspace/initramfs
+    find . -print0 | cpio -o --null --format=newc 2>/dev/null | zstd -19 >/workspace/root/boot/initrd.img
+  )
+  artifacts[/workspace/root/boot/initrd.img]=/images/$VARIANT.new/initrd.img
+
 
   ######################
   ### Build boot.img ###

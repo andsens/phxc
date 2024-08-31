@@ -1,0 +1,10 @@
+[Unit]
+Description=/boot
+Requires=systemd-udevd.service
+After=systemd-udevd.service
+
+[Mount]
+What=PARTUUID=${BOOT_UUID}
+Where=/boot
+Type=vfat
+Options=defaults,x-initrd.mount

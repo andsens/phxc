@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -Eeo pipefail; shopt -s inherit_errexit
+
+main() {
+  [[ -n $1 ]] || { printf "Usage: get-node-config KEY\n" >&2; return 1; }
+  local key=$1
+  if jq -r 'paths | join(".")' "$NODE_CONFIG_PATH" | grep -q "^$key$"; then
+    key=$(escape_key "$key")
+    jq -r ".$key" "$NODE_CONFIG_PATH"
+  else
+    fatal "%s is not set in node-config.json" "$key"
+  fi
+}
+
+main "$@"

@@ -1,0 +1,11 @@
+[Unit]
+Description=Copy the rootimg from the boot partition
+ConditionPathExists=!/run/initramfs/root.img
+Requires=create-node-state.service boot.mount
+After=create-node-state.service boot.mount
+Before=download-rootimg.service rootimg.target
+
+[Service]
+Type=oneshot
+ExecStart=cp /boot/home-cluster/root.${ROOT_SHA256}.img ${ROOT_IMG}.tmp
+ExecStart=/usr/local/bin/set-node-state rootimg.src /boot/home-cluster/root.${ROOT_SHA256}.img

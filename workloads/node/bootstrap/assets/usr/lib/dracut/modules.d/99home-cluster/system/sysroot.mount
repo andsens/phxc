@@ -1,5 +1,7 @@
 [Unit]
 Description=Mount the root squashfs image
+Requires=rootimg.target
+After=rootimg.target
 Before=initrd-root-fs.target
 
 [Install]

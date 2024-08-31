@@ -1,0 +1,9 @@
+[Unit]
+Description=Create /run/initramfs/node-state.json
+ConditionPathExists=!/run/initramfs/node-state.json
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=bash -c 'umask 0177; printf "{}\n" > $NODE_STATE_PATH'
+ExecStart=/usr/local/bin/set-node-state variant $VARIANT

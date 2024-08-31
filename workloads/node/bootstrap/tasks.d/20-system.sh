@@ -16,8 +16,7 @@ system() {
     /etc/systemd/system/create-persistent-dir@.service \
     /etc/systemd/system/create-persistent-dir@.service \
     /etc/systemd/system/resource-ready@.service \
-    /etc/systemd/system/resource-ready@.target \
-    /etc/systemd/system.conf.d/variant.conf
+    /etc/systemd/system/resource-ready@.target
 
   systemctl enable \
     systemd-timesyncd.service \

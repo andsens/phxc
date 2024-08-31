@@ -1,36 +1,5 @@
 #!/usr/bin/env bash
 
-NODE_STATE_PATH=/run/initramfs/node-state.json
-NODE_CONFIG_PATH=/run/initramfs/node-config.json
-# shellcheck disable=SC2034
-NODE_CONFIG_CACHE_PATH=/boot/home-cluster/node-config.json.enc
-NODE_KEY_PATH=/run/initramfs/node-key
-# shellcheck disable=SC2034
-NODE_KEY_CACHE_PATH=/boot/home-cluster/node-key
-
-set_node_state() {
-  local key=$1 val=$2 val_is_json=${3:-false} val_arg=--argjson
-  key=$(escape_key "$key")
-  $val_is_json || val_arg=--arg
-  LOGPROGRAM=node-state.json verbose 'Setting "%s" to "%s"' "$key" "$val"
-  # shellcheck disable=SC2016,SC2097,SC2098
-  NODE_STATE_PATH=$NODE_STATE_PATH key=$key val=$val val_arg=$val_arg flock -x "$NODE_STATE_PATH" bash <<'EOR'
-new_node_state=$(jq -re $val_arg val "$val" ".$key=\$val" "$NODE_STATE_PATH")
-printf "%s\n" "$new_node_state" > "$NODE_STATE_PATH"
-EOR
-}
-
-get_node_state() {
-  local key=$1
-  if jq -r 'paths | join(".")' "$NODE_STATE_PATH" | grep -q "^$key$"; then
-    key=$(escape_key "$key")
-    # shellcheck disable=SC2016
-    flock -s "$NODE_STATE_PATH" jq -r ".$key" "$NODE_STATE_PATH"
-  else
-    fatal "%s is not set in node-state.json" "$key"
-  fi
-}
-
 report_node_state() {
   if boot_server_available; then
     local boot_server primary_mac node_state_sig node_state result
@@ -46,16 +15,6 @@ report_node_state() {
         warning "Failed to report node state"
       fi
     fi
-  fi
-}
-
-get_node_config() {
-  local key=$1
-  if jq -r 'paths | join(".")' "$NODE_CONFIG_PATH" | grep -q "^$key$"; then
-    key=$(escape_key "$key")
-    jq -r ".$key" "$NODE_CONFIG_PATH"
-  else
-    fatal "%s is not set in node-config.json" "$key"
   fi
 }
 
