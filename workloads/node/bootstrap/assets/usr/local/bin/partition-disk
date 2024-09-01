@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+set -Eeo pipefail; shopt -s inherit_errexit
+
+main() {
+  local devpath
+  devpath=$(get-node-config disk.devpath)
+  if sfdisk -J "$devpath" &>/dev/null || lsblk -Jndo FSTYPE "$devpath" | jq -re '.blockdevices[0].fstype != null' >/dev/null; then
+    [[ $(get-node-config disk.force) = true ]] || fatal "Device %s is partitioned or contains a filesystem and .disk.force != true, aborting disk setup" "$devpath"
+  fi
+  printf 'Partitioning disk at "%s"\n' "$devpath" >&2
+  wipefs -a "$devpath"
+  sfdisk "$devpath" <<EOF
+label: gpt
+label-id: $DISK_UUID
+size=1GiB, type=U, bootable, uuid=$BOOT_UUID
+uuid=$DATA_UUID
+EOF
+  # Make sure to wipe leftover data before creating filesystems on the partitions
+  local part_devname
+  for part_devname in $(lsblk -Jno NAME "$devpath" | jq -re '.blockdevices[0].children[] | .name'); do
+    wipefs -a "/dev/$part_devname"
+  done
+}
+
+main "$@"

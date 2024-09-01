@@ -13,12 +13,12 @@ main() {
   local encrypted_node_config node_config
   if encrypted_node_config=$(download_node_config) && node_config=$(decrypt_node_config "$encrypted_node_config"); then
     if [[ ! -e $NODE_CONFIG_PATH ]] || ! diff $NODE_CONFIG_PATH <(printf "%s\n" "$node_config") &>/dev/null; then
-      info "New node config received, caching to %s and then rebooting" "$NODE_CONFIG_CACHE_PATH"
+      info "New node-config received, caching to %s and then rebooting" "$NODE_CONFIG_CACHE_PATH"
       printf "%s\n" "$encrypted_node_config" >"$NODE_CONFIG_CACHE_PATH"
       exec systemctl reboot
     fi
   else
-    fatal "Failed to download the node config"
+    fatal "Failed to download the node-config"
   fi
 }
 

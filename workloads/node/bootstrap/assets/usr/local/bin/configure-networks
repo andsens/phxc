@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -Eeo pipefail; shopt -s inherit_errexit
+
+main() {
+  local network
+  for network in $(jq -r '(.networks // {}) | keys[]' /run/initramfs/node-config.json); do
+    config=$(jq -r --arg network "$network" '.networks[$network]' /run/initramfs/node-config.json)
+    printf "%s\n" "$config" >"/etc/systemd/network/$network.network"
+  done
+}
+
+main "$@"

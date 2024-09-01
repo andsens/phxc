@@ -1,0 +1,6 @@
+[Unit]
+Description=The node-config is available
+AssertPathExists=/run/initramfs/node-config.json
+
+[Install]
+WantedBy=sysinit.target

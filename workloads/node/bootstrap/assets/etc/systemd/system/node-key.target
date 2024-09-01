@@ -1,0 +1,8 @@
+[Unit]
+Description=The node-key is available
+Before=report-initial-node-state.service node-config.target
+AssertPathExists=/run/initramfs/node-key
+AssertPathExists=/run/initramfs/node-key.pub
+
+[Install]
+RequiredBy=report-initial-node-state.target node-config.target

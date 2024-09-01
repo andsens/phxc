@@ -58,9 +58,7 @@ main() {
   )
   cat <<EOF >/workspace/initramfs/etc/systemd/system.conf.d/rootimg.conf
 [Manager]
-DefaultEnvironment=\\
-  ROOT_IMG=/run/initramfs/root.img \\
-  ROOT_SHA256=${sha256sums[root.img]}
+DefaultEnvironment=ROOT_SHA256=${sha256sums[root.img]}
 EOF
   (
     cd /workspace/initramfs

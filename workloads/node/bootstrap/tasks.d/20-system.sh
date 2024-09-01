@@ -9,15 +9,6 @@ system() {
   cp /workspace/root_ca.crt /usr/local/share/ca-certificates/home-cluster-root.crt
   update-ca-certificates
 
-  cp_tpl --raw \
-    /etc/systemd/system/update-node-config.service \
-    /etc/systemd/system/update-node-config.timer \
-    /etc/systemd/system/update-boot.service \
-    /etc/systemd/system/create-persistent-dir@.service \
-    /etc/systemd/system/create-persistent-dir@.service \
-    /etc/systemd/system/resource-ready@.service \
-    /etc/systemd/system/resource-ready@.target
-
   systemctl enable \
     systemd-timesyncd.service \
     update-node-config.service \

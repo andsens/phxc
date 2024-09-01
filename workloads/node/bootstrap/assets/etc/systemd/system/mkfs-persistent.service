@@ -1,0 +1,15 @@
+[Unit]
+Description=Format the encrypted data volume
+DefaultDependencies=no
+Requires=systemd-cryptsetup@persistent.service dev-mapper-persistent.device blockdev@dev-mapper-persistent.target
+After=systemd-cryptsetup@persistent.service dev-mapper-persistent.device blockdev@dev-mapper-persistent.target
+Before=persistent-partition.target
+
+[Install]
+WantedBy=persistent-partition.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecCondition=bash -c 'lsblk -Jno FSTYPE /dev/mapper/persistent | jq -re ".blockdevices[0].fstype == null" >/dev/null'
+ExecStart=mkfs.ext4 /dev/mapper/persistent

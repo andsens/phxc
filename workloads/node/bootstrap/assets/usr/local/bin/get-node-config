@@ -1,14 +1,17 @@
 #!/usr/bin/env bash
 set -Eeo pipefail; shopt -s inherit_errexit
+PKGROOT=$(dirname "$(realpath "${BASH_SOURCE[0]}")")
+source "$PKGROOT/../lib/home-cluster/node.sh"
 
 main() {
   [[ -n $1 ]] || { printf "Usage: get-node-config KEY\n" >&2; return 1; }
   local key=$1
-  if jq -r 'paths | join(".")' "$NODE_CONFIG_PATH" | grep -q "^$key$"; then
+  if jq -r 'paths | join(".")' /run/initramfs/node-config.json | grep -q "^$key$"; then
     key=$(escape_key "$key")
-    jq -r ".$key" "$NODE_CONFIG_PATH"
+    jq -r ".$key" /run/initramfs/node-config.json
   else
-    fatal "%s is not set in node-config.json" "$key"
+    printf "%s is not set in node-config.json" "$key" >&2
+    return 1
   fi
 }
 

@@ -3,9 +3,12 @@ Description=Download the rootimg from the boot server
 ConditionPathExists=!/run/initramfs/root.img
 Requires=find-boot-server.service
 After=find-boot-server.service
-Before=rootimg.target
+
+[Install]
+WantedBy=rootimg.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/bin/curl-boot-server images/${VARIANT}/root.${ROOT_SHA256}.img -o${ROOT_IMG}.tmp
-ExecStart=/usr/local/bin/set-node-state rootimg.src boot-server
+RemainAfterExit=yes
+ExecStart=curl-boot-server images/${VARIANT}/root.${ROOT_SHA256}.img -o/run/initramfs/root.img.tmp
+ExecStart=set-node-state rootimg.src boot-server

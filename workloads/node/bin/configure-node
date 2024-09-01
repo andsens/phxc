@@ -169,7 +169,7 @@ MACAddress=\($nic.mac)
     ! yesno n || break
   done
   info "Saving node configuration for %s" "$node_mac"
-  printf "%s\n" "$node_config" >"$node_config_path"
+  jq --indent 2 <<<"$node_config" >"$node_config_path"
 }
 
 get_text() {

@@ -1,4 +1,2 @@
 [Unit]
-Description=Reached when the rootimg has been obtained and verified
-Wants=copy-rootimg.service download-rootimg.service verify-rootimg.service move-rootimg.service
-ConditionPathExists=/run/initramfs/root.img
+Description=The rootimg is ready to be mounted

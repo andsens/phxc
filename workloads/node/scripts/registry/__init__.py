@@ -78,6 +78,12 @@ def get_node_config(node_mac_filename):
 
 @app.route('/registry/node-states/<path:node_mac_filename>', methods=['PUT'])
 def put_node_state(node_mac_filename):
+  try:
+    new_state = json.loads(flask.request.get_data())
+  except Exception as e:
+    log.error(e)
+    flask.abort(400)
+
   node_state_path = os.path.join(app.config['root'], 'node-states', node_mac_filename)
   node_key_pem = None
   if os.path.exists(node_state_path):
@@ -86,18 +92,22 @@ def put_node_state(node_mac_filename):
     with open(node_state_path, 'r') as h:
       previous_state = json.loads(h.read())
       if previous_state['node-key']['persisted']:
-        node_key_pem = previous_state['node-key']['public']
+        if previous_state['node-key']['public'] != new_state['node-key']['public']:
+          log.error(f'The node-key for {previous_state['primary-mac']} has been persisted and does not match the one of the incoming request')
+          flask.abort(403)
+        if not new_state['node-key']['persisted']:
+          log.error(f'The node-key for {previous_state['primary-mac']} has been persisted and cannot be reverted')
+          flask.abort(403)
+
+  sig = new_state['signature']
+  del new_state['signature']
+  to_sign = SHA256.new(json.dumps(new_state, sort_keys=True, separators=(',', ':')).encode('ascii'))
+  if node_key_pem is None:
+    # There is no previous node-state or the node-key has not been persisted yet.
+    # Trust the submitted node-key
+    node_key_pem = new_state['node-key']['public']
 
   try:
-    node_state = json.loads(flask.request.get_data())
-    sig = node_state['signature']
-    del node_state['signature']
-    to_sign = SHA256.new(json.dumps(node_state, sort_keys=True, separators=(',', ':')).encode('ascii'))
-    if node_key_pem is None:
-      # There is no previous node-state or the node-key
-      # has not been persisted yet.
-      # Trust the submitted node-key
-      node_key_pem = node_state['node-key']['public']
     node_key = RSA.import_key(node_key_pem)
   except Exception as e:
     log.error(e)
@@ -105,11 +115,12 @@ def put_node_state(node_mac_filename):
   try:
     pkcs1_15.new(node_key).verify(to_sign, base64.b64decode(sig))
   except Exception as e:
+    log.error(e)
     flask.abort(403)
 
   with open(node_state_path, 'w') as h:
     try:
-      h.write(json.dumps(node_state, indent=2))
+      h.write(json.dumps(new_state, indent=2))
     except Exception as e:
       log.error(e)
       flask.abort(500)

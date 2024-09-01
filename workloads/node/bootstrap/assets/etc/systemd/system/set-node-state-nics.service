@@ -1,0 +1,12 @@
+[Unit]
+Description=Populate the node-state with a list of NICs
+DefaultDependencies=no
+Before=report-node-state.service
+
+[Install]
+WantedBy=initial-node-state.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=bash -c 'set-node-state nics "$(ip --json link show | jq '[.[] | select(.ifname != "lo") | {"ifname": .ifname, "mac": .address}]')" true'

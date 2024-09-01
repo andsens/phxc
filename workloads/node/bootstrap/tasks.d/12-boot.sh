@@ -35,17 +35,29 @@ boot() {
 
   cp_tpl --raw /etc/dracut.conf.d/home-cluster.conf
 
-  cp_tpl --raw -r /etc/systemd/system.conf.d
+  cp_tpl --raw -r /etc/systemd/system
   cp_tpl --raw -r --chmod=0755 /usr/local/bin
+  cp_tpl --raw -r /usr/local/lib/home-cluster
+
   cp_tpl --raw --chmod=0755 \
     /usr/lib/dracut/modules.d/99home-cluster/parse-squashfs-root.sh \
     /usr/lib/dracut/modules.d/99home-cluster/module-setup.sh
-  cp_tpl --raw -r \
-    /usr/lib/dracut/modules.d/99home-cluster/system \
-    /usr/local/lib/home-cluster
-  cp_tpl --var BOOT_UUID /usr/lib/dracut/modules.d/99home-cluster/system/boot.mount
+  cp_tpl --raw -r /usr/lib/dracut/modules.d/99home-cluster/system
+
+  cp_tpl --var BOOT_UUID /etc/systemd/system/boot.mount
+  cp_tpl --raw /etc/systemd/system.conf.d/disk-uuids.conf
   cp_tpl --var VARIANT /etc/systemd/system.conf.d/variant.conf
   cp_tpl --var DISK_UUID --var BOOT_UUID --var DATA_UUID /etc/systemd/system.conf.d/disk-uuids.conf
+
+  systemctl enable \
+    report-final-node-state.service \
+    report-initial-node-state.service \
+    boot-partition.target \
+    persistent-partition.target \
+    persist-node-key.service \
+    cache-node-config.service \
+    configure-hostname.service \
+    configure-networks.service
 
   # Clear machine-id, let systemd generate one on first boot
   rm /var/lib/dbus/machine-id /etc/machine-id
@@ -55,14 +67,6 @@ boot() {
   cp_tpl /etc/systemd/system/setup-cluster-dns.service
   systemctl enable setup-cluster-dns.service
   cp_tpl /etc/hosts.tmp
-
-  # Disk setup
-  cp_tpl --raw \
-    /etc/systemd/system/setup-node.service \
-    /etc/systemd/system/persistent-mkfs.service
-  systemctl enable \
-    setup-node.service \
-    persistent-mkfs.service
 
   if [[ $VARIANT = rpi5 ]]; then
     # Remove Raspberry Pi 4 boot code

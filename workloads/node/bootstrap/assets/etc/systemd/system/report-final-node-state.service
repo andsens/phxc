@@ -1,0 +1,11 @@
+[Unit]
+Description=Report the final node-state to the boot-server
+DefaultDependencies=no
+
+[Install]
+WantedBy=sysinit.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=report-node-state

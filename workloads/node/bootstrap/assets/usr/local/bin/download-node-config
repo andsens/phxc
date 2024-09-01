@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+set -Eeo pipefail; shopt -s inherit_errexit
+
+main() {
+  [[ -n $1 ]] || { printf "Usage: download-node-config DEST\n" >&2; return 1; }
+  local node_config_dest=$1 \
+    primary_mac retry=15
+  primary_mac=$(get-node-state primary-mac)
+  while true; do
+    if boot-server-available; then
+      if curl-boot-server "registry/node-configs/${primary_mac//:/-}.json" -o"$node_config_dest"; then
+        printf "Successfully downloaded node-config\n" >&2
+        return 0
+      else
+        printf "Failed to download node-config, retrying in %ds\n" "$retry" >&2
+      fi
+    else
+      if [[ -e /boot/home-cluster/node-config.enc.json ]]; then
+        printf "boot-server is not available but cached node-config exists, giving up\n" >&2
+        return 1
+      else
+        printf "boot-server is not available, retrying in %ds\n" "$retry" >&2
+      fi
+    fi
+    sleep $retry
+  done
+}
+
+main "$@"

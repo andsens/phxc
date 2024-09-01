@@ -1,0 +1,16 @@
+[Unit]
+Description=Generate the public node-key
+DefaultDependencies=no
+ConditionPathExists=/run/initramfs/node-key
+Wants=copy-node-key.service generate-node-key.service
+After=copy-node-key.service generate-node-key.service
+Before=node-key.target
+
+[Install]
+RequiredBy=node-key.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=openssl rsa -in /run/initramfs/node-key -pubout -out /run/initramfs/node-key.pub
+ExecStart=bash -c 'set-node-state node-key.public "$(cat /run/initramfs/node-key.pub)"'

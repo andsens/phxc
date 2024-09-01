@@ -14,8 +14,6 @@ depends() {
 
 # Install the required file(s) and directories for the module in the initramfs.
 install() {
-# copy_exec /usr/bin/mountpoint /bin
-
   inst_binary \
     grep cut xxd dd sha256sum \
     lsblk \
@@ -30,10 +28,9 @@ install() {
     /usr/local/bin/get-node-state \
     /usr/local/bin/set-node-state \
     /etc/systemd/system.conf.d/disk-uuids.conf \
-    /etc/systemd/system.conf.d/node.conf \
     /etc/systemd/system.conf.d/variant.conf
 
-  inst "$moddir/system/boot.mount" "$systemdsystemconfdir/boot.mount"
+  inst /etc/systemd/system/boot.mount
   inst "$moddir/system/copy-rootimg.service" "$systemdsystemconfdir/copy-rootimg.service"
   inst "$moddir/system/create-node-state.service" "$systemdsystemconfdir/create-node-state.service"
   inst "$moddir/system/download-rootimg.service" "$systemdsystemconfdir/download-rootimg.service"
@@ -43,9 +40,16 @@ install() {
   inst "$moddir/system/sysroot.mount" "$systemdsystemconfdir/sysroot.mount"
   inst "$moddir/system/verify-rootimg.service" "$systemdsystemconfdir/verify-rootimg.service"
 
-  # Enable sysroot.mount, the rest of the chain follows
-  $SYSTEMCTL -q --root "$initdir" enable sysroot.mount
+  $SYSTEMCTL -q --root "$initdir" enable \
+    create-node-state.service \
+    find-boot-server.service \
+    copy-rootimg.service \
+    download-rootimg.service \
+    verify-rootimg.service \
+    move-rootimg.service \
+    sysroot.mount
 
+  # Skip root checking
   inst_hook cmdline 00 "$moddir/parse-squashfs-root.sh"
   return 0
 }

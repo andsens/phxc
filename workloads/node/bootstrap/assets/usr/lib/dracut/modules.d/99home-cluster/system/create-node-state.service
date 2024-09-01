@@ -2,8 +2,11 @@
 Description=Create /run/initramfs/node-state.json
 ConditionPathExists=!/run/initramfs/node-state.json
 
+[Install]
+WantedBy=rootimg.target
+
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=bash -c 'umask 0177; printf "{}\n" > $NODE_STATE_PATH'
-ExecStart=/usr/local/bin/set-node-state variant $VARIANT
+ExecStart=bash -c 'umask 0177; printf "{}\n" >/run/initramfs/node-state.json'
+ExecStart=set-node-state variant $VARIANT

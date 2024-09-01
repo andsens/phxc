@@ -1,0 +1,6 @@
+[Unit]
+Description=The boot partition has been created
+Before=boot.mount
+
+[Install]
+WantedBy=boot.mount

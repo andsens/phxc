@@ -7,4 +7,4 @@ After=systemd-udevd.service
 What=PARTUUID=${BOOT_UUID}
 Where=/boot
 Type=vfat
-Options=defaults,x-initrd.mount
+Options=

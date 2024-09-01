@@ -8,16 +8,16 @@ main() {
   local key=$1 val=$2 val_is_json=${3:-false} val_arg
   if $val_is_json; then
     val_arg=--argjson
-    printf "Setting node-state key '%s' to JSON value '%s'" "$key" "$val"
+    printf 'Setting node-state key "%s" to JSON value "%s"' "$key" "$val"
   else
     val_arg=--arg
-    printf "Setting node-state key '%s' to '%s'" "$key" "$val"
+    printf 'Setting node-state key "%s" to "%s"' "$key" "$val"
   fi
   key=$(escape_key "$key")
   # shellcheck disable=SC2016,SC2097,SC2098
-  key=$key val=$val val_arg=$val_arg flock -x "${NODE_STATE_PATH:?}" bash <<'EOR'
-new_node_state=$(jq -re $val_arg val "$val" ".$key=\$val" "$NODE_STATE_PATH")
-printf "%s\n" "$new_node_state" > "$NODE_STATE_PATH"
+  key=$key val=$val val_arg=$val_arg flock -x /run/initramfs/node-state.json bash <<'EOR'
+new_node_state=$(jq -re $val_arg val "$val" ".$key=\$val" /run/initramfs/node-state.json)
+printf "%s\n" "$new_node_state" > /run/initramfs/node-state.json
 EOR
 }
 

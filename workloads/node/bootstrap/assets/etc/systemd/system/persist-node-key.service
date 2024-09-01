@@ -1,0 +1,16 @@
+[Unit]
+Description=Copy the generated node-key to the boot-partition
+DefaultDependencies=no
+Requires=create-boot-cache-dir.service generate-node-key.service
+After=create-boot-cache-dir.service generate-node-key.service
+Before=report-final-node-state.service
+AssertPathExists=/run/initramfs/node-key
+
+[Install]
+WantedBy=report-final-node-state.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=cp /run/initramfs/node-key /boot/home-cluster/node-key
+ExecStart=set-node-state node-key.persisted true true
