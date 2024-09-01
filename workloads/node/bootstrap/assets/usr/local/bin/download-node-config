@@ -2,13 +2,18 @@
 set -Eeo pipefail; shopt -s inherit_errexit
 
 main() {
-  [[ -n $1 ]] || { printf "Usage: download-node-config DEST\n" >&2; return 1; }
+  [[ -n $1 ]] || { printf "Usage: download-node-config [DEST]\n" >&2; return 1; }
   local node_config_dest=$1 \
-    primary_mac retry=15
+    primary_mac retry=15 node_config
   primary_mac=$(get-node-state primary-mac)
   while true; do
     if boot-server-available; then
-      if curl-boot-server "registry/node-configs/${primary_mac//:/-}.json" -o"$node_config_dest"; then
+      if node_config=$(curl-boot-server "registry/node-configs/${primary_mac//:/-}.json"); then
+        if [[ -z $node_config_dest || $node_config_dest = '-' ]]; then
+          printf "%s\n" "$node_config"
+        else
+          printf "%s\n" "$node_config" >"$node_config_dest"
+        fi
         printf "Successfully downloaded node-config\n" >&2
         return 0
       else

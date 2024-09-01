@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# shellcheck source-path=../../..
+set -Eeo pipefail; shopt -s inherit_errexit
+
+main() {
+  local digests_json_new
+  mkdir -p /boot/home-cluster
+  if ! digests_json_new=$(curl-boot-server "images/$VARIANT/digests.json"); then
+    fatal "Unable to retrieve image digests from boot server"
+  fi
+  local current_root_img_sha256 new_root_img_sha256
+  current_root_img_sha256=$(jq -re '.sha256sums["root.img"]' /boot/home-cluster/digests.json 2>/dev/null || true)
+  new_root_img_sha256=$(jq -re '.sha256sums["root.img"]' <<<"$digests_json_new")
+  if [[ $current_root_img_sha256 = "$new_root_img_sha256" ]]; then
+    printf "boot partition is up-to-date\n" >&2
+    return 0
+  fi
+  printf "boot partition is outdated, updating now\n" >&2
+  # shellcheck disable=SC2064
+  trap "rm -f \"/boot/home-cluster/root.$new_root_img_sha256.img\"" EXIT
+  curl-boot-server "images/$VARIANT/root.$new_root_img_sha256.img" -o"/boot/home-cluster/root.$new_root_img_sha256.img"
+  if [[ $VARIANT = rpi* ]]; then
+    if curl-boot-server "images/$VARIANT/boot.img" -o/boot/boot.img.new; then
+      mv /boot/boot.img.new /boot/boot.img
+    else
+      rm -f /boot/boot.img.new
+      printf "Failed downloading boot.img from boot-server\n" >&2
+      return 1
+    fi
+  else
+    local efipath
+    case $VARIANT in
+      amd64) efipath=/boot/EFI/BOOT/BOOTX64.efi ;;
+      arm64) efipath=/boot/EFI/BOOT/BOOTAA64.efi ;;
+      *) fatal "Unknown variant: %s" "$VARIANT" ;;
+    esac
+    mkdir -p /boot/EFI/BOOT
+    if curl-boot-server "images/$VARIANT/uki.efi" -o$efipath.new ; then
+      mv $efipath.new $efipath
+    else
+      rm -f $efipath.new
+      printf "Failed downloading uki.efi from boot-server\n" >&2
+      return 1
+    fi
+  fi
+  trap '' EXIT
+  printf "%s\n" "$digests_json_new" >/boot/home-cluster/digests.json
+  rm -f "/boot/home-cluster/root.$current_root_img_sha256.img"
+}
+
+main "$@"

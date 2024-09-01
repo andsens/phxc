@@ -11,4 +11,4 @@ WantedBy=k3s.target
 Type=oneshot
 Restart=on-failure
 RestartSec=15s
-ExecStart=/usr/local/lib/upkg/.upkg/home-cluster/workloads/node/bin/pull-external-images
+ExecStart=pull-external-images

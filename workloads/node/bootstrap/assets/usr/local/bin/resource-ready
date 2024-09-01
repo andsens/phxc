@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+set -Eeo pipefail; shopt -s inherit_errexit
+
+main() {
+  [[ -n $1 ]] || { printf "Usage: resource-ready [--wait] RESOURCE\n" >&2; return 1; }
+  local resource=$1 wait
+  if [[ -z $2 ]]; then
+    wait=false
+  elif [[ $2 == '--wait' ]]; then
+    wait=true
+  else
+    printf "Usage: resource-ready [--wait] RESOURCE\n" >&2
+    return 1
+  fi
+  # shellcheck disable=SC2153
+  local resource=${RESOURCE//[^A-Za-z0-9_]/_}
+  type "${resource}_ready" &>/dev/null || { printf 'Unknown resource: "%s"\n' "$RESOURCE" >&2; return 1; }
+  # k3s.yaml may not have been created yet when this runs.
+  # We use the presence of the k3s dir and the executing user ID as an indicator
+  # as to whether k3s.yaml should be used for connecting to the cluster.
+  [[ ! -e /etc/rancher/k3s && $UID != 0 ]] || export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+
+  # shellcheck disable=SC2154
+  if $wait; then
+    until "${resource}_ready" 2> >(pipe_verbose); do
+      sleep 1
+    done
+    printf "%s is ready\n" "$resource" >&2
+    return 0
+  else
+    if eval "${resource}_ready" 2> >(pipe_verbose); then
+      printf "%s is ready\n" "$resource" >&2
+      return 0
+    else
+      printf "%s is not ready\n" "$resource" >&2
+      return 1
+    fi
+  fi
+}
+
+k3s_ready() {
+  kubectl get -n default endpoints kubernetes -ojsonpath='{.subsets[0].addresses}' | jq -e 'length > 0' &>/dev/null
+}
+
+cilium_ready() {
+  deployment_ready kube-system cilium-operator
+}
+
+coredns_ready() {
+  deployment_ready kube-system coredns
+}
+
+step_ca_ready() {
+  statefulset_ready smallstep step-ca
+}
+
+deployment_ready() {
+  local ns=$1 deployment=$2
+  [[ $(kubectl get -n "$ns" deployment "$deployment" -ojsonpath='{.status.readyReplicas}') -gt 0 ]] || return 1
+}
+
+statefulset_ready() {
+  local ns=$1 sts=$2
+  [[ $(kubectl get -n "$ns" statefulset "$sts" -ojsonpath='{.status.readyReplicas}') -gt 0 ]] || return 1
+}
+
+pod_ready() {
+  local ns=$1 pod=$2
+  kubectl -n "$ns" get pod "$pod" -o=jsonpath='{.status.conditions}' | jq -re 'any(.[] | select(.type == "Ready"); .status == "True")' >/dev/null
+}
+
+main "$@"

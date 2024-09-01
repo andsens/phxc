@@ -1,0 +1,16 @@
+[Unit]
+Description=Copy the node-config from the boot partition
+DefaultDependencies=no
+ConditionPathExists=!/run/initramfs/node-config.json
+ConditionPathExists=/boot/home-cluster/node-config.enc.json
+Requires=mount-boot.service
+After=mount-boot.service decrypt-cached-node-config.service
+Before=node-config.target
+
+[Install]
+WantedBy=node-config.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=cp /boot/home-cluster/node-config.enc.json /run/initramfs/node-config.json

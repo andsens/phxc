@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -Eeo pipefail; shopt -s inherit_errexit
+
+main() {
+  local node_config
+  download-node-config /run/initramfs/node-config.enc.json
+  node_config=$(decrypt-node-config /run/initramfs/node-config.enc.json)
+  if [[ ! -e /run/initramfs/node-config.json ]] || ! diff /run/initramfs/node-config.json <(printf "%s\n" "$node_config") &>/dev/null; then
+    info "New node-config received, caching to %s and then rebooting" /boot/home-cluster/node-config.enc.json
+    cp /run/initramfs/node-config.enc.json /boot/home-cluster/node-config.enc.json
+    exec systemctl reboot
+  fi
+}
+
+main "$@"

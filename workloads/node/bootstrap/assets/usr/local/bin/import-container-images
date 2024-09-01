@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -Eeo pipefail; shopt -s inherit_errexit
+
+main() {
+  local tarfile
+  for tarfile in /var/lib/persistent/container-images/*.tar; do
+    printf "Importing %s\n" "$(basename "$tarfile" .tar)" >&2
+    ctr -n k8s.io image import --snapshotter stargz "$tarfile"
+    rm "$tarfile"
+  done
+}
+
+main "$@"
