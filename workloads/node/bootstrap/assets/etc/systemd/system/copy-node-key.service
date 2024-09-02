@@ -4,6 +4,7 @@ DefaultDependencies=no
 ConditionPathExists=/boot/home-cluster/node-key
 Requires=mount-boot.service
 After=mount-boot.service
+Before=generate-node-key.service
 
 [Install]
 WantedBy=node-key.target

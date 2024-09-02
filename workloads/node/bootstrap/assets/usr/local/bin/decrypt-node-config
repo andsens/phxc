@@ -29,9 +29,9 @@ main() {
       -K "$(base64 -d  <<<"$cipher" | head -c 32 | xxd -p -c128)"
   )
   if [[ -z $node_config_dest || $node_config_dest = '-' ]]; then
-    printf "%s" "$node_config"
+    printf "%s\n" "$node_config"
   else
-    printf "%s" "$node_config" >"$node_config_dest"
+    printf "%s\n" "$node_config" >"$node_config_dest"
   fi
 }
 

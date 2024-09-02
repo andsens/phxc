@@ -1,6 +1,8 @@
 [Unit]
 Description=Report the final node-state to the boot-server
 DefaultDependencies=no
+Requires=resource-ready@boot-server.target
+After=resource-ready@boot-server.target
 
 [Install]
 WantedBy=sysinit.target

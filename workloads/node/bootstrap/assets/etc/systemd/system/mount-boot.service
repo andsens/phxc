@@ -3,11 +3,12 @@
 # and we will have to deal with getting it remount etc.
 [Unit]
 Description=Mount the boot partition
-Requires=systemd-udev-settle.service
-After=systemd-udev-settle.service
+Requires=systemd-udevd.service systemd-udev-trigger.service
+After=systemd-udevd.service systemd-udev-trigger.service
+ConditionPathIsMountPoint=!/boot
 
 [Service]
 Type=oneshot
-RemainAfterExit=yes
-ExecCondition=bash -c "lsblk -Jndo FSTYPE /dev/disk/by-partuuid/${BOOT_UUID} | jq -re '.blockdevices[0].fstype == \"vfat\"' >/dev/null"
+ExecCondition=bash -c "timeout=1000; until [[ -e /dev/disk/by-partuuid/${BOOT_UUID} || $timeout -le 0 ]]; do sleep 0.01; timeout=$((timeout-1)); done; \
+  lsblk -Jndo FSTYPE /dev/disk/by-partuuid/${BOOT_UUID} | jq -re '.blockdevices[0].fstype == \"vfat\"' >/dev/null"
 ExecStart=mount -t vfat PARTUUID=${BOOT_UUID} /boot

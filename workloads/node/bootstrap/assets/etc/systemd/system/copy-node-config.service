@@ -13,4 +13,4 @@ WantedBy=node-config.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=cp /boot/home-cluster/node-config.enc.json /run/initramfs/node-config.json
+ExecStart=cp /boot/home-cluster/node-config.enc.json /run/initramfs/node-config.enc.json

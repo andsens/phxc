@@ -2,7 +2,6 @@
 Description=Generate a new node-key
 DefaultDependencies=no
 ConditionPathExists=!/run/initramfs/node-key
-After=copy-node-key.service
 
 [Install]
 WantedBy=node-key.target

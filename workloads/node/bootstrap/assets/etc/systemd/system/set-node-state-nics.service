@@ -1,7 +1,7 @@
 [Unit]
 Description=Populate the node-state with a list of NICs
 DefaultDependencies=no
-Before=report-node-state.service
+Before=report-initial-node-state.service
 
 [Install]
 WantedBy=initial-node-state.target

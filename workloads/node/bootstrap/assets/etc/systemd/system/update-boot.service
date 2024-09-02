@@ -1,10 +1,10 @@
 [Unit]
 Description=Update the boot partition with the latest image
-Requires=boot.mount systemd-networkd-wait-online.service
-After=boot.mount systemd-networkd-wait-online.service
+Requires=boot.mount
+After=boot.mount
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=sysinit.target
 
 [Service]
 Type=oneshot

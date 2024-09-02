@@ -10,7 +10,7 @@ main() {
     key=$(escape_key "$key")
     jq -r ".$key" /run/initramfs/node-config.json
   else
-    printf "%s is not set in node-config.json" "$key" >&2
+    printf "%s is not set in node-config.json\n" "$key" >&2
     return 1
   fi
 }

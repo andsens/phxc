@@ -4,7 +4,7 @@ DefaultDependencies=no
 ConditionPathExists=/run/initramfs/node-config.json
 Requires=node-config.target
 After=node-config.target
-Before=report-final-node-state.service
+Before=report-final-node-state.service avahi-daemon.service
 
 [Install]
 WantedBy=sysinit.target

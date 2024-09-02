@@ -45,6 +45,7 @@ boot() {
   cp_tpl --raw -r /usr/lib/dracut/modules.d/99home-cluster/system
 
   cp_tpl --var BOOT_UUID /etc/systemd/system/boot.mount
+  cp_tpl --var BOOT_UUID /etc/systemd/system/mount-boot.service
   cp_tpl --raw /etc/systemd/system.conf.d/disk-uuids.conf
   cp_tpl --var VARIANT /etc/systemd/system.conf.d/variant.conf
   cp_tpl --var DISK_UUID --var BOOT_UUID --var DATA_UUID /etc/systemd/system.conf.d/disk-uuids.conf
