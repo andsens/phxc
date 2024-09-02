@@ -6,7 +6,7 @@ main() {
   download-node-config /run/initramfs/node-config.enc.json
   node_config=$(decrypt-node-config /run/initramfs/node-config.enc.json)
   if [[ ! -e /run/initramfs/node-config.json ]] || ! diff /run/initramfs/node-config.json <(printf "%s\n" "$node_config") &>/dev/null; then
-    info "New node-config received, caching to %s and then rebooting" /boot/home-cluster/node-config.enc.json
+    printf "New node-config received, caching to %s and then rebooting\n" /boot/home-cluster/node-config.enc.json >&2
     cp /run/initramfs/node-config.enc.json /boot/home-cluster/node-config.enc.json
     exec systemctl reboot
   fi

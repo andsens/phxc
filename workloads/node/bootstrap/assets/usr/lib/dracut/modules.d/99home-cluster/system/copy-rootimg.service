@@ -1,12 +1,9 @@
 [Unit]
 Description=Copy the rootimg from the boot partition
 ConditionPathExists=!/run/initramfs/root.img
-Requires=create-node-state.service boot.mount
-After=create-node-state.service boot.mount
+Requires=create-node-state.service mount-boot.service
+After=create-node-state.service mount-boot.service
 Before=download-rootimg.service
-
-[Install]
-WantedBy=rootimg.target
 
 [Service]
 Type=oneshot

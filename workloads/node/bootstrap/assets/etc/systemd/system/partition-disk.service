@@ -3,6 +3,7 @@ Description=Partition the disk
 DefaultDependencies=no
 Requires=node-config.target
 After=node-config.target
+Before=boot-partition.target persistent-partition.target
 AssertPathExists=/run/initramfs/node-config.json
 
 [Install]

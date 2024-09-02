@@ -4,9 +4,6 @@ ConditionPathExists=!/run/initramfs/root.img
 Requires=find-boot-server.service
 After=find-boot-server.service
 
-[Install]
-WantedBy=rootimg.target
-
 [Service]
 Type=oneshot
 RemainAfterExit=yes

@@ -28,9 +28,9 @@ install() {
     /usr/local/bin/get-node-state \
     /usr/local/bin/set-node-state \
     /etc/systemd/system.conf.d/disk-uuids.conf \
-    /etc/systemd/system.conf.d/variant.conf
+    /etc/systemd/system.conf.d/variant.conf \
+    /etc/systemd/system/mount-boot.service
 
-  inst /etc/systemd/system/boot.mount
   inst "$moddir/system/copy-rootimg.service" "$systemdsystemconfdir/copy-rootimg.service"
   inst "$moddir/system/create-node-state.service" "$systemdsystemconfdir/create-node-state.service"
   inst "$moddir/system/download-rootimg.service" "$systemdsystemconfdir/download-rootimg.service"
@@ -41,13 +41,9 @@ install() {
   inst "$moddir/system/verify-rootimg.service" "$systemdsystemconfdir/verify-rootimg.service"
 
   $SYSTEMCTL -q --root "$initdir" enable \
-    create-node-state.service \
-    find-boot-server.service \
-    copy-rootimg.service \
-    download-rootimg.service \
-    verify-rootimg.service \
     move-rootimg.service \
     sysroot.mount
+  rm "${initdir}${systemdutildir}"/system-generators/systemd-gpt-auto-generator
 
   # Skip root checking
   inst_hook cmdline 00 "$moddir/parse-squashfs-root.sh"

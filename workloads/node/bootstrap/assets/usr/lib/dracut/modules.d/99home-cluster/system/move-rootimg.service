@@ -1,6 +1,6 @@
 [Unit]
 Description=Move the rootimg into place
-AssertPathExists=/run/initramfs/root.img.tmp
+ConditionPathExists=/run/initramfs/root.img.tmp
 Requires=verify-rootimg.service
 After=verify-rootimg.service
 Before=rootimg.target
@@ -10,4 +10,5 @@ RequiredBy=rootimg.target
 
 [Service]
 Type=oneshot
+RemainAfterExit=yes
 ExecStart=mv /run/initramfs/root.img.tmp /run/initramfs/root.img

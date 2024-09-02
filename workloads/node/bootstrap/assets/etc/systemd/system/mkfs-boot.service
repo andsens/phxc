@@ -1,6 +1,7 @@
 [Unit]
 Description=Format the boot partition
 Before=boot-partition.target
+After=partition-disk.service
 
 [Install]
 RequiredBy=boot-partition.target

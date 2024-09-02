@@ -1,14 +1,12 @@
 [Unit]
 Description=Verify the rootimg SHA-256 sum
-AssertPathExists=/run/initramfs/root.img.tmp
+ConditionPathExists=/run/initramfs/root.img.tmp
 Requires=create-node-state.service
 Wants=copy-rootimg.service download-rootimg.service
 After=copy-rootimg.service download-rootimg.service
 
-[Install]
-WantedBy=rootimg.target
-
 [Service]
 Type=oneshot
+RemainAfterExit=yes
 ExecStart=bash -c 'sha256sum -c - <<<"${ROOT_SHA256}  /run/initramfs/root.img.tmp"'
 ExecStart=set-node-state rootimg.sha256 "${ROOT_SHA256}"

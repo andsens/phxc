@@ -4,9 +4,6 @@ AssertPathExists=/run/initramfs/node-state.json
 Requires=create-node-state.service systemd-networkd-wait-online.service
 After=create-node-state.service systemd-networkd-wait-online.service
 
-[Install]
-WantedBy=rootimg.target
-
 [Service]
 Type=oneshot
 RemainAfterExit=yes

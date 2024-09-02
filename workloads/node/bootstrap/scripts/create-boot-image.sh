@@ -51,6 +51,8 @@ main() {
   ### Inject SHA-256 sum into initramfs ###
   #########################################
 
+  info "Injecting SHA-256 of rootimg into initramfs"
+
   mkdir /workspace/initramfs
   (
     cd /workspace/initramfs
@@ -66,12 +68,13 @@ EOF
   )
   artifacts[/workspace/root/boot/initrd.img]=/images/$VARIANT.new/initrd.img
 
-
   ######################
   ### Build boot.img ###
   ######################
 
   if [[ $VARIANT = rpi* ]]; then
+
+    info "Building RaspberryPI boot.img"
 
     # The last "console=" wins with respect to initramfs stdout/stderr output
     printf "console=ttyS0,115200 console=tty0 %s" "$kernel_cmdline" > /workspace/cmdline.txt
