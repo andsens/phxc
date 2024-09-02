@@ -3,8 +3,8 @@
 # and we will have to deal with getting it remount etc.
 [Unit]
 Description=Mount the boot partition
-Requires=systemd-udevd.service
-After=systemd-udevd.service
+Requires=systemd-udev-settle.service
+After=systemd-udev-settle.service
 
 [Service]
 Type=oneshot

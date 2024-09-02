@@ -39,6 +39,7 @@ install() {
   inst "$moddir/system/rootimg.target" "$systemdsystemconfdir/rootimg.target"
   inst "$moddir/system/sysroot.mount" "$systemdsystemconfdir/sysroot.mount"
   inst "$moddir/system/verify-rootimg.service" "$systemdsystemconfdir/verify-rootimg.service"
+  mkdir "${initdir}/boot"
 
   $SYSTEMCTL -q --root "$initdir" enable \
     move-rootimg.service \
