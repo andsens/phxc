@@ -18,7 +18,6 @@ k3s() {
     /etc/rancher/k3s/registry.yaml \
     /etc/rancher/k3s/config.yaml.d/shared.yaml \
     /etc/systemd/system/install-cilium.service \
-    /etc/systemd/system/pull-external-images.service \
     /etc/systemd/system/apply-all-manifests.service \
     /etc/systemd/system/import-container-images.service \
     /etc/systemd/system/import-container-images.path
@@ -28,7 +27,6 @@ k3s() {
     etc-rancher-node.mount \
     k3s.target \
     install-cilium.service \
-    pull-external-images.service \
     apply-all-manifests.service \
     import-container-images.path
 }

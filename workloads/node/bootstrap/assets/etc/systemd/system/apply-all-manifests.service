@@ -1,7 +1,7 @@
 [Unit]
 Description=Apply all manifests
 Requires=resource-ready@cilium.target
-After=resource-ready@cilium.target pull-external-images.service
+After=resource-ready@cilium.target
 
 [Install]
 WantedBy=k3s@server.service
