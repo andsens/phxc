@@ -49,7 +49,7 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   node_config_path=$PKGROOT/startup/boot-server/registry/node-configs/$(basename "$node_state_path")
   [[ ! -e $node_config_path ]] || node_config=$(cat "$node_config_path")
 
-  local node_labels=(node-role.kubernetes.io/control-plane)
+  local node_labels=(node-role.kubernetes.io/control-plane=true)
 
   while true; do
     local disk_encryption_key
