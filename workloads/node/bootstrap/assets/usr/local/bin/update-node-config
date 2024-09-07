@@ -5,7 +5,7 @@ main() {
   local node_config diff
   download-node-config /run/initramfs/node-config.enc.json
   node_config=$(decrypt-node-config /run/initramfs/node-config.enc.json)
-  if [[ ! -e /run/initramfs/node-config.json ]] || ! diff=$(diff -u /run/initramfs/node-config.json <(printf "%s\n" "$node_config") 2>/dev/null); then
+  if [[ ! -e /run/initramfs/node-config.json ]] || ! diff=$(diff -u <(jq -c --sort-keys /run/initramfs/node-config.json) <(jq -c --sort-keys <<<"$node_config") 2>/dev/null); then
     printf "New node-config received, caching to %s and then rebooting.\nDiff is:\n%s\n" /boot/home-cluster/node-config.enc.json "$diff" >&2
     cp /run/initramfs/node-config.enc.json /boot/home-cluster/node-config.enc.json
     exec systemctl reboot
