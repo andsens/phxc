@@ -18,8 +18,8 @@ main() {
 
   if [[ -e /run/initramfs/cluster-secrets.json ]]; then
     # shellcheck disable=SC2016
-    (umask 0077; yq '{token: .["k3s-token"]}' /run/initramfs/cluster-secrets.json >/etc/rancher/k3s/config.yaml.d/token.yaml)
-    yq '{server: (.["control-plane-addrs"] | first)}' /run/initramfs/cluster-secrets.json >/etc/rancher/k3s/config.yaml.d/server.yaml
+    (umask 0077; yq -y '{token: .["k3s-token"]}' /run/initramfs/cluster-secrets.json >/etc/rancher/k3s/config.yaml.d/token.yaml)
+    yq -y '{server: (.["control-plane-addrs"] | first)}' /run/initramfs/cluster-secrets.json >/etc/rancher/k3s/config.yaml.d/server.yaml
   fi
   ln -sf "$k3s_type.yaml" /etc/rancher/k3s/config.yaml
 }
