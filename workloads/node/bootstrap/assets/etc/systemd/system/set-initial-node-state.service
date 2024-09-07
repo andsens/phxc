@@ -1,5 +1,5 @@
 [Unit]
-Description=Populate the node-state with a list of blockdevices
+Description=Populate the node-state with a list of nics & blockdevices
 DefaultDependencies=no
 Before=report-initial-node-state.service
 
@@ -10,3 +10,4 @@ WantedBy=report-initial-node-state.service
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=bash -c 'set-node-state blockdevices "$(get-blockdevices)" true'
+ExecStart=bash -c 'set-node-state nics "$(get-nics)" true'

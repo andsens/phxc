@@ -1,0 +1,15 @@
+[Unit]
+Description=Generate a new authn key
+DefaultDependencies=no
+Before=keys-available.target
+ConditionPathExists=!/run/initramfs/authn.key
+ConditionPathExists=!/boot/home-cluster/authn.key.enc
+
+[Install]
+WantedBy=keys-available.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=bash -c '(umask 0077; openssl genrsa -out /run/initramfs/authn.key)'
+ExecStart=set-node-state keys.authn.persisted false true

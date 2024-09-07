@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -Eeo pipefail; shopt -s inherit_errexit
+
+main() {
+  ip --json link show | jq '[.[] | select(.ifname != "lo") | {"ifname": .ifname, "mac": .address}]'
+}
+
+main "$@"

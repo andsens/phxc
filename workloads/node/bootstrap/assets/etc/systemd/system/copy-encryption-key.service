@@ -1,0 +1,17 @@
+[Unit]
+Description=Copy the encryption from the boot partition
+DefaultDependencies=no
+Requires=mount-boot.service
+After=mount-boot.service
+Before=keys-available.target generate-encryption-key.service
+ConditionPathExists=/boot/home-cluster/credential.secret
+ConditionPathExists=!/var/lib/systemd/credential.secret
+
+[Install]
+WantedBy=keys-available.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=bash -c '(umask 0377; cp /boot/home-cluster/credential.secret /var/lib/systemd/credential.secret)'
+ExecStart=set-node-state keys.encryption.persisted true true

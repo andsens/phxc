@@ -1,5 +1,6 @@
 [Unit]
 Description=Create /run/initramfs/node-state.json
+DefaultDependencies=no
 ConditionPathExists=!/run/initramfs/node-state.json
 
 [Service]

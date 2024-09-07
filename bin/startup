@@ -208,7 +208,6 @@ boot_server() {
 
   mkdir -p \
     "$boot_server_root/registry/node-configs" \
-    "$boot_server_root/registry/disk-encryption-keys" \
     "$boot_server_root/registry/node-states" \
     "$boot_server_root/registry/images" \
     "$boot_server_root/tftpd/images" \

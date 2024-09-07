@@ -1,0 +1,17 @@
+[Unit]
+Description=Decrypt the authentication key from the boot partition
+DefaultDependencies=no
+Requires=mount-boot.service copy-encryption-key.service
+After=mount-boot.service copy-encryption-key.service
+Before=generate-authn-key.service keys-available.target
+ConditionPathExists=!/run/initramfs/authn.key
+ConditionPathExists=/boot/home-cluster/authn.key.enc
+
+[Install]
+WantedBy=keys-available.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=systemd-creds decrypt /boot/home-cluster/authn.key.enc /run/initramfs/authn.key
+ExecStart=set-node-state keys.authn.persisted true true

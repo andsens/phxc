@@ -1,13 +1,14 @@
 [Unit]
 Description=Decrypt the node-config
 DefaultDependencies=no
-AssertPathExists=/run/initramfs/node-config.enc.json
+Requires=keys-available.target
 Wants=copy-node-config.service download-node-config.service
-After=copy-node-config.service download-node-config.service
-Before=node-config.target
+After=copy-node-config.service download-node-config.service keys-available.target
+Before=node-config-available.target
+AssertPathExists=/run/initramfs/node-config.enc.json
 
 [Install]
-WantedBy=node-config.target
+WantedBy=node-config-available.target
 
 [Service]
 Type=oneshot

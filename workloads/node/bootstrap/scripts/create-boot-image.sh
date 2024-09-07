@@ -21,6 +21,7 @@ main() {
   rm /workspace/root/etc/hostname /workspace/root/etc/resolv.conf
   ln -sf ../run/systemd/resolve/stub-resolv.conf /workspace/root/etc/resolv.conf
   mv /workspace/root/etc/hosts.tmp /workspace/root/etc/hosts
+  mv /workspace/root/etc/fstab.tmp /workspace/root/etc/fstab
 
   #######################
   ### Create root.img ###

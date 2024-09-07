@@ -50,7 +50,7 @@ def get_node_config(node_mac_filename):
     flask.abort(500)
 
   with open(node_state_path, 'r') as h:
-    node_key = RSA.import_key(json.loads(h.read())['node-key']['public'])
+    authn_key = RSA.import_key(json.loads(h.read())['keys']['authn']['public'])
 
   with open(node_config_path, 'r') as h:
     try:
@@ -60,14 +60,18 @@ def get_node_config(node_mac_filename):
       log.error(e)
       flask.abort(500)
 
-  aes_key = get_random_bytes(32)
-  aes_iv = get_random_bytes(16)
-  hmac_key = get_random_bytes(16)
+  try:
+    aes_key = get_random_bytes(32)
+    aes_iv = get_random_bytes(16)
+    hmac_key = get_random_bytes(16)
 
-  enc = AES.new(aes_key, AES.MODE_CBC, iv=aes_iv)
-  encrypted_config = enc.encrypt(pad(raw_json.encode('ascii'), AES.block_size))
+    enc = AES.new(aes_key, AES.MODE_CBC, iv=aes_iv)
+    encrypted_config = enc.encrypt(pad(raw_json.encode('ascii'), AES.block_size))
 
-  encrypted_cipher = PKCS1_OAEP.new(node_key).encrypt(aes_key + aes_iv + hmac_key)
+    encrypted_cipher = PKCS1_OAEP.new(authn_key).encrypt(aes_key + aes_iv + hmac_key)
+  except Exception as e:
+    log.error(e)
+    flask.abort(500)
 
   return {
     'result': 'OK',
@@ -85,35 +89,35 @@ def put_node_state(node_mac_filename):
     flask.abort(400)
 
   node_state_path = os.path.join(app.config['root'], 'node-states', node_mac_filename)
-  node_key_pem = None
+  authn_key_pem = None
   if os.path.exists(node_state_path):
-    # If the node has informed us that the node-key has been persisted
-    # enforce the signature on the new node-state
+    # If the node has informed us that the authentication key has
+    # been persisted enforce the signature on the new node-state
     with open(node_state_path, 'r') as h:
       previous_state = json.loads(h.read())
-      if previous_state['node-key']['persisted']:
-        if previous_state['node-key']['public'] != new_state['node-key']['public']:
-          log.error(f'The node-key for {previous_state['primary-mac']} has been persisted and does not match the one of the incoming request')
+      if previous_state['keys']['authn']['persisted']:
+        if previous_state['keys']['authn']['public'] != new_state['keys']['authn']['public']:
+          log.error(f'The authentication key for {previous_state['primary-mac']} is marked as persisted and does not match the one of the incoming request')
           flask.abort(403)
-        if not new_state['node-key']['persisted']:
-          log.error(f'The node-key for {previous_state['primary-mac']} has been persisted and cannot be reverted')
+        if not new_state['keys']['authn']['persisted']:
+          log.error(f'The authentication key for {previous_state['primary-mac']} is marked as persisted and cannot be reverted')
           flask.abort(403)
 
   sig = new_state['signature']
   del new_state['signature']
   to_sign = SHA256.new(json.dumps(new_state, sort_keys=True, separators=(',', ':')).encode('ascii'))
-  if node_key_pem is None:
-    # There is no previous node-state or the node-key has not been persisted yet.
-    # Trust the submitted node-key
-    node_key_pem = new_state['node-key']['public']
+  if authn_key_pem is None:
+    # There is no previous node-state or the authentication key has not been persisted yet.
+    # Trust the submitted authentication key
+    authn_key_pem = new_state['keys']['authn']['public']
 
   try:
-    node_key = RSA.import_key(node_key_pem)
+    authn_key = RSA.import_key(authn_key_pem)
   except Exception as e:
     log.error(e)
     flask.abort(400)
   try:
-    pkcs1_15.new(node_key).verify(to_sign, base64.b64decode(sig))
+    pkcs1_15.new(authn_key).verify(to_sign, base64.b64decode(sig))
   except Exception as e:
     log.error(e)
     flask.abort(403)

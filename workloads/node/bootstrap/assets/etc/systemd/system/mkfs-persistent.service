@@ -1,9 +1,9 @@
 [Unit]
 Description=Format the encrypted data volume
 DefaultDependencies=no
-Requires=systemd-cryptsetup@persistent.service dev-mapper-persistent.device blockdev@dev-mapper-persistent.target
-After=systemd-cryptsetup@persistent.service dev-mapper-persistent.device blockdev@dev-mapper-persistent.target
-Before=persistent-partition.target
+Requires=systemd-cryptsetup@persistent.service blockdev@dev-mapper-persistent.target
+After=systemd-cryptsetup@persistent.service blockdev@dev-mapper-persistent.target
+Before=dev-mapper-persistent.device persistent-partition.target
 
 [Install]
 WantedBy=persistent-partition.target

@@ -51,14 +51,18 @@ boot() {
   cp_tpl --var DISK_UUID --var BOOT_UUID --var DATA_UUID /etc/systemd/system.conf.d/disk-uuids.conf
 
   systemctl enable \
-    report-final-node-state.service \
     report-initial-node-state.service \
+    report-final-node-state.service \
     boot-partition.target \
     persistent-partition.target \
-    persist-node-key.service \
     cache-node-config.service \
     configure-hostname.service \
     configure-networks.service
+
+  ln -sf ../run/machine-id /etc/machine-id
+  ln -sf ../../../run/machine-id /var/lib/dbus/machine-id
+
+  cp_tpl /etc/crypttab /etc/fstab.tmp
 
   # Clear machine-id, let systemd generate one on first boot
   rm /var/lib/dbus/machine-id /etc/machine-id

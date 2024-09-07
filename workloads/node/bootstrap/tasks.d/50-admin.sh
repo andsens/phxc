@@ -2,7 +2,7 @@
 
 PACKAGES+=(sudo "$(basename "${ADMIN_SHELL:?}")")
 if $DEBUG; then
-  PACKAGES+=(less nano)
+  PACKAGES+=(less nano bsdextrautils)
 fi
 
 admin() {

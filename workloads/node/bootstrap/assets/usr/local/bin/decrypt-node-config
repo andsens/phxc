@@ -10,7 +10,7 @@ main() {
   cipher=$(
     jq -re '.["encrypted-chipher"]' <<<"$encrypted_node_config" | \
     base64 -d | \
-    openssl pkeyutl -pkeyopt rsa_padding_mode:oaep -inkey /run/initramfs/node-key -decrypt | \
+    openssl pkeyutl -pkeyopt rsa_padding_mode:oaep -inkey /run/initramfs/authn.key -decrypt | \
     base64 -w0
   )
 

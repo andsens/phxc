@@ -1,5 +1,6 @@
 [Unit]
 Description=Waits until %i is ready
+DefaultDependencies=no
 
 [Service]
 Type=oneshot

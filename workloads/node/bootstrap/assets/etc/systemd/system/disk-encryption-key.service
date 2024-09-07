@@ -1,8 +1,8 @@
 [Unit]
 Description=Extract the disk encryption key from the node-config
 DefaultDependencies=no
-Requires=node-config.target
-After=node-config.target
+Requires=node-config-available.target
+After=node-config-available.target
 Before=systemd-cryptsetup@persistent.service
 
 [Install]

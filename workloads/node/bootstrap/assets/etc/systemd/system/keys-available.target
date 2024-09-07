@@ -1,0 +1,5 @@
+[Unit]
+Description=The encryption & authentication keys are available
+AssertPathExists=/run/initramfs/authn.key
+AssertPathExists=/run/initramfs/authn.pub
+AssertPathExists=/var/lib/systemd/credential.secret

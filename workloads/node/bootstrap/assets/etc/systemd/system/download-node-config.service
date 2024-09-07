@@ -1,13 +1,13 @@
 [Unit]
 Description=Download the node-config from the boot-server & decrypt it
 DefaultDependencies=no
-AssertPathExists=!/run/initramfs/node-config.enc.json
 Requires=report-initial-node-state.service resource-ready@boot-server.target
 After=report-initial-node-state.service resource-ready@boot-server.target
-Before=node-config.target
+Before=node-config-available.target
+AssertPathExists=!/run/initramfs/node-config.enc.json
 
 [Install]
-WantedBy=node-config.target
+WantedBy=node-config-available.target
 
 [Service]
 Type=oneshot

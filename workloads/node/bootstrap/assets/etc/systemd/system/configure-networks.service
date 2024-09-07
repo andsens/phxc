@@ -1,8 +1,8 @@
 [Unit]
 Description=Configure systemd-networks using node-config
 DefaultDependencies=no
-Requires=node-config.target
-After=node-config.target
+Requires=node-config-available.target
+After=node-config-available.target
 
 [Install]
 WantedBy=sysinit.target

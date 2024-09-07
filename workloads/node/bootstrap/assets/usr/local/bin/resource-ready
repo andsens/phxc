@@ -16,8 +16,8 @@ main() {
     return 1
   fi
   # shellcheck disable=SC2153
-  local resource=${RESOURCE//[^A-Za-z0-9_]/_}
-  type "${resource}_ready" &>/dev/null || { printf 'Unknown resource: "%s"\n' "$RESOURCE" >&2; return 1; }
+  local resource=${resource//[^A-Za-z0-9_]/_}
+  type "${resource}_ready" &>/dev/null || { printf 'Unknown resource: "%s"\n' "$resource" >&2; return 1; }
   # k3s.yaml may not have been created yet when this runs.
   # We use the presence of the k3s dir and the executing user ID as an indicator
   # as to whether k3s.yaml should be used for connecting to the cluster.
@@ -25,13 +25,13 @@ main() {
 
   # shellcheck disable=SC2154
   if $wait; then
-    until "${resource}_ready" 2> >(pipe_verbose); do
+    until "${resource}_ready" &>/dev/null; do
       sleep 1
     done
     printf "%s is ready\n" "$resource" >&2
     return 0
   else
-    if eval "${resource}_ready" 2> >(pipe_verbose); then
+    if eval "${resource}_ready" &>/dev/null; then
       printf "%s is ready\n" "$resource" >&2
       return 0
     else

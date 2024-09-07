@@ -16,7 +16,4 @@ system() {
     update-boot.service
 
   mkdir /var/lib/persistent
-  if [[ $VARIANT = rpi* ]]; then
-    ln -s ../persistent/home-cluster/systemd-credential.secret /var/lib/systemd/credential.secret
-  fi
 }

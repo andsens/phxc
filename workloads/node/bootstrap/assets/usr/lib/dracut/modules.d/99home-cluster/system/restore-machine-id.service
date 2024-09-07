@@ -1,0 +1,16 @@
+[Unit]
+Description=Restore the machine-id from the boot-partition
+DefaultDependencies=no
+Requires=create-node-state.service mount-boot.service
+After=create-node-state.service mount-boot.service
+Before=systemd-journald.service
+ConditionPathExists=/boot/home-cluster/machine-id
+
+[Install]
+WantedBy=sysinit.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=cp /boot/home-cluster/machine-id /run/machine-id
+ExecStart=set-node-state machine-id.persisted true true
