@@ -3,12 +3,12 @@ Description=Copy the encryption from the boot partition
 DefaultDependencies=no
 Requires=mount-boot.service
 After=mount-boot.service
-Before=keys-available.target generate-encryption-key.service
+Before=encryption-key-available.target generate-encryption-key.service
 ConditionPathExists=/boot/home-cluster/credential.secret
 ConditionPathExists=!/var/lib/systemd/credential.secret
 
 [Install]
-WantedBy=keys-available.target
+WantedBy=encryption-key-available.target
 
 [Service]
 Type=oneshot

@@ -50,7 +50,7 @@ def get_node_config(node_mac_filename):
     flask.abort(500)
 
   with open(node_state_path, 'r') as h:
-    authn_key = RSA.import_key(json.loads(h.read())['keys']['authn']['public'])
+    state = json.loads(h.read())
 
   with open(node_config_path, 'r') as h:
     try:
@@ -68,13 +68,14 @@ def get_node_config(node_mac_filename):
     enc = AES.new(aes_key, AES.MODE_CBC, iv=aes_iv)
     encrypted_config = enc.encrypt(pad(raw_json.encode('ascii'), AES.block_size))
 
-    encrypted_cipher = PKCS1_OAEP.new(authn_key).encrypt(aes_key + aes_iv + hmac_key)
+    encrypted_cipher = PKCS1_OAEP.new(RSA.import_key(state['keys']['authn']['public'])).encrypt(aes_key + aes_iv + hmac_key)
   except Exception as e:
     log.error(e)
     flask.abort(500)
 
   return {
     'result': 'OK',
+    'encrypted-authn-key': state['keys']['authn']['encrypted-private'],
     'encrypted-chipher': base64.b64encode(encrypted_cipher).decode('ascii'),
     'encrypted-config-hmac': base64.b64encode(HMAC.new(key=hmac_key, msg=encrypted_config, digestmod=SHA256).digest()).decode('ascii'),
     'encrypted-config': base64.b64encode(encrypted_config).decode('ascii'),

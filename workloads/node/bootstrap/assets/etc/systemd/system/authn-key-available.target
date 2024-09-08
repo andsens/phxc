@@ -1,0 +1,4 @@
+[Unit]
+Description=The authentication key is available
+AssertPathExists=/run/initramfs/authn.key
+AssertPathExists=/run/initramfs/authn.pub

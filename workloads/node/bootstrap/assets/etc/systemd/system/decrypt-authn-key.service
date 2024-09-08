@@ -1,17 +1,17 @@
 [Unit]
 Description=Decrypt the authentication key from the boot partition
 DefaultDependencies=no
-Requires=mount-boot.service copy-encryption-key.service
-After=mount-boot.service copy-encryption-key.service
-Before=generate-authn-key.service keys-available.target
+Requires=mount-boot.service encryption-key-available.target
+After=mount-boot.service encryption-key-available.target
+Before=generate-authn-key.service authn-key-available.target
 ConditionPathExists=!/run/initramfs/authn.key
-ConditionPathExists=/boot/home-cluster/authn.key.enc
+AssertPathExists=/boot/home-cluster/node-config.enc.json
 
 [Install]
-WantedBy=keys-available.target
+WantedBy=authn-key-available.target
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=systemd-creds decrypt /boot/home-cluster/authn.key.enc /run/initramfs/authn.key
-ExecStart=set-node-state keys.authn.persisted true true
+ExecStart=bash -c "jq -re '.keys.authn.[\"encrypted-private\"]' | base64 -d >/run/initramfs/authn.key.enc"
+ExecStart=systemd-creds decrypt /run/initramfs/authn.key.enc /run/initramfs/authn.key

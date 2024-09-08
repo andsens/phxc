@@ -1,12 +1,12 @@
 [Unit]
 Description=Generate a new encryption key
 DefaultDependencies=no
-Before=keys-available.target
+Before=encryption-key-available.target
 ConditionPathExists=!/var/lib/systemd/credential.secret
 ConditionPathExists=!/boot/home-cluster/credential.secret
 
 [Install]
-WantedBy=keys-available.target
+WantedBy=encryption-key-available.target
 
 [Service]
 Type=oneshot

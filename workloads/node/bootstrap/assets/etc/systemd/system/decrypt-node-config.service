@@ -1,9 +1,9 @@
 [Unit]
 Description=Decrypt the node-config
 DefaultDependencies=no
-Requires=keys-available.target
+Requires=authn-key-available.target
 Wants=copy-node-config.service download-node-config.service
-After=copy-node-config.service download-node-config.service keys-available.target
+After=copy-node-config.service download-node-config.service authn-key-available.target
 Before=node-config-available.target
 AssertPathExists=/run/initramfs/node-config.enc.json
 

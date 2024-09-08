@@ -3,11 +3,11 @@ Description=Generate the public authentication key
 DefaultDependencies=no
 Wants=copy-encryption-key.service generate-authn-key.service
 After=copy-encryption-key.service generate-authn-key.service
-Before=keys-available.target
+Before=authn-key-available.target
 AssertPathExists=/run/initramfs/authn.key
 
 [Install]
-RequiredBy=keys-available.target
+RequiredBy=authn-key-available.target
 
 [Service]
 Type=oneshot

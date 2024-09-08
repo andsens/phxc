@@ -1,15 +1,17 @@
 [Unit]
 Description=Generate a new authn key
 DefaultDependencies=no
-Before=keys-available.target
+After=generate-encryption-key.service copy-encryption-key.service
+Before=authn-key-available.target
 ConditionPathExists=!/run/initramfs/authn.key
-ConditionPathExists=!/boot/home-cluster/authn.key.enc
+ConditionPathExists=!/boot/home-cluster/node-config.enc.json
 
 [Install]
-WantedBy=keys-available.target
+WantedBy=authn-key-available.target
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=bash -c '(umask 0077; openssl genrsa -out /run/initramfs/authn.key)'
-ExecStart=set-node-state keys.authn.persisted false true
+ExecStart=systemd-creds encrypt /run/initramfs/authn.key /run/initramfs/authn.key.enc
+ExecStart=bash -c 'set-node-state keys.authn.encrypted-private "$(base64 -w0 /run/initramfs/authn.key.enc)" false'
