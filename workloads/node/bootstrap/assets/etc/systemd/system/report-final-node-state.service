@@ -1,8 +1,8 @@
 [Unit]
 Description=Report the final node-state to the boot-server
 DefaultDependencies=no
-Requires=resource-ready@boot-server.target
-After=resource-ready@boot-server.target keys-available.target
+Requires=systemd-timesyncd.service keys-available.target
+After=systemd-timesyncd.service keys-available.target
 Before=configure-networks.service
 
 [Install]

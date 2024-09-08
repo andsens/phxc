@@ -1,8 +1,8 @@
 [Unit]
 Description=Download the node-config from the boot-server & decrypt it
 DefaultDependencies=no
-Requires=report-initial-node-state.service resource-ready@boot-server.target
-After=report-initial-node-state.service resource-ready@boot-server.target
+Requires=systemd-timesyncd.service report-initial-node-state.service
+After=systemd-timesyncd.service report-initial-node-state.service
 Before=node-config-available.target
 AssertPathExists=!/run/initramfs/node-config.enc.json
 

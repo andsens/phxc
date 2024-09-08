@@ -77,6 +77,29 @@ EOF
 
     info "Building RaspberryPI boot.img"
 
+    case $VARIANT in
+      rpi5)
+        mv /workspace/root/boot/vmlinuz /workspace/root/boot/firmware/kernel_2712.img
+        mv /workspace/root/boot/initrd.img /workspace/root/boot/firmware/initramfs_2712
+        unset 'artifacts[/workspace/root/boot/initrd.img]'
+        artifacts[/workspace/root/boot/firmware/initramfs_2712]=/images/$VARIANT.new/initrd.img
+        ;;
+      rpi4)
+        mv /workspace/root/boot/vmlinuz /workspace/root/boot/firmware/kernel8.img
+        mv /workspace/root/boot/initrd.img /workspace/root/boot/firmware/initramfs8
+        unset 'artifacts[/workspace/root/boot/initrd.img]'
+        artifacts[/workspace/root/boot/firmware/initramfs8]=/images/$VARIANT.new/initrd.img
+        ;;
+      rpi3)
+        mv /workspace/root/boot/vmlinuz /workspace/root/boot/firmware/kernel7.img
+        mv /workspace/root/boot/initrd.img /workspace/root/boot/firmware/initramfs7
+        unset 'artifacts[/workspace/root/boot/initrd.img]'
+        artifacts[/workspace/root/boot/firmware/initramfs7]=/images/$VARIANT.new/initrd.img
+        ;;
+      default)
+        ;;
+    esac
+
     # The last "console=" wins with respect to initramfs stdout/stderr output
     printf "console=ttyS0,115200 console=tty0 %s" "$kernel_cmdline" > /workspace/cmdline.txt
 
@@ -103,7 +126,7 @@ EOF
 
     (( disk_size_kib <= 1024 * 64 )) || \
       warning "boot.img size exceeds 64MiB (%dMiB). Transferring the image via TFTP will result in its truncation" "$((disk_size_kib / 1024))"
-
+    ! $DEBUG || export LIBGUESTFS_TRACE=1 LIBGUESTFS_DEBUG=1
     guestfish -xN /workspace/boot.img=disk:${disk_size_kib}K -- <<EOF
 mkfs fat /dev/sda
 mount /dev/sda /
@@ -184,8 +207,8 @@ EOF
     )
   done
   for key in "${!authentihashes[@]}"; do
-    digests=$(jq --arg key "$key" --argjson authentihashes "${authentihashes[$key]}" '
-      .authentihashes[$key] = $authentihashes' <<<"$digests"
+    digests=$(jq --arg key "$key" --argjson authentihashes "${authentihashes[$key]}" \
+      '.authentihashes[$key] = $authentihashes' <<<"$digests"
     )
   done
   printf "%s\n" "$digests" >/workspace/digests.json

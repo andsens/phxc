@@ -1,8 +1,8 @@
 [Unit]
 Description=Report the initial node-state to the boot-server
 DefaultDependencies=no
-Requires=keys-available.target
-After=keys-available.target
+Requires=systemd-timesyncd.service keys-available.target
+After=systemd-timesyncd.service keys-available.target
 
 [Install]
 WantedBy=sysinit.target
