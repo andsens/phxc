@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+set -Eeo pipefail; shopt -s inherit_errexit
+
+main() {
+  [[ -n $1 && -n $2 ]] || usage
+  local decrypt_opt=
+  if [[ $1 = decrypt ]]; then
+    decrypt_opt=-d
+  elif [[ $1 != encrypt ]]; then
+    usage
+  fi
+  shift
+  [[ -n $1 ]] || usage
+  local src=$1 dest=$2
+
+  local key iv
+  key=$(jq -r '.key' /run/initramfs/surrogate.key.json)
+  iv=$(jq -r '.iv' /run/initramfs/surrogate.key.json)
+  if [[ -z $dest || $dest = '-' ]]; then
+    openssl enc -aes-256-cbc $decrypt_opt -iv "$iv" -K "$key" -in "$src"
+  else
+    openssl enc -aes-256-cbc $decrypt_opt -iv "$iv" -K "$key" -in "$src" -out "$dest"
+  fi
+}
+
+usage() {
+  printf "Usage: surrogate-key (encrypt|decrypt) SRC [DEST]\n" >&2
+  return 1
+}
+
+main "$@"

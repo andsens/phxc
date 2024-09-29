@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+set -Eeo pipefail; shopt -s inherit_errexit
+
+main() {
+  set-node-state persisted-keys "$(get_persisted_keys)" true
+  set-node-state nics "$(get_nics)" true
+  set-node-state blockdevices "$(get_blockdevices)" true
+  case "$VARIANT" in
+    rpi5) set-node-state rpi "$(get_rpi5)" true ;;
+  esac
+  submit_node_state
+}
+
+get_persisted_keys() {
+  local persisted_keys='[]'
+  [[ ! -e /boot/home-cluster/authn-key.json.enc ]] || persisted_keys=$(jq '. + ["authn"]' <<<"$persisted_keys")
+  [[ ! -e /boot/home-cluster/credential.secret.enc ]] || persisted_keys=$(jq '. + ["credential"]' <<<"$persisted_keys")
+  [[ ! -e /boot/home-cluster/node-config.json.enc ]] || persisted_keys=$(jq '. + ["disk-encryption"]' <<<"$persisted_keys")
+  [[ ! -e /boot/home-cluster/machine-id ]] || persisted_keys=$(jq '. + ["machine-id"]' <<<"$persisted_keys")
+  printf "%s\n" "$persisted_keys"
+}
+
+get_nics() {
+  ip --json link show | jq '[.[] | select(.ifname != "lo" and (.ifname | startswith("cilium") | not)) | {"ifname": .ifname, "mac": .address}]'
+}
+
+get_blockdevices() {
+  local blockdevices='[]' devpath disk_filesystem disk_partitions
+  for devpath in $(lsblk --json --output NAME,FSTYPE,TYPE,MAJ:MIN | jq -r '.blockdevices[] | select(.type=="disk" and .pkname==null) | "/dev/\(.name)"'); do
+    disk_filesystem=$(lsblk -Jndo FSTYPE "$devpath" | jq '.blockdevices[0].fstype')
+    disk_partitions=$(sfdisk -J "$devpath" 2>/dev/null || printf "null")
+    blockdevices=$(jq \
+      --arg devpath "$devpath" \
+      --argjson fs "$disk_filesystem" \
+      --argjson part "$disk_partitions" \
+      '. + [{"devpath": $devpath, "filesystem": $fs, "partitions": $part}]' \
+      <<<"$blockdevices"
+    )
+  done
+  printf "%s\n" "$blockdevices"
+}
+
+get_rpi5() {
+  local device_info={}
+  if rpi-otp-private-key -l 16 | grep -qv 0; then
+    device_info=$(jq '.keys.otp.initialized=true' <<<"$device_info")
+  else
+    device_info=$(jq '.keys.otp.initialized=false' <<<"$device_info")
+  fi
+  device_info=$(jq --arg sn "$(cat /sys/firmware/devicetree/base/serial-number)" '.serialnumber=$sn' <<<"$device_info")
+  printf "%s\n" "$device_info"
+}
+
+submit_node_state() {
+  local primary_mac jwt result
+  primary_mac=$(get-node-state primary-mac)
+  jwt=$(step crypto jwt sign --key /run/initramfs/authn-key.json --iss "$primary_mac" \
+    --aud node-state --sub "$primary_mac" --exp "$(date -d'+5min' +%s)")
+  if result=$(curl-boot-server "registry/node-states/${primary_mac//:/-}.json?jwt=$jwt" \
+    -XPUT -d@/run/initramfs/node-state.json -w '%{http_code}' | tail -n1); then
+    return 0
+  else
+    if [[ $result = 403 ]]; then
+      printf "Reporting node-state not possible, authentication key is invalid\n" >&2
+      return 1
+    else
+      printf "Failed to report node-state (HTTP code: %s)\n" "$result" >&2
+      return 1
+    fi
+  fi
+}
+
+main "$@"

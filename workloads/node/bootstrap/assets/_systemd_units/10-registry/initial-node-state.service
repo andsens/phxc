@@ -1,0 +1,11 @@
+[Unit]
+Description=Report the node-state to the boot-server
+DefaultDependencies=no
+Requires=systemd-timesyncd.service authn-key.service
+After=systemd-timesyncd.service authn-key.service
+ConditionPathExists=!/boot/home-cluster/authn-key.json.enc
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=submit-node-state

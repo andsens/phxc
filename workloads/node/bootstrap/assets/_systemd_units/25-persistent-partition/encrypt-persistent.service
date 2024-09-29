@@ -1,0 +1,15 @@
+[Unit]
+Description=Encrypt the data partition
+DefaultDependencies=no
+Requires=disk-encryption-key.service partition-disk.service
+After=disk-encryption-key.service partition-disk.service
+Before=systemd-cryptsetup@persistent.service persistent-partition.target
+
+[Install]
+RequiredBy=persistent-partition.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecCondition=bash -c "! cryptsetup isLuks /dev/disk/by-partuuid/${DATA_UUID}"
+ExecStart=cryptsetup luksFormat --batch-mode /dev/disk/by-partuuid/${DATA_UUID} /run/initramfs/disk-encryption-key

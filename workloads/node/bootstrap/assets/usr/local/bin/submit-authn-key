@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+set -Eeo pipefail; shopt -s inherit_errexit
+
+main() {
+  local primary_mac result
+  primary_mac=$(get-node-state primary-mac)
+  authn_pubkey=$(step crypto jwk public </run/initramfs/authn-key.json)
+  jwt=$(step crypto jwt sign --key /run/initramfs/authn-key.json --iss "$primary_mac" \
+    --aud authn-key --sub "$primary_mac" --exp "$(date -d'+5min' +%s)")
+  if result=$(curl-boot-server "registry/node-authn-keys/${primary_mac//:/-}.json?jwt=$jwt" \
+    -XPUT -d@<(printf "%s" "$authn_pubkey") -w '%{http_code}' | tail -n1); then
+    return 0
+  else
+    if [[ $result = 403 ]]; then
+      printf "Authentication key submission failed, a different authn key has already been submitted\n" >&2
+      return 1
+    else
+      printf "Failed to submit authentication key (HTTP code: %s)\n" "$result" >&2
+      return 1
+    fi
+  fi
+}
+
+main "$@"

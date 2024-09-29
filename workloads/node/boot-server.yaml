@@ -107,8 +107,8 @@ spec:
           readOnly: true
         - name: nginx-cache
           mountPath: /var/cache/nginx
-      - name: safeboot-attest
-        image: cluster.local/safeboot-attest:latest
+      - name: registry
+        image: cluster.local/registry:latest
         imagePullPolicy: Never
         securityContext:
           readOnlyRootFilesystem: true
@@ -118,10 +118,10 @@ spec:
           hostPort: 8000
         volumeMounts:
         - name: scripts
-          mountPath: /safeboot-attest/attest-server.py
+          mountPath: /registry/attest-server.py
           subPath: attest-server.py
         - name: scripts
-          mountPath: /safeboot-attest/attest-verify
+          mountPath: /registry/attest-verify
           subPath: attest-verify
         - name: images
           mountPath: /images
@@ -135,7 +135,7 @@ spec:
           readOnly: true
         - name: attestation-database
           mountPath: /attestation-database
-        - name: safeboot-attest-tmp
+        - name: registry-tmp
           mountPath: /tmp
       - name: tftpd
         image: cluster.local/tftpd:latest

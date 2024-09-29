@@ -1,0 +1,14 @@
+[Unit]
+Description=Configure systemd-networks using node-config
+DefaultDependencies=no
+Requires=node-config.service
+After=node-config.service
+
+[Install]
+WantedBy=sysinit.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=configure-networks
+ExecStart=systemctl reload --no-block systemd-networkd

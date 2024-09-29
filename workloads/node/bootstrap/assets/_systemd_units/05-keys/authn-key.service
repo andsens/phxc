@@ -1,0 +1,19 @@
+[Unit]
+Description=Generate or decrypt the authentication key
+DefaultDependencies=no
+Requires=systemd-timesyncd.service
+Wants=mount-boot.service credential-key.service
+After=mount-boot.service credential-key.service systemd-timesyncd.service
+ConditionPathExists=!/run/initramfs/authn-key.json
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=bash -c ':;\
+  if [[ -e /boot/home-cluster/authn-key.json.enc ]]; then\
+    systemd-creds decrypt /boot/home-cluster/authn-key.json.enc /run/initramfs/authn-key.json;\
+    ! boot-server-available || submit-authn-key;\
+  else\
+    step crypto jwk create --no-password --insecure --force /dev/null /run/initramfs/authn-key.json;\
+    submit-authn-key;\
+  fi'

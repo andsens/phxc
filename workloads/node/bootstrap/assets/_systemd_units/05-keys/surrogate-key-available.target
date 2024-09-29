@@ -1,0 +1,3 @@
+[Unit]
+Description=The surrogate key for decrypting the systemd credential key is available
+ConditionPathExists=/run/initramfs/surrogate.key.json

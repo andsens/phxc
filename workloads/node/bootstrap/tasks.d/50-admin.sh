@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 
-PACKAGES+=(sudo "$(basename "${ADMIN_SHELL:?}")")
+PACKAGES+=(
+  sudo "$(basename "${ADMIN_SHELL:?}")"
+  adduser
+)
 if $DEBUG; then
   PACKAGES+=(less nano bsdextrautils)
 fi

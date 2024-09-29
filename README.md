@@ -88,3 +88,8 @@ Import the generated vhdx in windows with `wsl --import-in-place k8s-wsl D:\WSL\
 To refresh an image, run `wsl --unregister k8s-wsl` and then import it again.
 
 Setup Hyper-W firewall to allow incoming requests
+
+## RaspberryPI5 init
+
+- `rpi-otp-private-key -w -y -l 16 $(openssl rand -hex 64)`
+- Enable PXE booting ("Network Boot") with Raspberry Pi Imager

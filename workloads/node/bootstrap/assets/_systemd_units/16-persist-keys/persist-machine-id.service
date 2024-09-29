@@ -1,0 +1,16 @@
+[Unit]
+Description=Copy the machine-id to the boot-partition
+DefaultDependencies=no
+Requires=create-boot-cache-dir.service systemd-machine-id-commit.service
+After=create-boot-cache-dir.service systemd-machine-id-commit.service
+Before=keys-persisted.target
+ConditionPathExists=!/boot/home-cluster/machine-id
+AssertPathExists=/run/machine-id
+
+[Install]
+RequiredBy=keys-persisted.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=cp /run/machine-id /boot/home-cluster/machine-id

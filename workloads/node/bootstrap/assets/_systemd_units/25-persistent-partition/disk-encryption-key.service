@@ -1,0 +1,14 @@
+[Unit]
+Description=Extract the disk encryption key from the node-config
+DefaultDependencies=no
+Requires=node-config.service
+After=node-config.service
+Before=systemd-cryptsetup@persistent.service
+
+[Install]
+RequiredBy=persistent-partition.target systemd-cryptsetup@persistent.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=bash -c "umask 0077; get-node-config disk.encryption-key | base64 -d >/run/initramfs/disk-encryption-key"

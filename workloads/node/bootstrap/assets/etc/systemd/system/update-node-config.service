@@ -1,9 +1,0 @@
-[Unit]
-Description=Download the node configuration
-
-[Install]
-WantedBy=multi-user.target
-
-[Service]
-Type=oneshot
-ExecStart=update-node-config

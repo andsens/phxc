@@ -1,3 +1,0 @@
-[Unit]
-Description=The encryption key is available
-AssertPathExists=/var/lib/systemd/credential.secret

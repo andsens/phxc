@@ -1,5 +1,0 @@
-[Unit]
-Description=The node-config is available
-Requires=authn-key-available.target
-After=authn-key-available.target report-initial-node-state.service
-AssertPathExists=/run/initramfs/node-config.json

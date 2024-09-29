@@ -1,0 +1,18 @@
+[Unit]
+Description=Generate the surrogate AES key for decrypting the systemd credential key
+DefaultDependencies=no
+Before=surrogate-key-available.target
+ConditionPathExists=/run/initramfs/random-secret.bin
+ConditionPathExists=!/run/initramfs/surrogate.key.json
+
+[Install]
+RequiredBy=surrogate-key-available.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=bash -c "umask 0377; jq -n\
+  --arg key $(derive-key surrogate-key:key 32 | xxd -p -c0)\
+  --arg iv $(derive-key surrogate-key:iv 16 | xxd -p -c0)\
+  '.key=$key | .iv=$iv'\
+  >/run/initramfs/surrogate.key.json"

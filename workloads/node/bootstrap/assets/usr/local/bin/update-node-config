@@ -2,12 +2,12 @@
 set -Eeo pipefail; shopt -s inherit_errexit
 
 main() {
-  local node_config diff
-  download-node-config /run/initramfs/node-config.enc.json
-  node_config=$(decrypt-node-config /run/initramfs/node-config.enc.json)
-  if [[ ! -e /run/initramfs/node-config.json ]] || ! diff=$(diff -u <(jq -c --sort-keys /run/initramfs/node-config.json) <(jq -c --sort-keys <<<"$node_config") 2>/dev/null); then
-    printf "New node-config received, caching to %s and then rebooting.\nDiff is:\n%s\n" /boot/home-cluster/node-config.enc.json "$diff" >&2
-    cp /run/initramfs/node-config.enc.json /boot/home-cluster/node-config.enc.json
+  local diff current new
+  current=$(jq -c --sort-keys . /run/initramfs/node-config.json)
+  new=$(download-node-config | jq -c --sort-keys .)
+  if [[ ! -e /run/initramfs/node-config.json ]] || ! diff=$(diff -u <(printf "%s" "$current") <(printf "%s" "$new") 2>/dev/null); then
+    printf "New node-config received, caching to %s and then rebooting.\nDiff is:\n%s\n" /boot/home-cluster/node-config.json.enc "$diff" >&2
+    systemd-creds encrypt /run/initramfs/node-config.json /boot/home-cluster/node-config.json.enc
     exec systemctl reboot
   fi
 }

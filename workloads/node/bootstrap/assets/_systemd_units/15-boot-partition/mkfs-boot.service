@@ -1,0 +1,14 @@
+[Unit]
+Description=Format the boot partition
+Requires=partition-disk.service
+After=partition-disk.service
+Before=boot-partition.target
+
+[Install]
+RequiredBy=boot-partition.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecCondition=bash -c "lsblk -Jndo FSTYPE /dev/disk/by-partuuid/${BOOT_UUID} | jq -re '.blockdevices[0].fstype != \"vfat\"' >/dev/null"
+ExecStart=mkfs.vfat /dev/disk/by-partuuid/${BOOT_UUID}

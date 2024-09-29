@@ -1,0 +1,17 @@
+[Unit]
+Description=Set the hostname using the node-config
+DefaultDependencies=no
+ConditionPathExists=/run/initramfs/node-config.json
+Requires=node-config.service
+After=node-config.service
+Before=avahi-daemon.service
+
+[Install]
+WantedBy=sysinit.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=bash -c 'printf "%%s\n" "$(get-node-config hostname)" >/etc/hostname'
+ExecStart=hostname -F /etc/hostname
+ExecStart=bash -c 'set-node-state hostname "$(cat /etc/hostname)"'

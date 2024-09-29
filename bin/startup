@@ -154,8 +154,9 @@ bootstrap() {
     --tar-path "/workspace/images/$VARIANT.new/node.tar" \
     --no-push
 
+    # --platform "$DOCKER_PLATFORM" \
+  ARCH=amd64
   docker run --rm -ti \
-    --platform "$DOCKER_PLATFORM" \
     --mount type=bind,src="$SB_KEY",dst=/secureboot/tls.key,readonly \
     --mount type=bind,src="$SB_CRT",dst=/secureboot/tls.crt,readonly \
     -v "$PKGROOT/workloads/node/bootstrap/create-boot-image-assets:/assets:ro" \
@@ -207,6 +208,7 @@ boot_server() {
   step certificate bundle --force "$BOOT_SERVER_CRT" "$INTERMEDIATE_CRT" "$BOOT_SERVER_BUNDLE"
 
   mkdir -p \
+    "$boot_server_root/registry/node-authn-keys" \
     "$boot_server_root/registry/node-configs" \
     "$boot_server_root/registry/node-states" \
     "$boot_server_root/registry/images" \
