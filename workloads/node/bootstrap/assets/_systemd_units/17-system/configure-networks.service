@@ -2,6 +2,7 @@
 Description=Configure systemd-networks using node-config
 DefaultDependencies=no
 Requires=node-config.service
+Before=systemd-networkd-wait-online.service
 After=node-config.service
 
 [Install]
@@ -11,4 +12,4 @@ WantedBy=sysinit.target
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=configure-networks
-ExecStart=systemctl reload --no-block systemd-networkd
+ExecStart=systemctl reload systemd-networkd
