@@ -15,15 +15,14 @@ esac
 
 system_setup() {
   local filepath systemd_units=(
-    05-keys/generate-surrogate-key.service
-    05-keys/surrogate-key-available.target
+    05-keys/surrogate-key.service
     05-keys/authn-key.service
     05-keys/credential-key.service
     10-registry/node-config.service
     10-registry/initial-node-state.service
     14-partition-disk/partition-disk.service
     15-boot-partition/boot-partition.target
-    15-boot-partition/create-boot-cache-dir.service
+    15-boot-partition/boot-cache-dir.service
     15-boot-partition/mkfs-boot.service
     15-boot-partition/update-boot.service
     16-persist-keys/cache-node-config.service
