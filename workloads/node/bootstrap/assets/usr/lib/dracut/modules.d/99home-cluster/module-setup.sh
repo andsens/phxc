@@ -31,6 +31,7 @@ install() {
     /etc/systemd/system.conf.d/variant.conf \
     /etc/systemd/system/mount-boot.service
 
+  # shellcheck disable=SC2154
   inst "$moddir/system/restore-machine-id.service" "$systemdsystemconfdir/restore-machine-id.service"
   inst "$moddir/system/copy-rootimg.service" "$systemdsystemconfdir/copy-rootimg.service"
   inst "$moddir/system/create-node-state.service" "$systemdsystemconfdir/create-node-state.service"
@@ -40,14 +41,16 @@ install() {
   inst "$moddir/system/rootimg.target" "$systemdsystemconfdir/rootimg.target"
   inst "$moddir/system/sysroot.mount" "$systemdsystemconfdir/sysroot.mount"
   inst "$moddir/system/verify-rootimg.service" "$systemdsystemconfdir/verify-rootimg.service"
-  mkdir "${initdir}/boot"
+  # shellcheck disable=SC2154
+  mkdir "$initdir/boot"
 
   $SYSTEMCTL -q --root "$initdir" enable \
     restore-machine-id.service \
     move-rootimg.service \
     sysroot.mount
+  # shellcheck disable=SC2154
   rm "${initdir}${systemdutildir}"/system-generators/systemd-gpt-auto-generator
-  ln -sf ../run/machine-id "${initdir}/etc/machine-id"
+  ln -sf ../run/machine-id "$initdir/etc/machine-id"
 
   # Skip root checking
   inst_hook cmdline 00 "$moddir/parse-squashfs-root.sh"
