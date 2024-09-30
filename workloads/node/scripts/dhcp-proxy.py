@@ -45,14 +45,6 @@ signal.signal(signal.SIGINT, shutdown)
 with open(params['--boot-map'], 'r') as h:
   boot_map = dict((re.compile(regex), file_path) for regex, file_path in yaml.safe_load(h).items())
 
-def get_file_path(match_string: str):
-  file_path = None
-  for matcher, _file_path in boot_map.items():
-    if matcher.search(match_string) is not None:
-      # No break, last match wins
-      file_path = _file_path
-  return None if file_path is None else file_path.encode()
-
 #########################
 ### Setup UDP sockets ###
 #########################
@@ -112,7 +104,12 @@ try:
           option_list.append(uuid_opt)
 
         match_string = f'{options.get('vendor_class_identifier')}/{options.get('ClientSystem_93', '')}'
-        file_path = get_file_path(match_string)
+        file_path = None
+        for matcher, _file_path in boot_map.items():
+          if matcher.search(match_string) is not None:
+            # No break, last match wins
+            file_path = _file_path.encode()
+
         if file_path is None:
           log.info(f"No match found in {params['--boot-map']} for '{match_string}'")
           continue
