@@ -21,7 +21,11 @@ get_persisted_keys() {
 }
 
 get_nics() {
-  ip --json link show | jq '[.[] | select(.ifname != "lo" and (.ifname | startswith("cilium") | not)) | {"ifname": .ifname, "mac": .address}]'
+  ip --json link show | jq '[
+    .[] |
+    select(.ifname != "lo" and (.ifname | startswith("cilium") | not) and (.ifname | startswith("lxc") | not)) |
+    {"ifname": .ifname, "mac": .address}
+  ]'
 }
 
 get_blockdevices() {
