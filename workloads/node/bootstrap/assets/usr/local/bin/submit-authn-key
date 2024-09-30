@@ -6,7 +6,7 @@ main() {
   primary_mac=$(get-node-state primary-mac)
   authn_pubkey=$(step crypto jwk public </run/initramfs/authn-key.json)
   jwt=$(step crypto jwt sign --key /run/initramfs/authn-key.json --iss "$primary_mac" \
-    --aud authn-key --sub "$primary_mac" --exp "$(date -d'+5min' +%s)")
+    --aud authn-key --sub "$primary_mac" --nbf "$(date -d'-5min' +%s)" --exp "$(date -d'+5min' +%s)")
   if result=$(curl-boot-server "registry/node-authn-keys/${primary_mac//:/-}.json?jwt=$jwt" \
     -XPUT -d@<(printf "%s" "$authn_pubkey") -w '%{http_code}' | tail -n1); then
     return 0

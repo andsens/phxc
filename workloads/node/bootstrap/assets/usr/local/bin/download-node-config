@@ -11,7 +11,7 @@ main() {
     primary_mac retry=15 node_config
   primary_mac=$(get-node-state primary-mac)
   jwt=$(step crypto jwt sign --key /run/initramfs/authn-key.json --iss "$primary_mac" \
-    --aud node-config --sub "$primary_mac" --exp "$(date -d'+5min' +%s)")
+    --aud node-config --sub "$primary_mac" --nbf "$(date -d'-5min' +%s)" --exp "$(date -d'+5min' +%s)")
   while true; do
     if boot-server-available; then
       if node_config=$(curl-boot-server "registry/node-configs/${primary_mac//:/-}.json?jwt=$jwt"); then

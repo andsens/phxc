@@ -55,7 +55,7 @@ submit_node_state() {
   local primary_mac jwt result
   primary_mac=$(get-node-state primary-mac)
   jwt=$(step crypto jwt sign --key /run/initramfs/authn-key.json --iss "$primary_mac" \
-    --aud node-state --sub "$primary_mac" --exp "$(date -d'+5min' +%s)")
+    --aud node-state --sub "$primary_mac" --nbf "$(date -d'-5min' +%s)" --exp "$(date -d'+5min' +%s)")
   if result=$(curl-boot-server "registry/node-states/${primary_mac//:/-}.json?jwt=$jwt" \
     -XPUT -d@/run/initramfs/node-state.json -w '%{http_code}' | tail -n1); then
     return 0
