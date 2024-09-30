@@ -8,6 +8,7 @@ import json
 import subprocess
 import tempfile
 
+DISK_UUID='caf66bff-edab-4fb1-8ad9-e570be5415d7'
 
 log = logging.getLogger(__name__)
 log.setLevel(getattr(logging, os.getenv('LOGLEVEL', 'INFO').upper(), 'INFO'))
@@ -146,11 +147,29 @@ def put_node_state(node_mac_filename):
   node_state_path = os.path.join(app.config['root'], 'node-states', node_mac_filename)
   with open(node_state_path, 'w') as h:
     try:
-      new_state = json.loads(flask.request.get_data())
-      h.write(json.dumps(new_state, indent=2))
+      node_state = json.loads(flask.request.get_data())
+      h.write(json.dumps(node_state, indent=2))
     except Exception as e:
       log.error(e)
       flask.abort(500)
+
+  # Remove the force flag from the disk config once the disk is formatted
+  node_config_path = os.path.join(app.config['root'], 'node-configs', node_mac_filename)
+  try:
+    if os.path.exists(node_config_path):
+      with open(node_config_path, 'r') as h:
+        node_config = json.loads(h.read())
+      if node_config['disk'].get('force', False) == True:
+        selected_block_device = next(
+          filter(lambda bd: bd['devpath'] == node_config['disk']['devpath'], node_state['blockdevices']),
+          None
+        )
+        if selected_block_device.get('partitions', {}).get('partitiontable', {}).get('id', None).lower() == DISK_UUID:
+          del node_config['disk']['force']
+          with open(node_config_path, 'w') as h:
+            h.write(json.dumps(node_config, indent=2))
+  except Exception as e:
+    log.error(e)
 
   return {'result': 'OK'}
 
