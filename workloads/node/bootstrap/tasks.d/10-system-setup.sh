@@ -51,6 +51,15 @@ system_setup() {
     cp_tpl --raw _systemd_units/16-persist-keys/persist-random-secret.service -d /etc/systemd/system/persist-random-secret.service
   fi
   cp_tpl --var BOOT_UUID _systemd_units/15-boot-partition/boot.mount -d /etc/systemd/system/boot.mount
+  # Do not time out mounting the boot or persistent partitions
+  # download-node-config blocks indefinitely until it receives a configuration
+  local devpath
+  for devpath in "/dev/disk/by-partuuid/$BOOT_UUID" "/dev/disk/by-partuuid/$DATA_UUID" /dev/mapper/persistent; do
+    local systemd_name
+    systemd_name=$(systemd-escape -p "$devpath")
+    mkdir -p "/etc/systemd/system/$systemd_name.device.d"
+    printf '[Unit]\nJobRunningTimeoutSec=infinity\n' >"/etc/systemd/system/$systemd_name.device.d/50-device-timeout.conf"
+  done
 
   ln -s ../lib/upkg/.upkg/home-cluster/.upkg/.bin/step /usr/local/bin/step
 
