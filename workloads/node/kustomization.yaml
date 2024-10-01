@@ -6,24 +6,22 @@ resources:
 - ../common-context
 - containers/create-boot-image
 - containers/dhcp-proxy
-- containers/safeboot-attest
+- containers/registry
 - containers/tftpd
 - bootstrap
 - images.yaml
 - boot-server.yaml
-- secureboot.yaml
 - namespace.yaml
 - Kptfile
 - resourcegroup.yaml
 configMapGenerator:
 - files:
-  - config/boot-map.yaml.conf
+  - config/boot-map.yaml
   - config/nginx.conf
   - config/tftpd-map-file
   name: boot-server-config
 - files:
   - scripts/dhcp-proxy.py
   - scripts/tftpd.sh
-  - scripts/safeboot-attest/attest-server.py
-  - scripts/safeboot-attest/attest-verify
+  - scripts/registry.py
   name: boot-server-scripts

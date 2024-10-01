@@ -5,13 +5,14 @@ resources:
 - amd64.yaml
 - arm64.yaml
 - rpi5.yaml
+- secureboot.yaml
+- create-boot-image-sa.yaml
 configMapGenerator:
 - files:
   - Dockerfile
   name: node
 - files:
   - create-boot-image-assets/config-rpi5.txt
-  - create-boot-image-assets/etc-hosts
   name: create-boot-image-assets
 - files:
   - scripts/create-boot-image.sh

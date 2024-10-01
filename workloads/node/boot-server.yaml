@@ -97,8 +97,6 @@ spec:
           containerPort: 8020
           hostPort: 8020
         volumeMounts:
-        - name: node-config
-          mountPath: /var/www/node-config
         - name: config
           mountPath: /etc/nginx/nginx.conf
           subPath: nginx.conf
@@ -113,28 +111,17 @@ spec:
         securityContext:
           readOnlyRootFilesystem: true
         ports:
-        - name: remote-attestation
-          containerPort: 8000
-          hostPort: 8000
+        - name: api
+          containerPort: 8021
         volumeMounts:
         - name: scripts
-          mountPath: /registry/attest-server.py
-          subPath: attest-server.py
-        - name: scripts
-          mountPath: /registry/attest-verify
-          subPath: attest-verify
-        - name: images
-          mountPath: /images
-          readOnly: true
+          mountPath: /registry/registry.py
+          subPath: registry.py
         - name: k3s-token
           mountPath: /secrets/k3s-token
           readOnly: true
-        - name: disk-encryption-key
-          mountPath: /secrets/disk-encryption-key
-          subPath: password
-          readOnly: true
-        - name: attestation-database
-          mountPath: /attestation-database
+        - name: registry
+          mountPath: /data
         - name: registry-tmp
           mountPath: /tmp
       - name: tftpd
@@ -152,6 +139,7 @@ spec:
             - SETGID
             - SYS_CHROOT
             - SIGNAL
+            - CAP_KILL
         env:
         # Used to select which interface tcpdump should filter for
         - name: HOST_IP
@@ -175,7 +163,7 @@ spec:
       - name: dhcp-proxy
         image: cluster.local/dhcp-proxy:latest
         imagePullPolicy: Never
-        arguments:
+        args:
         - $(HOST_IP)
         - $(TFTPD_ADDR)
         securityContext:
@@ -188,7 +176,6 @@ spec:
             - NET_RAW
             - SETGID
             - SETUID
-            - CHOWN
         env:
         - name: HOST_IP
           valueFrom:
@@ -220,9 +207,6 @@ spec:
         configMap:
           name: boot-server-scripts
           defaultMode: 0755
-      - name: node-config
-        configMap:
-          name: node-config
       - name: images
         persistentVolumeClaim:
           claimName: images
@@ -235,13 +219,13 @@ spec:
           secretName: disk-encryption-key
       - name: nginx-cache
         emptyDir: {}
-      - name: safeboot-attest-tmp
+      - name: registry-tmp
         emptyDir: {}
       - name: dnsmasq-leases
         emptyDir: {}
   volumeClaimTemplates:
   - metadata:
-      name: attestation-database
+      name: registry
       labels:
         app.kubernetes.io/name: node
         app.kubernetes.io/component: boot-server

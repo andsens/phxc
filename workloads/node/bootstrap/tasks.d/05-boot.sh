@@ -32,7 +32,15 @@ boot() {
   cp_tpl --var VARIANT /etc/systemd/system.conf.d/variant.conf
   cp_tpl --var DISK_UUID --var BOOT_UUID --var DATA_UUID /etc/systemd/system.conf.d/disk-uuids.conf
 
-  cp /workspace/root_ca.crt /usr/local/share/ca-certificates/home-cluster-root.crt
+  if [[ -e /workspace/root_ca.crt ]]; then
+    # Running through bin/startup
+    cp /workspace/root_ca.crt /usr/local/share/ca-certificates/home-cluster-root.crt
+  else
+    # Running on k8s
+    kubectl -n smallstep get secret smallstep-root -o jsonpath='{.data.tls\.crt}' | \
+      base64 -d >/usr/local/share/ca-certificates/home-cluster-root.crt
+    update-ca-certificates
+  fi
   update-ca-certificates
 
   cp_tpl --raw /usr/local/lib/home-cluster/node.sh

@@ -12,18 +12,23 @@ spec:
       labels:
         app.kubernetes.io/name: bootstrap
         app.kubernetes.io/component: rpi5
+        cluster.local/allow-apiserver-egress: "true"
         cluster.local/allow-internet-egress: "true"
     spec:
       restartPolicy: Never
       nodeSelector:
         kubernetes.io/arch: arm64
+      serviceAccountName: create-boot-image
       initContainers:
-      - name: initialize-new-run
+      - name: initialize-new-build
         image: busybox
-        command: [bash, -c, rm -rf /images/$(VARIANT).new; mkdir /images/$(VARIANT).new]
+        command: [sh, -c, rm -rf /images/$(VARIANT).new; mkdir /images/$(VARIANT).new]
         env:
         - name: VARIANT
           value: rpi5
+        volumeMounts:
+        - name: images
+          mountPath: /images
       - name: kaniko
         image: gcr.io/kaniko-project/executor:latest
         args:
@@ -62,10 +67,10 @@ spec:
           mountPath: /rpi-config
         - name: workspace
           mountPath: /workspace
-        - name: images
-          mountPath: /images
         - name: secureboot
           mountPath: /secureboot
+        - name: images
+          mountPath: /images
       volumes:
       - name: context
         configMap:
@@ -81,6 +86,9 @@ spec:
         configMap:
           name: common-context
           defaultMode: 0755
+      - name: secureboot
+        secret:
+          secretName: secureboot
       - name: rpi-config
         configMap:
           name: rpi-config
