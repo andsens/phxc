@@ -27,7 +27,7 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' generate-settings-env.shellcheck.sh`
   eval "$(docopt "$@")"
 
-  printf "#!/usr/bin/env bash\n# shellcheck disable=SC2016\n%s" \
+  printf "#!/usr/bin/env bash\n# shellcheck disable=SC2016\n%s\n" \
     "$(generate_settings "$PKGROOT/settings.template.yaml")" \
     >"$PKGROOT/workloads/settings/env/settings.shellcheck.sh"
 }

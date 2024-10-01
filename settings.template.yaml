@@ -4,10 +4,6 @@
 
 # The admin user is set up on all bootstrapped nodes
 admin:
-  # Will be mounted to the admin user home directory, leave empty to not mount anything
-  adminHome:
-    addr: '[fd25:9998:d0e7:e351:1a01:be9:4d9a:157d]'
-    path: /mnt/cluster/home/admin
   # If mounting a NFS home share, make sure the UID matches the one on the share
   uid: 1000
   username: admin
@@ -20,29 +16,6 @@ admin:
   authorized_keys:
   - ssh-rsa ...
   - ssh-ed25519 ...
-########################
-### Node settings ###
-########################
-nodes:
-- hostname: k8s-master.local
-  mac: 00:01:02:a0:b0:ff
-  networks:
-  nic:
-    lan0:
-      nic: ens3
-    host:
-      nic: ens4
-      addrs: [10.186.223.3/24, 'fd25:9998:d0e7:e351:1a01:be9:4d9a:157f/48']
-  arch: amd64
-  data: /dev/vdb
-  node-label: [node-role.kubernetes.io/control-plane=true]
-- hostname: k8s-hyperv.local
-  mac: 00:15:5d:cd:6b:02
-  networks:
-    lan0:
-      nic: eth0
-  arch: amd64
-  data: /dev/disk/by-path/acpi-VMBUS:00-vmbus-12345678901234567890123456789012-lun-1
 #########################
 ### Cluster settings ###
 #########################
