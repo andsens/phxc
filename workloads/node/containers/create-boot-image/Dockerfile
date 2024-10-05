@@ -12,6 +12,7 @@ RUN /workspace/common-context/setup-debian.sh; \
   /signify/bin/pip3 install \
     'https://github.com/wbond/oscrypto/archive/d5f3437ed24257895ae1edd9e503cfb352e635a8.zip#sha256=6f54c4261ab6d56c9fe96b01c92abf99b06feb8836208c7e3fed894702d34b59' \
     signify==0.6.1 \
+    pyasn1==0.6.0 \
     docopt==0.6.2
 
 # See https://github.com/wbond/oscrypto/issues/78
