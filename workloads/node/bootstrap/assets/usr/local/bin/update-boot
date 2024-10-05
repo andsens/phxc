@@ -47,8 +47,9 @@ main() {
   trap '' EXIT
   printf "%s\n" "$digests_json_new" >/boot/home-cluster/digests.json
   rm -f "/boot/home-cluster/root.$current_root_img_sha256.img"
-  printf "boot partition has been updated, rebooting\n" >&2
-  exec systemctl reboot
+  printf "boot partition has been updated, rebooting in 10s\n" >&2
+  sleep 10
+  systemctl reboot
 }
 
 main "$@"
