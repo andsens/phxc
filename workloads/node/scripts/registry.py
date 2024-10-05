@@ -26,11 +26,11 @@ def get_root():
 
 @app.route('/images/<path:image_path>')
 def get_image(image_path):
-  if not app.config['enable_images']:
+  if not app.config['images']:
     flask.abort(503)
-  if not os.path.exists(os.path.join(app.config['root'], 'images', image_path)):
+  if not os.path.exists(os.path.join(app.config['images'], image_path)):
     flask.abort(404)
-  return flask.send_file(os.path.join(app.config['root'], 'images', image_path))
+  return flask.send_file(os.path.join(app.config['images'], image_path))
 
 @app.route('/registry/health', methods=['GET'])
 def get_health():
@@ -92,24 +92,7 @@ def put_node_authn_key(node_mac_filename):
 
 @app.route('/registry/node-configs/<path:node_mac_filename>', methods=['GET'])
 def get_node_config(node_mac_filename):
-  primary_mac = node_mac_filename.removesuffix('.json').replace('-', ':')
-  node_authn_key_path = os.path.join(app.config['root'], 'node-authn-keys', node_mac_filename)
-  if not os.path.exists(node_authn_key_path):
-    log.error(f'Unable to send node-config to {primary_mac}, no authentication key has been submitted yet')
-    flask.abort(400)
-
-  jwt = flask.request.args.get('jwt')
-  if jwt is None:
-    log.error(f'Unable to send node-config to {primary_mac}, no JWT was included in the query string')
-    flask.abort(400)
-  try:
-    subprocess.check_output(
-      ['step', 'crypto', 'jwt', 'verify', '--iss', primary_mac, '--aud', 'node-config', '--key', node_authn_key_path],
-      input=jwt.encode()
-    )
-  except Exception as e:
-    log.error(e)
-    flask.abort(403)
+  verify_jwt('node-state', node_mac_filename.removesuffix('.json').replace('-', ':'))
 
   node_config_path = os.path.join(app.config['root'], 'node-configs', node_mac_filename)
   if not os.path.exists(node_config_path):
@@ -125,24 +108,7 @@ def get_node_config(node_mac_filename):
 
 @app.route('/registry/node-states/<path:node_mac_filename>', methods=['PUT'])
 def put_node_state(node_mac_filename):
-  primary_mac = node_mac_filename.removesuffix('.json').replace('-', ':')
-  node_authn_key_path = os.path.join(app.config['root'], 'node-authn-keys', node_mac_filename)
-  if not os.path.exists(node_authn_key_path):
-    log.error(f'Unable to store node-state for {primary_mac}, no authentication key has been submitted yet')
-    flask.abort(400)
-
-  jwt = flask.request.args.get('jwt')
-  if jwt is None:
-    log.error(f'Unable to store node-state for {primary_mac}, no JWT was included in the query string')
-    flask.abort(400)
-  try:
-    subprocess.check_output(
-      ['step', 'crypto', 'jwt', 'verify', '--iss', primary_mac, '--aud', 'node-state', '--key', node_authn_key_path],
-      input=jwt.encode()
-    )
-  except Exception as e:
-    log.error(e)
-    flask.abort(403)
+  verify_jwt('node-state', node_mac_filename.removesuffix('.json').replace('-', ':'))
 
   node_state_path = os.path.join(app.config['root'], 'node-states', node_mac_filename)
   with open(node_state_path, 'w') as h:
@@ -174,9 +140,63 @@ def put_node_state(node_mac_filename):
   return {'result': 'OK'}
 
 
-def gunicorn(root, enable_images=False):
+@app.route('/registry/transfer-control/<path:root_filename>', methods=['GET'])
+def transfer_control(root_filename):
+  if app.config['steppath'] is None:
+    flask.abort(503)
+
+  primary_mac = verify_jwt('transfer-control')
+
+  node_config_path = os.path.join(app.config['root'], 'node-configs', f'{primary_mac.replace(':', '-')}.json')
+  if not os.path.exists(node_config_path):
+    log.error(f'Unable to transfer control to {primary_mac}. The machine has not been configured yet.')
+    flask.abort(403)
+
+  try:
+    with open(node_config_path, 'r') as h:
+      node_config = json.loads(h.read())
+  except Exception as e:
+    log.error(e)
+    flask.abort(500)
+
+  if 'node-role.kubernetes.io/control-plane=true' not in node_config['labels']:
+    log.error(f'Unable to transfer control to {primary_mac}. The machine has not been configured as a controle-plane node.')
+    flask.abort(403)
+
+  if root_filename in ['secrets/root_ca_key', 'certs/root_ca.crt']:
+    return flask.send_file(os.path.join(app.config['steppath'], root_filename))
+  else:
+    flask.abort(404)
+
+
+def verify_jwt(aud, expected_primary_mac=None):
+  jwt = flask.request.args.get('jwt')
+  if jwt is None:
+    log.error(f'No JWT was included in the query string')
+    flask.abort(400)
+  try:
+    jwt_data = json.loads(subprocess.check_output(['step', 'crypto', 'jwt', 'inspect', '--insecure'], input=jwt.encode()))
+    jwt_primary_mac = jwt_data['payload']['iss']
+    if expected_primary_mac is not None and jwt_primary_mac != expected_primary_mac:
+      log.error(f'Unable to verify JWT for {jwt_primary_mac}. Expected the JWT issuer to be {expected_primary_mac}')
+      flask.abort(400)
+    node_authn_key_path = os.path.join(app.config['root'], f'node-authn-keys/{jwt_primary_mac.replace(':', '-')}.json')
+    if not os.path.exists(node_authn_key_path):
+      log.error(f'Unable to verify JWT for {jwt_primary_mac}, no authentication key has been submitted yet')
+      flask.abort(400)
+    subprocess.check_output(
+      ['step', 'crypto', 'jwt', 'verify', '--iss', jwt_primary_mac, '--aud', aud, '--key', node_authn_key_path],
+      input=jwt.encode()
+    )
+    return jwt_primary_mac
+  except Exception as e:
+    log.error(e)
+    flask.abort(403)
+
+def gunicorn(root, images=False, steppath=None):
   app.config['root'] = root
-  app.config['enable_images'] = enable_images
+  app.config['images'] = images
+  app.config['steppath'] = steppath
   return app
 
 if __name__ == '__main__':
