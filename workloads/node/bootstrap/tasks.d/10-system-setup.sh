@@ -24,7 +24,6 @@ system_setup() {
     15-boot-partition/boot-partition.target
     15-boot-partition/boot-cache-dir.service
     15-boot-partition/mkfs-boot.service
-    15-boot-partition/update-boot.service
     16-persist-keys/cache-node-config.service
     16-persist-keys/persist-authn-key.service
     16-persist-keys/persist-credential-key.service
@@ -37,6 +36,7 @@ system_setup() {
     25-persistent-partition/mkfs-persistent.service
     25-persistent-partition/persistent-partition.target
     40-final-node-state/final-node-state.service
+    70-update-boot/update-boot.service
     90-node-config/update-node-config.service
     90-node-config/update-node-config.timer
   )

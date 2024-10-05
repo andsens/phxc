@@ -1,7 +1,7 @@
 [Unit]
 Description=Update the boot partition with the latest image
 Requires=boot.mount
-After=boot.mount
+After=boot.mount final-node-state.service
 
 [Install]
 WantedBy=sysinit.target
