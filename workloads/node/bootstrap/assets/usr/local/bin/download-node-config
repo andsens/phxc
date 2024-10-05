@@ -9,28 +9,36 @@ main() {
   fi
   local node_config_dest=$1 \
     primary_mac retry=15 node_config
-  primary_mac=$(get-node-state primary-mac)
-  while true; do
-    if boot-server-available; then
-      jwt=$(step crypto jwt sign --key /run/initramfs/authn-key.json --iss "$primary_mac" \
-        --aud node-config --sub "$primary_mac" --nbf "$(date -d'-5min' +%s)" --exp "$(date -d'+5min' +%s)")
-      if node_config=$(curl-boot-server "registry/node-configs/${primary_mac//:/-}.json?jwt=$jwt"); then
-        printf "Successfully downloaded node-config\n" >&2
-        break
+  if primary_mac=$(get-node-state primary-mac); then
+    while true; do
+      if boot-server-available; then
+        jwt=$(step crypto jwt sign --key /run/initramfs/authn-key.json --iss "$primary_mac" \
+          --aud node-config --sub "$primary_mac" --nbf "$(date -d'-5min' +%s)" --exp "$(date -d'+5min' +%s)")
+        if node_config=$(curl-boot-server "registry/node-configs/${primary_mac//:/-}.json?jwt=$jwt"); then
+          printf "Successfully downloaded node-config\n" >&2
+          break
+        else
+          printf "Failed to download node-config, retrying in %ds\n" "$retry" >&2
+        fi
       else
-        printf "Failed to download node-config, retrying in %ds\n" "$retry" >&2
+        if [[ -e /boot/home-cluster/node-config.json.enc ]] && $allow_fallback; then
+          printf "boot-server is not available and cached node-config exists, using that instead\n" >&2
+          node_config=$(systemd-creds decrypt /boot/home-cluster/node-config.json.enc)
+          break
+        else
+          printf "boot-server is not available, retrying in %ds\n" "$retry" >&2
+        fi
       fi
+      sleep $retry
+    done
+  else
+    if [[ -e /boot/home-cluster/node-config.json.enc ]] && $allow_fallback; then
+      printf "Cached node-config exists, using that instead\n" >&2
+      node_config=$(systemd-creds decrypt /boot/home-cluster/node-config.json.enc)
     else
-      if [[ -e /boot/home-cluster/node-config.json.enc ]] && $allow_fallback; then
-        printf "boot-server is not available and cached node-config exists, using that instead\n" >&2
-        node_config=$(systemd-creds decrypt /boot/home-cluster/node-config.json.enc)
-        break
-      else
-        printf "boot-server is not available, retrying in %ds\n" "$retry" >&2
-      fi
+      return 1
     fi
-    sleep $retry
-  done
+  fi
   if [[ -z $node_config_dest || $node_config_dest = '-' ]]; then
     printf "%s\n" "$node_config"
   else
