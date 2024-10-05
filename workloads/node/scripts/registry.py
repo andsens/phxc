@@ -50,7 +50,7 @@ def put_node_authn_key(node_mac_filename):
   if os.path.exists(node_state_path):
     with open(node_state_path, 'r') as h:
       try:
-        node_authn_key_persisted = 'authn' in json.loads(h.read())['persisted-keys']
+        node_authn_key_persisted = json.loads(h.read()).get('keys', {}).get('authn', {}).get('persisted', False)
       except Exception as e:
         log.error(e)
         flask.abort(500)

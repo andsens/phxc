@@ -13,3 +13,4 @@ RequiredBy=keys-persisted.target
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=systemd-creds encrypt /run/initramfs/node-config.json /boot/home-cluster/node-config.json.enc
+ExecStart=set-node-state keys.disk-encryption.persisted true true

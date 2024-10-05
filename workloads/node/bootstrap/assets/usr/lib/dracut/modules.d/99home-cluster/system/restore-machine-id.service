@@ -13,4 +13,3 @@ WantedBy=sysinit.target
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=cp /boot/home-cluster/machine-id /run/machine-id
-ExecStart=set-node-state machine-id.persisted true true

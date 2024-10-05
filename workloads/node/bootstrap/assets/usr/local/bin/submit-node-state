@@ -2,22 +2,12 @@
 set -Eeo pipefail; shopt -s inherit_errexit
 
 main() {
-  set-node-state persisted-keys "$(get_persisted_keys)" true
   set-node-state nics "$(get_nics)" true
   set-node-state blockdevices "$(get_blockdevices)" true
   case "$VARIANT" in
     rpi5) set-node-state rpi "$(get_rpi5)" true ;;
   esac
   submit_node_state
-}
-
-get_persisted_keys() {
-  local persisted_keys='[]'
-  [[ ! -e /boot/home-cluster/authn-key.json.enc ]] || persisted_keys=$(jq '. + ["authn"]' <<<"$persisted_keys")
-  [[ ! -e /boot/home-cluster/credential.secret.enc ]] || persisted_keys=$(jq '. + ["credential"]' <<<"$persisted_keys")
-  [[ ! -e /boot/home-cluster/node-config.json.enc ]] || persisted_keys=$(jq '. + ["disk-encryption"]' <<<"$persisted_keys")
-  [[ ! -e /boot/home-cluster/machine-id ]] || persisted_keys=$(jq '. + ["machine-id"]' <<<"$persisted_keys")
-  printf "%s\n" "$persisted_keys"
 }
 
 get_nics() {
@@ -46,11 +36,6 @@ get_blockdevices() {
 
 get_rpi5() {
   local device_info={}
-  if rpi-otp-private-key -l 16 | grep -qv 0; then
-    device_info=$(jq '.keys.otp.initialized=true' <<<"$device_info")
-  else
-    device_info=$(jq '.keys.otp.initialized=false' <<<"$device_info")
-  fi
   device_info=$(jq --arg sn "$(cat /sys/firmware/devicetree/base/serial-number)" '.serialnumber=$sn' <<<"$device_info")
   printf "%s\n" "$device_info"
 }

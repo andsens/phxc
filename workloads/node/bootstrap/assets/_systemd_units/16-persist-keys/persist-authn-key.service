@@ -14,3 +14,4 @@ RequiredBy=keys-persisted.target
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=systemd-creds encrypt /run/initramfs/authn-key.json /boot/home-cluster/authn-key.json.enc
+ExecStart=set-node-state keys.authn.persisted true true
