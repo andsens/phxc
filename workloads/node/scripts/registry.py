@@ -22,12 +22,12 @@ app.config['DEBUG'] = os.getenv('LOGLEVEL', 'INFO').upper() == 'DEBUG'
 
 @app.route('/', methods=['GET'])
 def get_root():
-  flask.abort(405)
+  flask.abort(404)
 
 @app.route('/images/<path:image_path>')
 def get_image(image_path):
   if not app.config['enable_images']:
-    flask.abort(500)
+    flask.abort(503)
   if not os.path.exists(os.path.join(app.config['root'], 'images', image_path)):
     flask.abort(404)
   return flask.send_file(os.path.join(app.config['root'], 'images', image_path))
