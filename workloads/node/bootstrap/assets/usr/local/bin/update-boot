@@ -6,7 +6,8 @@ main() {
   local digests_json_new
   mkdir -p /boot/home-cluster
   if ! digests_json_new=$(curl-boot-server "images/$VARIANT/digests.json"); then
-    fatal "Unable to retrieve image digests from boot server"
+    printf "Unable to retrieve image digests from boot server\n" >&2
+    return 1
   fi
   local current_root_img_sha256 new_root_img_sha256
   current_root_img_sha256=$(jq -re '.sha256sums["root.img"]' /boot/home-cluster/digests.json 2>/dev/null || true)
@@ -32,7 +33,7 @@ main() {
     case $VARIANT in
       amd64) efipath=/boot/EFI/BOOT/BOOTX64.efi ;;
       arm64) efipath=/boot/EFI/BOOT/BOOTAA64.efi ;;
-      *) fatal "Unknown variant: %s" "$VARIANT" ;;
+      *) printf "Unknown variant: %s\n" "$VARIANT" >&2; return 1 ;;
     esac
     mkdir -p /boot/EFI/BOOT
     if curl-boot-server "images/$VARIANT/uki.efi" -o$efipath.new ; then

@@ -5,7 +5,10 @@ main() {
   local devpath
   devpath=$(get-node-config disk.devpath)
   if sfdisk -J "$devpath" &>/dev/null || lsblk -Jndo FSTYPE "$devpath" | jq -re '.blockdevices[0].fstype != null' >/dev/null; then
-    [[ $(get-node-config disk.force) = true ]] || fatal "Device %s is partitioned or contains a filesystem and .disk.force != true, aborting disk setup" "$devpath"
+    if [[ $(get-node-config disk.force) != true ]]; then
+      printf "Device %s is partitioned or contains a filesystem and .disk.force != true, aborting disk setup\n" "$devpath" >&2
+      return 1
+    fi
   fi
   printf 'Partitioning disk at "%s"\n' "$devpath" >&2
   wipefs -a "$devpath"
