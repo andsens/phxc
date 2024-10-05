@@ -12,7 +12,7 @@ RemainAfterExit=yes
 ExecStart=bash -ec ':;\
   if [[ -e /boot/home-cluster/authn-key.json.enc ]]; then\
     systemd-creds decrypt /boot/home-cluster/authn-key.json.enc /run/initramfs/authn-key.json;\
-    ! boot-server-available || submit-authn-key;\
+    submit-authn-key || true;\
   else\
     step crypto jwk create --no-password --insecure --force /dev/null /run/initramfs/authn-key.json;\
     submit-authn-key;\

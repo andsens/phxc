@@ -48,7 +48,8 @@ boot() {
     /usr/local/bin/curl-boot-server \
     /usr/local/bin/find-boot-server \
     /usr/local/bin/get-node-state \
-    /usr/local/bin/set-node-state
+    /usr/local/bin/set-node-state \
+    /usr/local/bin/is-node-state \
 
 
   # Enable serial console

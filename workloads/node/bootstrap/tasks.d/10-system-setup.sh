@@ -15,6 +15,7 @@ esac
 
 system_setup() {
   local filepath systemd_units=(
+    05-keys/random-secret.service
     05-keys/surrogate-key.service
     05-keys/authn-key.service
     05-keys/credential-key.service
@@ -28,6 +29,7 @@ system_setup() {
     16-persist-keys/persist-authn-key.service
     16-persist-keys/persist-credential-key.service
     16-persist-keys/persist-machine-id.service
+    16-persist-keys/persist-random-secret.service
     16-persist-keys/keys-persisted.target
     17-system/configure-hostname.service
     17-system/configure-networks.service
@@ -46,9 +48,6 @@ system_setup() {
 
   if [[ $VARIANT = rpi5 ]]; then
     cp_tpl --raw _systemd_units/05-keys/rpi5-otp-secret.service -d /etc/systemd/system/rpi5-otp-secret.service
-  else
-    cp_tpl --raw _systemd_units/05-keys/random-secret.service -d /etc/systemd/system/random-secret.service
-    cp_tpl --raw _systemd_units/16-persist-keys/persist-random-secret.service -d /etc/systemd/system/persist-random-secret.service
   fi
   cp_tpl --var BOOT_UUID _systemd_units/15-boot-partition/boot.mount -d /etc/systemd/system/boot.mount
   # Do not time out mounting the boot or persistent partitions
