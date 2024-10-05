@@ -25,7 +25,7 @@ def get_root():
   flask.abort(405)
 
 @app.route('/images/<path:image_path>')
-def send_report(image_path):
+def get_image(image_path):
   if not app.config['enable_images']:
     flask.abort(500)
   if not os.path.exists(os.path.join(app.config['root'], 'images', image_path)):
