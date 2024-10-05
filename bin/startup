@@ -95,7 +95,7 @@ bootstrap() {
   local bundle
   bundle=$(mktemp --suffix .tar.gz)
   trap_append "rm \"$bundle\"" EXIT
-  "$PKGROOT/workloads/node/bin/bundle" "$bundle"
+  "$PKGROOT/workloads/node/bootstrap/scripts/bundle" "$bundle"
 
   SB_CRT=$STEPPATH/certs/secureboot.crt
   SB_KEY=$STEPPATH/certs/secureboot.key
