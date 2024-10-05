@@ -11,5 +11,5 @@ RequiredBy=persistent-partition.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecCondition=bash -c "! cryptsetup isLuks /dev/disk/by-partuuid/${DATA_UUID}"
+ExecCondition=bash -ec "! cryptsetup isLuks /dev/disk/by-partuuid/${DATA_UUID}"
 ExecStart=cryptsetup luksFormat --batch-mode /dev/disk/by-partuuid/${DATA_UUID} /run/initramfs/disk-encryption-key

@@ -11,4 +11,4 @@ RequiredBy=persistent-partition.target systemd-cryptsetup@persistent.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=bash -c "umask 0077; get-node-config disk.encryption-key | base64 -d >/run/initramfs/disk-encryption-key"
+ExecStart=bash -ec "umask 0077; get-node-config disk.encryption-key | base64 -d >/run/initramfs/disk-encryption-key"

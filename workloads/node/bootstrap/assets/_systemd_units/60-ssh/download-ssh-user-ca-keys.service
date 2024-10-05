@@ -10,5 +10,5 @@ WantedBy=multi-user.target
 Type=oneshot
 Environment=KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 TimeoutSec=1200
-ExecStart=bash -c 'step ssh config --host --roots >/etc/ssh/user_ca_keys'
+ExecStart=bash -ec 'step ssh config --host --roots >/etc/ssh/user_ca_keys'
 ExecStart=systemctl reload ssh

@@ -9,7 +9,7 @@ ConditionPathExists=!/run/initramfs/authn-key.json
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=bash -c ':;\
+ExecStart=bash -ec ':;\
   if [[ -e /boot/home-cluster/authn-key.json.enc ]]; then\
     systemd-creds decrypt /boot/home-cluster/authn-key.json.enc /run/initramfs/authn-key.json;\
     ! boot-server-available || submit-authn-key;\

@@ -11,7 +11,7 @@ RequiredBy=surrogate-key.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=bash -c "umask 0377; jq -n\
+ExecStart=bash -ec "umask 0377; jq -n\
   --arg key $(derive-key surrogate-key:key 32 | xxd -p -c0)\
   --arg iv $(derive-key surrogate-key:iv 16 | xxd -p -c0)\
   '.key=$key | .iv=$iv'\

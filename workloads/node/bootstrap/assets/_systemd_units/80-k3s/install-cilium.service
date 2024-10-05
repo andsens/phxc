@@ -11,7 +11,7 @@ WantedBy=k3s@server.service
 Type=oneshot
 Environment=HOME=/root KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 TimeoutSec=1200
-ExecStart=bash -c ':;\
+ExecStart=bash -ec ':;\
   if ! kubectl get -n kube-system deployment cilium-operator -o name &>/dev/null; then \
     printf "Cilium is not installed, installing now\n" >&2;\
     cilium install --version=1.15.5 \

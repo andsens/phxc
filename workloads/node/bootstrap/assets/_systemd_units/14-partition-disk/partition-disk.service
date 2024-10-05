@@ -12,5 +12,5 @@ WantedBy=boot-partition.target persistent-partition.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecCondition=bash -c "lsblk -Jndo PTUUID \"$(get-node-config disk.devpath)\" | jq -re --arg disk_uuid ${DISK_UUID} '.blockdevices[0].ptuuid != $disk_uuid' >/dev/null"
+ExecCondition=bash -ec "lsblk -Jndo PTUUID \"$(get-node-config disk.devpath)\" | jq -re --arg disk_uuid ${DISK_UUID} '.blockdevices[0].ptuuid != $disk_uuid' >/dev/null"
 ExecStart=partition-disk

@@ -6,5 +6,5 @@ ConditionPathExists=!/run/initramfs/node-state.json
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=bash -c 'umask 0177; printf "{}\n" >/run/initramfs/node-state.json'
+ExecStart=bash -ec 'umask 0177; printf "{}\n" >/run/initramfs/node-state.json'
 ExecStart=set-node-state variant $VARIANT
