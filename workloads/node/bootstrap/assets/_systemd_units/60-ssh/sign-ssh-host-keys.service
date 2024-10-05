@@ -1,7 +1,7 @@
 [Unit]
 Description=Sign SSH host keys
 Requires=resource-ready@step-ca.target
-After=resource-ready@step-ca.target
+After=resource-ready@step-ca.target ssh.service
 
 [Install]
 WantedBy=multi-user.target
@@ -9,5 +9,13 @@ WantedBy=multi-user.target
 [Service]
 Type=oneshot
 Environment=KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-ExecStart=/usr/local/lib/upkg/.upkg/home-cluster/workloads/smallstep/bin/ssh-keys sign-host
 TimeoutSec=1200
+ExecStart=bash -c ':;\
+  password=$(KUBECONFIG=/etc/rancher/k3s/k3s.yaml kubectl -n smallstep get secret ssh-host-provisioner-password -o=jsonpath='{.data.password}' | base64 -d);\
+  for pubkey in /etc/ssh/ssh_host_*.pub; do \
+    [[ $pubkey != *-cert.pub ]] || continue;\
+    printf "Signing %s\n" "$pubkey" >&2;\
+    step ssh certificate --host --sign --force --provisioner=ssh-host --provisioner-password-file=<(printf "%s" "$password") \
+      "$(hostname -f)" "$pubkey";\
+  done'
+ExecStart=systemctl reload ssh

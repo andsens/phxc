@@ -1,7 +1,7 @@
 [Unit]
 Description=Download SSH User CA keys
 Requires=resource-ready@step-ca.target
-After=resource-ready@step-ca.target
+After=resource-ready@step-ca.target ssh.service
 
 [Install]
 WantedBy=multi-user.target
@@ -9,5 +9,6 @@ WantedBy=multi-user.target
 [Service]
 Type=oneshot
 Environment=KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-ExecStart=/usr/local/lib/upkg/.upkg/home-cluster/workloads/smallstep/bin/ssh-keys download-ca /etc/ssh/user_ca_keys
 TimeoutSec=1200
+ExecStart=bash -c 'step ssh config --host --roots >/etc/ssh/user_ca_keys'
+ExecStart=systemctl reload ssh

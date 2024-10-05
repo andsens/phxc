@@ -15,6 +15,10 @@ sshd() {
   debconf-set-selections <<<"openssh-server  openssh-server/password-authentication  boolean false"
   rm /etc/ssh/ssh_host_*
 
+  export CLUSTER_SMALLSTEP_LB_FIXEDIPV4 SMALLSTEP_ROOT_CA_FINGERPRINT
+  SMALLSTEP_ROOT_CA_FINGERPRINT=$(step certificate fingerprint /usr/local/share/ca-certificates/home-cluster-root.crt)
+  cp_tpl --chmod 0600 --var CLUSTER_SMALLSTEP_LB_FIXEDIPV4 --var SMALLSTEP_ROOT_CA_FINGERPRINT /root/.step/config/defaults.json
+
   cp_tpl --raw \
     /etc/ssh/sshd_config.d/10-no-root-login.conf \
     /etc/ssh/sshd_config.d/20-host-key-certs.conf \

@@ -10,5 +10,31 @@ WantedBy=k3s@server.service
 [Service]
 Type=oneshot
 Environment=HOME=/root KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-ExecStart=/usr/local/lib/upkg/.upkg/home-cluster/workloads/cilium/bin/install-cilium
 TimeoutSec=1200
+ExecStart=bash -c ':;\
+  if ! kubectl get -n kube-system deployment cilium-operator -o name &>/dev/null; then \
+    printf "Cilium is not installed, installing now\n" >&2;\
+    cilium install --version=1.15.5 \
+      --set ipam.mode=cluster-pool \
+      --set ipam.operator.clusterPoolIPv4PodCIDRList="$CLUSTER_CIDRS_PODIPV4" \
+      --set ipam.operator.clusterPoolIPv6PodCIDRList="$CLUSTER_CIDRS_PODIPV6" \
+      --set ipam.operator.clusterPoolIPv4MaskSize=24 \
+      --set ipam.operator.clusterPoolIPv6MaskSize=112 \
+      --set k8sServiceHost="$CLUSTER_CILIUM_K8SSERVICEHOST" \
+      --set bgpControlPlane.enabled=true \
+      --set ipv6.enabled=true \
+      --set bpf.masquerade=true \
+      --set enableIPv6Masquerade=false \
+      --set envoy.enabled=false \
+      --set hubble.enabled=false \
+      --set hubble.relay.gops.enabled=false \
+      --set kubeProxyReplacement=true \
+      --set encryption.enabled=true \
+      --set encryption.type=wireguard \
+      --set encryption.nodeEncryption=true \
+      --set socketLB.enabled=true \
+      --set kubeConfigPath=/etc/rancher/k3s/k3s.yaml;\
+    kubectl patch -n kube-system cm cilium-config --patch-file <(printf "\ndata:\n  ipv6-service-range: \"%s\"\n" "$CLUSTER_CIDRS_SVCIPV6");\
+  else \
+    printf "Cilium is already installed\n" >&2;\
+  fi'
