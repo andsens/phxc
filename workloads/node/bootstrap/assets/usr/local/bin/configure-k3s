@@ -2,6 +2,7 @@
 set -Eeo pipefail; shopt -s inherit_errexit
 
 main() {
+  [[ $# -eq 0 ]] || usage
   mkdir -p /etc/rancher/k3s/config.yaml.d
 
   local label label_config="node-label: []" k3s_type=agent
@@ -22,6 +23,11 @@ main() {
     yq -y '{server: (.["control-plane-addrs"] | first)}' /run/initramfs/cluster-secrets.json >/etc/rancher/k3s/config.yaml.d/server.yaml
   fi
   ln -sf "$k3s_type.yaml" /etc/rancher/k3s/config.yaml
+}
+
+usage() {
+  printf "Usage: configure-k3s\n" >&2
+  return 1
 }
 
 main "$@"

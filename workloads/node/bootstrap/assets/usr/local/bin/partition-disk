@@ -2,6 +2,7 @@
 set -Eeo pipefail; shopt -s inherit_errexit
 
 main() {
+  [[ $# -eq 0 ]] || usage
   local devpath
   devpath=$(get-node-config disk.devpath)
   if sfdisk -J "$devpath" &>/dev/null || lsblk -Jndo FSTYPE "$devpath" | jq -re '.blockdevices[0].fstype != null' >/dev/null; then
@@ -23,6 +24,11 @@ EOF
   for part_devname in $(lsblk -Jno NAME "$devpath" | jq -re '.blockdevices[0].children[] | .name'); do
     wipefs -a "/dev/$part_devname"
   done
+}
+
+usage() {
+  printf "Usage: partition-disk\n" >&2
+  return 1
 }
 
 main "$@"

@@ -4,7 +4,8 @@ PKGROOT=$(dirname "$(realpath "${BASH_SOURCE[0]}")")
 source "$PKGROOT/../lib/home-cluster/node.sh"
 
 main() {
-  [[ -n $1 && -n $2 ]] || { printf "Usage: set-node-state KEY VAL [<val-is-json>]\n" >&2; return 1; }
+  local e; for e; do [[ "$e" != "--help" ]] || usage; done
+  [[ -n $1 && -n $2 && $# -le 3 ]] || usage
   local key=$1 val=$2 val_is_json=${3:-false} val_arg
   if $val_is_json; then
     val_arg=--argjson
@@ -19,6 +20,11 @@ main() {
 new_node_state=$(jq -re $val_arg val "$val" ".$key=\$val" /run/initramfs/node-state.json)
 printf "%s\n" "$new_node_state" > /run/initramfs/node-state.json
 EOR
+}
+
+usage() {
+  printf "Usage: set-node-state KEY VAL [<val-is-json>]\n" >&2
+  return 1
 }
 
 main "$@"

@@ -2,7 +2,8 @@
 set -Eeo pipefail; shopt -s inherit_errexit
 
 main() {
-  local primary_mac result
+  [[ $# -eq 0 ]] || usage
+  local primary_mac authn_pubkey jwt result
   primary_mac=$(get-node-state primary-mac)
   authn_pubkey=$(step crypto jwk public </run/initramfs/authn-key.json)
   jwt=$(step crypto jwt sign --key /run/initramfs/authn-key.json --iss "$primary_mac" \
@@ -19,6 +20,11 @@ main() {
       return 1
     fi
   fi
+}
+
+usage() {
+  printf "Usage: submit-authn-key\n" >&2
+  return 1
 }
 
 main "$@"

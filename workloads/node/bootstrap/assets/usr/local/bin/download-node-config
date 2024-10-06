@@ -2,13 +2,15 @@
 set -Eeo pipefail; shopt -s inherit_errexit
 
 main() {
+  local e; for e; do [[ "$e" != "--help" ]] || usage; done
   local allow_fallback=false
   if [[ $1 = -f ]]; then
     allow_fallback=true
     shift
   fi
+  [[ $# -le 1 ]] || usage
   local node_config_dest=$1 \
-    primary_mac retry=15 node_config
+    primary_mac jwt retry=15 node_config
   if primary_mac=$(get-node-state primary-mac); then
     while true; do
       if boot-server-available; then

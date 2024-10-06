@@ -4,9 +4,11 @@ PKGROOT=$(dirname "$(realpath "${BASH_SOURCE[0]}")")
 source "$PKGROOT/../lib/home-cluster/node.sh"
 
 main() {
-  [[ -n $1 ]] || { printf "Usage: is-node-state KEY [JSONVALUE]\n" >&2; return 1; }
+  local e; for e; do [[ "$e" != "--help" ]] || usage; done
+  [[ -n $1 ]] || usage
   local key=$1 value=true state
   [[ -z $2 ]] || value=$2
+  [[ $# -le 2 ]] || usage
   if jq -r 'paths | join(".")' /run/initramfs/node-state.json | grep -q "^$key$"; then
     key=$(escape_key "$key")
     state=$(flock -s /run/initramfs/node-state.json jq ".$key" /run/initramfs/node-state.json)
@@ -19,6 +21,11 @@ main() {
     printf "%s is not set in node-state.json" "$key" >&2
     return 1
   fi
+}
+
+usage() {
+  printf "Usage: is-node-state KEY [JSONVALUE]\n" >&2
+  return 1
 }
 
 main "$@"

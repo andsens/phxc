@@ -2,19 +2,14 @@
 set -Eeo pipefail; shopt -s inherit_errexit
 
 main() {
-  local DOC="Usage: resource-ready [--wait] RESOURCE"
-  local resource wait
-  if [[ $# -eq 1 ]]; then
-    resource=$1
-    wait=false
-  elif [[ $# -eq 2 ]]; then
-    [[ $1 = '--wait' ]] || { printf "%s\n" "$DOC" >&2; return 1; }
-    resource=$2
+  local e; for e; do [[ "$e" != "--help" ]] || usage; done
+  local resource wait=false
+  if [[ $1 = '--wait' ]]; then
     wait=true
-  else
-    printf "%s\n" "$DOC" >&2
-    return 1
+    shift
   fi
+  [[ $# -eq 1 ]] || usage
+  resource=$1
   # shellcheck disable=SC2153
   local resource=${resource//[^A-Za-z0-9_]/_}
   type "${resource}_ready" &>/dev/null || { printf 'Unknown resource: "%s"\n' "$resource" >&2; return 1; }
@@ -74,6 +69,11 @@ statefulset_ready() {
 pod_ready() {
   local ns=$1 pod=$2
   kubectl -n "$ns" get pod "$pod" -o=jsonpath='{.status.conditions}' | jq -re 'any(.[] | select(.type == "Ready"); .status == "True")' >/dev/null
+}
+
+usage() {
+  printf "Usage: resource-ready [--wait] RESOURCE\n" >&2
+  return 1
 }
 
 main "$@"

@@ -2,6 +2,7 @@
 set -Eeo pipefail; shopt -s inherit_errexit
 
 main() {
+  [[ $# -eq 0 ]] || usage
   boot_server=$(get-node-state boot-server) || return 1
   if [[ $(curl  --cacert /usr/local/share/ca-certificates/home-cluster-root.crt \
     -sw '%{http_code}' -o/dev/null "https://${boot_server}:8020/registry/health") = 200 ]]; then
@@ -9,6 +10,11 @@ main() {
   else
     return 1
   fi
+}
+
+usage() {
+  printf "Usage: boot-server-available\n" >&2
+  return 1
 }
 
 main "$@"

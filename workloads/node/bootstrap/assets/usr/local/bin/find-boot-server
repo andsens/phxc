@@ -2,6 +2,7 @@
 set -Eeo pipefail; shopt -s inherit_errexit
 
 main() {
+  [[ $# -eq 0 ]] || usage
   # Broadcast a DHCPDISCOVER packet on port 4011 to get an answer from dhcp-proxy
   # Built with make-req.py
   local dhcp_discover_head='01010600'
@@ -47,6 +48,11 @@ main() {
     fi
   done
   [[ -n "$boot_server" ]] || { printf "Unable to find the boot-server\n" >&2; return 1; }
+}
+
+usage() {
+  printf "Usage: find-boot-server\n" >&2
+  return 1
 }
 
 main "$@"

@@ -3,12 +3,18 @@ set -Eeo pipefail; shopt -s inherit_errexit
 # Inspired by https://lib.rs/crates/rpi-derive-key
 
 main() {
-  [[ -n $1 && -n $2 ]] || { printf "Usage: derive-key LABEL LENGTH\n" >&2; return 1; }
+  local e; for e; do [[ "$e" != "--help" ]] || usage; done
+  [[ -n $1 && -n $2 && $# -eq 2 ]] || usage
   local label=$1 length=$2
   exec openssl kdf \
     -kdfopt info:"$label" -keylen "$length" \
     -kdfopt digest:SHA3-512 -kdfopt hexkey:"$(xxd -p -c0 /run/initramfs/random-secret.bin)" \
     -binary HKDF
+}
+
+usage() {
+  printf "Usage: derive-key LABEL LENGTH\n" >&2
+  return 1
 }
 
 main "$@"

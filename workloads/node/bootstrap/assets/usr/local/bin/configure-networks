@@ -2,11 +2,17 @@
 set -Eeo pipefail; shopt -s inherit_errexit
 
 main() {
+  [[ $# -eq 0 ]] || usage
   local network
   for network in $(jq -r '(.networks // {}) | keys[]' /run/initramfs/node-config.json); do
     config=$(jq -r --arg network "$network" '.networks[$network]' /run/initramfs/node-config.json)
     printf "%s\n" "$config" >"/etc/systemd/network/$network.network"
   done
+}
+
+usage() {
+  printf "Usage: configure-networks\n" >&2
+  return 1
 }
 
 main "$@"

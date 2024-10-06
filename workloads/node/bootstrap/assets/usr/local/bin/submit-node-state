@@ -2,6 +2,7 @@
 set -Eeo pipefail; shopt -s inherit_errexit
 
 main() {
+  [[ $# -eq 0 ]] || usage
   set-node-state nics "$(get_nics)" true
   set-node-state blockdevices "$(get_blockdevices)" true
   case "$VARIANT" in
@@ -57,6 +58,11 @@ submit_node_state() {
       return 1
     fi
   fi
+}
+
+usage() {
+  printf "Usage: submit-node-state\n" >&2
+  return 1
 }
 
 main "$@"

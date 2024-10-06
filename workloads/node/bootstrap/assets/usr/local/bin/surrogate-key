@@ -2,6 +2,7 @@
 set -Eeo pipefail; shopt -s inherit_errexit
 
 main() {
+  local e; for e; do [[ "$e" != "--help" ]] || usage; done
   [[ -n $1 && -n $2 ]] || usage
   local decrypt_opt=
   if [[ $1 = decrypt ]]; then
@@ -10,7 +11,7 @@ main() {
     usage
   fi
   shift
-  [[ -n $1 ]] || usage
+  [[ -n $1 && $# -le 2 ]] || usage
   local src=$1 dest=$2
 
   local key iv
