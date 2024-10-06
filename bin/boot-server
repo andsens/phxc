@@ -1,0 +1,117 @@
+#!/usr/bin/env bash
+# shellcheck source-path=..
+set -Eeo pipefail; shopt -s inherit_errexit
+PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
+
+main() {
+  source "$PKGROOT/.upkg/records.sh/records.sh"
+  source "$PKGROOT/.upkg/bgpid/bgpid.sh"
+  source "$PKGROOT/.upkg/trap.sh/trap.sh"
+  source "$PKGROOT/.upkg/path-tools/path-tools.sh"
+  PATH=$(path_prepend "$PKGROOT/.upkg/.bin")
+  source "$PKGROOT/lib/options.sh"
+  source "$PKGROOT/lib/startup.sh"
+  # shellcheck source=workloads/settings/env/settings.shellcheck.sh
+  source "$PKGROOT/workloads/settings/env/settings.sh"
+  eval_settings
+
+  DOC="boot-server - Run the boot-server
+Usage:
+  boot-server [-h HOST_IP]
+
+Options:
+  -h --host-ip HOST_IP  The host IP the boot-server should bind to.
+                        Prompts if not set and more than one is available.
+"
+# docopt parser below, refresh this parser with `docopt.sh boot-server`
+# shellcheck disable=2016,2086,2317,1090,1091,2034
+docopt() { local v='2.0.2'; source \
+"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:220};usage=${DOC:34:33}
+digest=f0ef0;options=('-h --host-ip 1');node_0(){ value __host_ip 0;};node_1(){
+optional 0;};cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2
+printf "%s\n" "${DOC:34:33}" >&2;exit 1;}';local varnames=(__host_ip) varname
+for varname in "${varnames[@]}"; do unset "var_$varname";done;parse 1 "$@"
+local p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset \
+"$p$varname";done;eval $p'__host_ip=${var___host_ip:-};';local docopt_i=1;[[ \
+$BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for \
+varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
+# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' boot-server`
+  eval "$(docopt "$@")"
+
+  initialize_startup
+
+  # shellcheck disable=SC2154
+  checkdeps in.tftpd tcpdump python3 &>/dev/null || fatal "tftpd-hpa, tcpdump, and python3 must be installed\n"
+
+  local boot_server_root=$STARTUP/boot-server
+  mkdir -p "$boot_server_root"
+
+  local selected_addr addrs=()
+  readarray -t -d $'\n' addrs < <(ip --json a | jq -c '.[] | select(.ifname!="lo") | . as $if | .addr_info[] | {"if":$if,"addr":.}')
+  if [[ -z $__host_ip && ${#addrs[@]} -gt 1 && ! -t 0 ]]; then
+    fatal "There is more than one address to bind to and --host-ip is not specified"
+  fi
+  options=()
+  for addr_json in "${addrs[@]}"; do
+    # shellcheck disable=SC2053
+    if [[ -z $__host_ip || $(jq -re '.addr.local' <<<"$selected_addr") = $__host_ip ]]; then
+      options+=("$addr_json" "$(jq -r '"\(.if.ifname): \(.addr.local)"' <<<"$addr_json")")
+    fi
+  done
+  selected_addr=$(select_options "Multiple networks found, please select:" "" "${options[@]}") || fatal "No networks found"
+
+  local ifname
+  ifname=$(jq -re '.if.ifname' <<<"$selected_addr")
+  export HOST_IP TFTP_SERVER_IP
+  HOST_IP=$(jq -re '.addr.local' <<<"$selected_addr")
+  TFTP_SERVER_IP=$HOST_IP
+
+  BOOT_SERVER_CRT=$STEPPATH/certs/boot-server.crt
+  BOOT_SERVER_KEY=$STEPPATH/certs/boot-server.key
+  BOOT_SERVER_BUNDLE=$STEPPATH/certs/boot-server.bundle.crt
+  if [[ ! -e $BOOT_SERVER_KEY ]] || \
+        ! step certificate verify "$BOOT_SERVER_CRT" --roots="$INTERMEDIATE_CRT" &>/dev/null || \
+          step certificate needs-renewal "$BOOT_SERVER_CRT" &>/dev/null; then
+    step certificate create \
+      --ca "$INTERMEDIATE_CRT" --ca-key "$INTERMEDIATE_KEY" \
+      --force --no-password --insecure \
+      "$HOST_IP" "$BOOT_SERVER_CRT" "$BOOT_SERVER_KEY"
+  fi
+  step certificate bundle --force "$BOOT_SERVER_CRT" "$INTERMEDIATE_CRT" "$BOOT_SERVER_BUNDLE"
+
+  mkdir -p \
+    "$boot_server_root/registry/node-authn-keys" \
+    "$boot_server_root/registry/node-configs" \
+    "$boot_server_root/registry/node-states" \
+    "$boot_server_root/tftpd/images" \
+
+  trap_prepend "bg_killall" TERM
+  trap_prepend "bg_killall" INT
+  trap_prepend "bg_killall" EXIT
+
+  python3 -m venv "$boot_server_root/venv"
+  "$boot_server_root/venv/bin/pip3" install -qr "$PKGROOT/workloads/node/containers/dhcp-proxy/requirements.txt"
+  "$boot_server_root/venv/bin/pip3" install -qr "$PKGROOT/workloads/node/containers/registry/requirements.txt"
+
+  info "Binding to port 67 & 69 and bind-mounting directories require administrator privileges, you might be asked for your sudo password"
+  sudo mount --bind "$IMAGES" "$boot_server_root/tftpd/images"
+  trap_append "info \"unmounting tftpd bind-mount\"; sudo umount \"$boot_server_root/tftpd/images\"" EXIT
+
+  BG_MAXPARALLEL=-1 BG_SIGNAL=TERM
+  bg_run sudo "$boot_server_root/venv/bin/python3" "$PKGROOT/workloads/node/scripts/dhcp-proxy.py" \
+    --boot-map "$PKGROOT/workloads/node/config/boot-map.yaml" "$HOST_IP" "$TFTP_SERVER_IP"
+  bg_run sudo in.tftpd \
+    --foreground --user tftp --address "$HOST_IP:69" \
+    --map-file "$PKGROOT/workloads/node/config/tftpd-map-file" --secure "$boot_server_root/tftpd" --blocksize 1468
+  bg_run sudo tcpdump -i "$ifname" -nl port 69 and udp
+  PYTHONPATH=$PKGROOT/workloads/node/scripts \
+    bg_run "$boot_server_root/venv/bin/gunicorn" \
+      -b "$HOST_IP:8020" \
+      --certfile "$BOOT_SERVER_BUNDLE" --keyfile "$BOOT_SERVER_KEY" --ssl-version TLSv1_2 \
+      "registry:gunicorn(root=\"$boot_server_root/registry\",images=\"$IMAGES\",steppath=\"$STEPPATH\")"
+  info "boot-server is ready"
+  bg_block
+}
+
+main "$@"
