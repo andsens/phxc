@@ -17,7 +17,7 @@ main() {
 
   DOC="boot-server - Run the boot-server
 Usage:
-  boot-server [-h HOST_IP]
+  boot-server [options]
 
 Options:
   -h --host-ip HOST_IP  The host IP the boot-server should bind to.
@@ -27,10 +27,10 @@ Options:
 # shellcheck disable=2016,2086,2317,1090,1091,2034
 docopt() { local v='2.0.2'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
-%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:220};usage=${DOC:34:33}
-digest=f0ef0;options=('-h --host-ip 1');node_0(){ value __host_ip 0;};node_1(){
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:217};usage=${DOC:34:30}
+digest=89f2a;options=('-h --host-ip 1');node_0(){ value __host_ip 0;};node_1(){
 optional 0;};cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2
-printf "%s\n" "${DOC:34:33}" >&2;exit 1;}';local varnames=(__host_ip) varname
+printf "%s\n" "${DOC:34:30}" >&2;exit 1;}';local varnames=(__host_ip) varname
 for varname in "${varnames[@]}"; do unset "var_$varname";done;parse 1 "$@"
 local p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset \
 "$p$varname";done;eval $p'__host_ip=${var___host_ip:-};';local docopt_i=1;[[ \
@@ -111,7 +111,8 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
       --certfile "$BOOT_SERVER_BUNDLE" --keyfile "$BOOT_SERVER_KEY" --ssl-version TLSv1_2 \
       "registry:gunicorn(root=\"$boot_server_root/registry\",images=\"$IMAGES\",steppath=\"$STEPPATH\")"
   info "boot-server is ready"
-  bg_block
+  bg_block 3
+  bg_killall TERM
 }
 
 main "$@"

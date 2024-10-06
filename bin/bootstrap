@@ -18,7 +18,7 @@ main() {
 
   DOC="bootstrap - Bootstrap images
 Usage:
-  bootstrap [--debug] VARIANT
+  bootstrap [options] VARIANT
 
 Options:
   --debug  Enable debug build (installs less & nano, unlocks root, etc.)
@@ -33,7 +33,7 @@ Supported variants:
 docopt() { local v='2.0.2'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
 %d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:292};usage=${DOC:29:36}
-digest=38c69;options=(' --debug 0');node_0(){ switch __debug 0;};node_1(){
+digest=bb44a;options=(' --debug 0');node_0(){ switch __debug 0;};node_1(){
 value VARIANT a;};node_2(){ optional 0;};node_3(){ sequence 2 1;};cat <<<' \
 docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2;printf "%s\n" \
 "${DOC:29:36}" >&2;exit 1;}';local varnames=(__debug VARIANT) varname;for \

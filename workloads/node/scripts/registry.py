@@ -95,7 +95,7 @@ def put_node_authn_key():
 
 @app.route('/registry/config', methods=['GET'])
 def get_node_config():
-  filename = verify_jwt('node-state').replace('-', ':') + '.json'
+  filename = verify_jwt('node-config').replace('-', ':') + '.json'
   node_config_path = os.path.join(app.config['root'], 'node-configs', filename)
   if not os.path.exists(node_config_path):
     flask.abort(404)
@@ -140,17 +140,26 @@ def put_node_state():
   return {'result': 'OK'}
 
 
+root_key_fetched=False
 @app.route('/registry/root-key', methods=['GET'])
 def root_key():
   send_smallstep_secret('secrets/root_ca_key')
+  root_key_fetched=True
+  check_shutdown()
 
+secureboot_cert_fetched=False
 @app.route('/registry/secureboot-cert', methods=['GET'])
 def secureboot_cert():
   send_smallstep_secret('certs/secureboot.crt')
+  secureboot_cert_fetched=True
+  check_shutdown()
 
+secureboot_key_fetched=False
 @app.route('/registry/secureboot-key', methods=['GET'])
 def secureboot_key():
   send_smallstep_secret('secrets/secureboot_key')
+  secureboot_key_fetched=True
+  check_shutdown()
 
 def send_smallstep_secret(filepath):
   if app.config['steppath'] is None:
@@ -175,6 +184,12 @@ def send_smallstep_secret(filepath):
     flask.abort(403)
 
   return flask.send_file(os.path.join(app.config['steppath'], filepath))
+
+
+def check_shutdown():
+  if root_key_fetched and secureboot_cert_fetched and secureboot_key_fetched:
+    log.info('The remote control-plane node has fetched all step certificates, shutting down so it can take over the registry')
+    sys.exit(0)
 
 
 def verify_jwt(aud):
