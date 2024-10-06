@@ -140,16 +140,16 @@ def put_node_state():
   return {'result': 'OK'}
 
 
-@app.route('/registry/transfer-control/<path:root_filename>', methods=['GET'])
-def transfer_control(root_filename):
+@app.route('/registry/root-key', methods=['GET'])
+def root_key():
   if app.config['steppath'] is None:
     flask.abort(503)
 
-  primary_mac = verify_jwt('transfer-control')
+  primary_mac = verify_jwt('root-key')
 
   node_config_path = os.path.join(app.config['root'], 'node-configs', f'{primary_mac.replace(':', '-')}.json')
   if not os.path.exists(node_config_path):
-    log.error(f'Unable to transfer control to {primary_mac}. The machine has not been configured yet.')
+    log.error(f'Unable to send the root key to {primary_mac}. The machine has not been configured yet.')
     flask.abort(403)
 
   try:
@@ -160,13 +160,10 @@ def transfer_control(root_filename):
     flask.abort(500)
 
   if 'node-role.kubernetes.io/control-plane=true' not in node_config['labels']:
-    log.error(f'Unable to transfer control to {primary_mac}. The machine has not been configured as a controle-plane node.')
+    log.error(f'Unable to send the root key to {primary_mac}. The machine has not been configured as a controle-plane node.')
     flask.abort(403)
 
-  if root_filename in ['secrets/root_ca_key', 'certs/root_ca.crt']:
-    return flask.send_file(os.path.join(app.config['steppath'], root_filename))
-  else:
-    flask.abort(404)
+  return flask.send_file(os.path.join(app.config['steppath'], 'secrets/root_ca_key'))
 
 
 def verify_jwt(aud):

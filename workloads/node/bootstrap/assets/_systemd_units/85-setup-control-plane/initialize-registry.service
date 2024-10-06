@@ -1,0 +1,17 @@
+[Unit]
+Description=Initialize the registry with data from this node
+Requires=\
+  systemd-timesyncd.service keys-persisted.target \
+  resource-ready@node-namespace.service
+After=\
+  systemd-timesyncd.service keys-persisted.target \
+  resource-ready@node-namespace.service
+
+[Install]
+WantedBy=k3s@server.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecCondition=initialize-registry check
+ExecStart=initialize-registry init

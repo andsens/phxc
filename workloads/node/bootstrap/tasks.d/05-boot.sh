@@ -37,9 +37,8 @@ boot() {
     cp /workspace/root_ca.crt /usr/local/share/ca-certificates/home-cluster-root.crt
   else
     # Running on k8s
-    kubectl -n smallstep get secret smallstep-root -o jsonpath='{.data.tls\.crt}' | \
+    kubectl -n smallstep get secret smallstep-root-cert -o jsonpath='{.data.tls\.crt}' | \
       base64 -d >/usr/local/share/ca-certificates/home-cluster-root.crt
-    update-ca-certificates
   fi
   update-ca-certificates
 

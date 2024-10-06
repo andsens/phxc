@@ -20,7 +20,7 @@ rules:
   verbs: [create]
 - apiGroups: [""]
   resources: [secrets]
-  resourceNames: [smallstep-root, smallstep-intermediate, step-issuer-provisioner, ssh-host-provisioner, kube-apiserver-client-ca]
+  resourceNames: [smallstep-root-cert, smallstep-intermediate, step-issuer-provisioner, ssh-host-provisioner, kube-apiserver-client-ca]
   verbs: [get, delete]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -128,27 +128,24 @@ spec:
           mountPath: /home/step/scripts
         - name: step-issuer-provisioner-password
           mountPath: /home/step/step-issuer-provisioner-password
-          readOnly: true
         - name: ssh-host-provisioner-password
           mountPath: /home/step/ssh-host-provisioner-password
-          readOnly: true
         - name: certs
           mountPath: /home/step/certs
-          readOnly: false
+        - name: smallstep-root
+          mountPath: /home/step/certs/root_ca
         - name: kube-apiserver-client-ca-cert
           mountPath: /home/step/certs/kube_apiserver_client_ca.crt
-          readOnly: true
         - name: kube-apiserver-client-ca-key
           mountPath: /home/step/certs/kube_apiserver_client_ca_key
-          readOnly: true
-        - name: persistent-certs
-          mountPath: /home/step/persistent-certs
-          readOnly: false
       volumes:
       - name: scripts
         configMap:
           name: scripts
           defaultMode: 0755
+      - name: smallstep-root
+        secret:
+          secretName: smallstep-root
       - name: step-issuer-provisioner-password
         secret:
           secretName: step-issuer-provisioner-password
@@ -166,6 +163,3 @@ spec:
         hostPath:
           path: /var/lib/rancher/k3s/server/tls/client-ca.key
           type: File
-      - name: persistent-certs
-        persistentVolumeClaim:
-          claimName: step-ca-certs

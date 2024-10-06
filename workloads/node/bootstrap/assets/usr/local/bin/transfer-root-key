@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+set -Eeo pipefail; shopt -s inherit_errexit
+
+main() {
+  local e; for e; do [[ "$e" != "--help" ]] || usage; done
+  [[ $# -eq 1 ]] || usage
+  if [[ $1 = check ]]; then
+    check
+  elif [[ $1 = transfer ]]; then
+    transfer
+  else
+    usage
+  fi
+}
+
+check() {
+  local jwt result
+  if kubectl -n smallstep get secret smallstep-root &>/dev/null; then
+    printf "The smallstep-root secret already exists\n" >&2
+    return 1
+  fi
+  jwt=$(sign-jwt node-config)
+  if result=$(curl-boot-server "registry/root-key?jwt=$jwt" \
+    -XGET -w '%{http_code}' | tail -n1); then
+    return 0
+  else
+    if [[ $result = 503 ]]; then
+      printf "The root-key transfer feature is not enabled on the boot-server\n" >&2
+      return 1
+    else
+      printf "The boot-server returned an unexpected response: %s\n" "$result" >&2
+      return 1
+    fi
+  fi
+}
+
+transfer() {
+  local jwt root_ca_key
+  jwt=$(sign-jwt root-key)
+  root_ca_key=$(curl-boot-server "registry/root-key?jwt=$jwt")
+  kubectl create -n smallstep secret generic smallstep-root-cert --from-file=tls.crt=/usr/local/share/ca-certificates/home-cluster-root.crt
+  kubectl create -n smallstep secret tls smallstep-root --cert=/usr/local/share/ca-certificates/home-cluster-root.crt --key=<(printf "%s\n" "$root_ca_key")
+}
+
+usage() {
+  printf "Usage: transfer-root-key (check|transfer)\n" >&2
+  return 1
+}
+
+main "$@"

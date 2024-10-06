@@ -1,0 +1,17 @@
+[Unit]
+Description=Transfer the root key from the startup boot-server to kubernetes
+Requires=\
+  systemd-timesyncd.service keys-persisted.target \
+  resource-ready@boot-server.service resource-ready@smallstep-namespace.service
+After=\
+  systemd-timesyncd.service keys-persisted.target \
+  resource-ready@boot-server.service resource-ready@smallstep-namespace.service
+
+[Install]
+WantedBy=k3s@server.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecCondition=transfer-root-key check
+ExecStart=transfer-root-key transfer

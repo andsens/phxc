@@ -138,7 +138,7 @@ local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
     info "Bootstrapping Smallstep %s context" $context
     ca_url=https://$smallstep_ipv4:9000
     # Retrieve the fingerprint by connecting to kubernetes, no TOFU needed
-    fingerprint=$(step certificate fingerprint <(kubectl --context "$kube_context" -n smallstep get secret smallstep-root -o=jsonpath='{.data.tls\.crt}' | base64 -d))
+    fingerprint=$(step certificate fingerprint <(kubectl --context "$kube_context" -n smallstep get secret smallstep-root-cert -o=jsonpath='{.data.tls\.crt}' | base64 -d))
     step ca bootstrap --context $context --force --ca-url "$ca_url" --fingerprint="$fingerprint"
 
     # home-cluster-pki context/profile setup

@@ -211,7 +211,7 @@ spec:
           secretName: ssh-host-provisioner-password
       - name: root-cert
         secret:
-          secretName: smallstep-root
+          secretName: smallstep-root-cert
       - name: intermediate
         secret:
           secretName: smallstep-intermediate

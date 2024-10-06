@@ -120,8 +120,12 @@ spec:
         - name: k3s-token
           mountPath: /secrets/k3s-token
           readOnly: true
-        - name: registry
-          mountPath: /data
+        - name: node-authn-keys
+          mountPath: /data/node-authn-keys
+        - name: node-configs
+          mountPath: /data/node-configs
+        - name: node-states
+          mountPath: /data/node-states
         - name: registry-tmp
           mountPath: /tmp
       - name: tftpd
@@ -217,19 +221,18 @@ spec:
       - name: disk-encryption-key
         secret:
           secretName: disk-encryption-key
+      - name: node-authn-keys
+        configMap:
+          name: node-authn-keys
+      - name: node-configs
+        secret:
+          secretName: node-configs
+      - name: node-states
+        configMap:
+          name: node-states
       - name: nginx-cache
         emptyDir: {}
       - name: registry-tmp
         emptyDir: {}
       - name: dnsmasq-leases
         emptyDir: {}
-  volumeClaimTemplates:
-  - metadata:
-      name: registry
-      labels:
-        app.kubernetes.io/name: node
-        app.kubernetes.io/component: boot-server
-    spec:
-      storageClassName: longhorn
-      accessModes: [ReadWriteOnce]
-      resources: {requests: {storage: 1Mi}}

@@ -3,65 +3,43 @@ set -Eeo pipefail; shopt -s inherit_errexit
 # shellcheck disable=SC1091
 source /usr/local/lib/upkg/.upkg/records.sh/records.sh
 
-ROOT_KEY_PATH=$STEPPATH/persistent-certs/root_ca_key
-ROOT_CRT_PATH=$STEPPATH/persistent-certs/root_ca.crt
+ROOT_KEY_PATH=$STEPPATH/certs/root_ca/tls.key
+ROOT_CRT_PATH=$STEPPATH/certs/root_ca/tls.crt
 
-INTERMEDIATE_KEY_PATH=$STEPPATH/persistent-certs/intermediate_ca_key
-INTERMEDIATE_CRT_PATH=$STEPPATH/persistent-certs/intermediate_ca.crt
+INTERMEDIATE_KEY_PATH=$STEPPATH/certs/intermediate_ca_key
+INTERMEDIATE_CRT_PATH=$STEPPATH/certs/intermediate_ca.crt
 
 main() {
-  create_ca_certificates
+  create_intermediate_ca
   create_ca_secrets
   create_step_issuer_provisioner
   create_ssh_host_provisioner
   create_kube_apiserver_client_ca_secret
 }
 
-create_ca_certificates() {
-  info "Setting up root and intermediate certificates"
-  if [[ ! -e $ROOT_KEY_PATH ]] || \
-        ! step certificate lint "$ROOT_CRT_PATH" || \
-          step certificate needs-renewal "$ROOT_CRT_PATH"; then
-    info "Root CA validation failed, (re-)creating now"
-    step certificate create --profile=root-ca \
-      --force --no-password --insecure \
-      --not-after=87600h \
-      "$CLUSTER_PKINAME Root" "$ROOT_CRT_PATH" "$ROOT_KEY_PATH"
+create_intermediate_ca() {
+  info "Creating smallstep intermediate certificate secret"
+  if (kubectl get -n smallstep secret smallstep-intermediate -o jsonpath='{.data.tls\.crt}' | base64 -d) >"$INTERMEDIATE_CRT_PATH" 2>/dev/null; then
+    if step certificate verify "$INTERMEDIATE_CRT_PATH" --roots="$ROOT_CRT_PATH" && \
+       step certificate needs-renewal "$INTERMEDIATE_CRT_PATH"; then
+      info "Intermediate CA secret validation succeeded"
+    else
+      info "Intermediate CA validation failed"
+      rm "$INTERMEDIATE_CRT_PATH"
+    fi
   else
-    info "Root CA validation succeeded"
+    info "Intermediate CA not found"
+    rm "$INTERMEDIATE_CRT_PATH"
   fi
-
-  if [[ ! -e $INTERMEDIATE_KEY_PATH ]] || \
-        ! step certificate verify "$INTERMEDIATE_CRT_PATH" --roots="$ROOT_CRT_PATH" || \
-          step certificate needs-renewal "$INTERMEDIATE_CRT_PATH"; then
-    info "Intermediate CA validation failed, (re-)creating now"
+  if [[ ! -e "$INTERMEDIATE_CRT_PATH" ]]; then
+    info "Creating intermediate CA"
     step certificate create --profile=intermediate-ca \
       --force --no-password --insecure \
       --not-after=87600h \
       --ca="$ROOT_CRT_PATH" --ca-key="$ROOT_KEY_PATH" \
       "$CLUSTER_PKINAME" "$INTERMEDIATE_CRT_PATH" "$INTERMEDIATE_KEY_PATH"
-  else
-    info "Intermediate CA validation succeeded"
-  fi
-}
-
-create_ca_secrets() {
-  info "Creating smallstep certificate chain secrets"
-
-  if [[ $(kubectl get -n smallstep secret smallstep-root -o jsonpath='{.data.tls\.crt}' | base64 -d) != $(cat "$ROOT_CRT_PATH") ]]; then
-    info "Root CA secret validation failed, (re-)creating now"
-    kubectl delete -n smallstep secret smallstep-root 2>/dev/null || true
-    kubectl create -n smallstep secret generic smallstep-root --from-file=tls.crt="$ROOT_CRT_PATH"
-  else
-    info "Root CA secret validation succeeded"
-  fi
-
-  if [[ $(kubectl get -n smallstep secret smallstep-intermediate -o jsonpath='{.data.tls\.crt}' | base64 -d) != $(cat "$INTERMEDIATE_CRT_PATH") ]]; then
-    info "Intermediate CA secret validation failed, (re-)creating now"
     kubectl delete -n smallstep secret smallstep-intermediate 2>/dev/null || true
     kubectl create -n smallstep secret tls smallstep-intermediate --cert="$INTERMEDIATE_CRT_PATH" --key="$INTERMEDIATE_KEY_PATH"
-  else
-    info "Intermediate CA secret validation succeeded"
   fi
 }
 

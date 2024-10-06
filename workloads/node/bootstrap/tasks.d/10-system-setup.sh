@@ -39,6 +39,8 @@ system_setup() {
     25-persistent-partition/persistent-partition.target
     40-final-node-state/final-node-state.service
     70-update-boot/update-boot.service
+    85-setup-control-plane/initialize-registry.service
+    85-setup-control-plane/transfer-root-key.service
     90-node-config/update-node-config.service
     90-node-config/update-node-config.timer
   )

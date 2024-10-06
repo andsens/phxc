@@ -17,6 +17,6 @@ metadata:
 rules:
 - apiGroups: [""]
   resources: [secret]
-  resourceNames: [smallstep-root]
+  resourceNames: [smallstep-root-cert]
   verbs: [get]
   namespace: smallstep
