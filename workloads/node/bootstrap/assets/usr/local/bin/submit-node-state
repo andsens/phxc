@@ -42,10 +42,9 @@ get_rpi5() {
 }
 
 submit_node_state() {
-  local primary_mac jwt result
-  primary_mac=$(get-node-state primary-mac)
+  local jwt result
   jwt=$(sign-jwt node-state)
-  if result=$(curl-boot-server "registry/node-states/${primary_mac//:/-}.json?jwt=$jwt" \
+  if result=$(curl-boot-server "registry/state?jwt=$jwt" \
     -XPUT -d@/run/initramfs/node-state.json -w '%{http_code}' | tail -n1); then
     return 0
   else

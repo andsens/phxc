@@ -36,29 +36,22 @@ def get_image(image_path):
 def get_health():
   return ''
 
-@app.route('/registry/node-authn-keys/<path:node_mac_filename>', methods=['PUT'])
-def put_node_authn_key(node_mac_filename):
-  primary_mac = node_mac_filename.removesuffix('.json').replace('-', ':')
+@app.route('/registry/authn-key', methods=['PUT'])
+def put_node_authn_key():
+  jwt = flask.request.args.get('jwt')
+  if jwt is None:
+    log.error(f'Unable to store authn-key, no JWT was included in the query string')
+    flask.abort(400)
+
   try:
+    jwt_data = json.loads(subprocess.check_output(['step', 'crypto', 'jwt', 'inspect', '--insecure'], input=jwt.encode()))
+    primary_mac = jwt_data['payload']['iss']
+    filename = primary_mac.replace('-', ':') + '.json'
     node_authn_key = json.loads(flask.request.get_data())
   except Exception as e:
     log.error(e)
     flask.abort(400)
 
-  node_authn_key_persisted = False
-  node_state_path = os.path.join(app.config['root'], 'node-states', node_mac_filename)
-  if os.path.exists(node_state_path):
-    with open(node_state_path, 'r') as h:
-      try:
-        node_authn_key_persisted = json.loads(h.read()).get('keys', {}).get('authn', {}).get('persisted', False)
-      except Exception as e:
-        log.error(e)
-        flask.abort(500)
-
-  jwt = flask.request.args.get('jwt')
-  if jwt is None:
-    log.error(f'Unable to store authn key for {primary_mac}, no JWT was included in the query string')
-    flask.abort(400)
   try:
     with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
       fp.write(json.dumps(node_authn_key, indent=2).encode())
@@ -71,7 +64,17 @@ def put_node_authn_key(node_mac_filename):
     log.error(e)
     flask.abort(403)
 
-  node_authn_key_path = os.path.join(app.config['root'], 'node-authn-keys', node_mac_filename)
+  node_authn_key_persisted = False
+  node_state_path = os.path.join(app.config['root'], 'node-states', filename)
+  if os.path.exists(node_state_path):
+    with open(node_state_path, 'r') as h:
+      try:
+        node_authn_key_persisted = json.loads(h.read()).get('keys', {}).get('authn', {}).get('persisted', False)
+      except Exception as e:
+        log.error(e)
+        flask.abort(500)
+
+  node_authn_key_path = os.path.join(app.config['root'], 'node-authn-keys', filename)
   if node_authn_key_persisted and os.path.exists(node_authn_key_path):
     with open(node_authn_key_path, 'r') as h:
       existing_node_authn_key = json.loads(h.read())
@@ -90,14 +93,12 @@ def put_node_authn_key(node_mac_filename):
     return {'result': 'OK'}
 
 
-@app.route('/registry/node-configs/<path:node_mac_filename>', methods=['GET'])
-def get_node_config(node_mac_filename):
-  verify_jwt('node-state', node_mac_filename.removesuffix('.json').replace('-', ':'))
-
-  node_config_path = os.path.join(app.config['root'], 'node-configs', node_mac_filename)
+@app.route('/registry/config', methods=['GET'])
+def get_node_config():
+  filename = verify_jwt('node-state').replace('-', ':') + '.json'
+  node_config_path = os.path.join(app.config['root'], 'node-configs', filename)
   if not os.path.exists(node_config_path):
     flask.abort(404)
-
   with open(node_config_path, 'r') as h:
     try:
       return json.loads(h.read())
@@ -106,11 +107,10 @@ def get_node_config(node_mac_filename):
       flask.abort(500)
 
 
-@app.route('/registry/node-states/<path:node_mac_filename>', methods=['PUT'])
-def put_node_state(node_mac_filename):
-  verify_jwt('node-state', node_mac_filename.removesuffix('.json').replace('-', ':'))
-
-  node_state_path = os.path.join(app.config['root'], 'node-states', node_mac_filename)
+@app.route('/registry/state', methods=['PUT'])
+def put_node_state():
+  filename = verify_jwt('node-state').replace('-', ':') + '.json'
+  node_state_path = os.path.join(app.config['root'], 'node-states', filename)
   with open(node_state_path, 'w') as h:
     try:
       node_state = json.loads(flask.request.get_data())
@@ -120,7 +120,7 @@ def put_node_state(node_mac_filename):
       flask.abort(500)
 
   # Remove the force flag from the disk config once the disk is formatted
-  node_config_path = os.path.join(app.config['root'], 'node-configs', node_mac_filename)
+  node_config_path = os.path.join(app.config['root'], 'node-configs', filename)
   try:
     if os.path.exists(node_config_path):
       with open(node_config_path, 'r') as h:
@@ -169,7 +169,7 @@ def transfer_control(root_filename):
     flask.abort(404)
 
 
-def verify_jwt(aud, expected_primary_mac=None):
+def verify_jwt(aud):
   jwt = flask.request.args.get('jwt')
   if jwt is None:
     log.error(f'No JWT was included in the query string')
@@ -177,9 +177,6 @@ def verify_jwt(aud, expected_primary_mac=None):
   try:
     jwt_data = json.loads(subprocess.check_output(['step', 'crypto', 'jwt', 'inspect', '--insecure'], input=jwt.encode()))
     jwt_primary_mac = jwt_data['payload']['iss']
-    if expected_primary_mac is not None and jwt_primary_mac != expected_primary_mac:
-      log.error(f'Unable to verify JWT for {jwt_primary_mac}. Expected the JWT issuer to be {expected_primary_mac}')
-      flask.abort(400)
     node_authn_key_path = os.path.join(app.config['root'], f'node-authn-keys/{jwt_primary_mac.replace(':', '-')}.json')
     if not os.path.exists(node_authn_key_path):
       log.error(f'Unable to verify JWT for {jwt_primary_mac}, no authentication key has been submitted yet')
