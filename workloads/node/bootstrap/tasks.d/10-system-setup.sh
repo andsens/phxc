@@ -41,6 +41,7 @@ system_setup() {
     70-update-boot/update-boot.service
     85-setup-control-plane/initialize-registry.service
     85-setup-control-plane/transfer-root-key.service
+    85-setup-control-plane/transfer-secureboot-cert.service
     90-node-config/update-node-config.service
     90-node-config/update-node-config.timer
   )

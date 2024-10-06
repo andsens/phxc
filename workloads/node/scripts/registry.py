@@ -142,10 +142,21 @@ def put_node_state():
 
 @app.route('/registry/root-key', methods=['GET'])
 def root_key():
+  send_smallstep_secret('secrets/root_ca_key')
+
+@app.route('/registry/secureboot-cert', methods=['GET'])
+def secureboot_cert():
+  send_smallstep_secret('certs/secureboot.crt')
+
+@app.route('/registry/secureboot-key', methods=['GET'])
+def secureboot_key():
+  send_smallstep_secret('secrets/secureboot_key')
+
+def send_smallstep_secret(filepath):
   if app.config['steppath'] is None:
     flask.abort(503)
 
-  primary_mac = verify_jwt('root-key')
+  primary_mac = verify_jwt('smallstep-secret')
 
   node_config_path = os.path.join(app.config['root'], 'node-configs', f'{primary_mac.replace(':', '-')}.json')
   if not os.path.exists(node_config_path):
@@ -163,7 +174,7 @@ def root_key():
     log.error(f'Unable to send the root key to {primary_mac}. The machine has not been configured as a controle-plane node.')
     flask.abort(403)
 
-  return flask.send_file(os.path.join(app.config['steppath'], 'secrets/root_ca_key'))
+  return flask.send_file(os.path.join(app.config['steppath'], filepath))
 
 
 def verify_jwt(aud):

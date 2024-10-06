@@ -12,6 +12,8 @@ initialize_startup() {
   ROOT_KEY=$STEPPATH/secrets/root_ca_key
   INTERMEDIATE_CRT=$STEPPATH/certs/intermediate_ca.crt
   INTERMEDIATE_KEY=$STEPPATH/secrets/intermediate_ca_key
+  SB_CRT=$STEPPATH/certs/secureboot.crt
+  SB_KEY=$STEPPATH/secrets/secureboot_key
 
   verbose "Setting up/checking root and intermediate certificates"
   if [[ ! -e $ROOT_KEY ]] || \
@@ -35,6 +37,17 @@ initialize_startup() {
       --not-after 87600h \
       --ca "$ROOT_CRT" --ca-key "$ROOT_KEY" \
       home-cluster "$INTERMEDIATE_CRT" "${intermediate_key_arg[@]}" &>/dev/null
+  fi
+
+  if [[ ! -e $SB_CRT ]]; then
+    # Key *must* be RSA. When sbsign signs the UKI it always specifies that the key is RSA regardless of the facts.
+    step certificate create --template <(printf '{
+  "subject": {{ toJson .Subject }},
+  "keyUsage": ["digitalSignature"],
+  "extKeyUsage": ["codeSigning"]
+}') --force --insecure --no-password --not-after $((20*365*24))h --kty RSA \
+    --ca "$INTERMEDIATE_CRT" --ca-key "$INTERMEDIATE_KEY" \
+    "home-cluster Secure Boot" "$SB_CRT" "$SB_KEY"
   fi
 
   jq -n --arg steppath "$STEPPATH" --arg root_fp "$(step certificate fingerprint "$ROOT_CRT")" --arg root_crt "$ROOT_CRT" '{
