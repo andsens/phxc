@@ -14,8 +14,7 @@ main() {
   if primary_mac=$(get-node-state primary-mac); then
     while true; do
       if boot-server-available; then
-        jwt=$(step crypto jwt sign --key /run/initramfs/authn-key.json --iss "$primary_mac" \
-          --aud node-config --sub "$primary_mac" --nbf "$(date -d'-5min' +%s)" --exp "$(date -d'+5min' +%s)")
+        jwt=$(sign-jwt node-config)
         if node_config=$(curl-boot-server "registry/node-configs/${primary_mac//:/-}.json?jwt=$jwt"); then
           printf "Successfully downloaded node-config\n" >&2
           break
