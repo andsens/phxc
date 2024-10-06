@@ -4,4 +4,5 @@ DefaultDependencies=no
 
 [Service]
 Type=oneshot
+RemainAfterExit=yes
 ExecStart=resource-ready --wait %i

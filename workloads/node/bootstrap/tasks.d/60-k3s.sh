@@ -14,7 +14,6 @@ k3s() {
     80-k3s/k3s@.service
     80-k3s/k3s.target
     80-k3s/resource-ready@.service
-    80-k3s/resource-ready@.target
     80-k3s/etc-rancher-node.mount
     80-k3s/var-lib-longhorn.mount
     80-k3s/var-lib-rancher-k3s.mount
