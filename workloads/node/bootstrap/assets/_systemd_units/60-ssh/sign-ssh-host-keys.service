@@ -8,10 +8,10 @@ WantedBy=multi-user.target
 
 [Service]
 Type=oneshot
-Environment=KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+Environment=HOME=/root KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 TimeoutSec=1200
 ExecStart=bash -ec ':;\
-  password=$(KUBECONFIG=/etc/rancher/k3s/k3s.yaml kubectl -n smallstep get secret ssh-host-provisioner-password -o=jsonpath='{.data.password}' | base64 -d);\
+  password=$(kubectl -n smallstep get secret ssh-host-provisioner-password -o=jsonpath='{.data.password}' | base64 -d);\
   for pubkey in /etc/ssh/ssh_host_*.pub; do \
     [[ $pubkey != *-cert.pub ]] || continue;\
     printf "Signing %s\n" "$pubkey" >&2;\

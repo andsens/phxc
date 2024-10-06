@@ -13,10 +13,6 @@ main() {
   # shellcheck disable=SC2153
   local resource=${resource//[^A-Za-z0-9_]/_}
   type "${resource}_ready" &>/dev/null || { printf 'Unknown resource: "%s"\n' "$resource" >&2; return 1; }
-  # k3s.yaml may not have been created yet when this runs.
-  # We use the presence of the k3s dir and the executing user ID as an indicator
-  # as to whether k3s.yaml should be used for connecting to the cluster.
-  [[ ! -e /etc/rancher/k3s && $UID != 0 ]] || export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 
   # shellcheck disable=SC2154
   if $wait; then
