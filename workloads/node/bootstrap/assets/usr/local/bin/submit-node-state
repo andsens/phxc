@@ -42,20 +42,26 @@ get_rpi5() {
 }
 
 submit_node_state() {
-  local jwt result
-  jwt=$(sign-jwt node-state)
-  if result=$(curl-boot-server "registry/state?jwt=$jwt" \
-    -XPUT -d@/run/initramfs/node-state.json -w '%{http_code}' | tail -n1); then
-    return 0
-  else
-    if [[ $result = 403 ]]; then
-      printf "Reporting node-state not possible, authentication key is invalid\n" >&2
-      return 1
+  local jwt result retry=15
+  while true; do
+    if boot-server-available; then
+      jwt=$(sign-jwt node-state)
+      if result=$(curl-boot-server "registry/state?jwt=$jwt" \
+        -XPUT -d@/run/initramfs/node-state.json -w '%{http_code}' | tail -n1); then
+        printf "Successfully reported node-state\n" >&2
+        return 0
+      else
+        if [[ $result = 403 ]]; then
+          printf "Reporting node-state not possible, authentication key is invalid, retrying in %ds\n" "$retry" >&2
+        else
+          printf "Failed to report node-state (HTTP code: %s), retrying in %ds\n" "$result" "$retry" >&2
+        fi
+      fi
     else
-      printf "Failed to report node-state (HTTP code: %s)\n" "$result" >&2
-      return 1
+      printf "boot-server is not available, retrying in %ds\n" "$retry" >&2
     fi
-  fi
+    sleep $retry
+  done
 }
 
 usage() {
