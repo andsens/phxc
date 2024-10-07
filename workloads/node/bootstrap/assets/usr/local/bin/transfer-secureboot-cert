@@ -19,8 +19,8 @@ check() {
     printf "The secureboot secret already exists\n" >&2
     return 1
   fi
-  jwt=$(sign-jwt smallstep-secret)
-  if result=$(curl-boot-server "registry/secureboot-cert?jwt=$jwt" \
+  jwt=$(sign-jwt transfer-enabled)
+  if result=$(curl-boot-server "registry/transfer-enabled?jwt=$jwt" \
     -XGET -w '%{http_code}' | tail -n1); then
     return 0
   else
@@ -36,8 +36,9 @@ check() {
 
 transfer() {
   local jwt secureboot_cert secureboot_key
-  jwt=$(sign-jwt root-key)
+  jwt=$(sign-jwt secureboot-cert)
   secureboot_cert=$(curl-boot-server "registry/secureboot-cert?jwt=$jwt")
+  jwt=$(sign-jwt secureboot-key)
   secureboot_key=$(curl-boot-server "registry/secureboot-key?jwt=$jwt")
   kubectl create -n node secret tls secureboot --cert=<(printf "%s\n" "$secureboot_cert") --key=<(printf "%s\n" "$secureboot_key")
 }

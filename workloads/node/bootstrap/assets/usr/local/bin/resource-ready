@@ -22,7 +22,7 @@ main() {
     printf "%s is ready\n" "$resource" >&2
     return 0
   else
-    if eval "${resource}_ready" &>/dev/null; then
+    if "${resource}_ready" &>/dev/null; then
       printf "%s is ready\n" "$resource" >&2
       return 0
     else
@@ -49,11 +49,11 @@ coredns_ready() {
 }
 
 smallstep_namespace_ready() {
-  statefulset_ready smallstep
+  namespace_ready smallstep
 }
 
 node_namespace_ready() {
-  statefulset_ready node
+  namespace_ready node
 }
 
 step_ca_ready() {

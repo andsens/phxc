@@ -13,5 +13,5 @@ WantedBy=k3s@server.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecCondition=transfer-root-key check
-ExecStart=transfer-root-key transfer
+ExecCondition=transfer-secureboot-cert check
+ExecStart=transfer-secureboot-cert transfer

@@ -11,7 +11,6 @@ INTERMEDIATE_CRT_PATH=$STEPPATH/certs/intermediate_ca.crt
 
 main() {
   create_intermediate_ca
-  create_ca_secrets
   create_step_issuer_provisioner
   create_ssh_host_provisioner
   create_kube_apiserver_client_ca_secret

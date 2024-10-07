@@ -19,8 +19,8 @@ check() {
     printf "The smallstep-root secret already exists\n" >&2
     return 1
   fi
-  jwt=$(sign-jwt smallstep-secret)
-  if result=$(curl-boot-server "registry/root-key?jwt=$jwt" \
+  jwt=$(sign-jwt transfer-enabled)
+  if result=$(curl-boot-server "registry/transfer-enabled?jwt=$jwt" \
     -XGET -w '%{http_code}' | tail -n1); then
     return 0
   else

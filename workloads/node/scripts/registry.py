@@ -92,7 +92,6 @@ def put_node_authn_key():
         flask.abort(500)
     return {'result': 'OK'}
 
-
 @app.route('/registry/config', methods=['GET'])
 def get_node_config():
   filename = verify_jwt('node-config').replace(':', '-') + '.json'
@@ -105,7 +104,6 @@ def get_node_config():
     except Exception as e:
       log.error(e)
       flask.abort(500)
-
 
 @app.route('/registry/state', methods=['PUT'])
 def put_node_state():
@@ -139,58 +137,71 @@ def put_node_state():
 
   return {'result': 'OK'}
 
+transfers_completed = {
+  'root_key': False,
+  'secureboot_cert': False,
+  'secureboot_key': False,
+}
 
-root_key_fetched=False
+@app.route('/registry/transfer-enabled', methods=['GET'])
+def transfer_enabled():
+  primary_mac = verify_jwt('transfer-enabled')
+  if not is_control_plane_node(primary_mac):
+    log.error(f'Unable to send the root key to {primary_mac}. The machine has not been configured as a controle-plane node.')
+    flask.abort(403)
+  if app.config['steppath'] is None:
+    flask.abort(503)
+  return {'result': 'OK'}
+
 @app.route('/registry/root-key', methods=['GET'])
 def root_key():
-  send_smallstep_secret('secrets/root_ca_key')
-  root_key_fetched=True
+  response = send_smallstep_secret('secrets/root_ca_key', 'root-key')
+  transfers_completed['root_key']=True
   check_shutdown()
+  return response
 
-secureboot_cert_fetched=False
 @app.route('/registry/secureboot-cert', methods=['GET'])
 def secureboot_cert():
-  send_smallstep_secret('certs/secureboot.crt')
-  secureboot_cert_fetched=True
+  response = send_smallstep_secret('certs/secureboot.crt', 'secureboot-cert')
+  transfers_completed['secureboot_cert']=True
   check_shutdown()
+  return response
 
-secureboot_key_fetched=False
 @app.route('/registry/secureboot-key', methods=['GET'])
 def secureboot_key():
-  send_smallstep_secret('secrets/secureboot_key')
-  secureboot_key_fetched=True
+  response = send_smallstep_secret('secrets/secureboot_key', 'secureboot-key')
+  transfers_completed['secureboot_key']=True
   check_shutdown()
+  return response
 
-def send_smallstep_secret(filepath):
+def send_smallstep_secret(filepath, purpose):
+  primary_mac = verify_jwt(purpose)
+  if not is_control_plane_node(primary_mac):
+    log.error(f'Unable to send the root key to {primary_mac}. The machine has not been configured as a controle-plane node.')
+    flask.abort(403)
   if app.config['steppath'] is None:
     flask.abort(503)
 
-  primary_mac = verify_jwt('smallstep-secret')
+  return flask.send_file(os.path.join(app.config['steppath'], filepath))
 
+def is_control_plane_node(primary_mac):
   node_config_path = os.path.join(app.config['root'], 'node-configs', f'{primary_mac.replace(':', '-')}.json')
   if not os.path.exists(node_config_path):
-    log.error(f'Unable to send the root key to {primary_mac}. The machine has not been configured yet.')
-    flask.abort(403)
+    return False
 
   try:
     with open(node_config_path, 'r') as h:
       node_config = json.loads(h.read())
   except Exception as e:
     log.error(e)
-    flask.abort(500)
+    return False
 
-  if 'node-role.kubernetes.io/control-plane=true' not in node_config['labels']:
-    log.error(f'Unable to send the root key to {primary_mac}. The machine has not been configured as a controle-plane node.')
-    flask.abort(403)
-
-  return flask.send_file(os.path.join(app.config['steppath'], filepath))
-
+  return 'node-role.kubernetes.io/control-plane=true' in node_config['node-label']
 
 def check_shutdown():
-  if root_key_fetched and secureboot_cert_fetched and secureboot_key_fetched:
-    log.info('The remote control-plane node has fetched all step certificates, shutting down so it can take over the registry')
+  if all(transfers_completed.values()):
+    log.info('The remote control-plane node has transferred all step secrets, shutting down so it can take over the registry')
     sys.exit(0)
-
 
 def verify_jwt(aud):
   jwt = flask.request.args.get('jwt')
@@ -206,7 +217,8 @@ def verify_jwt(aud):
       flask.abort(400)
     subprocess.check_output(
       ['step', 'crypto', 'jwt', 'verify', '--iss', jwt_primary_mac, '--aud', aud, '--key', node_authn_key_path],
-      input=jwt.encode()
+      input=jwt.encode(),
+      stderr=sys.stderr
     )
     return jwt_primary_mac
   except Exception as e:

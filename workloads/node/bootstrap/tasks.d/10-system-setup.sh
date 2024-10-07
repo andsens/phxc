@@ -71,11 +71,14 @@ system_setup() {
     /usr/local/bin/derive-key \
     /usr/local/bin/download-node-config \
     /usr/local/bin/get-node-config \
+    /usr/local/bin/initialize-registry \
     /usr/local/bin/partition-disk \
     /usr/local/bin/sign-jwt \
     /usr/local/bin/submit-authn-key \
     /usr/local/bin/submit-node-state \
     /usr/local/bin/surrogate-key \
+    /usr/local/bin/transfer-root-key \
+    /usr/local/bin/transfer-secureboot-cert \
     /usr/local/bin/update-boot \
     /usr/local/bin/update-node-config
 
