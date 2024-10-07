@@ -5,13 +5,11 @@ source "$PKGROOT/../lib/home-cluster/node.sh"
 
 main() {
   local e; for e; do [[ "$e" != "--help" ]] || usage; done
-  [[ -n $1 ]] || usage
-  local key=$1 value=true state
-  [[ -z $2 ]] || value=$2
-  [[ $# -le 2 ]] || usage
+  [[ -n $1 && -n $2 && $# -eq 2 ]] || usage
+  local key=$1 value=$2 state
   if jq -r 'paths | join(".")' /run/initramfs/node-state.json | grep -q "^$key$"; then
     key=$(escape_key "$key")
-    state=$(flock -s /run/initramfs/node-state.json jq ".$key" /run/initramfs/node-state.json)
+    state=$(flock -s /run/initramfs/node-state.json jq -r ".$key" /run/initramfs/node-state.json)
     if [[ $state = "$value" ]]; then
       return 0
     else
@@ -24,7 +22,7 @@ main() {
 }
 
 usage() {
-  printf "Usage: is-node-state KEY [JSONVALUE]\n" >&2
+  printf "Usage: is-node-state KEY VALUE\n" >&2
   return 1
 }
 
