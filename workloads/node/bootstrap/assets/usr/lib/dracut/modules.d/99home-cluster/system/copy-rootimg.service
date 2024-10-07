@@ -8,5 +8,6 @@ Before=download-rootimg.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
+ExecCondition=bash -c 'test -e /boot/home-cluster/root.${ROOT_SHA256}.img'
 ExecStart=cp /boot/home-cluster/root.${ROOT_SHA256}.img /run/initramfs/root.img.tmp
 ExecStart=set-node-state rootimg.src /boot/home-cluster/root.${ROOT_SHA256}.img
