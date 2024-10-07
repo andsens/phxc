@@ -153,7 +153,7 @@ DHCP=yes
 "' <<<"$node_config")
         ;;
         fixed)
-          out "Enter a comma-separated list of IP's you would like to assign to this network interface:\n"
+          out "Enter a comma-separated list of IP's you would like to assign to this network interface (make sure to append the prefix length, /32 for IPv4, /128 for IPv6):\n"
           read -r addrs
           node_config=$(jq --arg name "$network_name" --argjson nic "$nic" --arg addrs "$addrs" '.networks[$name] = "[Match]
 MACAddress=\($nic.mac)
