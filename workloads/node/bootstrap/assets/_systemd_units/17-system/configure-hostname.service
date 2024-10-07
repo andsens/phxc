@@ -12,6 +12,10 @@ WantedBy=sysinit.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=bash -ec 'printf "%%s\n" "$(get-node-config hostname)" >/etc/hostname'
-ExecStart=hostname -F /etc/hostname
-ExecStart=bash -ec 'set-node-state hostname "$(cat /etc/hostname)"'
+ExecStart=bash -ec ':;\
+  hostname=$(get-node-config hostname);\
+  printf "%%s\n" "$hostname" >/etc/hostname;\
+  hostname -F /etc/hostname;\
+  set-node-state hostname "$hostname";\
+  hostsFile=$(cat /etc/hosts | grep -v 127.0.1.1);\
+  printf "127.0.1.1       %%s %%s\n%%s\n" "$hostname" "$${hostname%%.local}" "$hostsFile" >/etc/hosts'
