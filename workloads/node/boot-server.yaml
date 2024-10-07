@@ -51,28 +51,14 @@ spec:
     port: 8020
     targetPort: http
 ---
-apiVersion: secretgenerator.mittwald.de/v1alpha1
-kind: StringSecret
-metadata:
-  name: disk-encryption-key
-  labels:
-    app.kubernetes.io/name: node
-    app.kubernetes.io/component: boot-server
-spec:
-  fields:
-  - fieldName: password
-    encoding: base64url
-    length: "32"
----
 apiVersion: apps/v1
-kind: StatefulSet
+kind: Deployment
 metadata:
   name: boot-server
   labels:
     app.kubernetes.io/name: node
     app.kubernetes.io/component: boot-server
 spec:
-  serviceName: boot-server
   selector:
     matchLabels:
       app.kubernetes.io/name: node
@@ -218,9 +204,6 @@ spec:
         hostPath:
           path: /var/lib/rancher/k3s/server/token
           type: File
-      - name: disk-encryption-key
-        secret:
-          secretName: disk-encryption-key
       - name: node-authn-keys
         configMap:
           name: node-authn-keys
