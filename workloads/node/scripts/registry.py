@@ -46,7 +46,7 @@ def put_node_authn_key():
   try:
     jwt_data = json.loads(subprocess.check_output(['step', 'crypto', 'jwt', 'inspect', '--insecure'], input=jwt.encode()))
     primary_mac = jwt_data['payload']['iss']
-    filename = primary_mac.replace('-', ':') + '.json'
+    filename = primary_mac.replace(':', '-') + '.json'
     node_authn_key = json.loads(flask.request.get_data())
   except Exception as e:
     log.error(e)
@@ -95,7 +95,7 @@ def put_node_authn_key():
 
 @app.route('/registry/config', methods=['GET'])
 def get_node_config():
-  filename = verify_jwt('node-config').replace('-', ':') + '.json'
+  filename = verify_jwt('node-config').replace(':', '-') + '.json'
   node_config_path = os.path.join(app.config['root'], 'node-configs', filename)
   if not os.path.exists(node_config_path):
     flask.abort(404)
@@ -109,7 +109,7 @@ def get_node_config():
 
 @app.route('/registry/state', methods=['PUT'])
 def put_node_state():
-  filename = verify_jwt('node-state').replace('-', ':') + '.json'
+  filename = verify_jwt('node-state').replace(':', '-') + '.json'
   node_state_path = os.path.join(app.config['root'], 'node-states', filename)
   with open(node_state_path, 'w') as h:
     try:
