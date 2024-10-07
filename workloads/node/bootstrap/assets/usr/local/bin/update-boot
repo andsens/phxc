@@ -10,8 +10,13 @@ main() {
     printf "Unable to retrieve image digests from boot server\n" >&2
     return 1
   fi
-  local current_root_img_sha256 new_root_img_sha256
-  current_root_img_sha256=$(jq -re '.sha256sums["root.img"]' /boot/home-cluster/digests.json 2>/dev/null || true)
+  local current_root_img_sha256 new_root_img_sha256 first_setup
+  if [[ -e /boot/home-cluster/digests.json ]]; then
+    first_setup=false
+    current_root_img_sha256=$(jq -re '.sha256sums["root.img"]' /boot/home-cluster/digests.json 2>/dev/null || true)
+  else
+    first_setup=true
+  fi
   new_root_img_sha256=$(jq -re '.sha256sums["root.img"]' <<<"$digests_json_new")
   if [[ $current_root_img_sha256 = "$new_root_img_sha256" ]]; then
     printf "boot partition is up-to-date\n" >&2
@@ -48,9 +53,13 @@ main() {
   trap '' EXIT
   printf "%s\n" "$digests_json_new" >/boot/home-cluster/digests.json
   rm -f "/boot/home-cluster/root.$current_root_img_sha256.img"
-  printf "boot partition has been updated, rebooting in 10s\n" >&2
-  sleep 10
-  systemctl reboot
+  if $first_setup; then
+    printf "boot partition has been updated\n" >&2
+  else
+    printf "boot partition has been updated, rebooting in 10s\n" >&2
+    sleep 10
+    systemctl reboot
+  fi
 }
 
 usage() {
