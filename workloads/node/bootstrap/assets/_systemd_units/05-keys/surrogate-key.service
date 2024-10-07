@@ -1,7 +1,6 @@
 [Unit]
 Description=Generate the surrogate AES key for decrypting the systemd credential key
 DefaultDependencies=no
-Before=surrogate-key.service
 ConditionPathExists=/run/initramfs/random-secret.bin
 ConditionPathExists=!/run/initramfs/surrogate.key.json
 
