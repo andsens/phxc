@@ -14,8 +14,8 @@ ExecStart=bash -ec ':;\
   password=$(kubectl -n smallstep get secret ssh-host-provisioner-password -o=jsonpath='{.data.password}' | base64 -d);\
   for pubkey in /etc/ssh/ssh_host_*.pub; do \
     [[ $pubkey != *-cert.pub ]] || continue;\
-    printf "Signing %s\n" "$pubkey" >&2;\
-    step ssh certificate --host --sign --force --provisioner=ssh-host --provisioner-password-file=<(printf "%s" "$password") \
+    printf "Signing %%s\n" "$pubkey" >&2;\
+    step ssh certificate --host --sign --force --provisioner=ssh-host --provisioner-password-file=<(printf "%%s" "$password") \
       "$(hostname -f)" "$pubkey";\
   done'
 ExecStart=systemctl reload ssh
