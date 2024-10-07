@@ -66,6 +66,7 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
       out "Enter a hostname for the node: "
       hostname=$(get_text)
     fi
+    hostname=${hostname%'.local'}.local
     node_config=$(jq --arg hostname "$hostname" '.hostname=$hostname' <<<"$node_config")
 
     while true; do
