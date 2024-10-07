@@ -2,7 +2,7 @@
 Description=Report the node-state to the boot-server
 DefaultDependencies=no
 Requires=systemd-timesyncd.service authn-key.service systemd-networkd-wait-online.service
-After=systemd-timesyncd.service systemd-networkd-wait-online.service \
+After=systemd-timesyncd.service configure-networks.service systemd-networkd-wait-online.service \
   authn-key.service keys-persisted.target \
   boot-partition.target persistent-partition.target \
   configure-hostname.service configure-network.service
