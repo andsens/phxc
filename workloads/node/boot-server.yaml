@@ -59,6 +59,8 @@ metadata:
     app.kubernetes.io/name: node
     app.kubernetes.io/component: boot-server
 spec:
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app.kubernetes.io/name: node
