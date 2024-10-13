@@ -29,8 +29,6 @@ def get_root():
 
 @app.route('/images/<path:image_path>')
 def get_image(image_path):
-  if not app.config['images']:
-    flask.abort(503)
   if not os.path.exists(os.path.join(app.config['images'], image_path)):
     flask.abort(404)
   return flask.send_file(os.path.join(app.config['images'], image_path))
@@ -231,7 +229,7 @@ def verify_jwt(purpose):
     log.error(e)
     flask.abort(403)
 
-def gunicorn(root, images=False, steppath=None):
+def gunicorn(root, images, steppath=None):
   app.config['root'] = root
   app.config['images'] = images
   app.config['steppath'] = steppath

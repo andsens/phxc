@@ -116,6 +116,8 @@ spec:
           mountPath: /data/node-states
         - name: registry-tmp
           mountPath: /tmp
+        - name: images
+          mountPath: /images
       - name: tftpd
         image: cluster.local/tftpd:latest
         imagePullPolicy: Never
