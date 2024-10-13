@@ -42,7 +42,6 @@ main() {
         socat -4 - udp-datagram:255.255.255.255:4011,bind=:0,broadcast,reuseaddr | \
         dd skip=1 count=1 ibs=44 obs=64 status=none | tr -d '\000'
       ) && [[ -n "$boot_server" ]]; then
-      set-node-state primary-mac "$mac"
       set-node-state boot-server "$boot_server"
       break
     fi

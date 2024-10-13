@@ -4,10 +4,10 @@ set -Eeo pipefail; shopt -s inherit_errexit
 main() {
   local e; for e; do [[ "$e" != "--help" ]] || usage; done
   [[ -n $1 && $# -eq 1 ]] || usage
-  local purpose=$1 primary_mac
-  primary_mac=$(get-node-state primary-mac)
-  step crypto jwt sign --key /run/initramfs/authn-key.json --iss "$primary_mac" \
-    --aud "$purpose" --sub "$primary_mac" --nbf "$(date -d'-5min' +%s)" --exp "$(date -d'+5min' +%s)"
+  local purpose=$1 machine_id
+  machine_id=$(cat /etc/machine-id)
+  step crypto jwt sign --key /run/initramfs/authn-key.json --iss "$machine_id" \
+    --aud boot-server-registry --sub "$purpose" --nbf "$(date -d'-5min' +%s)" --exp "$(date -d'+5min' +%s)"
 }
 
 usage() {

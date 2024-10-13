@@ -7,6 +7,7 @@ import logging
 import json
 import subprocess
 import tempfile
+import re
 
 DISK_UUID='caf66bff-edab-4fb1-8ad9-e570be5415d7'
 
@@ -19,6 +20,8 @@ log.addHandler(handler)
 
 app = flask.Flask(__name__)
 app.config['DEBUG'] = os.getenv('LOGLEVEL', 'INFO').upper() == 'DEBUG'
+
+invalid_filename_chars = re.compile(r'[^a-zA-Z0-9 _-]')
 
 @app.route('/', methods=['GET'])
 def get_root():
@@ -45,8 +48,8 @@ def put_node_authn_key():
 
   try:
     jwt_data = json.loads(subprocess.check_output(['step', 'crypto', 'jwt', 'inspect', '--insecure'], input=jwt.encode()))
-    primary_mac = jwt_data['payload']['iss']
-    filename = primary_mac.replace(':', '-') + '.json'
+    issuer = jwt_data['payload']['iss']
+    issuer_filename = invalid_filename_chars.sub('_', issuer) + '.json'
     node_authn_key = json.loads(flask.request.get_data())
   except Exception as e:
     log.error(e)
@@ -57,7 +60,7 @@ def put_node_authn_key():
       fp.write(json.dumps(node_authn_key, indent=2).encode())
       fp.close()
       subprocess.check_output(
-        ['step', 'crypto', 'jwt', 'verify', '--iss', primary_mac, '--aud', 'authn-key', '--key', fp.name],
+        ['step', 'crypto', 'jwt', 'verify', '--iss', issuer, '--aud', 'authn-key', '--key', fp.name],
         input=jwt.encode()
       )
   except Exception as e:
@@ -65,7 +68,7 @@ def put_node_authn_key():
     flask.abort(403)
 
   node_authn_key_persisted = False
-  node_state_path = os.path.join(app.config['root'], 'node-states', filename)
+  node_state_path = os.path.join(app.config['root'], 'node-states', issuer_filename)
   if os.path.exists(node_state_path):
     with open(node_state_path, 'r') as h:
       try:
@@ -74,12 +77,12 @@ def put_node_authn_key():
         log.error(e)
         flask.abort(500)
 
-  node_authn_key_path = os.path.join(app.config['root'], 'node-authn-keys', filename)
+  node_authn_key_path = os.path.join(app.config['root'], 'node-authn-keys', issuer_filename)
   if node_authn_key_persisted and os.path.exists(node_authn_key_path):
     with open(node_authn_key_path, 'r') as h:
       existing_node_authn_key = json.loads(h.read())
       if existing_node_authn_key != node_authn_key:
-        log.error(f'The authentication key for {primary_mac} does not match the one in the incoming request')
+        log.error(f'The authentication key for {issuer} does not match the one in the incoming request')
         flask.abort(403)
       else:
         return {'result': 'OK'}
@@ -94,8 +97,8 @@ def put_node_authn_key():
 
 @app.route('/registry/config', methods=['GET'])
 def get_node_config():
-  filename = verify_jwt('node-config').replace(':', '-') + '.json'
-  node_config_path = os.path.join(app.config['root'], 'node-configs', filename)
+  (issuer, issuer_filename) = verify_jwt('node-config')
+  node_config_path = os.path.join(app.config['root'], 'node-configs', issuer_filename)
   if not os.path.exists(node_config_path):
     flask.abort(404)
   with open(node_config_path, 'r') as h:
@@ -107,8 +110,8 @@ def get_node_config():
 
 @app.route('/registry/state', methods=['PUT'])
 def put_node_state():
-  filename = verify_jwt('node-state').replace(':', '-') + '.json'
-  node_state_path = os.path.join(app.config['root'], 'node-states', filename)
+  (issuer, issuer_filename) = verify_jwt('node-state')
+  node_state_path = os.path.join(app.config['root'], 'node-states', issuer_filename)
   with open(node_state_path, 'w') as h:
     try:
       node_state = json.loads(flask.request.get_data())
@@ -118,7 +121,7 @@ def put_node_state():
       flask.abort(500)
 
   # Remove the force flag from the disk config once the disk is formatted
-  node_config_path = os.path.join(app.config['root'], 'node-configs', filename)
+  node_config_path = os.path.join(app.config['root'], 'node-configs', issuer_filename)
   try:
     if os.path.exists(node_config_path):
       with open(node_config_path, 'r') as h:
@@ -145,9 +148,9 @@ transfers_completed = {
 
 @app.route('/registry/transfer-enabled', methods=['GET'])
 def transfer_enabled():
-  primary_mac = verify_jwt('transfer-enabled')
-  if not is_control_plane_node(primary_mac):
-    log.error(f'Unable to send the root key to {primary_mac}. The machine has not been configured as a controle-plane node.')
+  (issuer, issuer_filename) = verify_jwt('transfer-enabled')
+  if not is_control_plane_node(issuer):
+    log.error(f'Unable to send the root key to {issuer}. The machine has not been configured as a controle-plane node.')
     flask.abort(403)
   if app.config['steppath'] is None:
     flask.abort(503)
@@ -175,17 +178,17 @@ def secureboot_key():
   return response
 
 def send_smallstep_secret(filepath, purpose):
-  primary_mac = verify_jwt(purpose)
-  if not is_control_plane_node(primary_mac):
-    log.error(f'Unable to send the root key to {primary_mac}. The machine has not been configured as a controle-plane node.')
+  (issuer, issuer_filename) = verify_jwt(purpose)
+  if not is_control_plane_node(issuer_filename):
+    log.error(f'Unable to send the root key to {issuer}. The machine has not been configured as a controle-plane node.')
     flask.abort(403)
   if app.config['steppath'] is None:
     flask.abort(503)
 
   return flask.send_file(os.path.join(app.config['steppath'], filepath))
 
-def is_control_plane_node(primary_mac):
-  node_config_path = os.path.join(app.config['root'], 'node-configs', f'{primary_mac.replace(':', '-')}.json')
+def is_control_plane_node(issuer_filename):
+  node_config_path = os.path.join(app.config['root'], 'node-configs', issuer_filename)
   if not os.path.exists(node_config_path):
     return False
 
@@ -203,24 +206,27 @@ def check_shutdown():
     log.info('The remote control-plane node has transferred all step secrets, shutting down so it can take over the registry')
     sys.exit(0)
 
-def verify_jwt(aud):
+def verify_jwt(purpose):
   jwt = flask.request.args.get('jwt')
   if jwt is None:
     log.error(f'No JWT was included in the query string')
     flask.abort(400)
   try:
     jwt_data = json.loads(subprocess.check_output(['step', 'crypto', 'jwt', 'inspect', '--insecure'], input=jwt.encode()))
-    jwt_primary_mac = jwt_data['payload']['iss']
-    node_authn_key_path = os.path.join(app.config['root'], f'node-authn-keys/{jwt_primary_mac.replace(':', '-')}.json')
+    issuer = jwt_data['payload']['iss']
+    issuer_filename = invalid_filename_chars.sub('_', issuer) + '.json'
+    node_authn_key_path = os.path.join(app.config['root'], f'node-authn-keys/{issuer_filename}')
     if not os.path.exists(node_authn_key_path):
-      log.error(f'Unable to verify JWT for {jwt_primary_mac}, no authentication key has been submitted yet')
+      log.error(f'Unable to verify JWT for {issuer}, no authentication key has been submitted yet')
       flask.abort(400)
     subprocess.check_output(
-      ['step', 'crypto', 'jwt', 'verify', '--iss', jwt_primary_mac, '--aud', aud, '--key', node_authn_key_path],
+      ['step', 'crypto', 'jwt', 'verify', '--iss', issuer, '--aud', 'boot-server-registry', '--key', node_authn_key_path],
       input=jwt.encode(),
       stderr=sys.stderr
     )
-    return jwt_primary_mac
+    if jwt_data['sub'] != purpose:
+      raise Exception(f'Received a JWT for {issuer} with subject "{jwt_data['sub']}", was however expecting the subject "{purpose}"')
+    return (issuer, issuer_filename)
   except Exception as e:
     log.error(e)
     flask.abort(403)

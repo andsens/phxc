@@ -30,21 +30,21 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   eval "$(docopt "$@")"
 
   shopt -s nullglob
-  local node_state_path node_opts=() node_config_state node_config_path node_display_name
+  local node_state_path node_id node_opts=() node_config_state node_config_path node_display_name
   for node_state_path in "$PKGROOT/startup/boot-server/registry/node-states"/*; do
     node_config_state=configured
+    node_id=$(basename "$node_state_path" .json)
     [[ -e $PKGROOT/startup/boot-server/registry/node-configs/$(basename "$node_state_path") ]] || node_config_state=unconfigured
     node_config_path=$PKGROOT/startup/boot-server/registry/node-configs/$(basename "$node_state_path")
     if ! node_display_name="$(jq -re '.hostname // empty' "$node_config_path" 2>/dev/null) (configured)"; then
-      node_display_name=$(jq -r --arg node_config_state "$node_config_state" '"(\(.variant)) \(.["primary-mac"]) (\($node_config_state))"' "$node_state_path")
+      node_display_name=$(jq -r --arg id "$node_id" --arg state "$node_config_state" '"(\(.variant)) \($id) (\($state))"' "$node_state_path")
     fi
     node_opts+=("$node_state_path" "$node_display_name")
   done
   node_state_path=$(select_options "Select node to configure:" "" "${node_opts[@]}") \
     || fatal "No nodes found"
 
-  local node_config_path node_config={} node_mac
-  node_mac=$(jq -r '.["primary-mac"]' "$node_state_path")
+  local node_config_path node_config={}
   node_config_path=$PKGROOT/startup/boot-server/registry/node-configs/$(basename "$node_state_path")
   [[ ! -e $node_config_path ]] || node_config=$(cat "$node_config_path")
 
@@ -168,7 +168,7 @@ MACAddress=\($nic.mac)
     out "The node configuration now looks like the above, would you like to reconfigure (n) or save (y)? [yN] "
     ! yesno n || break
   done
-  info "Saving node configuration for %s" "$node_mac"
+  info "Saving node configuration for %s" "$hostname"
   jq --indent 2 <<<"$node_config" >"$node_config_path"
 }
 

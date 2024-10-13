@@ -21,9 +21,8 @@ check() {
 }
 
 init() {
-  local primary_mac filename
-  primary_mac=$(get-node-state primary-mac)
-  filename=${primary_mac//:/-}.json
+  local filename
+  filename=$(cat /etc/machine-id).json
   kubectl create -n node configmap node-states --from-file="$filename"=/run/initramfs/node-state.json
   kubectl create -n node secret generic node-configs --from-file="$filename"=/run/initramfs/node-config.json
   kubectl create -n node configmap node-authn-keys --from-file="$filename"=/run/initramfs/authn-key.json
