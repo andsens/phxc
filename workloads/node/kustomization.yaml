@@ -9,6 +9,7 @@ resources:
 - containers/registry
 - containers/tftpd
 - bootstrap
+- admin-pubkey.yaml
 - images.yaml
 - boot-server.yaml
 - namespace.yaml
@@ -17,7 +18,6 @@ resources:
 configMapGenerator:
 - files:
   - config/boot-map.yaml
-  - config/nginx.conf
   - config/tftpd-map-file
   name: boot-server-config
 - files:
@@ -25,3 +25,8 @@ configMapGenerator:
   - scripts/tftpd.sh
   - scripts/registry.py
   name: boot-server-scripts
+replacements:
+- source: {fieldPath: data.cluster.adminPubkey, kind: ConfigMap, name: settings}
+  targets:
+  - select: {kind: ConfigMap, name: admin-pubkey}
+    fieldPaths: [data.admin\.pub]

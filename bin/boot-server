@@ -76,7 +76,7 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
     step certificate create \
       --ca "$INTERMEDIATE_CRT" --ca-key "$INTERMEDIATE_KEY" \
       --force --no-password --insecure \
-      "$HOST_IP" "$BOOT_SERVER_CRT" "$BOOT_SERVER_KEY"
+      boot-server.node.svc.cluster.local "$BOOT_SERVER_CRT" "$BOOT_SERVER_KEY"
   fi
   step certificate bundle --force "$BOOT_SERVER_CRT" "$INTERMEDIATE_CRT" "$BOOT_SERVER_BUNDLE"
 
@@ -108,8 +108,9 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   PYTHONPATH=$PKGROOT/workloads/node/scripts \
     bg_run "$boot_server_root/venv/bin/gunicorn" \
       -b "$HOST_IP:8020" \
-      --certfile "$BOOT_SERVER_BUNDLE" --keyfile "$BOOT_SERVER_KEY" --ssl-version TLSv1_2 \
-      "registry:gunicorn(root=\"$boot_server_root/registry\",images=\"$IMAGES\",steppath=\"$STEPPATH\")"
+      --certfile "$BOOT_SERVER_BUNDLE" --keyfile "$BOOT_SERVER_KEY" \
+      --worker-class gevent --timeout 0 \
+      "registry:gunicorn(root=\"$boot_server_root/registry\",images=\"$IMAGES\",admin_pubkey=\"$STEPPATH/system:admin.pub\",steppath=\"$STEPPATH\")"
   info "boot-server is ready"
   bg_block 3
   bg_killall TERM

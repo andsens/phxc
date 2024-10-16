@@ -1,0 +1,7 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: admin-pubkey
+data:
+  admin.pub: ""

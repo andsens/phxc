@@ -10,6 +10,7 @@ main() {
   # shellcheck source=workloads/settings/env/settings.shellcheck.sh
   source "$PKGROOT/workloads/settings/env/settings.sh"
   eval_settings
+  source "$PKGROOT/lib/options.sh"
 
   DOC="auth - Manage cluster authentication
 Usage:
@@ -49,15 +50,16 @@ local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
 
   # shellcheck disable=SC2154
   local context \
+    pubkey_path="$STEPPATH/$__username.pub" \
     key_path="$STEPPATH/$__username.key" \
     cert_path="$STEPPATH/$__username.crt"
 
   # shellcheck disable=2154
   if $init; then
 
-    step crypto keypair --no-password --insecure "$key_path.pub" "$key_path"
+    step crypto keypair --no-password --insecure "$pubkey_path" "$key_path"
     info "Add the following to settings.yaml in the 'cluster:' section:"
-    printf "  adminPubkey: |-\n%s" "$(sed 's/^/    /' <"$key_path.pub")"
+    printf "  adminPubkey: |-\n%s" "$(sed 's/^/    /' <"$pubkey_path")"
 
   elif $renew; then
 
@@ -81,10 +83,7 @@ local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
 
     local profile ca_url fingerprint config_path config control_plane_hostname
 
-    control_plane_hostname=$(
-      jq -rse '[
-        .[] | select((.["node-label"] // [])[] | contains("node-role.kubernetes.io/control-plane=true"))
-      ] | first | .hostname' "$PKGROOT/startup/boot-server/registry/node-configs"/*.json)
+    control_plane_hostname=$(get_control_plane_hostname)
 
     ################################
     ### Setup kube client API CA ###

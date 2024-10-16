@@ -47,9 +47,24 @@ spec:
     app.kubernetes.io/name: node
     app.kubernetes.io/component: boot-server
   ports:
-  - name: http
+  - name: registry
     port: 8020
-    targetPort: http
+    targetPort: api
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: boot-server
+  labels:
+    app.kubernetes.io/name: node
+    app.kubernetes.io/component: boot-server
+spec:
+  commonName: boot-server.node.svc.cluster.local
+  issuerRef:
+    group: certmanager.step.sm
+    kind: StepClusterIssuer
+    name: step-issuer
+  secretName: boot-server-tls
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -76,23 +91,7 @@ spec:
         node-role.kubernetes.io/control-plane: "true"
       hostNetwork: true
       containers:
-      - name: nginx
-        image: nginx:1.27-alpine-slim
-        securityContext:
-          readOnlyRootFilesystem: true
-        ports:
-        - name: boot-assets
-          containerPort: 8020
-          hostPort: 8020
-        volumeMounts:
-        - name: config
-          mountPath: /etc/nginx/nginx.conf
-          subPath: nginx.conf
-        - name: images
-          mountPath: /var/www/images
-          readOnly: true
-        - name: nginx-cache
-          mountPath: /var/cache/nginx
+
       - name: registry
         image: cluster.local/registry:latest
         imagePullPolicy: Never
@@ -100,7 +99,8 @@ spec:
           readOnlyRootFilesystem: true
         ports:
         - name: api
-          containerPort: 8021
+          containerPort: 8020
+          hostPort: 8020
         volumeMounts:
         - name: scripts
           mountPath: /registry/registry.py
@@ -108,6 +108,8 @@ spec:
         - name: k3s-token
           mountPath: /secrets/k3s-token
           readOnly: true
+        - name: boot-server-tls
+          mountPath: /data/tls
         - name: node-authn-keys
           mountPath: /data/node-authn-keys
         - name: node-configs
@@ -116,44 +118,12 @@ spec:
           mountPath: /data/node-states
         - name: registry-tmp
           mountPath: /tmp
+        - name: admin-pubkey
+          mountPath: /data/admin.pub
+          subPath: admin.pub
         - name: images
-          mountPath: /images
-      - name: tftpd
-        image: cluster.local/tftpd:latest
-        imagePullPolicy: Never
-        securityContext:
-          readOnlyRootFilesystem: true
-          capabilities:
-            drop: [ALL]
-            add:
-            - NET_BIND_SERVICE
-            - NET_ADMIN
-            - NET_RAW
-            - SETUID
-            - SETGID
-            - SYS_CHROOT
-            - SIGNAL
-            - CAP_KILL
-        env:
-        # Used to select which interface tcpdump should filter for
-        - name: HOST_IP
-          valueFrom:
-            fieldRef:
-              fieldPath: status.hostIP
-        ports:
-        - name: tftp
-          containerPort: 69
-          hostPort: 69
-        volumeMounts:
-        - name: scripts
-          mountPath: /tftpd.sh
-          subPath: tftpd.sh
-        - name: config
-          mountPath: /config/map-file
-          subPath: tftpd-map-file
-        - name: images
-          mountPath: /tftp/images
-          readOnly: true
+          mountPath: /data/images
+
       - name: dhcp-proxy
         image: cluster.local/dhcp-proxy:latest
         imagePullPolicy: Never
@@ -182,9 +152,11 @@ spec:
         ports:
         - name: dhcp
           containerPort: 67
+          protocol: UDP
           hostPort: 67
         - name: dhcp-proxy
           containerPort: 4011
+          protocol: UDP
           hostPort: 4011
         volumeMounts:
         - name: scripts
@@ -193,6 +165,44 @@ spec:
         - name: config
           mountPath: /dhcp-proxy/boot-map.yaml
           subPath: boot-map.yaml
+
+      - name: tftpd
+        image: cluster.local/tftpd:latest
+        imagePullPolicy: Never
+        securityContext:
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: [ALL]
+            add:
+            - NET_BIND_SERVICE
+            - NET_ADMIN
+            - NET_RAW
+            - SETUID
+            - SETGID
+            - SYS_CHROOT
+            - SIGNAL
+            - CAP_KILL
+        env:
+        # Used to select which interface tcpdump should filter for
+        - name: HOST_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        ports:
+        - name: tftp
+          containerPort: 69
+          protocol: UDP
+          hostPort: 69
+        volumeMounts:
+        - name: scripts
+          mountPath: /tftpd.sh
+          subPath: tftpd.sh
+        - name: config
+          mountPath: /config/map-file
+          subPath: tftpd-map-file
+        - name: images
+          mountPath: /tftp/images
+          readOnly: true
       volumes:
       - name: config
         configMap:
@@ -204,10 +214,16 @@ spec:
       - name: images
         persistentVolumeClaim:
           claimName: images
+      - name: boot-server-tls
+        secret:
+          secretName: boot-server-tls
       - name: k3s-token
         hostPath:
           path: /var/lib/rancher/k3s/server/token
           type: File
+      - name: admin-pubkey
+        configMap:
+          name: admin-pubkey
       - name: node-authn-keys
         configMap:
           name: node-authn-keys
@@ -217,8 +233,6 @@ spec:
       - name: node-states
         configMap:
           name: node-states
-      - name: nginx-cache
-        emptyDir: {}
       - name: registry-tmp
         emptyDir: {}
       - name: dnsmasq-leases

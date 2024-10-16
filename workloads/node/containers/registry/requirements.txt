@@ -1,3 +1,4 @@
 gunicorn==22.0.0
 Flask==3.0.3
 PyYAML==6.0.1
+gevent==24.10.2

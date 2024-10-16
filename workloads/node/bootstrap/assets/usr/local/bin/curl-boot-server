@@ -2,11 +2,13 @@
 set -Eeo pipefail; shopt -s inherit_errexit
 
 main() {
-  local addr
-  addr=https://$(get-node-state boot-server):8020/$1
+  local boot_server_ip url_path=$1
+  boot_server_ip=$(get-node-state boot-server)
   shift
   curl --cacert /usr/local/share/ca-certificates/home-cluster-root.crt \
-    -fL --no-progress-meter --connect-timeout 5 --retry 3 "$addr" "$@"
+    --connect-to "boot-server.node.svc.cluster.local:8020:$boot_server_ip:8020" \
+    -fL --no-progress-meter --connect-timeout 5 --retry 3 \
+    "https://boot-server.node.svc.cluster.local/$url_path" "$@"
 }
 
 main "$@"
