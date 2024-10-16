@@ -180,7 +180,7 @@ spec:
           mountPath: /home/step/certs/intermediate_ca.crt
           subPath: tls.crt
         - name: intermediate
-          mountPath: /home/step/certs/intermediate_ca_key
+          mountPath: /home/step/secrets/intermediate_ca_key
           subPath: tls.key
         - name: config-rw
           mountPath: /home/step/config

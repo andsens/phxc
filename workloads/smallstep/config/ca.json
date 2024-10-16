@@ -10,10 +10,10 @@
   },
   "root": "/home/step/certs/root_ca.crt",
   "crt": "/home/step/certs/intermediate_ca.crt",
-  "key": "/home/step/certs/intermediate_ca_key",
+  "key": "/home/step/secrets/intermediate_ca_key",
   "ssh": {
-    "hostKey": "/home/step/certs/intermediate_ca_key",
-    "userKey": "/home/step/certs/intermediate_ca_key"
+    "hostKey": "/home/step/secrets/intermediate_ca_key",
+    "userKey": "/home/step/secrets/intermediate_ca_key"
   },
   "authority": {
     "provisioners": [

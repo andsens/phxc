@@ -36,7 +36,7 @@ create_intermediate_ca() {
       --force --no-password --insecure \
       --not-after=87600h \
       --ca="$ROOT_CRT_PATH" --ca-key="$ROOT_KEY_PATH" \
-      "$CLUSTER_PKINAME" "$INTERMEDIATE_CRT_PATH" "$INTERMEDIATE_KEY_PATH"
+      "${CLUSTER_PKINAME:?}" "$INTERMEDIATE_CRT_PATH" "$INTERMEDIATE_KEY_PATH"
     kubectl delete -n smallstep secret smallstep-intermediate 2>/dev/null || true
     kubectl create -n smallstep secret tls smallstep-intermediate --cert="$INTERMEDIATE_CRT_PATH" --key="$INTERMEDIATE_KEY_PATH"
   fi
@@ -107,14 +107,15 @@ create_ssh_host_provisioner() {
 }
 
 create_kube_apiserver_client_ca_secret() {
+  info "Setting up kube-apiserver client CA certificate secret"
   local cert_path=/home/step/certs/kube_apiserver_client_ca.crt
   cert=$(cat $cert_path)
   if [[ $(kubectl get -n "$NAMESPACE" secret kube-apiserver-client-ca -o jsonpath='{.data.tls\.crt}' | base64 -d) != "$cert" ]]; then
-    info "kube-apiserver client CA secret validation failed, (re-)creating now"
+    info "kube-apiserver client CA certificate secret validation failed, (re-)creating now"
     kubectl delete -n "$NAMESPACE" secret kube-apiserver-client-ca 2>/dev/null || true
     kubectl create -n "$NAMESPACE" secret generic kube-apiserver-client-ca --from-file=tls.crt=$cert_path
   else
-    info "kube-apiserver client CA secret validation succeeded"
+    info "kube-apiserver client CA certificate secret validation succeeded"
   fi
 }
 
