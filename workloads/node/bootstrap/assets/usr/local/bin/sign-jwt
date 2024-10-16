@@ -6,8 +6,8 @@ main() {
   [[ -n $1 && $# -eq 1 ]] || usage
   local purpose=$1 machine_id
   machine_id=$(cat /etc/machine-id)
-  step crypto jwt sign --key /run/initramfs/authn-key.json --iss "$machine_id" \
-    --aud boot-server-registry --sub "$purpose" --nbf "$(date -d'-5min' +%s)" --exp "$(date -d'+5min' +%s)"
+  step crypto jwt sign --key /run/initramfs/authn-key.json --iss "$machine_id" --jti '' \
+    --aud boot-server --sub "$purpose" --nbf "$(date -d'-30sec' +%s)" --exp "$(date -d'+30sec' +%s)"
 }
 
 usage() {
