@@ -1,12 +1,13 @@
 #!/usr/bin/python3
 
-import os, sys, logging, json, subprocess, tempfile, re, shutil, tarfile, time, tempfile, uuid
+import os, logging, tempfile, shutil, tarfile, tempfile, uuid
 from pathlib import Path
 import quart
 from hypercorn.config import Config
 from hypercorn.asyncio import serve
+import jwt
 from .tracker import BootTracker
-from .registry import NodeRegistry
+from .registry import NodeRegistry, allowed_jwt_algos, required_jwt_claims
 
 
 DISK_UUID='caf66bff-edab-4fb1-8ad9-e570be5415d7'
@@ -83,14 +84,14 @@ async def get_health():
 
 @app.put('/authn-key')
 async def put_node_authn_key():
-  jwt = quart.request.args.get('jwt')
-  if jwt is None:
+  token = quart.request.args.get('jwt')
+  if token is None:
     log.error(f'Unable to store authn-key, no JWT was included in the query string')
     quart.abort(400)
 
   try:
-    jwt_data = json.loads(subprocess.check_output(['step', 'crypto', 'jwt', 'inspect', '--insecure'], input=jwt.encode()))
-    machine_id = uuid.UUID(jwt_data['payload']['iss'])
+    payload = jwt.decode(token, algorithms=allowed_jwt_algos, options={'verify_signature': False, 'require': required_jwt_claims})
+    machine_id = uuid.UUID(payload['iss'])
     submitted_node_authn_key = await quart.request.get_json()
   except Exception as e:
     log.exception(e)
@@ -103,17 +104,13 @@ async def put_node_authn_key():
 
   existing_node_authn_key = app.config['registry'].get_node_authn_key(machine_id)
   if node_authn_key_persisted and existing_node_authn_key is not None:
-    app.config['registry'].verify_jwt(jwt, 'authn-key')
+    app.config['registry'].verify_jwt(token, 'authn-key')
   else:
-    # When a key for a new node is submitted, validate the JWT using the submitted key
     try:
-      with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
-        fp.write(json.dumps(submitted_node_authn_key, indent=2).encode())
-        fp.close()
-        subprocess.check_output(
-          ['step', 'crypto', 'jwt', 'verify', '--iss', machine_id, '--aud', 'authn-key', '--key', fp.name],
-          input=jwt.encode()
-        )
+      # When a key for a new node is submitted, validate the JWT using the submitted key
+      jwt.decode(token, key=submitted_node_authn_key,
+                algorithms=allowed_jwt_algos, issuer=machine_id, audience=['boot-server'],
+                options={'require': required_jwt_claims})
     except Exception as e:
       log.exception(e)
       quart.abort(403)

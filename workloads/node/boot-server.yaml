@@ -107,6 +107,8 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
+        - name: ETCD_URL
+          value: http://etcd.etcd.svc.cluster.local:2379
         ports:
         - name: api
           containerPort: 8020
@@ -127,7 +129,19 @@ spec:
         - name: scripts
           mountPath: /boot-server
         - name: k3s-token
-          mountPath: /secrets/k3s-token
+          mountPath: /data/k3s-token
+          readOnly: true
+        - name: host-machine-id
+          mountPath: /data/host-machine-id
+          readOnly: true
+        - name: host-node-state
+          mountPath: /data/host-node-state.json
+          readOnly: true
+        - name: host-node-config
+          mountPath: /data/host-node-config.json
+          readOnly: true
+        - name: host-authn-key
+          mountPath: /data/host-authn-key.json
           readOnly: true
         - name: boot-server-tls
           mountPath: /data/tls
@@ -167,6 +181,22 @@ spec:
       - name: k3s-token
         hostPath:
           path: /var/lib/rancher/k3s/server/token
+          type: File
+      - name: host-machine-id
+        hostPath:
+          path: /etc/machine-id
+          type: File
+      - name: host-node-state
+        hostPath:
+          path: /run/initramfs/node-state.json
+          type: File
+      - name: host-node-config
+        hostPath:
+          path: /run/initramfs/node-config.json
+          type: File
+      - name: host-authn-key
+        hostPath:
+          path: /run/initramfs/authn-key.json
           type: File
       - name: admin-pubkey
         configMap:

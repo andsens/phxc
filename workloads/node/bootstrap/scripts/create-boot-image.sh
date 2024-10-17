@@ -13,8 +13,8 @@ main() {
   mkdir -p /workspace/root
 
   info "Extracting container export"
-  for layer in $(jq -r '.[0].Layers[]' <(tar -xOf "/images/$VARIANT.new/node.tar" manifest.json)); do
-    tar -xOf "/images/$VARIANT.new/node.tar" "$layer" | tar -xz -C /workspace/root
+  for layer in $(jq -r '.[0].Layers[]' <(tar -xOf "/images/$VARIANT.bootstrapping/node.tar" manifest.json)); do
+    tar -xOf "/images/$VARIANT.bootstrapping/node.tar" "$layer" | tar -xz -C /workspace/root
   done
   # During bootstrapping with kaniko these files can't be removed/overwritten,
   # instead we do it when creating the image
@@ -44,7 +44,7 @@ main() {
   # Hash the root image so we can verify it during boot
   sha256sums[root.img]=$(sha256sum /workspace/root.img | cut -d ' ' -f1)
 
-  artifacts[/workspace/root.img]=/images/$VARIANT.new/root.${sha256sums[root.img]}.img
+  artifacts[/workspace/root.img]=/images/$VARIANT.bootstrapping/root.${sha256sums[root.img]}.img
   local kernel_cmdline="rd.neednet=1 rootovl"
   ! $DEBUG || kernel_cmdline+=" rd.shell"
 
@@ -67,7 +67,7 @@ EOF
     cd /workspace/initramfs
     find . -print0 | cpio -o --null --format=newc 2>/dev/null | zstd -19 >/workspace/root/boot/initrd.img
   )
-  artifacts[/workspace/root/boot/initrd.img]=/images/$VARIANT.new/initrd.img
+  artifacts[/workspace/root/boot/initrd.img]=/images/$VARIANT.bootstrapping/initrd.img
 
   ######################
   ### Build boot.img ###
@@ -82,19 +82,19 @@ EOF
         mv /workspace/root/boot/vmlinuz /workspace/root/boot/firmware/kernel_2712.img
         mv /workspace/root/boot/initrd.img /workspace/root/boot/firmware/initramfs_2712
         unset 'artifacts[/workspace/root/boot/initrd.img]'
-        artifacts[/workspace/root/boot/firmware/initramfs_2712]=/images/$VARIANT.new/initrd.img
+        artifacts[/workspace/root/boot/firmware/initramfs_2712]=/images/$VARIANT.bootstrapping/initrd.img
         ;;
       rpi4)
         mv /workspace/root/boot/vmlinuz /workspace/root/boot/firmware/kernel8.img
         mv /workspace/root/boot/initrd.img /workspace/root/boot/firmware/initramfs8
         unset 'artifacts[/workspace/root/boot/initrd.img]'
-        artifacts[/workspace/root/boot/firmware/initramfs8]=/images/$VARIANT.new/initrd.img
+        artifacts[/workspace/root/boot/firmware/initramfs8]=/images/$VARIANT.bootstrapping/initrd.img
         ;;
       rpi3)
         mv /workspace/root/boot/vmlinuz /workspace/root/boot/firmware/kernel7.img
         mv /workspace/root/boot/initrd.img /workspace/root/boot/firmware/initramfs7
         unset 'artifacts[/workspace/root/boot/initrd.img]'
-        artifacts[/workspace/root/boot/firmware/initramfs7]=/images/$VARIANT.new/initrd.img
+        artifacts[/workspace/root/boot/firmware/initramfs7]=/images/$VARIANT.bootstrapping/initrd.img
         ;;
       default)
         ;;
@@ -106,7 +106,7 @@ EOF
     # Adjust config.txt for being embedded in boot.img
     sed 's/boot_ramdisk=1/auto_initramfs=1/' <"/assets/config-${VARIANT}.txt" >/workspace/config.txt
     cp "/assets/config-${VARIANT}.txt" /workspace/config-netboot.txt
-    artifacts[/workspace/config-netboot.txt]=/images/$VARIANT.new/config.txt
+    artifacts[/workspace/config-netboot.txt]=/images/$VARIANT.bootstrapping/config.txt
 
     local file_size fs_table_size_b firmware_size_b=0
     fs_table_size_b=$(( 1024 * 1024 )) # Total guess, but should be enough
@@ -139,7 +139,7 @@ rm-rf /firmware
 EOF
 
     sha256sums[boot.img]=$(sha256sum /workspace/boot.img | cut -d ' ' -f1)
-    artifacts[/workspace/boot.img]=/images/$VARIANT.new/boot.img
+    artifacts[/workspace/boot.img]=/images/$VARIANT.bootstrapping/boot.img
 
   fi
 
@@ -166,7 +166,7 @@ EOF
       --json=pretty \
       >/boot/pcr11.json
 
-    artifacts[/boot/pcr11.json]=/images/$VARIANT.new/pcr11.json
+    artifacts[/boot/pcr11.json]=/images/$VARIANT.bootstrapping/pcr11.json
 
     cp -r /secureboot /workspace/root/secureboot
     chroot /workspace/root /lib/systemd/ukify build \
@@ -179,7 +179,7 @@ EOF
       --secureboot-certificate=/secureboot/tls.crt \
       --output=/boot/uki.efi
 
-    artifacts[/workspace/root/boot/uki.efi]=/images/$VARIANT.new/uki.efi
+    artifacts[/workspace/root/boot/uki.efi]=/images/$VARIANT.bootstrapping/uki.efi
 
     local uki_size_b
     uki_size_b=$(stat -c %s /workspace/root/boot/uki.efi)
@@ -213,7 +213,7 @@ EOF
   done
   printf "%s\n" "$digests" >/workspace/digests.json
 
-  artifacts[/workspace/digests.json]=/images/$VARIANT.new/digests.json
+  artifacts[/workspace/digests.json]=/images/$VARIANT.bootstrapping/digests.json
 
   ################
   ### Finalize ###
@@ -231,12 +231,9 @@ EOF
   done
   [[ $mv_failed -eq 0 ]] || return $mv_failed
 
-  # Move current node image to old, move new images from tmp to current
-  if [[ -e /images/$VARIANT ]]; then
-    rm -rf "/images/$VARIANT.old"
-    mv "/images/$VARIANT" "/images/$VARIANT.old"
-  fi
-  mv "/images/$VARIANT.new" "/images/$VARIANT"
+  # Replaced old bootstrapped image (if any)
+  [[ ! -e /images/$VARIANT ]] || rm -rf "/images/$VARIANT.bootstrapped"
+  mv "/images/$VARIANT.bootstrapping" "/images/$VARIANT.bootstrapped"
 
   [[ -z "$CHOWN" ]] || chown -R "$CHOWN" "/images/$VARIANT"
 }

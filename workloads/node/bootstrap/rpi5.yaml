@@ -22,7 +22,7 @@ spec:
       initContainers:
       - name: initialize-new-build
         image: busybox
-        command: [sh, -c, rm -rf /images/$(VARIANT).new; mkdir /images/$(VARIANT).new]
+        command: [sh, -c, rm -rf /images/$(VARIANT).new; mkdir /images/$(VARIANT).bootstrapping]
         env:
         - name: VARIANT
           value: rpi5

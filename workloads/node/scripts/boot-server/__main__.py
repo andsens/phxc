@@ -20,9 +20,12 @@ Options:
   --boot-map PATH      Path to map of "vendor-client/arch" DHCP options to TFTP
                        boot file paths [default: <root>/boot-map.yaml]
   --user USER          Drop privileges after setup and run as specified user
+  --import             Import the state, config, and authn-key of the host node
+  --etcd URL           etcd URL for storing node states, configs, and authn-keys
 '''
 
 import asyncio, logging, os, pwd, signal, sys
+import urllib.parse
 import logfmter
 from pathlib import Path
 import docopt
@@ -32,6 +35,7 @@ from .registry import NodeRegistry
 from .api import api
 from .tftpd import tftpd
 from .tracker import BootTracker
+import etcd
 
 log = logging.getLogger(root_name)
 
@@ -53,8 +57,15 @@ async def main():
   steppath: Path | None = Path(params['--steppath']) if params['--steppath'] is not None else None
   boot_map: Path = root / 'boot-map.yaml' if params['--boot-map'] == '<root>/boot-map.yaml' else root / Path(params['--boot-map'])
 
-  boot_tracker = BootTracker()
-  node_registry = NodeRegistry(root, admin_pubkey)
+
+  if params['--etcd'] is not None:
+    etcd_parts = urllib.parse.urlparse(params['--etcd'])
+    kvClient = etcd.Client(protocol=etcd_parts.scheme, host=etcd_parts.hostname, port=etcd_parts.port)
+
+  node_registry = NodeRegistry(kvClient, admin_pubkey)
+  if params['--import']:
+    node_registry.import_host_info(root)
+  boot_tracker = BootTracker(node_registry)
 
   async with asyncio.TaskGroup() as task_group:
     tftpd_ready = asyncio.Event()

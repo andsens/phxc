@@ -39,7 +39,6 @@ system_setup() {
     25-persistent-partition/persistent-partition.target
     40-final-node-state/final-node-state.service
     70-update-boot/update-boot.service
-    85-setup-control-plane/initialize-registry.service
     85-setup-control-plane/transfer-root-key.service
     85-setup-control-plane/transfer-secureboot-cert.service
     90-node-config/update-node-config.service
@@ -71,7 +70,6 @@ system_setup() {
     /usr/local/bin/derive-key \
     /usr/local/bin/download-node-config \
     /usr/local/bin/get-node-config \
-    /usr/local/bin/initialize-registry \
     /usr/local/bin/partition-disk \
     /usr/local/bin/sign-jwt \
     /usr/local/bin/submit-authn-key \
