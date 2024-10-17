@@ -1,16 +1,16 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: build-tftpd
+  name: build-boot-server
   labels:
-    app.kubernetes.io/name: pxe
-    app.kubernetes.io/component: tftpd
+    app.kubernetes.io/name: bootstrap
+    app.kubernetes.io/component: boot-server
 spec:
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: pxe
-        app.kubernetes.io/component: tftpd
+        app.kubernetes.io/name: bootstrap
+        app.kubernetes.io/component: boot-server
         cluster.local/allow-internet-egress: "true"
     spec:
       restartPolicy: Never
@@ -19,8 +19,8 @@ spec:
         image: gcr.io/kaniko-project/executor:latest
         args:
         - --dockerfile=context/Dockerfile
-        - --destination=cluster.local/tftpd:latest
-        - --tar-path=/workspace/images/tftpd.tar.tmp
+        - --destination=cluster.local/boot-server:latest
+        - --tar-path=/workspace/images/boot-server:latest.tar.tmp
         - --no-push
         env:
         - name: GGCR_EXPERIMENT_ESTARGZ
@@ -35,14 +35,14 @@ spec:
       containers:
       - name: move-image
         image: busybox
-        args: [mv, /images/tftpd.tar.tmp, /images/tftpd.tar]
+        args: [mv, /images/boot-server:latest.tar.tmp, /images/boot-server:latest.tar]
         volumeMounts:
         - name: images
           mountPath: /images
       volumes:
       - name: context
         configMap:
-          name: tftpd
+          name: boot-server
       - name: common-context
         configMap:
           name: common-context

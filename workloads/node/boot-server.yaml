@@ -91,45 +91,9 @@ spec:
         node-role.kubernetes.io/control-plane: "true"
       hostNetwork: true
       containers:
-
-      - name: registry
-        image: cluster.local/registry:latest
+      - name: boot-server
+        image: cluster.local/boot-server:latest
         imagePullPolicy: Never
-        securityContext:
-          readOnlyRootFilesystem: true
-        ports:
-        - name: api
-          containerPort: 8020
-          hostPort: 8020
-        volumeMounts:
-        - name: scripts
-          mountPath: /registry/registry.py
-          subPath: registry.py
-        - name: k3s-token
-          mountPath: /secrets/k3s-token
-          readOnly: true
-        - name: boot-server-tls
-          mountPath: /data/tls
-        - name: node-authn-keys
-          mountPath: /data/node-authn-keys
-        - name: node-configs
-          mountPath: /data/node-configs
-        - name: node-states
-          mountPath: /data/node-states
-        - name: registry-tmp
-          mountPath: /tmp
-        - name: admin-pubkey
-          mountPath: /data/admin.pub
-          subPath: admin.pub
-        - name: images
-          mountPath: /data/images
-
-      - name: dhcp-proxy
-        image: cluster.local/dhcp-proxy:latest
-        imagePullPolicy: Never
-        args:
-        - $(HOST_IP)
-        - $(TFTPD_ADDR)
         securityContext:
           readOnlyRootFilesystem: true
           capabilities:
@@ -138,18 +102,15 @@ spec:
             - NET_ADMIN
             - NET_BIND_SERVICE
             - NET_RAW
-            - SETGID
-            - SETUID
         env:
         - name: HOST_IP
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        - name: TFTPD_ADDR
-          valueFrom:
-            fieldRef:
-              fieldPath: status.hostIP
         ports:
+        - name: api
+          containerPort: 8020
+          hostPort: 8020
         - name: dhcp
           containerPort: 67
           protocol: UDP
@@ -158,51 +119,37 @@ spec:
           containerPort: 4011
           protocol: UDP
           hostPort: 4011
-        volumeMounts:
-        - name: scripts
-          mountPath: /dhcp-proxy/dhcp-proxy.py
-          subPath: dhcp-proxy.py
-        - name: config
-          mountPath: /dhcp-proxy/boot-map.yaml
-          subPath: boot-map.yaml
-
-      - name: tftpd
-        image: cluster.local/tftpd:latest
-        imagePullPolicy: Never
-        securityContext:
-          readOnlyRootFilesystem: true
-          capabilities:
-            drop: [ALL]
-            add:
-            - NET_BIND_SERVICE
-            - NET_ADMIN
-            - NET_RAW
-            - SETUID
-            - SETGID
-            - SYS_CHROOT
-            - SIGNAL
-            - CAP_KILL
-        env:
-        # Used to select which interface tcpdump should filter for
-        - name: HOST_IP
-          valueFrom:
-            fieldRef:
-              fieldPath: status.hostIP
-        ports:
         - name: tftp
           containerPort: 69
           protocol: UDP
           hostPort: 69
         volumeMounts:
         - name: scripts
-          mountPath: /tftpd.sh
-          subPath: tftpd.sh
-        - name: config
-          mountPath: /config/map-file
-          subPath: tftpd-map-file
-        - name: images
-          mountPath: /tftp/images
+          mountPath: /boot-server
+        - name: k3s-token
+          mountPath: /secrets/k3s-token
           readOnly: true
+        - name: boot-server-tls
+          mountPath: /data/tls
+        - name: config
+          mountPath: /data/boot-map.yaml
+          subPath: boot-map.yaml
+        - name: config
+          mountPath: /data/map-file
+          subPath: tftpd-map-file
+        - name: node-authn-keys
+          mountPath: /data/node-authn-keys
+        - name: node-configs
+          mountPath: /data/node-configs
+        - name: node-states
+          mountPath: /data/node-states
+        - name: admin-pubkey
+          mountPath: /data/admin.pub
+          subPath: admin.pub
+        - name: images
+          mountPath: /data/images
+        - name: tmp
+          mountPath: /tmp
       volumes:
       - name: config
         configMap:
@@ -233,7 +180,7 @@ spec:
       - name: node-states
         configMap:
           name: node-states
-      - name: registry-tmp
+      - name: tmp
         emptyDir: {}
       - name: dnsmasq-leases
         emptyDir: {}

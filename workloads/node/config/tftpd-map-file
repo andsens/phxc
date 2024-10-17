@@ -1,4 +1,0 @@
-re ^x64.efi$ /images/amd64/uki.efi last;
-re ^aa64.efi$ /images/arm64/uki.efi last;
-re ^boot.img$ /images/rpi5/boot.img last;
-re ^config.txt$ /images/rpi5/config.txt last;

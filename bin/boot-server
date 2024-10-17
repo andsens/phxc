@@ -10,7 +10,7 @@ main() {
   source "$PKGROOT/.upkg/path-tools/path-tools.sh"
   PATH=$(path_prepend "$PKGROOT/.upkg/.bin")
   source "$PKGROOT/lib/options.sh"
-  source "$PKGROOT/lib/startup.sh"
+  source "$PKGROOT/lib/boot-server.sh"
   # shellcheck source=workloads/settings/env/settings.shellcheck.sh
   source "$PKGROOT/workloads/settings/env/settings.sh"
   eval_settings
@@ -39,13 +39,10 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' boot-server`
   eval "$(docopt "$@")"
 
-  initialize_startup
+  initialize_boot_server
 
   # shellcheck disable=SC2154
   checkdeps in.tftpd tcpdump python3 &>/dev/null || fatal "tftpd-hpa, tcpdump, and python3 must be installed\n"
-
-  local boot_server_root=$STARTUP/boot-server
-  mkdir -p "$boot_server_root"
 
   local selected_addr addrs=()
   readarray -t -d $'\n' addrs < <(ip --json a | jq -c '.[] | select(.ifname!="lo") | . as $if | .addr_info[] | {"if":$if,"addr":.}')
@@ -61,59 +58,37 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   done
   selected_addr=$(select_options "Multiple networks found, please select:" "" "${options[@]}") || fatal "No networks found"
 
-  local ifname
-  ifname=$(jq -re '.if.ifname' <<<"$selected_addr")
-  export HOST_IP TFTP_SERVER_IP
-  HOST_IP=$(jq -re '.addr.local' <<<"$selected_addr")
-  TFTP_SERVER_IP=$HOST_IP
+  local host_ip
+  host_ip=$(jq -re '.addr.local' <<<"$selected_addr")
 
-  BOOT_SERVER_CRT=$STEPPATH/certs/boot-server.crt
-  BOOT_SERVER_KEY=$STEPPATH/certs/boot-server.key
-  BOOT_SERVER_BUNDLE=$STEPPATH/certs/boot-server.bundle.crt
-  if [[ ! -e $BOOT_SERVER_KEY ]] || \
-        ! step certificate verify "$BOOT_SERVER_CRT" --roots="$INTERMEDIATE_CRT" &>/dev/null || \
-          step certificate needs-renewal "$BOOT_SERVER_CRT" &>/dev/null; then
+  local boot_server_crt=$STEPPATH/certs/boot-server.crt
+  local boot_server_key=$STEPPATH/certs/boot-server.key
+  local boot_server_bundle=$STEPPATH/certs/boot-server.bundle.crt
+  if [[ ! -e $boot_server_key ]] || \
+        ! step certificate verify "$boot_server_crt" --roots="$INTERMEDIATE_CRT" &>/dev/null || \
+          step certificate needs-renewal "$boot_server_crt" &>/dev/null; then
     step certificate create \
       --ca "$INTERMEDIATE_CRT" --ca-key "$INTERMEDIATE_KEY" \
       --force --no-password --insecure \
-      boot-server.node.svc.cluster.local "$BOOT_SERVER_CRT" "$BOOT_SERVER_KEY"
+      boot-server.node.svc.cluster.local "$boot_server_crt" "$boot_server_key"
   fi
-  step certificate bundle --force "$BOOT_SERVER_CRT" "$INTERMEDIATE_CRT" "$BOOT_SERVER_BUNDLE"
+  step certificate bundle --force "$boot_server_crt" "$INTERMEDIATE_CRT" "$boot_server_bundle"
 
   mkdir -p \
-    "$boot_server_root/registry/node-authn-keys" \
-    "$boot_server_root/registry/node-configs" \
-    "$boot_server_root/registry/node-states" \
-    "$boot_server_root/tftpd/images" \
+    "$BOOT_SERVER_ROOT/node-authn-keys" \
+    "$BOOT_SERVER_ROOT/node-configs" \
+    "$BOOT_SERVER_ROOT/node-states" \
 
-  trap_prepend "bg_killall" TERM
-  trap_prepend "bg_killall" INT
-  trap_prepend "bg_killall" EXIT
+  python3 -m venv "$BOOT_SERVER_ROOT/venv"
+  "$BOOT_SERVER_ROOT/venv/bin/pip3" install -qr "$PKGROOT/workloads/node/containers/boot-server/requirements.txt"
 
-  python3 -m venv "$boot_server_root/venv"
-  "$boot_server_root/venv/bin/pip3" install -qr "$PKGROOT/workloads/node/containers/dhcp-proxy/requirements.txt"
-  "$boot_server_root/venv/bin/pip3" install -qr "$PKGROOT/workloads/node/containers/registry/requirements.txt"
-
-  info "Binding to port 67 & 69 and bind-mounting directories require administrator privileges, you might be asked for your sudo password"
-  sudo mount --bind "$IMAGES" "$boot_server_root/tftpd/images"
-  trap_append "info \"unmounting tftpd bind-mount\"; sudo umount \"$boot_server_root/tftpd/images\"" EXIT
-
-  BG_MAXPARALLEL=-1 BG_SIGNAL=TERM
-  bg_run sudo "$boot_server_root/venv/bin/python3" "$PKGROOT/workloads/node/scripts/dhcp-proxy.py" \
-    --boot-map "$PKGROOT/workloads/node/config/boot-map.yaml" "$HOST_IP" "$TFTP_SERVER_IP"
-  bg_run sudo in.tftpd \
-    --foreground --user tftp --address "$HOST_IP:69" \
-    --map-file "$PKGROOT/workloads/node/config/tftpd-map-file" --secure "$boot_server_root/tftpd" --blocksize 1468
-  bg_run sudo tcpdump -i "$ifname" -nl port 69 and udp
+  info "Binding to port 67 & 69 requires administrator privileges, you might be asked for your sudo password"
   PYTHONPATH=$PKGROOT/workloads/node/scripts \
-    bg_run "$boot_server_root/venv/bin/gunicorn" \
-      -b "$HOST_IP:8020" \
-      --certfile "$BOOT_SERVER_BUNDLE" --keyfile "$BOOT_SERVER_KEY" \
-      --worker-class gevent --timeout 0 \
-      "registry:gunicorn(root=\"$boot_server_root/registry\",images=\"$IMAGES\",admin_pubkey=\"$STEPPATH/system:admin.pub\",steppath=\"$STEPPATH\")"
-  info "boot-server is ready"
-  bg_block 3
-  bg_killall TERM
+    exec sudo --preserve-env=PYTHONPATH "$BOOT_SERVER_ROOT/venv/bin/python3" \
+      -m boot-server --bind-ip "$host_ip" \
+      --certfile "$boot_server_bundle" --keyfile "$boot_server_key" \
+      --root="$BOOT_SERVER_ROOT" --admin-pubkey="$STEPPATH/system:admin.pub" --steppath="$STARTUP/step" \
+      --boot-map="$PKGROOT/workloads/node/config/boot-map.yaml"
 }
 
 main "$@"

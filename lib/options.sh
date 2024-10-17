@@ -41,5 +41,5 @@ select_options() {
 get_control_plane_hostname() {
   jq -rse '[
     .[] | select((.["node-label"] // [])[] | contains("node-role.kubernetes.io/control-plane=true"))
-  ] | first | .hostname' "$PKGROOT/startup/boot-server/registry/node-configs"/*.json
+  ] | first | .hostname' "$PKGROOT/boot-server/node-configs"/*.json
 }

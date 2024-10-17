@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 
-initialize_startup() {
-  STARTUP=$PKGROOT/startup
+initialize_boot_server() {
+  BOOT_SERVER_ROOT=$PKGROOT/boot-server
   # shellcheck disable=SC2034
-  IMAGES=$STARTUP/images
-  mkdir -p "$STARTUP"
+  IMAGES=$BOOT_SERVER_ROOT/images
+  mkdir -p "$BOOT_SERVER_ROOT" "$IMAGES"
 
-  export STEPPATH=$STARTUP/step
+  export STEPPATH=$BOOT_SERVER_ROOT/step
   mkdir -p "$STEPPATH/certs" "$STEPPATH/secrets" "$STEPPATH/config"
   ROOT_CRT=$STEPPATH/certs/root_ca.crt
   ROOT_KEY=$STEPPATH/secrets/root_ca_key

@@ -5,9 +5,7 @@ resources:
 - ../settings/replacements
 - ../common-context
 - containers/create-boot-image
-- containers/dhcp-proxy
-- containers/registry
-- containers/tftpd
+- containers/boot-server
 - bootstrap
 - admin-pubkey.yaml
 - images.yaml
@@ -18,12 +16,14 @@ resources:
 configMapGenerator:
 - files:
   - config/boot-map.yaml
-  - config/tftpd-map-file
   name: boot-server-config
 - files:
-  - scripts/dhcp-proxy.py
-  - scripts/tftpd.sh
-  - scripts/registry.py
+  - scripts/boot-server.sh
+  - scripts/boot-server/__init__.py
+  - scripts/boot-server/__main__.py
+  - scripts/boot-server/dhcp_proxy.py
+  - scripts/boot-server/tftpd.py
+  - scripts/boot-server/registry.py
   name: boot-server-scripts
 replacements:
 - source: {fieldPath: data.cluster.adminPubkey, kind: ConfigMap, name: settings}

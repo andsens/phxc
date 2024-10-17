@@ -46,10 +46,10 @@
 # Regex matching. Last match wins
 # Format is "<vendor-client>/<arch>" (without quotes and <>)
 
-/0x00 0x0[79]$: images/amd64/uki.efi
-/0x00 0x0b$: images/arm64/uki.efi
-^PXEClient:Arch:00000:UNDI:002001/0x00 0x00$: images/rpi5/boot.img
-/0x00 0x1[68]$: images/rpi5/boot.img
-^PXEClient:Arch:00000:UNDI:002001/$: images/rpi5/boot.img
+/0x00 0x0[79]$: amd64/uki.efi
+/0x00 0x0b$: arm64/uki.efi
+^PXEClient:Arch:00000:UNDI:002001/0x00 0x00$: rpi5/boot.img
+/0x00 0x1[68]$: rpi5/boot.img
+^PXEClient:Arch:00000:UNDI:002001/$: rpi5/boot.img
 # home-cluster initramfs boot-server discovery
 ^PXEClient:home-cluster/$: ""

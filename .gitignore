@@ -1,5 +1,5 @@
 /.upkg
 /settings.yaml
 /mnt
-/startup
+/boot-server
 __pycache__
