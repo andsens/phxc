@@ -20,7 +20,7 @@ check() {
     return 1
   fi
   jwt=$(sign-jwt transfer-enabled)
-  if result=$(curl-boot-server "registry/transfer-enabled?jwt=$jwt" \
+  if result=$(curl-boot-server "transfer-enabled?jwt=$jwt" \
     -XGET -w '%{http_code}' | tail -n1); then
     return 0
   else
@@ -37,7 +37,7 @@ check() {
 transfer() {
   local jwt root_ca_key
   jwt=$(sign-jwt root-key)
-  root_ca_key=$(curl-boot-server "registry/root-key?jwt=$jwt")
+  root_ca_key=$(curl-boot-server "root-key?jwt=$jwt")
   kubectl create -n smallstep secret generic smallstep-root-cert --from-file=tls.crt=/usr/local/share/ca-certificates/home-cluster-root.crt
   kubectl create -n smallstep secret tls smallstep-root --cert=/usr/local/share/ca-certificates/home-cluster-root.crt --key=<(printf "%s\n" "$root_ca_key")
 }

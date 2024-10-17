@@ -28,8 +28,10 @@ from pathlib import Path
 import docopt
 from . import __name__ as root_name
 from .dhcp_proxy import dhcp_proxy
-from .registry import registry
+from .registry import NodeRegistry
+from .api import api
 from .tftpd import tftpd
+from .tracker import BootTracker
 
 log = logging.getLogger(root_name)
 
@@ -51,16 +53,17 @@ async def main():
   steppath: Path | None = Path(params['--steppath']) if params['--steppath'] is not None else None
   boot_map: Path = root / 'boot-map.yaml' if params['--boot-map'] == '<root>/boot-map.yaml' else root / Path(params['--boot-map'])
 
+  boot_tracker = BootTracker()
+  node_registry = NodeRegistry(root, admin_pubkey)
+
   async with asyncio.TaskGroup() as task_group:
     tftpd_ready = asyncio.Event()
-    task_group.create_task(tftpd(tftpd_ready, shutdown_event, bind_ip, images))
+    task_group.create_task(tftpd(tftpd_ready, shutdown_event, boot_tracker, bind_ip, images))
     dhcp_proxy_ready = asyncio.Event()
-    task_group.create_task(dhcp_proxy(dhcp_proxy_ready, shutdown_event, boot_map, bind_ip))
+    task_group.create_task(dhcp_proxy(dhcp_proxy_ready, shutdown_event, boot_tracker, boot_map, bind_ip))
     registry_ready = asyncio.Event()
-    task_group.create_task(registry(registry_ready, shutdown_event,
-                                    bind_ip, root, images,
-                                    certfile, keyfile,
-                                    admin_pubkey, steppath=steppath))
+    task_group.create_task(api(registry_ready, shutdown_event, boot_tracker, node_registry,
+                               bind_ip, images, certfile, keyfile, steppath=steppath))
     await tftpd_ready.wait()
     await dhcp_proxy_ready.wait()
     await registry_ready.wait()

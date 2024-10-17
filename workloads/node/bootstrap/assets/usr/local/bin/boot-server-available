@@ -5,7 +5,7 @@ main() {
   [[ $# -eq 0 ]] || usage
   boot_server=$(get-node-state boot-server) || return 1
   if [[ $(curl  --cacert /usr/local/share/ca-certificates/home-cluster-root.crt \
-    -sw '%{http_code}' -o/dev/null "https://${boot_server}:8020/registry/health") = 200 ]]; then
+    -sw '%{http_code}' -o/dev/null "https://${boot_server}:8020/health") = 200 ]]; then
     return 0
   else
     return 1

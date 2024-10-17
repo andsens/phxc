@@ -1,16 +1,26 @@
 import asyncio, socket, logging, re
 from pathlib import Path
 import ipaddress, yaml, dhcppython
+from .tracker import BootTracker
+from typing import TypedDict, Pattern, Any
+import macaddress
 
 log = logging.getLogger(__name__)
 
-async def dhcp_proxy(ready_event, shutdown_event, boot_map: Path, host_ip):
+
+class BootSpec(TypedDict):
+  variant: str
+  filename: str
+
+BootMap = dict[Pattern[Any], BootSpec | None]
+
+async def dhcp_proxy(ready_event, shutdown_event, boot_tracker: BootTracker, boot_map: Path, host_ip):
   log.info('Starting DHCP proxy')
   proxy_ip = ipaddress.ip_address(host_ip)
   tftpd_addr = host_ip
 
   with boot_map.open('r') as h:
-    compiled_boot_map = dict((re.compile(regex), file_path) for regex, file_path in yaml.safe_load(h).items())
+    compiled_boot_map = dict((re.compile(regex), boot_spec) for regex, boot_spec in yaml.safe_load(h).items())
 
   DSCP_TOS_ROUTING_CONTROL = 0xc0
   IP_PMTUDISC_DONT = 0
@@ -35,11 +45,11 @@ async def dhcp_proxy(ready_event, shutdown_event, boot_map: Path, host_ip):
 
   loop = asyncio.get_running_loop()
   transport_67, protocol = await loop.create_datagram_endpoint(
-    lambda: DHCPProxy(67, proxy_ip, tftpd_addr, base_option_list, compiled_boot_map),
+    lambda: DHCPProxy(boot_tracker, 67, proxy_ip, tftpd_addr, base_option_list, compiled_boot_map),
     sock=sock_67
   )
   transport_4011, protocol = await loop.create_datagram_endpoint(
-    lambda: DHCPProxy(4011, proxy_ip, tftpd_addr, base_option_list, compiled_boot_map),
+    lambda: DHCPProxy(boot_tracker, 4011, proxy_ip, tftpd_addr, base_option_list, compiled_boot_map),
     sock=sock_4011
   )
   ready_event.set()
@@ -50,7 +60,11 @@ async def dhcp_proxy(ready_event, shutdown_event, boot_map: Path, host_ip):
 
 class DHCPProxy(object):
 
-  def __init__(self, port, proxy_ip, tftpd_addr, base_option_list, boot_map):
+  boot_tracker: BootTracker
+  boot_map: BootMap
+
+  def __init__(self, boot_tracker, port, proxy_ip, tftpd_addr, base_option_list, boot_map: BootMap):
+    self.boot_tracker = boot_tracker
     self.port = port
     self.proxy_ip = proxy_ip
     self.tftpd_addr = tftpd_addr
@@ -72,19 +86,26 @@ class DHCPProxy(object):
 
       options = message.options.as_dict()
 
+      macaddr: macaddress.MAC = macaddress.parse(message.chaddr, macaddress.MAC)
       if 'PXEClient' not in options.get('vendor_class_identifier', ''):
-        log.debug(f'Non-PXE client request received from {message.chaddr}')
+        log.debug(f'Non-PXE client request received from {macaddr}')
         return
 
       if options['dhcp_message_type'] == 'DHCPDISCOVER' and self.port == 67:
         response_type = dhcppython.packet.DHCPPacket.Offer
+      elif options['dhcp_message_type'] == 'DHCPREQUEST' and self.port == 67:
+        requested_ip = options.get('requested_ip_address', None)
+        if requested_ip is not None:
+          log.debug(f'{macaddr} requested IP {requested_ip}')
+          self.boot_tracker.ip_requested(macaddr, ipaddress.ip_address(requested_ip))
+        return
       elif options['dhcp_message_type'] == 'DHCPREQUEST' and self.port == 4011:
         response_type = dhcppython.packet.DHCPPacket.Ack
       else:
-        log.debug(f'Unhandled DHCP message type {options['dhcp_message_type']} from {message.chaddr} on port {self.port}')
+        log.info(f'Unhandled DHCP message type {options['dhcp_message_type']} from {macaddr} on port {self.port}')
         return
 
-      log.info(f'PXE client {options['dhcp_message_type']} received from {message.chaddr}')
+      log.info(f'PXE client {options['dhcp_message_type']} received from {macaddr}')
       option_list = list(self.base_option_list)
       uuid_opt = message.options.by_code(97)
       if uuid_opt is not None:
@@ -92,10 +113,13 @@ class DHCPProxy(object):
 
       match_string = f'{options.get('vendor_class_identifier')}/{options.get('ClientSystem_93', '')}'
       file_path = None
-      for matcher, _file_path in self.boot_map.items():
+      for matcher, boot_spec in self.boot_map.items():
         if matcher.search(match_string) is not None:
-          # No break, last match wins
-          file_path = _file_path.encode()
+          if boot_spec is not None:
+            # No break, last match wins
+            file_path = str(self.boot_tracker.get_variant_dir(macaddr, boot_spec['variant']) / boot_spec['filename']).encode()
+          else:
+            file_path = ''.encode()
 
       if file_path is None:
         log.info(f"No match found in boot-map for '{match_string}'")

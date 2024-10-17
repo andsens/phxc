@@ -25,6 +25,8 @@ configMapGenerator:
   - scripts/boot-server/tftpd.py
   - scripts/boot-server/registry.py
   name: boot-server-scripts
+generatorOptions:
+  disableNameSuffixHash: true
 replacements:
 - source: {fieldPath: data.cluster.adminPubkey, kind: ConfigMap, name: settings}
   targets:

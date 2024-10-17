@@ -15,7 +15,7 @@ main() {
 
 check() {
   if kubectl -n node get configmap node-authn-keys &>/dev/null; then
-    printf "The node-authn-keys get configmap already exists\n" >&2
+    printf "The node-authn-keys configmap already exists\n" >&2
     return 1
   fi
 }
