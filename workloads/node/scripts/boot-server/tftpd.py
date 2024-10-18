@@ -5,7 +5,8 @@ import py3tftp.exceptions
 import py3tftp.file_io
 import py3tftp.netascii
 import ipaddress
-from .tracker import BootTracker
+from .registry import Registry
+from . import AnyIPAddress
 
 log = logging.getLogger(__name__)
 
@@ -20,7 +21,7 @@ boot_spec_map = {
   },
 }
 
-async def tftpd(ready_event, shutdown_event, boot_tracker: BootTracker, host_ip, root: Path):
+async def tftpd(ready_event, shutdown_event, registry: Registry, host_ip: AnyIPAddress, root: Path):
   log.info('Starting TFTP server')
 
   def get_file_reader(mode, ipaddr, filename, opts):
@@ -30,7 +31,7 @@ async def tftpd(ready_event, shutdown_event, boot_tracker: BootTracker, host_ip,
     boot_spec = next((p for r, p in reversed(boot_spec_map.items()) if r.match(rel_filename)), None)
     abs_path = root / (
       rel_filename if boot_spec is None else \
-      boot_tracker.get_variant_dir(ipaddr, boot_spec['variant']) / boot_spec['filename']
+      registry.get_variant_dir(ipaddr, boot_spec['variant']) / boot_spec['filename']
     )
     # Verify that the formed path is under the root directory.
     try:
@@ -45,7 +46,7 @@ async def tftpd(ready_event, shutdown_event, boot_tracker: BootTracker, host_ip,
   loop = asyncio.get_running_loop()
   transport, protocol = await loop.create_datagram_endpoint(
     lambda: TFTPServerProtocol(get_file_reader, host_ip, loop, {}),
-    local_addr=(host_ip, 69,))
+    local_addr=(str(host_ip), 69,))
   ready_event.set()
   await shutdown_event.wait()
   log.info('Closing TFTP server')
@@ -53,9 +54,9 @@ async def tftpd(ready_event, shutdown_event, boot_tracker: BootTracker, host_ip,
 
 class TFTPServerProtocol(py3tftp.protocols.BaseTFTPServerProtocol):
 
-  def __init__(self, get_file_reader, host_interface, loop, extra_opts):
+  def __init__(self, get_file_reader, host_ip, loop, extra_opts):
     self.get_file_reader = get_file_reader
-    super().__init__(host_interface, loop, extra_opts)
+    super().__init__(str(host_ip), loop, extra_opts)
 
   def datagram_received(self, data, addr):
     """

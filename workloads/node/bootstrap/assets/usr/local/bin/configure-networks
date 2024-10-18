@@ -5,8 +5,25 @@ main() {
   [[ $# -eq 0 ]] || usage
   local network
   for network in $(jq -r '(.networks // {}) | keys[]' /run/initramfs/node-config.json); do
-    config=$(jq -r --arg network "$network" '.networks[$network]' /run/initramfs/node-config.json)
-    printf "%s\n" "$config" >"/etc/systemd/network/$network.network"
+    local mac
+    mac=$(jq -r --arg network "$network" '.networks[$network].mac' /run/initramfs/node-config.json)
+    if jq -re --arg network "$network" '.networks[$network].dhcp' /run/initramfs/node-config.json &>/dev/null; then
+      cat <<EOF >"/etc/systemd/network/$network.network"
+[Match]
+MACAddress=$mac
+[Network]
+DHCP=yes
+EOF
+    else
+      local addrs
+      addrs=$(jq -r --arg network "$network" '.networks[$network].static[] | "Address=\(.)"' /run/initramfs/node-config.json)
+      cat <<EOF >"/etc/systemd/network/$network.network"
+[Match]
+MACAddress=$mac
+[Network]
+$addrs
+EOF
+    fi
   done
 }
 

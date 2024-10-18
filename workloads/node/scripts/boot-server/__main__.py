@@ -3,7 +3,7 @@ Usage:
   boot-server [options]
 
 Options:
-  --bind-ip IP         The IP to bind to [default: 127.0.0.1]
+  --listen IP          The IP to bind to [default: <prompt>]
   -r --root PATH       The root directory for the boot-server
                        [default: $PWD]
   --images PATH        Path to the OS images the boot-server serves
@@ -22,20 +22,22 @@ Options:
   --user USER          Drop privileges after setup and run as specified user
   --import             Import the state, config, and authn-key of the host node
   --etcd URL           etcd URL for storing node states, configs, and authn-keys
+                       An ephemeral in-memory KV store will be used if not
+                       specified and boot-server will prompt on the terminal
+                       when a node needs to be configured.
 '''
 
-import asyncio, logging, os, pwd, signal, sys
+import asyncio, ipaddress, logging, os, pwd, signal, sys
 import urllib.parse
-import logfmter
 from pathlib import Path
 import docopt
-from . import __name__ as root_name
+from . import __name__ as root_name, ErrorMessage
 from .dhcp_proxy import dhcp_proxy
-from .registry import NodeRegistry
+from .registry import Registry
+from .inmemorykvstore import InMemoryKVStore
 from .api import api
 from .tftpd import tftpd
-from .tracker import BootTracker
-import etcd
+import etcd, ifaddr, logfmter, questionary
 
 log = logging.getLogger(root_name)
 
@@ -48,7 +50,7 @@ async def main():
   loop.add_signal_handler(signal.SIGINT, lambda: shutdown_event.set())
   loop.add_signal_handler(signal.SIGTERM, lambda: shutdown_event.set())
 
-  bind_ip = params['--bind-ip']
+  host_ip = ipaddress.ip_address(params['--listen']) if params['--listen'] != '<prompt>' else await prompt_host_ip()
   root: Path = Path.cwd() if params['--root'] == '$PWD' else Path(params['--root'])
   images: Path = root / 'images' if params['--images'] == '<root>/images' else Path(params['--images'])
   certfile: Path = root / 'tls/tls.crt' if params['--certfile'] == '<root>/tls/tls.crt' else params['--certfile']
@@ -57,31 +59,49 @@ async def main():
   steppath: Path | None = Path(params['--steppath']) if params['--steppath'] is not None else None
   boot_map: Path = root / 'boot-map.yaml' if params['--boot-map'] == '<root>/boot-map.yaml' else root / Path(params['--boot-map'])
 
-
   if params['--etcd'] is not None:
     etcd_parts = urllib.parse.urlparse(params['--etcd'])
-    kvClient = etcd.Client(protocol=etcd_parts.scheme, host=etcd_parts.hostname, port=etcd_parts.port)
+    kvClient = etcd.Client(protocol=etcd_parts.scheme, host=etcd_parts.hostname, port=etcd_parts.port, allow_reconnect=True)
+    promptForNodeConfig = False
+  else:
+    kvClient = InMemoryKVStore()
+    promptForNodeConfig = True
 
-  node_registry = NodeRegistry(kvClient, admin_pubkey)
+  registry = Registry(kvClient, admin_pubkey)
   if params['--import']:
-    node_registry.import_host_info(root)
-  boot_tracker = BootTracker(node_registry)
+    registry.import_host_info(root)
 
   async with asyncio.TaskGroup() as task_group:
     tftpd_ready = asyncio.Event()
-    task_group.create_task(tftpd(tftpd_ready, shutdown_event, boot_tracker, bind_ip, images))
+    task_group.create_task(tftpd(tftpd_ready, shutdown_event, registry, host_ip, images))
     dhcp_proxy_ready = asyncio.Event()
-    task_group.create_task(dhcp_proxy(dhcp_proxy_ready, shutdown_event, boot_tracker, boot_map, bind_ip))
-    registry_ready = asyncio.Event()
-    task_group.create_task(api(registry_ready, shutdown_event, boot_tracker, node_registry,
-                               bind_ip, images, certfile, keyfile, steppath=steppath))
+    task_group.create_task(dhcp_proxy(dhcp_proxy_ready, shutdown_event, registry, boot_map, host_ip))
+    api_ready = asyncio.Event()
+    task_group.create_task(api(api_ready, shutdown_event, registry,
+                               host_ip, images, certfile, keyfile, steppath, promptForNodeConfig))
     await tftpd_ready.wait()
     await dhcp_proxy_ready.wait()
-    await registry_ready.wait()
+    await api_ready.wait()
     if params['--user'] is not None:
       user_uid = pwd.getpwnam(params['--user']).pw_uid
       log.info(f'Sockets bound, dropping to user {params['--user']} (UID: {user_uid})')
       os.setuid(user_uid)
+
+async def prompt_host_ip():
+  choices = []
+  for adapter in filter(lambda a: a.nice_name != 'lo', ifaddr.get_adapters()):
+    for ip in filter(lambda ip: ip.is_IPv4, adapter.ips):
+      choices.append(questionary.Choice(f'{adapter.nice_name}: {ip.ip}', ip.ip))
+  if len(choices) == 1:
+    ip = choices[0].value
+  elif len(choices) == 0:
+    raise ErrorMessage('Unable to enumerate NICs and --listen is not specified')
+  else:
+    log.warning('There is more than one address to bind to and --listen is not specified')
+    ip = await questionary.select("Multiple networks found, please select:", choices).ask_async()
+    if ip is None:
+      raise ErrorMessage('You must select an IP for the boot-server to listen on')
+  return ipaddress.ip_address(ip)
 
 def setup_logging():
   log.setLevel(getattr(logging, os.getenv('LOGLEVEL', 'INFO').upper(), 'INFO'))
@@ -93,4 +113,9 @@ def setup_logging():
 
 
 if __name__ == "__main__":
-  asyncio.run(main())
+  try:
+    asyncio.run(main())
+  except KeyboardInterrupt as e:
+    pass
+  except ErrorMessage as e:
+    sys.stderr.write(f'{e}\n')

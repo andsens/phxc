@@ -42,24 +42,7 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   initialize_boot_server
 
   # shellcheck disable=SC2154
-  checkdeps in.tftpd tcpdump python3 &>/dev/null || fatal "tftpd-hpa, tcpdump, and python3 must be installed\n"
-
-  local selected_addr addrs=()
-  readarray -t -d $'\n' addrs < <(ip --json a | jq -c '.[] | select(.ifname!="lo") | . as $if | .addr_info[] | {"if":$if,"addr":.}')
-  if [[ -z $__host_ip && ${#addrs[@]} -gt 1 && ! -t 0 ]]; then
-    fatal "There is more than one address to bind to and --host-ip is not specified"
-  fi
-  options=()
-  for addr_json in "${addrs[@]}"; do
-    # shellcheck disable=SC2053
-    if [[ -z $__host_ip || $(jq -re '.addr.local' <<<"$selected_addr") = $__host_ip ]]; then
-      options+=("$addr_json" "$(jq -r '"\(.if.ifname): \(.addr.local)"' <<<"$addr_json")")
-    fi
-  done
-  selected_addr=$(select_options "Multiple networks found, please select:" "" "${options[@]}") || fatal "No networks found"
-
-  local host_ip
-  host_ip=$(jq -re '.addr.local' <<<"$selected_addr")
+  checkdeps python3 &>/dev/null || fatal "python3 must be installed\n"
 
   local boot_server_crt=$STEPPATH/certs/boot-server.crt
   local boot_server_key=$STEPPATH/certs/boot-server.key
@@ -74,18 +57,13 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   fi
   step certificate bundle --force "$boot_server_crt" "$INTERMEDIATE_CRT" "$boot_server_bundle"
 
-  mkdir -p \
-    "$BOOT_SERVER_ROOT/node-authn-keys" \
-    "$BOOT_SERVER_ROOT/node-configs" \
-    "$BOOT_SERVER_ROOT/node-states" \
-
   python3 -m venv "$BOOT_SERVER_ROOT/venv"
   "$BOOT_SERVER_ROOT/venv/bin/pip3" install -qr "$PKGROOT/workloads/node/containers/boot-server/requirements.txt"
 
   info "Binding to port 67 & 69 requires administrator privileges, you might be asked for your sudo password"
   PYTHONPATH=$PKGROOT/workloads/node/scripts \
     exec sudo --preserve-env=PYTHONPATH "$BOOT_SERVER_ROOT/venv/bin/python3" \
-      -m boot-server --bind-ip "$host_ip" \
+      -m boot-server \
       --certfile "$boot_server_bundle" --keyfile "$boot_server_key" \
       --root="$BOOT_SERVER_ROOT" --admin-pubkey="$STEPPATH/system:admin.pub" --steppath="$STARTUP/step" \
       --boot-map="$PKGROOT/workloads/node/config/boot-map.yaml"

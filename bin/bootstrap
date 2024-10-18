@@ -68,8 +68,8 @@ local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
   "$PKGROOT/workloads/node/bootstrap/scripts/bundle" "$bundle"
 
   # shellcheck disable=SC2154
-  rm -rf "$IMAGES/$VARIANT.new"
-  mkdir "$IMAGES/$VARIANT.new"
+  rm -rf "$IMAGES/$VARIANT.bootstrapping"
+  mkdir "$IMAGES/$VARIANT.bootstrapping"
 
   if [[ ! -e "$IMAGES/containers/create-boot-image-$ARCH.tar" ]] || \
      find "$PKGROOT/workloads/node/containers/create-boot-image" "$PKGROOT/workloads/common-context" \
@@ -108,7 +108,7 @@ local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
     --custom-platform="$DOCKER_PLATFORM" \
     --destination "cluster.local/node:$VARIANT" \
     --insecure-registry=cluster.local \
-    --tar-path "/workspace/images/$VARIANT.new/node.tar" \
+    --tar-path "/workspace/images/$VARIANT.bootstrapping/node.tar" \
     --no-push
 
   docker run --rm -ti \

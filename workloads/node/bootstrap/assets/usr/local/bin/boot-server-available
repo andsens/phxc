@@ -3,9 +3,11 @@ set -Eeo pipefail; shopt -s inherit_errexit
 
 main() {
   [[ $# -eq 0 ]] || usage
-  boot_server=$(get-node-state boot-server) || return 1
+  local boot_server_ip
+  boot_server_ip=$(get-node-state boot-server) || return 1
   if [[ $(curl  --cacert /usr/local/share/ca-certificates/home-cluster-root.crt \
-    -sw '%{http_code}' -o/dev/null "https://${boot_server}:8020/health") = 200 ]]; then
+    --connect-to "boot-server.node.svc.cluster.local:8020:$boot_server_ip:8020" \
+    -sw '%{http_code}' -o/dev/null "https://boot-server.node.svc.cluster.local:8020/health") = 200 ]]; then
     return 0
   else
     return 1

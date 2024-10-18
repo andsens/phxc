@@ -8,7 +8,7 @@ main() {
   curl --cacert /usr/local/share/ca-certificates/home-cluster-root.crt \
     --connect-to "boot-server.node.svc.cluster.local:8020:$boot_server_ip:8020" \
     -fL --no-progress-meter --connect-timeout 5 --retry 3 \
-    "https://boot-server.node.svc.cluster.local/$url_path" "$@"
+    "https://boot-server.node.svc.cluster.local:8020/$url_path" "$@"
 }
 
 main "$@"

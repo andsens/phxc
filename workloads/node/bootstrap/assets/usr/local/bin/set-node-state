@@ -9,10 +9,10 @@ main() {
   local key=$1 val=$2 val_is_json=${3:-false} val_arg
   if $val_is_json; then
     val_arg=--argjson
-    printf 'Setting node-state key "%s" to JSON value "%s"' "$key" "$val"
+    printf 'Setting node-state key "%s" to JSON value "%s"\n' "$key" "$val" >&2
   else
     val_arg=--arg
-    printf 'Setting node-state key "%s" to "%s"' "$key" "$val"
+    printf 'Setting node-state key "%s" to "%s"\n' "$key" "$val" >&2
   fi
   key=$(escape_key "$key")
   # shellcheck disable=SC2016,SC2097,SC2098
