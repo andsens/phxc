@@ -9,11 +9,10 @@ main() {
     shift
   fi
   [[ $# -le 1 ]] || usage
-  local node_config_dest=$1 jwt retry=15 node_config
+  local node_config_dest=$1 retry=15 node_config
   while true; do
     if boot-server-available; then
-      jwt=$(sign-jwt node-config)
-      if node_config=$(curl-boot-server "config?jwt=$jwt"); then
+      if node_config=$(curl-boot-server config); then
         printf "Successfully downloaded node-config\n" >&2
         break
       else

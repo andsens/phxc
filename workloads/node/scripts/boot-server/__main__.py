@@ -5,7 +5,7 @@ Usage:
 Options:
   --listen IP          The IP to bind to [default: <prompt>]
   -r --root PATH       The root directory for the boot-server
-                       [default: $PWD]
+                       [default: /data]
   --images PATH        Path to the OS images the boot-server serves
                        [default: <root>/images]
   --steppath PATH      Path to the smallstep root where the root & secureboot
@@ -20,14 +20,15 @@ Options:
   --boot-map PATH      Path to map of "vendor-client/arch" DHCP options to TFTP
                        boot file paths [default: <root>/boot-map.yaml]
   --user USER          Drop privileges after setup and run as specified user
-  --import             Import the state, config, and authn-key of the host node
+  --import PATH        Import the state, config, and authn-key of the host node
+                       from the specified path
   --etcd URL           etcd URL for storing node states, configs, and authn-keys
                        An ephemeral in-memory KV store will be used if not
                        specified and boot-server will prompt on the terminal
                        when a node needs to be configured.
 '''
 
-import asyncio, ipaddress, logging, os, pwd, signal, sys
+import asyncio, ipaddress, logging, os, pwd, signal, sys, uuid
 import urllib.parse
 from pathlib import Path
 import docopt
@@ -68,8 +69,8 @@ async def main():
     promptForNodeConfig = True
 
   registry = Registry(kvClient, admin_pubkey)
-  if params['--import']:
-    registry.import_host_info(root)
+  if params['--import'] is not None:
+    registry.import_host_info(Path(params['--import']))
 
   async with asyncio.TaskGroup() as task_group:
     tftpd_ready = asyncio.Event()
@@ -106,9 +107,9 @@ async def prompt_host_ip():
 def setup_logging():
   log.setLevel(getattr(logging, os.getenv('LOGLEVEL', 'INFO').upper(), 'INFO'))
   handler = logging.StreamHandler(sys.stderr)
-  handler.setFormatter(logfmter.Logfmter(keys=['ts', 'at', 'component', 'msg'],
-                                         mapping={'at': 'level', 'ts': 'asctime', 'component': 'name'},
-                                         datefmt='%Y-%m-%dT%H:%M:%S%z'))
+  # handler.setFormatter(logfmter.Logfmter(keys=['ts', 'at', 'component', 'msg'],
+  #                                        mapping={'at': 'level', 'ts': 'asctime', 'component': 'name'},
+  #                                        datefmt='%Y-%m-%dT%H:%M:%S%z'))
   log.addHandler(handler)
 
 

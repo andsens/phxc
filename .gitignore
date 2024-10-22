@@ -1,5 +1,7 @@
 /.upkg
 /settings.yaml
 /mnt
-/boot-server
+/.venv
+/.step
+/images
 __pycache__

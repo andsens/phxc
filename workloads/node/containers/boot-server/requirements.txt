@@ -10,3 +10,4 @@ python-etcd==0.4.5
 PyJWT==2.9.0
 questionary==2.0.1
 ifaddr==0.2.0
+cryptography==43.0.3

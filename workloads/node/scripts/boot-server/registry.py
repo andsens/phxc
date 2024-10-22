@@ -52,13 +52,12 @@ class Registry(object):
     except (etcd.EtcdKeyNotFound, KeyError):
       return []
 
-  def get_node_state(self, machine_id: uuid.UUID) -> NodeState | None:
-    state = self.__get(f'nodes/states/{machine_id}')
-    return json.loads(state) if state is not None else None
+  def get_node_authn_key(self, machine_id: uuid.UUID) -> jwt.PyJWK | None:
+    authn_key = self.__get(f'nodes/authn-keys/{machine_id}')
+    return jwt.PyJWK.from_json(authn_key) if authn_key is not None else None
 
-  def update_node_state(self, machine_id: uuid.UUID, node_state: NodeState):
-    self.__set(f'nodes/states/{machine_id}', json.dumps(node_state, indent=2))
-    self.__set(f'mac-to-machine-id/{node_state['primary-mac']}', machine_id)
+  def update_node_authn_key(self, machine_id: uuid.UUID, node_authn_key: Dict):
+    self.__set(f'nodes/authn-keys/{machine_id}', json.dumps(node_authn_key, indent=2))
 
   def get_node_config(self, machine_id: uuid.UUID) -> NodeConfig | None:
     config = self.__get(f'nodes/configs/{machine_id}')
@@ -67,45 +66,48 @@ class Registry(object):
   def update_node_config(self, machine_id: uuid.UUID, node_config: NodeConfig):
     self.__set(f'nodes/configs/{machine_id}', json.dumps(node_config, indent=2))
 
-  def get_node_authn_key(self, machine_id: uuid.UUID) -> jwt.PyJWK | None:
-    authn_key = self.__get(f'nodes/authn-keys/{machine_id}')
-    return jwt.PyJWK.from_json(authn_key) if authn_key is not None else None
+  def get_node_state(self, machine_id: uuid.UUID) -> NodeState | None:
+    state = self.__get(f'nodes/states/{machine_id}')
+    return json.loads(state) if state is not None else None
 
-  def update_node_authn_key(self, machine_id: uuid.UUID, node_authn_key: Dict):
-    self.__set(f'nodes/authn-keys/{machine_id}', json.dumps(node_authn_key, indent=2))
+  def update_node_state(self, machine_id: uuid.UUID, node_state: NodeState):
+    self.__set(f'nodes/states/{machine_id}', json.dumps(node_state, indent=2))
+    self.__set(f'mac-to-machine-id/{node_state['primary-mac']}', machine_id)
 
-  def verify_jwt(self, token, purpose, require_admin=False) -> uuid.UUID | Literal['admin']:
+  def verify_jwt(self, token, subject, require_admin=False) -> uuid.UUID | Literal['admin']:
     if token is None:
       raise JWTVerificationError(f'No JWT was provided')
     payload = jwt.decode(token, algorithms=allowed_jwt_algos, options={'verify_signature': False, 'require': required_jwt_claims})
     issuer = payload['iss']
     if 'jti' not in payload:
-      raise JWTVerificationError(f'Unable to verify JWT for {issuer}, JWT must contain a JTI')
+      raise JWTVerificationError(f'Unable to verify JWT for {issuer}: The JWT must contain a JTI')
     if self.__get(f'used-jtis/{payload['jti']}') is not None:
-      raise JWTVerificationError(f'Unable to verify JWT for {issuer}, the JTI {payload['jti']} has already been used')
+      raise JWTVerificationError(f'Unable to verify JWT for {issuer}: The JTI {payload['jti']} has already been used')
     if require_admin:
       if issuer != 'admin':
-        raise JWTVerificationError(f'Unable to verify JWT for {issuer}, issuer must be admin')
+        raise JWTVerificationError(f'Unable to verify JWT for {issuer}: Issuer must be admin')
+      issuer_return = issuer
       node_authn_key = self.admin_pubkey_path.read_text()
     else:
       machine_id = uuid.UUID(issuer)
+      issuer_return = machine_id
       node_authn_key = self.get_node_authn_key(machine_id)
     if node_authn_key is None:
-      raise JWTVerificationError(f'Unable to verify JWT for {issuer}, no authentication key has been submitted yet')
+      raise JWTVerificationError(f'Unable to verify JWT for {issuer}: No authentication key has been submitted yet')
     jwt.decode(token, key=node_authn_key, algorithms=allowed_jwt_algos,
                issuer=issuer, audience=['boot-server'],
                options={'require': required_jwt_claims}, leeway=30)
-    self.__set(f'used-jtis/{payload['jti']}', '', ttl=payload['exp'] - time.time())
-    if payload['sub'] != purpose:
-      raise Exception(f'Received a JWT for {issuer} with subject "{payload['sub']}", was however expecting the subject "{purpose}"')
-    return issuer
+    self.__set(f'used-jtis/{payload['jti']}', '', ttl=int(payload['exp'] - time.time()) + 1)
+    if payload['sub'] != subject:
+      raise Exception(f'Received a JWT for {issuer} with subject "{payload['sub']}", was however expecting the subject "{subject}"')
+    return issuer_return
 
-  def import_host_info(self, root: Path):
+  def import_host_info(self, import_path: Path):
     log.info('Updating state, config, and authn-key of host node')
-    host_machine_id = uuid.UUID((root / 'host-machine-id').read_text())
-    self.update_node_state(host_machine_id, json.loads((root / 'host-node-state.json').read_text()))
-    self.update_node_config(host_machine_id, json.loads((root / 'host-node-config.json').read_text()))
-    self.update_node_authn_key(host_machine_id, json.loads((root / 'host-authn-key.json').read_text()))
+    host_machine_id = uuid.UUID((import_path / 'machine-id').read_text())
+    self.update_node_state(host_machine_id, json.loads((import_path / 'node-state.json').read_text()))
+    self.update_node_config(host_machine_id, json.loads((import_path / 'node-config.json').read_text()))
+    self.update_node_authn_key(host_machine_id, json.loads((import_path / 'authn-key.json').read_text()))
 
   @overload
   def get_variant_dir(self, ipaddr: AnyIPAddress, variant) -> Path:

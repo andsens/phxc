@@ -10,8 +10,7 @@ main() {
   source "$PKGROOT/.upkg/trap.sh/trap.sh"
   source "$PKGROOT/.upkg/path-tools/path-tools.sh"
   PATH=$(path_prepend "$PKGROOT/.upkg/.bin")
-  source "$PKGROOT/lib/options.sh"
-  source "$PKGROOT/lib/boot-server.sh"
+  source "$PKGROOT/lib/certificates.sh"
   # shellcheck source=workloads/settings/env/settings.shellcheck.sh
   source "$PKGROOT/workloads/settings/env/settings.sh"
   eval_settings
@@ -46,7 +45,11 @@ local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' bootstrap`
   eval "$(docopt "$@")"
 
-  initialize_boot_server
+  export STEPPATH=$PKGROOT/.step
+  initialize_certificates
+  # shellcheck disable=SC2034
+  IMAGES=$PKGROOT/images
+  mkdir -p "$IMAGES"
 
   # shellcheck disable=SC2154
   local DEBUG=$__debug DOCKER_PLATFORM ARCH

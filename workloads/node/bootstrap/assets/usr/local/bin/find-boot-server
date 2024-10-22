@@ -4,7 +4,19 @@ set -Eeo pipefail; shopt -s inherit_errexit
 main() {
   [[ $# -eq 0 ]] || usage
   # Broadcast a DHCPDISCOVER packet on port 4011 to get an answer from dhcp-proxy
-  # Built with make-req.py
+  # Built with:
+  # #!/usr/bin/env /python3
+  # import dhcppython
+  # from textwrap import wrap
+  # print('\n'.join(wrap(dhcppython.packet.DHCPPacket.Request(
+  #   mac_addr='5e:bb:f6:9e:ee:fa',
+  #   seconds=0,
+  #   tx_id=1111111,
+  #   option_list=[
+  #     dhcppython.options.VendorClassIdentifier(code=60, length=len(b'PXEClient:home-cluster'), data=b'PXEClient:home-cluster')
+  #   ]
+  # ).asbytes.hex(),32)))
+
   local dhcp_discover_head='01010600'
   # XID goes here
   local dhcp_discover_xid_tail=\
@@ -28,10 +40,10 @@ main() {
 '3501033c16505845436c69656e743a68'\
 '6f6d652d636c7573746572ff'
 
-  local mac xid boot_server
+  local mac xid boot_server_ip
   for mac in $(ip -o link show | grep -v ' lo: ' | grep -Eo 'link/[^ ]+ [^ ]+' | cut -d ' ' -f2); do
     xid=$(xxd -p -l4 /dev/random)
-    if boot_server=$(
+    if boot_server_ip=$(
         printf "%s%s%s%s%s" \
           "$dhcp_discover_head" \
           "$xid" \
@@ -41,13 +53,17 @@ main() {
         xxd -r -p | \
         socat -4 - udp-datagram:255.255.255.255:4011,bind=:0,broadcast,reuseaddr | \
         dd skip=1 count=1 ibs=44 obs=64 status=none | tr -d '\000'
-      ) && [[ -n "$boot_server" ]]; then
-      set-node-state primary-mac "$mac"
-      set-node-state boot-server "$boot_server"
+      ) && [[ -n "$boot_server_ip" ]]; then
+      if type set-node-state &>/dev/null; then
+        set-node-state primary-mac "$mac"
+        set-node-state boot-server "$boot_server_ip"
+      else
+        printf "%s\n" "$boot_server_ip"
+      fi
       break
     fi
   done
-  [[ -n "$boot_server" ]] || { printf "Unable to find the boot-server\n" >&2; return 1; }
+  [[ -n "$boot_server_ip" ]] || { printf "Unable to find the boot-server\n" >&2; return 1; }
 }
 
 usage() {

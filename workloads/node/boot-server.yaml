@@ -132,16 +132,16 @@ spec:
           mountPath: /data/k3s-token
           readOnly: true
         - name: host-machine-id
-          mountPath: /data/host-machine-id
+          mountPath: /data/host/machine-id
           readOnly: true
         - name: host-node-state
-          mountPath: /data/host-node-state.json
+          mountPath: /data/host/node-state.json
           readOnly: true
         - name: host-node-config
-          mountPath: /data/host-node-config.json
+          mountPath: /data/host/node-config.json
           readOnly: true
         - name: host-authn-key
-          mountPath: /data/host-authn-key.json
+          mountPath: /data/host/authn-key.json
           readOnly: true
         - name: boot-server-tls
           mountPath: /data/tls
@@ -151,12 +151,6 @@ spec:
         - name: config
           mountPath: /data/map-file
           subPath: tftpd-map-file
-        - name: node-authn-keys
-          mountPath: /data/node-authn-keys
-        - name: node-configs
-          mountPath: /data/node-configs
-        - name: node-states
-          mountPath: /data/node-states
         - name: admin-pubkey
           mountPath: /data/admin.pub
           subPath: admin.pub
@@ -201,15 +195,6 @@ spec:
       - name: admin-pubkey
         configMap:
           name: admin-pubkey
-      - name: node-authn-keys
-        configMap:
-          name: node-authn-keys
-      - name: node-configs
-        secret:
-          secretName: node-configs
-      - name: node-states
-        configMap:
-          name: node-states
       - name: tmp
         emptyDir: {}
       - name: dnsmasq-leases

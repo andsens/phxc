@@ -1,16 +1,35 @@
-import base64, logging, secrets, uuid, sys
-import questionary
-from .registry import Registry
-from . import ErrorMessage, NodeState, NodeConfig, BlockDevice
+'''configure-node
+Usage:
+  configure-node -b IP -p PATH -c PATH [<MACHINE-ID>]
+
+Options:
+  -b --boot-server-ip IP   IP of the boot-server
+  -p --admin-privkey PATH  Path to the admin private key file
+  -c --cafile PATH         Path to the home-cluster root certificate
+'''
+
+import asyncio, base64, ipaddress, json, logging, secrets, ssl, sys, time, uuid
+import urllib.request
+from pathlib import Path
+import docopt, questionary, jwt
+from . import AnyIPAddress, ErrorMessage, NodeState, NodeConfig, BlockDevice
 
 log = logging.getLogger(__name__)
 
-async def configure_nodes(registry: Registry, machine_id: uuid.UUID | None = None):
-  if machine_id is None:
-    all_machines = map(lambda m: (m, registry.get_node_state(m), registry.get_node_config(m)), registry.get_all_machine_ids())
+async def main():
+  params = docopt.docopt(__doc__)
+  boot_server_ip = ipaddress.ip_address(params['--boot-server-ip'])
+  admin_privkey = Path(params['--admin-privkey'])
+  cafile = Path(params['--cafile'])
+
+  client = RegistryClient(boot_server_ip, admin_privkey, cafile)
+  if params['<MACHINE-ID>'] is None:
+    all_machines = [(m, client.get_node_state(m), client.get_node_config(m)) for m in client.get_all_machine_ids()]
+    if len(all_machines) == 0:
+      raise ErrorMessage('No machines have reported their state to the boot-server yet')
     selection: tuple[uuid.UUID, NodeState, NodeConfig] = await questionary.select(
       "Please select the machine you would like to configure:", [
-        questionary.Choice(f'{state.variant} {machine_id} ({'unconfigured' if config is None else 'configured'})',
+        questionary.Choice(f'{state['variant']} {machine_id} ({'unconfigured' if config is None else 'configured'})',
                           value=(machine_id, state, config))
         for machine_id, state, config in all_machines
       ]
@@ -19,8 +38,9 @@ async def configure_nodes(registry: Registry, machine_id: uuid.UUID | None = Non
       raise ErrorMessage('You must select an IP for the boot-server to listen on')
     (machine_id, state, config) = selection
   else:
-    state = registry.get_node_state(machine_id)
-    config = registry.get_node_config(machine_id)
+    machine_id = uuid.UUID(params['<MACHINE-ID>'])
+    state = client.get_node_state(machine_id)
+    config = client.get_node_config(machine_id)
 
   if state is None:
     raise ErrorMessage(f'The node {machine_id} has not reported any state yet, unable to configure it')
@@ -101,5 +121,68 @@ async def configure_nodes(registry: Registry, machine_id: uuid.UUID | None = Non
         }
     if await questionary.confirm('Would you like to save the node configuration?', default=False).ask_async():
       break
-  registry.update_node_config(machine_id, config)
+  client.update_node_config(machine_id, config)
   return config
+
+
+class RegistryClient:
+
+  boot_server_ip: AnyIPAddress
+  jwk: str
+  ctx: ssl.SSLContext
+
+  def __init__(self, boot_server_ip: AnyIPAddress, admin_privkey: Path, cafile: Path):
+    self.boot_server_ip = boot_server_ip
+    with admin_privkey.open('r') as h:
+      self.jwk = h.read()
+    self.ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    self.ctx.load_verify_locations(cafile=cafile)
+    self.ctx.check_hostname = False
+
+  def get_all_machine_ids(self) -> list[uuid.UUID]:
+    return map(lambda id: uuid.UUID(id), self.api_call('GET', f'machine-ids'))
+
+  def get_node_config(self, machine_id: uuid.UUID) -> NodeConfig | None:
+    return self.api_call('GET', f'config/{machine_id}')
+
+  def update_node_config(self, machine_id: uuid.UUID, config: NodeConfig):
+    return self.api_call('PUT', f'config/{machine_id}', config)
+
+  def get_node_state(self, machine_id: uuid.UUID) -> NodeState | None:
+    return self.api_call('GET', f'state/{machine_id}')
+
+  def api_call(self, method: str, path: str, body: None | dict = None) -> dict | None:
+    token = jwt.encode(key=self.jwk, algorithm='ES256', payload={
+      'sub': f'{method} {path}',
+      'iss': 'admin',
+      'aud': 'boot-server',
+      'jti': secrets.token_bytes(20).hex(),
+      'nbf': int(time.time() - 30),
+      'exp': int(time.time() + 30),
+    })
+    headers = {
+      'Host': 'boot-server.node.svc.cluster.local',
+      'Authorization': f'Bearer {token}',
+    }
+    data = None
+    if body is not None:
+      headers['Content-Type'] = 'application/json'
+      data = json.dumps(body).encode()
+    req = urllib.request.Request(url=f'https://{self.boot_server_ip}:8020/{path}',
+                                 headers=headers, method=method, data=data)
+    try:
+      with urllib.request.urlopen(req, context=self.ctx) as f:
+        return json.loads(f.read().decode())
+    except urllib.error.HTTPError as e:
+      if e.code == 404:
+        return None
+      else:
+        raise
+
+if __name__ == "__main__":
+  try:
+    asyncio.run(main())
+  except KeyboardInterrupt as e:
+    pass
+  except ErrorMessage as e:
+    sys.stderr.write(f'{e}\n')

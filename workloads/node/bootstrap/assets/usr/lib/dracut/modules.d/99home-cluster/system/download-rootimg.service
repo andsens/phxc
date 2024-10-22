@@ -10,5 +10,5 @@ RemainAfterExit=yes
 # Raspberry PIs don't have an RTC and getting NTP up and running in initramfs
 # is not feasible. We don't actually need a secure connection since we will
 # be checking the SHA-256 sum of the rootimg anyways.
-ExecStart=curl-boot-server images/${VARIANT}/root.${ROOT_SHA256}.img -o/run/initramfs/root.img.tmp --insecure
+ExecStart=bash -c 'wget -qO/run/initramfs/root.img.tmp --no-check-certificate https://$(get-node-state boot-server):8020/images/${VARIANT}/root.${ROOT_SHA256}.img'
 ExecStart=set-node-state rootimg.src boot-server

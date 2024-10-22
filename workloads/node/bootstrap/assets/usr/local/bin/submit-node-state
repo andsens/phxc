@@ -42,11 +42,10 @@ get_rpi5() {
 }
 
 submit_node_state() {
-  local jwt result retry=15
+  local result retry=15
   while true; do
     if boot-server-available; then
-      jwt=$(sign-jwt node-state)
-      if result=$(curl-boot-server "state?jwt=$jwt" -H 'Content-Type: application/json' \
+      if result=$(curl-boot-server state -H 'Content-Type: application/json' \
         -XPUT -d@/run/initramfs/node-state.json -w '%{http_code}' | tail -n1); then
         printf "Successfully reported node-state\n" >&2
         return 0

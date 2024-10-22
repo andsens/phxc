@@ -71,7 +71,6 @@ system_setup() {
     /usr/local/bin/download-node-config \
     /usr/local/bin/get-node-config \
     /usr/local/bin/partition-disk \
-    /usr/local/bin/sign-jwt \
     /usr/local/bin/submit-authn-key \
     /usr/local/bin/submit-node-state \
     /usr/local/bin/surrogate-key \

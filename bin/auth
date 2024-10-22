@@ -10,7 +10,6 @@ main() {
   # shellcheck source=workloads/settings/env/settings.shellcheck.sh
   source "$PKGROOT/workloads/settings/env/settings.sh"
   eval_settings
-  source "$PKGROOT/lib/options.sh"
 
   DOC="auth - Manage cluster authentication
 Usage:

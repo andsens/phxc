@@ -17,13 +17,12 @@ install() {
   inst_binary \
     grep cut xxd dd sha256sum \
     lsblk \
-    ip socat curl \
+    ip socat wget \
     jq flock \
     basename dirname realpath
   inst /usr/local/share/ca-certificates/home-cluster-root.crt
   inst \
     /usr/local/lib/home-cluster/node.sh \
-    /usr/local/bin/curl-boot-server \
     /usr/local/bin/find-boot-server \
     /usr/local/bin/get-node-state \
     /usr/local/bin/set-node-state \

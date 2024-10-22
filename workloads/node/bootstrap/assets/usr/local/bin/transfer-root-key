@@ -14,14 +14,12 @@ main() {
 }
 
 check() {
-  local jwt result
+  local result
   if kubectl -n smallstep get secret smallstep-root &>/dev/null; then
     printf "The smallstep-root secret already exists\n" >&2
     return 1
   fi
-  jwt=$(sign-jwt transfer-enabled)
-  if result=$(curl-boot-server "transfer-enabled?jwt=$jwt" \
-    -XGET -w '%{http_code}' | tail -n1); then
+  if result=$(curl-boot-server transfer-enabled -w '%{http_code}' | tail -n1); then
     return 0
   else
     if [[ $result = 503 ]]; then
@@ -35,9 +33,8 @@ check() {
 }
 
 transfer() {
-  local jwt root_ca_key
-  jwt=$(sign-jwt root-key)
-  root_ca_key=$(curl-boot-server "root-key?jwt=$jwt")
+  local root_ca_key
+  root_ca_key=$(curl-boot-server root-key)
   kubectl create -n smallstep secret generic smallstep-root-cert --from-file=tls.crt=/usr/local/share/ca-certificates/home-cluster-root.crt
   kubectl create -n smallstep secret tls smallstep-root --cert=/usr/local/share/ca-certificates/home-cluster-root.crt --key=<(printf "%s\n" "$root_ca_key")
 }
