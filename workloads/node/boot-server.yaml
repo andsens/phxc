@@ -109,6 +109,8 @@ spec:
               fieldPath: status.hostIP
         - name: ETCD_URL
           value: http://etcd.etcd.svc.cluster.local:2379
+        - name: LOGFORMAT
+          value: logfmt
         ports:
         - name: api
           containerPort: 8020

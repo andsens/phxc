@@ -21,7 +21,8 @@ boot_spec_map = {
   },
 }
 
-async def tftpd(ready_event, shutdown_event, registry: Registry, host_ip: AnyIPAddress, root: Path):
+async def tftpd(ready_event: asyncio.Event, shutdown_event: asyncio.Event, registry: Registry,
+                host_ip: AnyIPAddress, root: Path):
   log.info('Starting TFTP server')
 
   def get_file_reader(mode, ipaddr, filename, opts):

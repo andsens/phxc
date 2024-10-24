@@ -15,13 +15,13 @@ BootSpec = TypedDict('BootSpec', {
 
 BootMap = dict[Pattern[Any], BootSpec | None]
 
-async def dhcp_proxy(ready_event, shutdown_event, registry: Registry, boot_map: Path, host_ip: AnyIPAddress):
+async def dhcp_proxy(ready_event: asyncio.Event, shutdown_event: asyncio.Event, registry: Registry,
+                     boot_map: Path, host_ip: AnyIPAddress):
   log.info('Starting DHCP proxy')
   proxy_ip = host_ip
   tftpd_ip = host_ip
 
-  with boot_map.open('r') as h:
-    compiled_boot_map = dict((re.compile(regex), boot_spec) for regex, boot_spec in yaml.safe_load(h).items())
+  compiled_boot_map = dict((re.compile(regex), boot_spec) for regex, boot_spec in yaml.safe_load(boot_map.read_text()).items())
 
   DSCP_TOS_ROUTING_CONTROL = 0xc0
   IP_PMTUDISC_DONT = 0

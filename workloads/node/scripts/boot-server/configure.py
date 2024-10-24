@@ -133,8 +133,7 @@ class RegistryClient:
 
   def __init__(self, boot_server_ip: AnyIPAddress, admin_privkey: Path, cafile: Path):
     self.boot_server_ip = boot_server_ip
-    with admin_privkey.open('r') as h:
-      self.jwk = h.read()
+    self.jwk = admin_privkey.read_text()
     self.ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
     self.ctx.load_verify_locations(cafile=cafile)
     self.ctx.check_hostname = False
