@@ -47,9 +47,9 @@ local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
 
   export STEPPATH=$PKGROOT/.step
   initialize_certificates
-  # shellcheck disable=SC2034
-  IMAGES=$PKGROOT/images
-  mkdir -p "$IMAGES"
+  local artifacts
+  artifacts=$(mktemp -d)
+  trap_append "rm -rf \"$artifacts\"" EXIT
 
   # shellcheck disable=SC2154
   local DEBUG=$__debug DOCKER_PLATFORM ARCH
@@ -70,28 +70,31 @@ local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
   trap_append "rm \"$bundle\"" EXIT
   "$PKGROOT/workloads/node/bootstrap/scripts/bundle" "$bundle"
 
-  # shellcheck disable=SC2154
-  rm -rf "$IMAGES/$VARIANT.bootstrapping"
-  mkdir "$IMAGES/$VARIANT.bootstrapping"
+  local boot_server_ip retry=15
+  if ! boot_server_ip=$("$PKGROOT/workloads/node/bootstrap/assets/usr/local/bin/find-boot-server" --no-set-state); then
+    error "Failed to determine boot-server IP, retrying in %ds" $retry
+    sleep $retry
+  fi
 
-  if [[ ! -e "$IMAGES/containers/create-boot-image-$ARCH.tar" ]] || \
+  local containers=$PKGROOT/images/containers
+  if [[ ! -e "$containers/create-boot-image-$ARCH.tar" ]] || \
      find "$PKGROOT/workloads/node/containers/create-boot-image" "$PKGROOT/workloads/common-context" \
-       -newer "$IMAGES/containers/create-boot-image-$ARCH.tar" 2>/dev/null | grep -q .; then
+       -newer "$containers/create-boot-image-$ARCH.tar" 2>/dev/null | grep -q .; then
     info "Building '%s'" "create-boot-image:$ARCH"
-    mkdir -p "$IMAGES/containers"
+    mkdir -p "$PKGROOT/images"
     docker run --rm -ti \
       --platform "$DOCKER_PLATFORM" \
       -v "$PKGROOT/workloads/common-context:/workspace/common-context:ro" \
       -v "$PKGROOT/workloads/node/containers/create-boot-image:/workspace/context:ro" \
-      -v "$IMAGES:/workspace/images:rw" \
+      -v "$containers:/workspace/containers:rw" \
       gcr.io/kaniko-project/executor:latest \
       --dockerfile context/Dockerfile \
       --build-arg "ARCH=$ARCH" \
       --custom-platform="$DOCKER_PLATFORM" \
       --destination "cluster.local/create-boot-image:$ARCH" \
-      --tar-path "/workspace/images/containers/create-boot-image-$ARCH.tar" \
+      --tar-path "/workspace/containers/create-boot-image-$ARCH.tar" \
       --no-push
-    docker load -i "$IMAGES/containers/create-boot-image-$ARCH.tar"
+    docker load -i "$containers/create-boot-image-$ARCH.tar"
   else
     info "Not building '%s', no files have changed since last run" "create-boot-image:$ARCH"
   fi
@@ -103,7 +106,7 @@ local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
     -v "$bundle:/workspace/home-cluster.tar.gz:ro" \
     -v "$ROOT_CRT:/workspace/root_ca.crt:ro" \
     -v "$PKGROOT/workloads/common-context:/workspace/common-context:ro" \
-    -v "$IMAGES:/workspace/images:rw" \
+    -v "$artifacts:/workspace/artifacts:rw" \
     gcr.io/kaniko-project/executor:latest \
     --dockerfile context/Dockerfile \
     --build-arg "VARIANT=$VARIANT" \
@@ -111,21 +114,22 @@ local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
     --custom-platform="$DOCKER_PLATFORM" \
     --destination "cluster.local/node:$VARIANT" \
     --insecure-registry=cluster.local \
-    --tar-path "/workspace/images/$VARIANT.bootstrapping/node.tar" \
+    --tar-path "/workspace/artifacts/node.tar" \
     --no-push
 
   docker run --rm -ti \
     --platform "$DOCKER_PLATFORM" \
-    --mount type=bind,src="$SB_KEY",dst=/secureboot/tls.key,readonly \
-    --mount type=bind,src="$SB_CRT",dst=/secureboot/tls.crt,readonly \
+    --add-host "boot-server.node.svc.cluster.local:$boot_server_ip" \
+    -v "$SB_KEY:/secureboot/tls.key:ro" \
+    -v "$SB_CRT:/secureboot/tls.crt:ro" \
+    -v "$ROOT_CRT:/workspace/root_ca.crt:ro" \
     -v "$PKGROOT/workloads/node/bootstrap/create-boot-image-assets:/assets:ro" \
     -v "$PKGROOT/workloads/node/bootstrap/scripts:/scripts:ro" \
-    -v "$IMAGES:/images:rw" \
+    -v "$artifacts:/workspace/artifacts:rw" \
     -e "VARIANT=$VARIANT" \
     -e "DEBUG=$DEBUG" \
     --device=/dev/kvm \
     --group-add "$(stat -c %g /dev/kvm)" \
-    -e CHOWN=$UID:$UID \
     "cluster.local/create-boot-image:$ARCH"
 }
 

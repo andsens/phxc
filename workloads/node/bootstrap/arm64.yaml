@@ -20,15 +20,6 @@ spec:
         kubernetes.io/arch: arm64
       serviceAccountName: create-boot-image
       initContainers:
-      - name: initialize-new-build
-        image: busybox
-        command: [sh, -c, rm -rf /images/$(VARIANT).new; mkdir /images/$(VARIANT).bootstrapping]
-        env:
-        - name: VARIANT
-          value: arm64
-        volumeMounts:
-        - name: images
-          mountPath: /images
       - name: kaniko
         image: gcr.io/kaniko-project/executor:latest
         args:
@@ -36,7 +27,7 @@ spec:
         - --build-arg=VARIANT=$(VARIANT)
         - --custom-platform=linux/arm64
         - --destination=cluster.local/non-existent
-        - --tar-path=/images/$(VARIANT).new/node.tar
+        - --tar-path=/workspace/artifacts/node.tar
         - --no-push
         env:
         - name: VARIANT
@@ -52,8 +43,6 @@ spec:
         - name: bundle
           mountPath: /workspace/home-cluster.tar.gz
           subPath: home-cluster.tar.gz
-        - name: images
-          mountPath: /images
       containers:
       - name: create-boot-image
         image: cluster.local/create-boot-image:arm64
@@ -70,8 +59,9 @@ spec:
           mountPath: /workspace
         - name: secureboot
           mountPath: /secureboot
-        - name: images
-          mountPath: /images
+        - name: smallstep-root-cert
+          mountPath: /workspace/root_ca.crt
+          readOnly: true
       volumes:
       - name: context
         configMap:
@@ -99,6 +89,3 @@ spec:
           name: bundle
       - name: workspace
         emptyDir: {}
-      - name: images
-        persistentVolumeClaim:
-          claimName: images

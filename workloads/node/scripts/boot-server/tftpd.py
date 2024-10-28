@@ -1,16 +1,16 @@
 import asyncio, functools, logging, os, re
-from pathlib import Path
 import py3tftp.protocols
 import py3tftp.exceptions
 import py3tftp.file_io
 import py3tftp.netascii
 import ipaddress
-from .registry import Registry
-from . import AnyIPAddress
+from .context import Context, BootSpec
+from .bootmanager import get_image_dir
+from typing import Pattern
 
 log = logging.getLogger(__name__)
 
-boot_spec_map = {
+boot_spec_map: dict[Pattern, BootSpec] = {
   re.compile(r'^boot.img$'): {
     'variant': 'rpi5',
     'filename': 'boot.img'
@@ -21,8 +21,7 @@ boot_spec_map = {
   },
 }
 
-async def tftpd(ready_event: asyncio.Event, shutdown_event: asyncio.Event, registry: Registry,
-                host_ip: AnyIPAddress, root: Path):
+async def tftpd(ready_event: asyncio.Event, context: Context):
   log.info('Starting TFTP server')
 
   def get_file_reader(mode, ipaddr, filename, opts):
@@ -30,13 +29,13 @@ async def tftpd(ready_event: asyncio.Event, shutdown_event: asyncio.Event, regis
     rel_filename = os.fsdecode(filename).lstrip('./')
     # Check to see if the file has a special mapping, last match wins
     boot_spec = next((p for r, p in reversed(boot_spec_map.items()) if r.match(rel_filename)), None)
-    abs_path = root / (
+    abs_path = context['config']['images'] / (
       rel_filename if boot_spec is None else \
-      registry.get_variant_dir(ipaddr, boot_spec['variant']) / boot_spec['filename']
+      get_image_dir(context, ipaddr, boot_spec['variant']) / boot_spec['filename']
     )
-    # Verify that the formed path is under the root directory.
+    # Verify that the formed path is under the images directory.
     try:
-      abs_path.relative_to(root)
+      abs_path.relative_to(context['config']['images'])
     except ValueError:
       raise FileNotFoundError
     # Verify that we are not accessing a reserved file.
@@ -46,10 +45,10 @@ async def tftpd(ready_event: asyncio.Event, shutdown_event: asyncio.Event, regis
 
   loop = asyncio.get_running_loop()
   transport, protocol = await loop.create_datagram_endpoint(
-    lambda: TFTPServerProtocol(get_file_reader, host_ip, loop, {}),
-    local_addr=(str(host_ip), 69,))
+    lambda: TFTPServerProtocol(get_file_reader, context['config']['host_ip'], loop, {}),
+    local_addr=(str(context['config']['host_ip']), 69,))
   ready_event.set()
-  await shutdown_event.wait()
+  await context['shutdown_event'].wait()
   log.info('Closing TFTP server')
   transport.close()
 

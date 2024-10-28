@@ -11,8 +11,10 @@ Options:
   --steppath PATH      Path to the smallstep root where the root & secureboot
                        keys & certificates are located
                        (smallstep secrets transfer disabled if not specified)
-  --admin-pubkey PATH  Path to the admin public key, used for uploading images
-                       [default: <root>/admin.pub]
+  --admin-pubkey PATH  Path to the admin pubkey, used for configuring nodes
+                       [default: <root>/admin.pem]
+  --sb-pubkey PATH     Path to the secureboot pubkey, used for uploading images
+                       [default: <root>/secureboot.pem]
   --certfile PATH      Path to the TLS certificate bundle for the
                        boot-server API [default: <root>/tls/tls.crt]
   --keyfile PATH       Path to the TLS key for the boot-server API
@@ -35,12 +37,17 @@ import docopt
 from . import __name__ as root_name, ErrorMessage
 from .context import Context
 from .dhcp_proxy import dhcp_proxy
-from .registry import Registry
 from .inmemorykvstore import InMemoryKVStore
 from .api import api
+from .db import DB
 from .tftpd import tftpd
-from .jwt_checker import JWTChecker
 import etcd, ifaddr, logfmter, questionary
+from .node import Node
+import logging, re
+from pathlib import Path
+import yaml
+from .inmemorykvstore import InMemoryKVStore
+import uuid, json
 
 log = logging.getLogger(root_name)
 
@@ -53,15 +60,7 @@ async def main():
   loop.add_signal_handler(signal.SIGINT, lambda: shutdown_event.set())
   loop.add_signal_handler(signal.SIGTERM, lambda: shutdown_event.set())
 
-  host_ip = ipaddress.ip_address(params['--listen']) if params['--listen'] != '<prompt>' else await prompt_host_ip()
   root: Path = Path.cwd() if params['--root'] == '$PWD' else Path(params['--root'])
-  images: Path = root / 'images' if params['--images'] == '<root>/images' else Path(params['--images'])
-  certfile: Path = root / 'tls/tls.crt' if params['--certfile'] == '<root>/tls/tls.crt' else params['--certfile']
-  keyfile: Path = root / 'tls/tls.key' if params['--keyfile'] == '<root>/tls/tls.key' else params['--keyfile']
-  admin_pubkey: Path = root if params['--admin-pubkey'] == '<root>/admin.pub' else Path(params['--admin-pubkey'])
-  steppath: Path | None = Path(params['--steppath']) if params['--steppath'] is not None else None
-  boot_map: Path = root / 'boot-map.yaml' if params['--boot-map'] == '<root>/boot-map.yaml' else root / Path(params['--boot-map'])
-
 
   if params['--etcd'] is not None:
     etcd_parts = urllib.parse.urlparse(params['--etcd'])
@@ -69,26 +68,39 @@ async def main():
   else:
     kv_client = InMemoryKVStore()
 
-  jwt_checker = JWTChecker(kv_client, admin_pubkey)
-
-  registry = Registry(kv_client, admin_pubkey)
-  if params['--import'] is not None:
-    registry.import_host_info(Path(params['--import']))
+  boot_map_path = root / 'boot-map.yaml' if params['--boot-map'] == '<root>/boot-map.yaml' else root / Path(params['--boot-map'])
 
   context: Context = {
-    'registry': registry,
-    'jwt_checker': jwt_checker,
-    'kv_client': kv_client,
+    'boot_map': dict((re.compile(regex), boot_spec) for regex, boot_spec in yaml.safe_load(boot_map_path.read_text()).items()),
+    'config': {
+      'ip_to_mac_ttl': 3600,
+      'host_ip': ipaddress.ip_address(params['--listen']) if params['--listen'] != '<prompt>' else await prompt_host_ip(),
+      'images': root / 'images' if params['--images'] == '<root>/images' else Path(params['--images']),
+      'tls_certfile': root / 'tls/tls.crt' if params['--certfile'] == '<root>/tls/tls.crt' else params['--certfile'],
+      'tls_keyfile': root / 'tls/tls.key' if params['--keyfile'] == '<root>/tls/tls.key' else params['--keyfile'],
+      'admin_pubkey': (root if params['--admin-pubkey'] == '<root>/admin.pem' else Path(params['--admin-pubkey'])).read_text(),
+      'sb_pubkey': (root if params['--sb-pubkey'] == '<root>/sb.pem' else Path(params['--sb-pubkey'])).read_text(),
+      'steppath': Path(params['--steppath']) if params['--steppath'] is not None else None,
+    },
+    'db': DB(kv_client, '/boot-server/'),
+    'shutdown_event': shutdown_event,
   }
+
+  if params['--import'] is not None:
+    log.info('Updating state, config, and authn-key of host node')
+    import_path = Path(params['--import'])
+    host_node = Node(context, uuid.UUID((import_path / 'machine-id').read_text()))
+    host_node.set_state(json.loads((import_path / 'node-state.json').read_text()))
+    host_node.set_config(json.loads((import_path / 'node-config.json').read_text()))
+    host_node.set_authn_key(json.loads((import_path / 'authn-key.json').read_text()))
 
   async with asyncio.TaskGroup() as task_group:
     tftpd_ready = asyncio.Event()
-    task_group.create_task(tftpd(tftpd_ready, context, host_ip, images))
+    task_group.create_task(tftpd(tftpd_ready, context))
     dhcp_proxy_ready = asyncio.Event()
-    task_group.create_task(dhcp_proxy(dhcp_proxy_ready, context, boot_map, host_ip))
+    task_group.create_task(dhcp_proxy(dhcp_proxy_ready, context))
     api_ready = asyncio.Event()
-    task_group.create_task(api(api_ready, context,
-                               host_ip, images, certfile, keyfile, steppath))
+    task_group.create_task(api(api_ready, context))
     await tftpd_ready.wait()
     await dhcp_proxy_ready.wait()
     await api_ready.wait()

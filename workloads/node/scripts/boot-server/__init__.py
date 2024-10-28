@@ -1,13 +1,9 @@
 import ipaddress
 from typing import TypedDict, Literal, Union
-from werkzeug.exceptions import Forbidden
 
 AnyIPAddress = ipaddress.IPv4Address | ipaddress.IPv6Address
 
 class ErrorMessage(Exception):
-  pass
-
-class JWTVerificationError(Forbidden):
   pass
 
 Partition = TypedDict('Partition', {

@@ -2,7 +2,14 @@
 set -Eeo pipefail; shopt -s inherit_errexit
 
 main() {
-  [[ $# -eq 0 ]] || usage
+  local set_state=true
+  local e; for e; do [[ "$e" != "--help" ]] || usage; done
+  if [[ $# -eq 1 ]]; then
+    [[ $1 = -S || $1 = --no-set-state ]] || usage
+    set_state=false
+  elif [[ $# -ne 0 ]]; then
+    usage
+  fi
   # Broadcast a DHCPDISCOVER packet on port 4011 to get an answer from dhcp-proxy
   # Built with:
   # #!/usr/bin/env /python3
@@ -54,7 +61,7 @@ main() {
         socat -4 - udp-datagram:255.255.255.255:4011,bind=:0,broadcast,reuseaddr | \
         dd skip=1 count=1 ibs=44 obs=64 status=none | tr -d '\000'
       ) && [[ -n "$boot_server_ip" ]]; then
-      if type set-node-state &>/dev/null; then
+      if $set_state; then
         set-node-state primary-mac "$mac"
         set-node-state boot-server "$boot_server_ip"
       else
@@ -67,7 +74,12 @@ main() {
 }
 
 usage() {
-  printf "Usage: find-boot-server\n" >&2
+  printf "Usage: find-boot-server [options]
+
+Options:
+  -S --no-set-state  Output boot-server IP instead of setting it and
+                     the primary-mac in the node state
+" >&2
   return 1
 }
 

@@ -1,27 +1,17 @@
-import asyncio, socket, logging, re
-from pathlib import Path
-import ipaddress, yaml, dhcppython
-from .registry import Registry
+import asyncio, socket, logging
+import ipaddress, dhcppython
 from . import AnyIPAddress
-from typing import TypedDict, Pattern, Any
+from .context import Context
+from .bootmanager import get_boot_spec, get_image_dir
 import macaddress
+from .node import Node
 
 log = logging.getLogger(__name__)
 
-BootSpec = TypedDict('BootSpec', {
-  'variant': str,
-  'filename': str
-})
-
-BootMap = dict[Pattern[Any], BootSpec | None]
-
-async def dhcp_proxy(ready_event: asyncio.Event, shutdown_event: asyncio.Event, registry: Registry,
-                     boot_map: Path, host_ip: AnyIPAddress):
+async def dhcp_proxy(ready_event: asyncio.Event, context: Context):
   log.info('Starting DHCP proxy')
-  proxy_ip = host_ip
-  tftpd_ip = host_ip
-
-  compiled_boot_map = dict((re.compile(regex), boot_spec) for regex, boot_spec in yaml.safe_load(boot_map.read_text()).items())
+  proxy_ip = context['config']['host_ip']
+  tftpd_ip = context['config']['host_ip']
 
   DSCP_TOS_ROUTING_CONTROL = 0xc0
   IP_PMTUDISC_DONT = 0
@@ -46,37 +36,35 @@ async def dhcp_proxy(ready_event: asyncio.Event, shutdown_event: asyncio.Event, 
 
   loop = asyncio.get_running_loop()
   transport_67, protocol = await loop.create_datagram_endpoint(
-    lambda: DHCPProxy(registry, 67, proxy_ip, tftpd_ip, base_option_list, compiled_boot_map),
+    lambda: DHCPProxy(context, 67, proxy_ip, tftpd_ip, base_option_list),
     sock=sock_67
   )
   transport_4011, protocol = await loop.create_datagram_endpoint(
-    lambda: DHCPProxy(registry, 4011, proxy_ip, tftpd_ip, base_option_list, compiled_boot_map),
+    lambda: DHCPProxy(context, 4011, proxy_ip, tftpd_ip, base_option_list),
     sock=sock_4011
   )
   ready_event.set()
-  await shutdown_event.wait()
+  await context['shutdown_event'].wait()
   log.info('Closing DHCP proxy')
   transport_67.close()
   transport_4011.close()
 
 class DHCPProxy(object):
 
-  registry: Registry
+  context: Context
   port: int
   proxy_ip: AnyIPAddress
   tftpd_ip: AnyIPAddress
   base_option_list: list[dhcppython.options.Option]
-  boot_map: BootMap
 
-  def __init__(self, registry: Registry, port: int,
+  def __init__(self, context: Context, port: int,
                proxy_ip: AnyIPAddress, tftpd_ip: AnyIPAddress,
-               base_option_list: list[dhcppython.options.Option], boot_map: BootMap):
-    self.registry = registry
+               base_option_list: list[dhcppython.options.Option]):
+    self.context = context
     self.port = port
     self.proxy_ip = proxy_ip
     self.tftpd_ip = tftpd_ip
     self.base_option_list = base_option_list
-    self.boot_map = boot_map
 
   def connection_made(self, transport):
     self.transport = transport
@@ -108,7 +96,7 @@ class DHCPProxy(object):
         requested_ip = get_opt(dhcppython.options.RequestedIPAddress.code)
         if requested_ip is not None:
           log.debug(f'{macaddr} requested IP {requested_ip}')
-          self.registry.ip_requested(macaddr, ipaddress.ip_address(requested_ip))
+          Node.ip_requested(self.context, macaddr, ipaddress.ip_address(requested_ip))
         return
       elif dhcp_message_type == 'DHCPREQUEST' and self.port == 4011:
         response_type = dhcppython.packet.DHCPPacket.Ack
@@ -122,21 +110,18 @@ class DHCPProxy(object):
       if uuid_opt is not None:
         option_list.append(uuid_opt)
 
-      client_system = get_opt(93, '')
-      match_string = f'{vendor_class_identifier}/{client_system}'
-      file_path = None
-      for matcher, boot_spec in self.boot_map.items():
-        if matcher.search(match_string) is not None:
-          if boot_spec is not None:
-            # No break, last match wins
-            file_path = str(self.registry.get_variant_dir(macaddr, boot_spec['variant']) / boot_spec['filename']).encode()
-          else:
-            file_path = ''.encode()
-
-      if file_path is None:
-        log.info(f"No match found in boot-map for '{match_string}'")
-        return
-      option_list.append(dhcppython.options.BootfileName(code=67, length=len(file_path), data=file_path))
+      file_path = ''
+      # Make sure it isn't a discovery request ("find-boot-server")
+      if vendor_class_identifier != 'PXEClient:home-cluster':
+        client_system = get_opt(93, '')
+        match_string = f'{vendor_class_identifier}/{client_system}'
+        boot_spec = get_boot_spec(self.context, match_string)
+        if boot_spec is None:
+          log.info(f"No match found in boot-map for '{match_string}'")
+          return
+        image_dir = get_image_dir(self.context, macaddr, boot_spec)
+        file_path = image_dir / boot_spec['filename']
+        option_list.append(dhcppython.options.BootfileName(code=67, length=len(file_path), data=file_path))
 
       response = response_type(
         message.chaddr,
@@ -144,7 +129,7 @@ class DHCPProxy(object):
         tx_id=message.xid,
         yiaddr='0.0.0.0',
         sname=str(self.tftpd_ip).encode(),
-        fname=file_path,
+        fname=str(file_path).encode(),
         option_list=option_list
       )
       response.siaddr = self.proxy_ip

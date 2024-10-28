@@ -8,33 +8,6 @@ main() {
   source "$PKGROOT/.upkg/path-tools/path-tools.sh"
   PATH=$(path_prepend "$PKGROOT/.upkg/.bin")
   source "$PKGROOT/lib/certificates.sh"
-  # shellcheck source=workloads/settings/env/settings.shellcheck.sh
-  source "$PKGROOT/workloads/settings/env/settings.sh"
-  eval_settings
-
-  DOC="boot-server - Run the boot-server
-Usage:
-  boot-server [options]
-
-Options:
-  -h --host-ip HOST_IP  The host IP the boot-server should bind to.
-                        Prompts if not set and more than one is available.
-"
-# docopt parser below, refresh this parser with `docopt.sh boot-server`
-# shellcheck disable=2016,2086,2317,1090,1091,2034
-docopt() { local v='2.0.2'; source \
-"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
-%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:217};usage=${DOC:34:30}
-digest=89f2a;options=('-h --host-ip 1');node_0(){ value __host_ip 0;};node_1(){
-optional 0;};cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2
-printf "%s\n" "${DOC:34:30}" >&2;exit 1;}';local varnames=(__host_ip) varname
-for varname in "${varnames[@]}"; do unset "var_$varname";done;parse 1 "$@"
-local p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset \
-"$p$varname";done;eval $p'__host_ip=${var___host_ip:-};';local docopt_i=1;[[ \
-$BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for \
-varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
-# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' boot-server`
-  eval "$(docopt "$@")"
 
   local user_steppath
   user_steppath=${STEPPATH:-$(step path --base)}
@@ -42,30 +15,20 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   export STEPPATH=$PKGROOT/.step
   initialize_certificates
 
-  local boot_server_crt=$STEPPATH/certs/boot-server.crt
-  local boot_server_key=$STEPPATH/certs/boot-server.key
-  local boot_server_bundle=$STEPPATH/certs/boot-server.bundle.crt
-  if [[ ! -e $boot_server_key ]] || \
-        ! step certificate verify "$boot_server_crt" --roots="$INTERMEDIATE_CRT" &>/dev/null || \
-          step certificate needs-renewal "$boot_server_crt" &>/dev/null; then
-    step certificate create \
-      --ca "$INTERMEDIATE_CRT" --ca-key "$INTERMEDIATE_KEY" \
-      --force --no-password --insecure \
-      boot-server.node.svc.cluster.local "$boot_server_crt" "$boot_server_key"
-  fi
-  step certificate bundle --force "$boot_server_crt" "$INTERMEDIATE_CRT" "$boot_server_bundle"
-
   python3 -m venv "$PKGROOT/.venv"
   "$PKGROOT/.venv/bin/pip3" install -qr "$PKGROOT/workloads/node/containers/boot-server/requirements.txt"
 
   info "Binding to port 67 & 69 requires administrator privileges, you might be asked for your sudo password"
+  mkdir -p "$PKGROOT/images"
   PYTHONPATH=$PKGROOT/workloads/node/scripts \
     exec sudo --preserve-env=PYTHONPATH "$PKGROOT/.venv/bin/python3" \
       -m boot-server \
       --images "$PKGROOT/images" \
-      --certfile "$boot_server_bundle" --keyfile "$boot_server_key" \
-      --admin-pubkey="$user_steppath/system:admin.pub" --steppath="$PKGROOT/.step" \
-      --boot-map="$PKGROOT/workloads/node/config/boot-map.yaml"
+      --certfile "$BOOT_SERVER_BUNDLE" --keyfile "$BOOT_SERVER_KEY" \
+      --admin-pubkey="$user_steppath/system:admin.pub" \
+      --sb-pubkey="$SB_PUBKEY" \
+      --steppath="$STEPPATH" \
+      --boot-map="$PKGROOT/workloads/node/config/boot-map.yaml" "$@"
 }
 
 main "$@"

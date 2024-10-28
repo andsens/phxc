@@ -61,5 +61,3 @@
 ^PXEClient:Arch:00000:UNDI:002001/$:
   variant: rpi5
   filename: boot.img
-# home-cluster initramfs boot-server discovery
-^PXEClient:home-cluster/$: null

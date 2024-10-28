@@ -66,6 +66,18 @@ spec:
     name: step-issuer
   secretName: boot-server-tls
 ---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: images
+  labels:
+    app.kubernetes.io/name: node
+    app.kubernetes.io/component: images
+spec:
+  storageClassName: longhorn
+  accessModes: [ReadWriteOnce]
+  resources: {requests: {storage: 10Gi}}
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:

@@ -7,7 +7,11 @@ initialize_certificates() {
   INTERMEDIATE_CRT=$STEPPATH/certs/intermediate_ca.crt
   INTERMEDIATE_KEY=$STEPPATH/secrets/intermediate_ca_key
   SB_CRT=$STEPPATH/certs/secureboot.crt
+  SB_PUBKEY=$STEPPATH/certs/secureboot.pub
   SB_KEY=$STEPPATH/secrets/secureboot_key
+  BOOT_SERVER_CRT=$STEPPATH/certs/boot-server.crt
+  BOOT_SERVER_KEY=$STEPPATH/certs/boot-server.key
+  BOOT_SERVER_BUNDLE=$STEPPATH/certs/boot-server.bundle.crt
 
   verbose "Setting up/checking root and intermediate certificates"
   if [[ ! -e $ROOT_KEY ]] || \
@@ -43,6 +47,17 @@ initialize_certificates() {
     --ca "$INTERMEDIATE_CRT" --ca-key "$INTERMEDIATE_KEY" \
     "home-cluster Secure Boot" "$SB_CRT" "$SB_KEY"
   fi
+  step crypto key public "$SB_KEY" >"$SB_PUBKEY"
+
+  if [[ ! -e $BOOT_SERVER_KEY ]] || \
+        ! step certificate verify "$BOOT_SERVER_CRT" --roots="$INTERMEDIATE_CRT" &>/dev/null || \
+          step certificate needs-renewal "$BOOT_SERVER_CRT" &>/dev/null; then
+    step certificate create \
+      --ca "$INTERMEDIATE_CRT" --ca-key "$INTERMEDIATE_KEY" \
+      --force --no-password --insecure \
+      boot-server.node.svc.cluster.local "$BOOT_SERVER_CRT" "$BOOT_SERVER_KEY"
+  fi
+  step certificate bundle --force "$BOOT_SERVER_CRT" "$INTERMEDIATE_CRT" "$BOOT_SERVER_BUNDLE"
 
   jq -n --arg steppath "$STEPPATH" --arg root_fp "$(step certificate fingerprint "$ROOT_CRT")" --arg root_crt "$ROOT_CRT" '{
       "ca-config": "\($steppath)/config/ca.json",
