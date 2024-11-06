@@ -4,13 +4,13 @@ import py3tftp.exceptions
 import py3tftp.file_io
 import py3tftp.netascii
 import ipaddress
-from .context import Context, BootSpec
-from .bootmanager import get_image_dir
+from .context import Context, BootPath
+from .bootmanager import get_image_dir, tftp_download_initiated
 from typing import Pattern
 
 log = logging.getLogger(__name__)
 
-boot_spec_map: dict[Pattern, BootSpec] = {
+boot_spec_map: dict[Pattern, BootPath] = {
   re.compile(r'^boot.img$'): {
     'variant': 'rpi5',
     'filename': 'boot.img'
@@ -25,7 +25,8 @@ async def tftpd(ready_event: asyncio.Event, context: Context):
   log.info('Starting TFTP server')
 
   def get_file_reader(mode, ipaddr, filename, opts):
-    log.info(f'get {filename.decode()}')
+    log.debug(f'get {filename.decode()}')
+    tftp_download_initiated(context, ipaddr, filename)
     rel_filename = os.fsdecode(filename).lstrip('./')
     # Check to see if the file has a special mapping, last match wins
     boot_spec = next((p for r, p in reversed(boot_spec_map.items()) if r.match(rel_filename)), None)
@@ -45,7 +46,7 @@ async def tftpd(ready_event: asyncio.Event, context: Context):
 
   loop = asyncio.get_running_loop()
   transport, protocol = await loop.create_datagram_endpoint(
-    lambda: TFTPServerProtocol(get_file_reader, context['config']['host_ip'], loop, {}),
+    lambda: TFTPServerProtocol(context, get_file_reader, loop, {}),
     local_addr=(str(context['config']['host_ip']), 69,))
   ready_event.set()
   await context['shutdown_event'].wait()
@@ -54,9 +55,9 @@ async def tftpd(ready_event: asyncio.Event, context: Context):
 
 class TFTPServerProtocol(py3tftp.protocols.BaseTFTPServerProtocol):
 
-  def __init__(self, get_file_reader, host_ip, loop, extra_opts):
+  def __init__(self, context: Context, get_file_reader, loop, extra_opts):
     self.get_file_reader = get_file_reader
-    super().__init__(str(host_ip), loop, extra_opts)
+    super().__init__(str(context['config']['host_ip']), loop, extra_opts)
 
   def datagram_received(self, data, addr):
     """

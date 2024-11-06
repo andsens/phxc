@@ -16,6 +16,7 @@ import jwt
 import jwt.algorithms
 from .node import Node
 from .context import Context
+from .bootmanager import image_upload_completed, node_state_reported
 
 DISK_UUID='caf66bff-edab-4fb1-8ad9-e570be5415d7'
 
@@ -86,6 +87,7 @@ async def put_image(variant):
       raise InternalServerError(str(e))
     shutil.rmtree(image_path_uploaded, ignore_errors=True)
     image_path.rename(image_path_uploaded)
+    image_upload_completed(app.config['context'], variant)
   except Exception as e:
     shutil.rmtree(image_path, ignore_errors=True)
     raise InternalServerError(str(e))
@@ -162,6 +164,7 @@ async def put_node_state():
   new_node_state = await quart.request.get_json()
   node.set_state(new_node_state)
   node_config = node.get_config()
+  node_state_reported(app.config['context'], node, new_node_state)
   if node_config is not None:
     if node_config['disk'].get('force', False) == True:
       selected_block_device = next(

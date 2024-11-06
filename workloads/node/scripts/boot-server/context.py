@@ -5,7 +5,7 @@ from .db import DB
 from . import AnyIPAddress
 
 
-class BootSpec(TypedDict):
+class BootPath(TypedDict):
   variant: str
   filename: str
 
@@ -22,5 +22,5 @@ class Config(TypedDict):
 class Context(TypedDict):
   db: DB
   config: Config
-  boot_map: dict[Pattern, BootSpec]
+  boot_map: dict[Pattern, BootPath]
   shutdown_event: asyncio.Event

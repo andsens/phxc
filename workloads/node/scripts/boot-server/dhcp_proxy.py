@@ -2,7 +2,7 @@ import asyncio, socket, logging
 import ipaddress, dhcppython
 from . import AnyIPAddress
 from .context import Context
-from .bootmanager import get_boot_spec, get_image_dir
+from .bootmanager import get_boot_spec, get_image_dir, pxe_request_received
 import macaddress
 from .node import Node
 
@@ -116,6 +116,7 @@ class DHCPProxy(object):
         client_system = get_opt(93, '')
         match_string = f'{vendor_class_identifier}/{client_system}'
         boot_spec = get_boot_spec(self.context, match_string)
+        pxe_request_received(self.context, macaddr, boot_spec, image_dir)
         if boot_spec is None:
           log.info(f"No match found in boot-map for '{match_string}'")
           return
