@@ -8,4 +8,5 @@ ConditionPathExists=!/boot/home-cluster/authn-key.json.enc
 [Service]
 Type=oneshot
 RemainAfterExit=yes
+ExecStart=set-node-state report-phase initial
 ExecStart=submit-node-state

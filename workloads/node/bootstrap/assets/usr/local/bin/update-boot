@@ -4,20 +4,20 @@ set -Eeo pipefail; shopt -s inherit_errexit
 
 main() {
   [[ $# -eq 0 ]] || usage
-  local digests_json_new
+  local meta_json_new
   mkdir -p /boot/home-cluster
-  if ! digests_json_new=$(curl-boot-server "images/$VARIANT/digests.json"); then
-    printf "Unable to retrieve image digests from boot server\n" >&2
+  if ! meta_json_new=$(curl-boot-server "images/$VARIANT/meta.json"); then
+    printf "Unable to retrieve image metadata from boot server\n" >&2
     return 1
   fi
   local current_root_img_sha256 new_root_img_sha256 first_setup
-  if [[ -e /boot/home-cluster/digests.json ]]; then
+  if [[ -e /boot/home-cluster/meta.json ]]; then
     first_setup=false
-    current_root_img_sha256=$(jq -re '.sha256sums["root.img"]' /boot/home-cluster/digests.json 2>/dev/null || true)
+    current_root_img_sha256=$(jq -re '.sha256sums["root.img"]' /boot/home-cluster/meta.json 2>/dev/null || true)
   else
     first_setup=true
   fi
-  new_root_img_sha256=$(jq -re '.sha256sums["root.img"]' <<<"$digests_json_new")
+  new_root_img_sha256=$(jq -re '.sha256sums["root.img"]' <<<"$meta_json_new")
   if [[ $current_root_img_sha256 = "$new_root_img_sha256" ]]; then
     printf "boot partition is up-to-date\n" >&2
     return 0
@@ -51,7 +51,7 @@ main() {
     fi
   fi
   trap '' EXIT
-  printf "%s\n" "$digests_json_new" >/boot/home-cluster/digests.json
+  printf "%s\n" "$meta_json_new" >/boot/home-cluster/meta.json
   rm -f "/boot/home-cluster/root.$current_root_img_sha256.img"
   if $first_setup; then
     printf "boot partition has been updated\n" >&2

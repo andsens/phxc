@@ -46,18 +46,8 @@
 # Regex matching. Last match wins
 # Format is "<vendor-client>/<arch>" (without quotes and <>)
 
-/0x00 0x0[79]$:
-  variant: amd64
-  filename: uki.efi
-/0x00 0x0b$:
-  variant: amd64
-  filename: uki.efi
-^PXEClient:Arch:00000:UNDI:002001/0x00 0x00$:
-  variant: rpi5
-  filename: boot.img
-/0x00 0x1[68]$:
-  variant: rpi5
-  filename: boot.img
-^PXEClient:Arch:00000:UNDI:002001/$:
-  variant: rpi5
-  filename: boot.img
+/0x00 0x0[79]$: amd64
+/0x00 0x0b$: amd64
+^PXEClient:Arch:00000:UNDI:002001/0x00 0x00$: rpi5
+/0x00 0x1[68]$: rpi5
+^PXEClient:Arch:00000:UNDI:002001/$: rpi5

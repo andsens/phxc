@@ -1,58 +1,28 @@
 '''boot-server
 Usage:
-  boot-server [options]
-
-Options:
-  --listen IP          The IP to bind to [default: <prompt>]
-  -r --root PATH       The root directory for the boot-server
-                       [default: /data]
-  --images PATH        Path to the OS images the boot-server serves
-                       [default: <root>/images]
-  --steppath PATH      Path to the smallstep root where the root & secureboot
-                       keys & certificates are located
-                       (smallstep secrets transfer disabled if not specified)
-  --admin-pubkey PATH  Path to the admin pubkey, used for configuring nodes
-                       [default: <root>/admin.pem]
-  --sb-pubkey PATH     Path to the secureboot pubkey, used for uploading images
-                       [default: <root>/secureboot.pem]
-  --certfile PATH      Path to the TLS certificate bundle for the
-                       boot-server API [default: <root>/tls/tls.crt]
-  --keyfile PATH       Path to the TLS key for the boot-server API
-                       [default: <root>/tls/tls.key]
-  --boot-map PATH      Path to map of "vendor-client/arch" DHCP options to TFTP
-                       boot file paths [default: <root>/boot-map.yaml]
-  --user USER          Drop privileges after setup and run as specified user
-  --import PATH        Import the state, config, and authn-key of the host node
-                       from the specified path
-  --etcd URL           etcd URL for storing node states, configs, and authn-keys
-                       An ephemeral in-memory KV store will be used if not
-                       specified and boot-server will prompt on the terminal
-                       when a node needs to be configured.
+  boot-server HOST_IP ETCD_URL
 '''
 
-import asyncio, ipaddress, logging, os, pwd, signal, sys
-import urllib.parse
+import asyncio, ipaddress, logging, os, signal, sys
 from pathlib import Path
 import docopt
-from . import __name__ as root_name, ErrorMessage
-from .context import Context
+from . import __name__ as root_name, ErrorMessage, Context, NodeState
 from .dhcp_proxy import dhcp_proxy
-from .inmemorykvstore import InMemoryKVStore
 from .api import api
-from .db import DB
 from .tftpd import tftpd
-import etcd, ifaddr, logfmter, questionary
+import ifaddr, logfmter, questionary
 from .node import Node
-import logging, re
+from kubernetes_asyncio import config
+import logging
 from pathlib import Path
-import yaml
-from .inmemorykvstore import InMemoryKVStore
 import uuid, json
+from .watch_nodes import watch_nodes
+import macaddress
 
 log = logging.getLogger(root_name)
 
 async def main():
-  params = docopt.docopt(__doc__)
+  params = docopt.docopt(__doc__) # type: ignore
   setup_logging()
 
   shutdown_event = asyncio.Event()
@@ -60,54 +30,36 @@ async def main():
   loop.add_signal_handler(signal.SIGINT, lambda: shutdown_event.set())
   loop.add_signal_handler(signal.SIGTERM, lambda: shutdown_event.set())
 
-  root: Path = Path.cwd() if params['--root'] == '$PWD' else Path(params['--root'])
+  host_ip = ipaddress.ip_address(params['HOST_IP'])
+  if not isinstance(host_ip, ipaddress.IPv4Address):
+    raise Exception('HOST_IP must be an IPv4 address')
 
-  if params['--etcd'] is not None:
-    etcd_parts = urllib.parse.urlparse(params['--etcd'])
-    kv_client = etcd.Client(protocol=etcd_parts.scheme, host=etcd_parts.hostname, port=etcd_parts.port, allow_reconnect=True)
-  else:
-    kv_client = InMemoryKVStore()
+  ctx = Context(host_ip, params['ETCD_URL'], shutdown_event)
 
-  boot_map_path = root / 'boot-map.yaml' if params['--boot-map'] == '<root>/boot-map.yaml' else root / Path(params['--boot-map'])
-
-  context: Context = {
-    'boot_map': dict((re.compile(regex), boot_spec) for regex, boot_spec in yaml.safe_load(boot_map_path.read_text()).items()),
-    'config': {
-      'ip_to_mac_ttl': 3600,
-      'host_ip': ipaddress.ip_address(params['--listen']) if params['--listen'] != '<prompt>' else await prompt_host_ip(),
-      'images': root / 'images' if params['--images'] == '<root>/images' else Path(params['--images']),
-      'tls_certfile': root / 'tls/tls.crt' if params['--certfile'] == '<root>/tls/tls.crt' else params['--certfile'],
-      'tls_keyfile': root / 'tls/tls.key' if params['--keyfile'] == '<root>/tls/tls.key' else params['--keyfile'],
-      'admin_pubkey': (root if params['--admin-pubkey'] == '<root>/admin.pem' else Path(params['--admin-pubkey'])).read_text(),
-      'sb_pubkey': (root if params['--sb-pubkey'] == '<root>/sb.pem' else Path(params['--sb-pubkey'])).read_text(),
-      'steppath': Path(params['--steppath']) if params['--steppath'] is not None else None,
-    },
-    'db': DB(kv_client, '/boot-server/'),
-    'shutdown_event': shutdown_event,
-  }
+  await config.load_kube_config()
 
   if params['--import'] is not None:
     log.info('Updating state, config, and authn-key of host node')
     import_path = Path(params['--import'])
-    host_node = Node(context, uuid.UUID((import_path / 'machine-id').read_text()))
-    host_node.set_state(json.loads((import_path / 'node-state.json').read_text()))
+    host_state: NodeState = json.loads((import_path / 'node-state.json').read_text())
+    host_node = \
+      Node.get_by_machine_id(ctx, uuid.UUID((import_path / 'machine-id').read_text())) or \
+      Node.new_by_mac(ctx, macaddress.MAC(host_state['primary-mac']))
+    host_node.set_state(host_state)
     host_node.set_config(json.loads((import_path / 'node-config.json').read_text()))
-    host_node.set_authn_key(json.loads((import_path / 'authn-key.json').read_text()))
+    host_node.authn_key = json.loads((import_path / 'authn-key.json').read_text())
 
   async with asyncio.TaskGroup() as task_group:
     tftpd_ready = asyncio.Event()
-    task_group.create_task(tftpd(tftpd_ready, context))
+    task_group.create_task(tftpd(ctx, tftpd_ready))
     dhcp_proxy_ready = asyncio.Event()
-    task_group.create_task(dhcp_proxy(dhcp_proxy_ready, context))
+    task_group.create_task(dhcp_proxy(ctx, dhcp_proxy_ready))
     api_ready = asyncio.Event()
-    task_group.create_task(api(api_ready, context))
+    task_group.create_task(api(ctx, api_ready))
+    task_group.create_task(watch_nodes(ctx))
     await tftpd_ready.wait()
     await dhcp_proxy_ready.wait()
     await api_ready.wait()
-    if params['--user'] is not None:
-      user_uid = pwd.getpwnam(params['--user']).pw_uid
-      log.info(f'Sockets bound, dropping to user {params['--user']} (UID: {user_uid})')
-      os.setuid(user_uid)
 
 async def prompt_host_ip():
   choices = []
@@ -129,7 +81,7 @@ def setup_logging():
   log.setLevel(getattr(logging, os.getenv('LOGLEVEL', 'INFO').upper(), 'INFO'))
   handler = logging.StreamHandler(sys.stderr)
   if os.getenv('LOGFORMAT', 'cli').lower() == 'logfmt':
-    handler.setFormatter(logfmter.Logfmter(keys=['ts', 'at', 'component', 'msg'],
+    handler.setFormatter(logfmter.Logfmter(keys=['ts', 'at', 'component', 'msg'], # type: ignore
                                            mapping={'at': 'level', 'ts': 'asctime', 'component': 'name'},
                                            datefmt='%Y-%m-%dT%H:%M:%S%z'))
   log.addHandler(handler)

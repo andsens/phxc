@@ -9,6 +9,7 @@ main() {
   declare -A artifacts
   declare -A authentihashes
   declare -A sha256sums
+  local boot_file
 
   mkdir -p /workspace/root
 
@@ -76,6 +77,8 @@ EOF
   if [[ $VARIANT = rpi* ]]; then
 
     info "Building RaspberryPI boot.img"
+
+    boot_file=boot.img
 
     case $VARIANT in
       rpi5)
@@ -152,6 +155,8 @@ EOF
 
     info "Creating unified kernel image"
 
+    boot_file=boot.img
+
     printf "%s" "$kernel_cmdline" > /workspace/root/boot/cmdline.txt
 
     local kernver
@@ -197,46 +202,49 @@ EOF
   fi
 
   ###########################
-  ### Create digests.json ###
+  ### Create meta.json ###
   ###########################
 
-  local key digests='{"sha256sums": {}, "authentihashes": {}}'
+  local key meta
+  meta=$(jq -n --arg variant "$VARIANT" --arg filename "$boot_file" --arg now "$(date --iso-8601=seconds --utc)" '{
+    "variant": $variant,
+    "boot-file": $boot_file,
+    "build-date": $now,
+    "sha256sums": {},
+    "authentihashes": {}
+  }')
   for key in "${!sha256sums[@]}"; do
-    digests=$(jq --arg key "$key" --arg sha256sums "${sha256sums[$key]}" '
-      .sha256sums[$key] = $sha256sums' <<<"$digests"
+    meta=$(jq --arg key "$key" --arg sha256sums "${sha256sums[$key]}" '
+      .sha256sums[$key] = $sha256sums' <<<"$meta"
     )
   done
   for key in "${!authentihashes[@]}"; do
-    digests=$(jq --arg key "$key" --argjson authentihashes "${authentihashes[$key]}" \
-      '.authentihashes[$key] = $authentihashes' <<<"$digests"
+    meta=$(jq --arg key "$key" --argjson authentihashes "${authentihashes[$key]}" \
+      '.authentihashes[$key] = $authentihashes' <<<"$meta"
     )
   done
-  printf "%s\n" "$digests" >/workspace/digests.json
+  printf "%s\n" "$meta" >/workspace/meta.json
 
-  artifacts[/workspace/digests.json]=digests.json
+  artifacts[/workspace/meta.json]=meta.json
 
   ################
   ### Finalize ###
   ################
 
-  info "Assembling artifacts"
-  local src mv_failed=0
-  for src in "${!artifacts[@]}"; do
-    mv "$src" "/workspace/artifacts/${artifacts[$src]}" || mv_failed=$?
-  done
-  [[ $mv_failed -eq 0 ]] || return $mv_failed
-
   info "Uploading artifacts to boot-server"
-  local jwt_token url_path=images/$VARIANT retry=15
+  local src jwt_token curl_params=() url_path=images/$VARIANT retry=15
+  for src in "${!artifacts[@]}"; do
+    curl_params+=(-F "${artifacts[$src]}=@$src")
+  done
   while true; do
     jwt_token=$(step crypto jwt sign --key /secureboot/tls.key --iss bootstrap --jti '' \
       --aud boot-server --sub "PUT $url_path" --nbf "$(date -d'-30sec' +%s)" --exp "$(date -d'+30sec' +%s)")
     if ! curl --cacert /workspace/root_ca.crt \
         -H "Authorization: Bearer $jwt_token" \
         -fL --no-progress-meter --connect-timeout 5 \
-        -XPUT -F image=@<(cd /workspace/artifacts; tar -c -- "${artifacts[@]}") \
+        -XPUT "${curl_params[@]}" \
         "https://boot-server.node.svc.cluster.local:8020/$url_path" >/dev/null; then
-      error "Failed to upload image, retrying in %ds" $retry
+      error "Failed to upload artifacts, retrying in %ds" $retry
       sleep $retry
       continue
     fi

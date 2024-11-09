@@ -1,7 +1,5 @@
 /.upkg
 /settings.yaml
 /mnt
-/.venv
 /.step
 /images
-__pycache__

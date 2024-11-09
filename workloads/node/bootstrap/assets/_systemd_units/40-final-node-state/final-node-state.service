@@ -13,4 +13,5 @@ WantedBy=sysinit.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
+ExecStart=set-node-state report-phase final
 ExecStart=submit-node-state
