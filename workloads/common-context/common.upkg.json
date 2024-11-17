@@ -2,9 +2,9 @@
   "$schema": "https://schemas.orbit.dev/upkg/upkg-v0.28.0.schema.json",
   "dependencies": [
     {
-      "tar": "https://github.com/andsens/docopt.sh/releases/download/v2.0.1/docopt-lib.sh.tar.gz",
-      "sha256": "539053da8b3063921b8889dbe752279e3a215d8fa3e2550d6521e094981f26a2",
-      "name": "docopt-lib-v2.0.1"
+      "tar": "https://github.com/andsens/docopt.sh/releases/download/v2.0.2/docopt-lib.sh.tar.gz",
+      "sha256": "d6997858e7f2470aa602fdd1e443d89b4e2084245b485e4b7924b0f388ec401e",
+      "name": "docopt-lib-v2.0.2"
     },
     {
       "tar": "https://github.com/orbit-online/trap.sh/releases/download/v1.1.1/trap.sh.tar.gz",

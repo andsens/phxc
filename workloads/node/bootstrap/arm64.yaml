@@ -47,6 +47,7 @@ spec:
       - name: create-boot-image
         image: cluster.local/create-boot-image:arm64
         imagePullPolicy: Never
+        command: [upload]
         env:
         - name: VARIANT
           value: arm64

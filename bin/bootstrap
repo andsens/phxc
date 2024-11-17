@@ -20,7 +20,8 @@ Usage:
   bootstrap [options] VARIANT
 
 Options:
-  --debug  Enable debug build (installs less & nano, unlocks root, etc.)
+  --upload  Upload artifacts to the boot-server
+  --debug   Enable debug build (installs less & nano, unlocks root, etc.)
 
 Supported variants:
   amd64 - Standard x86_64 image
@@ -31,15 +32,16 @@ Supported variants:
 # shellcheck disable=2016,2086,2317,1090,1091,2034
 docopt() { local v='2.0.2'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
-%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:292};usage=${DOC:29:36}
-digest=bb44a;options=(' --debug 0');node_0(){ switch __debug 0;};node_1(){
-value VARIANT a;};node_2(){ optional 0;};node_3(){ sequence 2 1;};cat <<<' \
-docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2;printf "%s\n" \
-"${DOC:29:36}" >&2;exit 1;}';local varnames=(__debug VARIANT) varname;for \
-varname in "${varnames[@]}"; do unset "var_$varname";done;parse 3 "$@";local \
-p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset "$p$varname"
-done;eval $p'__debug=${var___debug:-false};'$p'VARIANT=${var_VARIANT:-};'
-local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:341};usage=${DOC:29:36}
+digest=388c3;options=(' --upload 0' ' --debug 0');node_0(){ switch __upload 0;}
+node_1(){ switch __debug 1;};node_2(){ value VARIANT a;};node_3(){ optional 0 1
+};node_4(){ sequence 3 2;};cat <<<' docopt_exit() { [[ -n $1 ]] && printf \
+"%s\n" "$1" >&2;printf "%s\n" "${DOC:29:36}" >&2;exit 1;}';local \
+varnames=(__upload __debug VARIANT) varname;for varname in "${varnames[@]}"; do
+unset "var_$varname";done;parse 4 "$@";local p=${DOCOPT_PREFIX:-''};for \
+varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
+'___upload:-false};'$p'__debug=${var___debug:-false};'$p'VARIANT=${var_VARIANT'\
+':-};';local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
 ((;docopt_i>0;docopt_i--)); do for varname in "${varnames[@]}"; do declare -p \
 "$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' bootstrap`
@@ -47,9 +49,6 @@ local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
 
   export STEPPATH=$PKGROOT/.step
   initialize_certificates
-  local artifacts
-  artifacts=$(mktemp -d)
-  trap_append "rm -rf \"$artifacts\"" EXIT
 
   # shellcheck disable=SC2154
   local DEBUG=$__debug DOCKER_PLATFORM ARCH
@@ -65,15 +64,27 @@ local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
     *) fatal "Unknown variant: %s" "$VARIANT" ;;
   esac
 
+  local artifacts
+  artifacts=$PKGROOT/images/$VARIANT.building
+  trap_append "rm -rf \"$artifacts\"" EXIT
+  rm -rf "$artifacts"
+  mkdir -p "$artifacts"
+
   local bundle
   bundle=$(mktemp --suffix .tar.gz)
   trap_append "rm \"$bundle\"" EXIT
   "$PKGROOT/workloads/node/bootstrap/scripts/bundle" "$bundle"
 
-  local boot_server_ip retry=15
-  if ! boot_server_ip=$("$PKGROOT/workloads/node/bootstrap/assets/usr/local/bin/find-boot-server" --no-set-state); then
-    error "Failed to determine boot-server IP, retrying in %ds" $retry
-    sleep $retry
+  local create_boot_image_opts=(--chown $UID) create_boot_image_docker_opts=()
+  # shellcheck disable=SC2154
+  if $__upload; then
+    local boot_server_ip retry=15
+    if ! boot_server_ip=$("$PKGROOT/workloads/node/bootstrap/assets/usr/local/bin/find-boot-server" --no-set-state); then
+      error "Failed to determine boot-server IP, retrying in %ds" $retry
+      sleep $retry
+    fi
+    create_boot_image_opts+=(--upload)
+    create_boot_image_docker_opts+=(--add-host "boot-server.node.svc.cluster.local:$boot_server_ip")
   fi
 
   local containers=$PKGROOT/images/containers
@@ -117,9 +128,8 @@ local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
     --tar-path "/workspace/artifacts/node.tar" \
     --no-push
 
-  docker run --rm -ti \
+  docker run --rm -ti "${create_boot_image_docker_opts[@]}" \
     --platform "$DOCKER_PLATFORM" \
-    --add-host "boot-server.node.svc.cluster.local:$boot_server_ip" \
     -v "$SB_KEY:/secureboot/tls.key:ro" \
     -v "$SB_CRT:/secureboot/tls.crt:ro" \
     -v "$ROOT_CRT:/workspace/root_ca.crt:ro" \
@@ -130,7 +140,11 @@ local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
     -e "DEBUG=$DEBUG" \
     --device=/dev/kvm \
     --group-add "$(stat -c %g /dev/kvm)" \
-    "cluster.local/create-boot-image:$ARCH"
+    "cluster.local/create-boot-image:$ARCH" "${create_boot_image_opts[@]}"
+
+  rm -rf "$PKGROOT/images/$VARIANT.old"
+  mv "$PKGROOT/images/$VARIANT" "$PKGROOT/images/$VARIANT.old"
+  mv "$artifacts" "$PKGROOT/images/$VARIANT"
 }
 
 main "$@"
