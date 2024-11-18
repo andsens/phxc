@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 
 PACKAGES+=(
-  sudo "$(basename "${ADMIN_SHELL:?}")"
-  adduser
+  sudo adduser
 )
 if $DEBUG; then
   PACKAGES+=(less nano bsdextrautils)
@@ -14,11 +13,11 @@ admin() {
   else
     usermod -L root
   fi
-  useradd -m -s "$ADMIN_SHELL" -u "${ADMIN_UID:?}" "${ADMIN_USERNAME:?}"
-  usermod -p "${ADMIN_PWHASH:?}" "$ADMIN_USERNAME"
-  adduser "$ADMIN_USERNAME" adm
-  adduser "$ADMIN_USERNAME" sudo
-  userdir=$(getent passwd "$ADMIN_USERNAME" | cut -d: -f6 )
+  useradd -m -s /bin/bash -u 1000 admin
+  usermod -p "${ADMIN_PWHASH:?}" admin
+  adduser admin adm
+  adduser admin sudo
+  userdir=$(getent passwd admin | cut -d: -f6)
 
   mkdir "$userdir/.ssh"
   local i key
@@ -27,6 +26,6 @@ admin() {
     [[ -n ${!key} ]] || break
     printf "%s\n" "${!key}" >> "$userdir/.ssh/authorized_keys"
   done
-  chown -R "$ADMIN_USERNAME:$ADMIN_USERNAME" "$userdir/.ssh"
+  chown -R admin:admin "$userdir/.ssh"
   chmod -R u=rwX,go=rX "$userdir/.ssh"
 }

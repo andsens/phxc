@@ -9,12 +9,23 @@ main() {
   version_flag=$(jq -r '.version // empty' "$PKGROOT/upkg.json")
   [[ -z $version_flag ]] || version_flag=-V$version_flag
   PATH=$(path_prepend "$PKGROOT/.upkg/.bin")
+  local bundle_files=(README.md settings.template.yaml settings.yaml)
+  if [[ -e $PKGROOT/.git ]]; then
+    local filepath
+    while read -r -d $'\0' filepath; do
+      [[ ! -e $filepath ]] || bundle_files+=("$filepath")
+    done < <(cd "$PKGROOT"; git ls-files -zco --exclude-standard bin workloads)
+  else
+    bundle_files+=(bin workloads)
+  fi
   # shellcheck disable=SC2086
   (
     cd "$PKGROOT"
-    upkg bundle -qd"$dest" $version_flag \
-      bin workloads README.md settings.template.yaml settings.yaml >/dev/null
+    upkg bundle -qd"$dest" $version_flag "${bundle_files[@]}" >/dev/null
   )
+  local bundle_size
+  bundle_size=$(stat -c %s "$dest")
+  (( bundle_size < 1024 * 256 )) || printf "bundle: Bundle size is %d (>256KiB)\n" "$bundle_size" >&2
 }
 
 main "$@"

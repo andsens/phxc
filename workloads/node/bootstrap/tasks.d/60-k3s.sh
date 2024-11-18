@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 PACKAGES+=(
-  git # kpt dep
-  open-iscsi nfs-common # longhorn deps
+  git # kpt
+  open-iscsi nfs-common # longhorn
 )
 
 k3s() {

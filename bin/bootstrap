@@ -10,7 +10,6 @@ main() {
   source "$PKGROOT/.upkg/trap.sh/trap.sh"
   source "$PKGROOT/.upkg/path-tools/path-tools.sh"
   PATH=$(path_prepend "$PKGROOT/.upkg/.bin")
-  source "$PKGROOT/lib/certificates.sh"
   # shellcheck source=workloads/settings/env/settings.shellcheck.sh
   source "$PKGROOT/workloads/settings/env/settings.sh"
   eval_settings
@@ -48,7 +47,34 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
   eval "$(docopt "$@")"
 
   export STEPPATH=$PKGROOT/.step
-  initialize_certificates
+  mkdir -p "${STEPPATH:?}/certs" "$STEPPATH/secrets" "$STEPPATH/config"
+  ROOT_CRT=$STEPPATH/certs/root_ca.crt
+  ROOT_KEY=$STEPPATH/secrets/root_ca_key
+  SB_CRT=$STEPPATH/certs/secureboot.crt
+  SB_PUBKEY=$STEPPATH/certs/secureboot.pub
+  SB_KEY=$STEPPATH/secrets/secureboot_key
+
+  verbose "Setting up/checking root certificates"
+  if [[ ! -e $ROOT_KEY ]]; then
+    local root_key_arg=("--key" "$ROOT_KEY")
+    [[ -e $ROOT_KEY ]] || root_key_arg=("$ROOT_KEY")
+    step certificate create --profile root-ca \
+      --force --no-password --insecure \
+      --not-after $((20*365*24))h \
+      "home-cluster root" "$ROOT_CRT" "${root_key_arg[@]}" &>/dev/null
+  fi
+
+  if [[ ! -e $SB_CRT ]]; then
+    # Key *must* be RSA. When sbsign signs the UKI it always specifies that the key is RSA regardless of the facts.
+    step certificate create --template <(printf '{
+  "subject": {{ toJson .Subject }},
+  "keyUsage": ["digitalSignature"],
+  "extKeyUsage": ["codeSigning"]
+}') --force --insecure --no-password --not-after $((20*365*24))h --kty RSA \
+    --ca "$INTERMEDIATE_CRT" --ca-key "$INTERMEDIATE_KEY" \
+    "home-cluster Secure Boot" "$SB_CRT" "$SB_KEY"
+    step crypto key public "$SB_KEY" >"$SB_PUBKEY"
+  fi
 
   # shellcheck disable=SC2154
   local DEBUG=$__debug DOCKER_PLATFORM ARCH
@@ -71,7 +97,7 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
   mkdir -p "$artifacts"
 
   local bundle
-  bundle=$(mktemp --suffix .tar.gz)
+  bundle=$(mktemp --suffix '-home-cluster-bundle.tar.gz')
   trap_append "rm \"$bundle\"" EXIT
   "$PKGROOT/workloads/node/bootstrap/scripts/bundle" "$bundle"
 
@@ -114,6 +140,7 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
   docker run --rm -ti \
     --platform "$DOCKER_PLATFORM" \
     -v "$PKGROOT/workloads/node/bootstrap/Dockerfile:/workspace/context/Dockerfile:ro" \
+    -v "$PKGROOT/workloads/node/bootstrap/assets:/workspace/assets:ro" \
     -v "$bundle:/workspace/home-cluster.tar.gz:ro" \
     -v "$ROOT_CRT:/workspace/root_ca.crt:ro" \
     -v "$PKGROOT/workloads/common-context:/workspace/common-context:ro" \

@@ -137,8 +137,7 @@ EOF
         unset 'artifacts[/workspace/root/boot/initrd.img]'
         artifacts[/workspace/root/boot/firmware/initramfs7]=initrd.img
         ;;
-      default)
-        ;;
+      *) printf "Unknown rpi* variant: %s\n" "$VARIANT" >&2; return 1 ;;
     esac
 
     # The last "console=" wins with respect to initramfs stdout/stderr output
@@ -203,32 +202,21 @@ EOF
     kernver=$(echo /workspace/root/lib/modules/*)
     kernver=${kernver#'/workspace/root/lib/modules/'}
 
-    chroot /workspace/root /lib/systemd/systemd-measure calculate \
-      --linux=boot/vmlinuz \
-      --initrd=boot/initrd.img \
-      --cmdline=boot/cmdline.txt \
-      --osrel=/etc/os-release \
-      --json=pretty \
-      >/boot/pcr11.json
-
-    artifacts[/boot/pcr11.json]=pcr11.json
-
-    cp -r /secureboot /workspace/root/secureboot
-    chroot /workspace/root /lib/systemd/ukify build \
+    /lib/systemd/ukify build \
       --uname="$kernver" \
-      --linux=boot/vmlinuz \
-      --initrd=boot/initrd.img \
+      --linux=/workspace/root/boot/vmlinuz \
+      --initrd=/workspace/root/boot/initrd.img \
       --cmdline="$kernel_cmdline" \
       --signtool=sbsign \
       --secureboot-private-key=/secureboot/tls.key \
       --secureboot-certificate=/secureboot/tls.crt \
-      --output=/boot/uki.efi
+      --output=/workspace/root/boot/uki.efi
 
     artifacts[/workspace/root/boot/uki.efi]=uki.efi
 
     case "$ARCH" in
-      amd64) boot_files[/workspace/root/boot/uki.efi]=/boot/EFI/BOOT/BOOTX64.efi ;;
-      arm64) boot_files[/workspace/root/boot/uki.efi]=/boot/EFI/BOOT/BOOTAA64.efi ;;
+      amd64) boot_files[/workspace/root/boot/uki.efi]=/EFI/BOOT/BOOTX64.efi ;;
+      arm64) boot_files[/workspace/root/boot/uki.efi]=/EFI/BOOT/BOOTAA64.efi ;;
       *) fatal "Unknown architecture: %s" "$ARCH" ;;
     esac
 

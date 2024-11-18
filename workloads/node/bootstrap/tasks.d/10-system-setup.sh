@@ -10,7 +10,7 @@ case $VARIANT in
   amd64) ;;
   arm64) ;;
   rpi*) PACKAGES+=(raspi-config rpi-update rpi-eeprom) ;;
-  default) fatal "Unknown variant: %s" "$VARIANT" ;;
+  *) printf "Unknown variant: %s\n" "$VARIANT" >&2; return 1 ;;
 esac
 
 system_setup() {

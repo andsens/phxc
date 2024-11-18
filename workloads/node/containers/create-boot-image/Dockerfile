@@ -3,9 +3,11 @@ SHELL ["/usr/bin/bash", "-Eeo", "pipefail", "-c"]
 ARG ARCH
 ENV ARCH=$ARCH
 
+# See https://github.com/wbond/oscrypto/issues/78 for why we install oscrypto like this.
 RUN /workspace/common-context/setup-debian.sh; \
   apt-get -y update; apt-get -y install --no-install-recommends \
   squashfs-tools guestfish ipxe-qemu dosfstools linux-image-${ARCH} python3-venv binutils curl \
+  systemd-ukify systemd-boot-efi python3-pefile sbsigntool \
   ; rm -rf /var/cache/apt/lists/*; \
   upkg add -g /workspace/common-context/smallstep.upkg.json; \
   python3 -m venv /signify; \
@@ -14,8 +16,5 @@ RUN /workspace/common-context/setup-debian.sh; \
     signify==0.6.1 \
     pyasn1==0.6.0 \
     docopt==0.6.2
-
-# See https://github.com/wbond/oscrypto/issues/78
-# for why we install oscrypto like this.
 
 ENTRYPOINT ["/scripts/create-boot-image.sh"]

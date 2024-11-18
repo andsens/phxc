@@ -1,19 +1,21 @@
 #!/usr/bin/env bash
 
 PACKAGES+=(
-  systemd systemd-sysv systemd-boot systemd-ukify # systemd bootup
-  dracut dracut-network binutils zstd # initrd
-  python3-pefile sbsigntool # UKI creation & signing
+  systemd systemd-sysv # systemd bootup
   dosfstools # Used for mounting ESP
   iproute2 curl # Used to determine MAC address and boot-server communication
   systemd-resolved # DNS resolution setup
   avahi-daemon libnss-mdns # System reachability through mdns
-  socat xxd #  find-boot-server
+  socat xxd # find-boot-server
+)
+
+PACKAGES_TMP+=(
+  dracut dracut-network binutils zstd # initramfs
 )
 
 case $VARIANT in
-  amd64) PACKAGES+=(linux-image-amd64) ;;
-  arm64) PACKAGES+=(linux-image-arm64) ;;
+  amd64) PACKAGES_TMP+=(linux-image-amd64) ;;
+  arm64) PACKAGES_TMP+=(linux-image-arm64) ;;
   rpi*)
   wget -qO/etc/apt/trusted.gpg.d/raspberrypi.asc http://archive.raspberrypi.com/debian/raspberrypi.gpg.key
   cat <<EOF >/etc/apt/sources.list.d/raspberrypi.sources
@@ -22,9 +24,10 @@ URIs: http://archive.raspberrypi.com/debian
 Suites: bookworm
 Components: main
 EOF
-  PACKAGES+=(linux-image-rpi-2712 raspi-firmware)
+  PACKAGES_TMP+=(linux-image-rpi-2712)
+  PACKAGES+=(raspi-firmware)
   ;;
-  default) fatal "Unknown variant: %s" "$VARIANT" ;;
+  *) printf "Unknown variant: %s\n" "$VARIANT" >&2; return 1 ;;
 esac
 
 boot() {

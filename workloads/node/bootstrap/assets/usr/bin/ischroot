@@ -1,7 +1,0 @@
-#!/bin/sh
-# ischroot from debianutils does not detect a chroot when bootstrapping through
-# kaniko. So we fake it.
-# We need this so the Raspberry PI initramfs hook does not complain about
-# /boot/firmware not existing (as a mountpoint)
-# The file is removed by create-boot-image.sh
-exit 0

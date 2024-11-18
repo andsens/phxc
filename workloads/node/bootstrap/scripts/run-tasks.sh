@@ -16,22 +16,23 @@ main() {
 
   # Enable non-free components
   sed -i 's/Components: main/Components: main contrib non-free non-free-firmware/' /etc/apt/sources.list.d/debian.sources
-  # See corresponding file in assets for explanation
-  cp_tpl --raw --chmod=0755 /usr/bin/ischroot
   # Keep old/default config when there is a conflict
   cp_tpl --raw /etc/apt/apt.conf.d/10-dpkg-keep-conf.conf
 
   PACKAGES=(apt-utils gettext jq yq)
+  PACKAGES_TMP=()
   local taskfile
   for taskfile in "$PKGROOT/workloads/node/bootstrap/tasks.d/"??-*.sh; do
     # shellcheck disable=SC1090
     source "$taskfile"
   done
 
-  readarray -t -d $'\n' -O ${#PACKAGES[@]} PACKAGES < <(printf "%s\n" "${PACKAGES[@]}" | sort -u)
-  info "Installing packages: %s" "${PACKAGES[*]}"
+  local all_packages=()
+  readarray -t -d $'\n' all_packages < <(printf "%s\n" "${PACKAGES[@]}" "${PACKAGES_TMP[@]}" | sort -u)
+  info "Installing packages: %s" "${all_packages[*]}"
+  apt-get upgrade -qq
   apt-get update -qq
-  apt-get install -y --no-install-recommends "${PACKAGES[@]}"
+  apt-get install -y --no-install-recommends "${all_packages[@]}"
   rm -rf /var/cache/apt/lists/*
 
   upkg add -g "$PKGROOT/workloads/node/bootstrap/assets/system.upkg.json"
@@ -49,20 +50,13 @@ main() {
     fi
   done
 
+  # `comm -13`: Only remove temp packages that don't also appear in PACKAGES_TMP
+  local packages_purge=()
+  readarray -t -d $'\n' packages_purge < <(comm -13 <(printf "%s\n" "${PACKAGES[@]}" | sort -u) <(printf "%s\n" "${PACKAGES_TMP[@]}" | sort -u))
+  printf "%s\n" "${packages_purge[@]}"
+  apt-get purge -y "${packages_purge[@]}"
   apt-get autoremove -y
   apt-get autoclean
-
-  info "Building initrd"
-  local kernver
-  kernver=$(echo /lib/modules/*)
-  kernver=${kernver#'/lib/modules/'}
-  dracut --kver "$kernver"
-  # Remove fake ischroot
-  rm /usr/bin/ischroot
-  # Remove kernel & initramfs symlinks and move real files to fixed location
-  rm -f /vmlinuz* /initrd.img*
-  mv "/boot/vmlinuz-${kernver}" /boot/vmlinuz
-  mv "/boot/initramfs-${kernver}.img" /boot/initrd.img
 }
 
 cp_tpl() {
