@@ -61,7 +61,6 @@ metadata:
     app.kubernetes.io/name: smallstep
     app.kubernetes.io/component: certificates
   annotations:
-    io.cilium/lb-ipam-ips: "cluster.smallstep.fixedIPv4,cluster.smallstep.fixedIPv6"
     external-dns.alpha.kubernetes.io/hostname: pki.DOMAIN.
 spec:
   type: LoadBalancer

@@ -79,7 +79,6 @@ metadata:
     app.kubernetes.io/name: smallstep
     app.kubernetes.io/component: kube-apiserver-client-ca
   annotations:
-    io.cilium/lb-ipam-ips: "cluster.kubeAPIServerClientCA.fixedIPv4,cluster.kubeAPIServerClientCA.fixedIPv6"
     external-dns.alpha.kubernetes.io/hostname: pki-kube.DOMAIN.
 spec:
   type: LoadBalancer
