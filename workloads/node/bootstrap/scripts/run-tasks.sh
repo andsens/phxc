@@ -16,10 +16,16 @@ main() {
 
   # Enable non-free components
   sed -i 's/Components: main/Components: main contrib non-free non-free-firmware/' /etc/apt/sources.list.d/debian.sources
+  apt-get update -qq
+
+  # Instal base deps
+  # gettext -> envsubst
+  apt-get install -y --no-install-recommends gettext
+
   # Keep old/default config when there is a conflict
   cp_tpl --raw /etc/apt/apt.conf.d/10-dpkg-keep-conf.conf
 
-  PACKAGES=(apt-utils gettext jq yq)
+  PACKAGES=(apt-utils jq)
   PACKAGES_TMP=()
   local taskfile
   for taskfile in "$PKGROOT/workloads/node/bootstrap/tasks.d/"??-*.sh; do
@@ -31,7 +37,6 @@ main() {
   readarray -t -d $'\n' all_packages < <(printf "%s\n" "${PACKAGES[@]}" "${PACKAGES_TMP[@]}" | sort -u)
   info "Installing packages: %s" "${all_packages[*]}"
   apt-get upgrade -qq
-  apt-get update -qq
   apt-get install -y --no-install-recommends "${all_packages[@]}"
   rm -rf /var/cache/apt/lists/*
 

@@ -2,7 +2,7 @@
 set -Eeo pipefail; shopt -s inherit_errexit
 
 apt-get -y update
-apt-get -y install --no-install-recommends gettext jq yq wget ca-certificates
+apt-get -y install --no-install-recommends jq wget ca-certificates
 rm -rf /var/cache/apt/lists/*
 
 
