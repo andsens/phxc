@@ -26,8 +26,8 @@ cluster:
     -----END PUBLIC KEY-----
   # Top-level domain name of your cluster
   domain: example.org
-  # IP to use for overriding external A record queries
-  wanIPv4: '1.2.3.4'
+  # DynDNS domain pointing at the cluster, so external A record queries can resolve
+  CLUSTER_DYNDNSDOMAIN: elysium.example.com
   # Name of the PKI root & intermediate
   pkiName: 'Elysium'
   # CIDRs for the Kubernetes cluster

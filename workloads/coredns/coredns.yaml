@@ -188,7 +188,7 @@ spec:
         env:
         - name: CLUSTER_WANIPV4
           value: cluster.wanIPv4
-        - name: CLUSTER_DOMAIN
+        - name: CLUSTER_DYNDNSDOMAIN
           value: cluster.domain
         # Since coredns is scheduled on "node-role.kubernetes.io/control-plane"
         # the kube-apiserver is also available on this node, so we can use the IP from the status field
