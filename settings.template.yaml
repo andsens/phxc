@@ -26,8 +26,6 @@ cluster:
     -----END PUBLIC KEY-----
   # Top-level domain name of your cluster
   domain: example.org
-  # DynDNS domain pointing at the cluster, so external A record queries can resolve
-  CLUSTER_DYNDNSDOMAIN: elysium.example.com
   # Name of the PKI root & intermediate
   pkiName: 'Elysium'
   # CIDRs for the Kubernetes cluster
@@ -45,17 +43,3 @@ cluster:
   router:
     fixedIPv4: '192.168.1.1'
     fixedIPv6: 'fd73:9867:6b4d:0:feec:daff:fe04:a9ec'
-  # CoreDNS, the central DNS server for the entire cluster
-  coredns:
-    # Fixed IP from the service subnet above for port forwarding
-    svc:
-      fixedIPv4: '10.33.0.10'
-      fixedIPv6: 'fd73:9867:6b4d:cafe:0000:34::1'
-    # Fixed IP from the load balancer subnet above for port forwarding
-    lb:
-      fixedIPv4: '10.34.0.2'
-      fixedIPv6: 'fd73:9867:6b4d:cafe:0:34::2'
-  # Fixed etcd IP address for coredns, note that this is from the svc pool and not the lb pool
-  etcd:
-    fixedIPv4: '10.33.0.2'
-    fixedIPv6: 'fd73:9867:6b4d:cafe:0:33:0:2'

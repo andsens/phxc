@@ -43,6 +43,13 @@ spec:
         "k8s:io.kubernetes.pod.namespace": etcd
         app.kubernetes.io/name: etcd
         app.kubernetes.io/component: etcd
+  - toPorts:
+    # Needed for external IP resolution
+    - ports:
+      - port: "443"
+        protocol: TCP
+    toEntities:
+    - world
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -92,10 +99,6 @@ spec:
   selector:
     k8s-app: kube-dns
   ipFamilyPolicy: RequireDualStack
-  clusterIP: cluster.coredns.svc.fixedIP
-  clusterIPs:
-  - cluster.coredns.svc.fixedIPv4
-  - cluster.coredns.svc.fixedIPv6
   ports:
   - name: dns
     port: 53
@@ -112,7 +115,6 @@ metadata:
     app.kubernetes.io/name: coredns
     app.kubernetes.io/component: coredns
   annotations:
-    io.cilium/lb-ipam-ips: "cluster.coredns.fixedIPv4,cluster.coredns.fixedIPv6"
     external-dns.alpha.kubernetes.io/hostname: ns1.DOMAIN.
 spec:
   type: LoadBalancer
@@ -173,7 +175,48 @@ spec:
           matchLabels:
             k8s-app: kube-dns
       dnsPolicy: Default
+      initContainers:
+      - name: build-config
+        # Image choice may seem a bit weird here.
+        # We use it (#1) because it is one we already need anyways for smallstep,
+        # and (#2) because it has all the tools we need installed: curl, ca-certificates, and bash.
+        # There's also kubectl installed if we need that at some point.
+        image: cr.step.sm/smallstep/step-ca-bootstrap@sha256:5270356cf91596afe18478eab60c6c0866b2cc62618f282d42827e58f84d6eae
+        command: [/scripts/render-imports.sh]
+        securityContext:
+          readOnlyRootFilesystem: true
+        env:
+        # Since coredns is scheduled on "node-role.kubernetes.io/control-plane"
+        # the kube-apiserver is also available on this node, so we can use the IPs from the status field
+        - name: HOST_IPS
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIPs
+        volumeMounts:
+        - name: scripts
+          mountPath: /scripts
+        - name: imports
+          mountPath: /etc/coredns/imports
       containers:
+      - name: build-config
+        # See above
+        image: cr.step.sm/smallstep/step-ca-bootstrap@sha256:5270356cf91596afe18478eab60c6c0866b2cc62618f282d42827e58f84d6eae
+        command: [/scripts/render-imports.sh]
+        args: ['--watch']
+        securityContext:
+          readOnlyRootFilesystem: true
+        env:
+        # Since coredns is scheduled on "node-role.kubernetes.io/control-plane"
+        # the kube-apiserver is also available on this node, so we can use the IPs from the status field
+        - name: HOST_IPS
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIPs
+        volumeMounts:
+        - name: scripts
+          mountPath: /scripts
+        - name: imports
+          mountPath: /etc/coredns/imports
       - name: coredns
         args: [-conf, /etc/coredns/Corefile]
         image: coredns/coredns:1.11.1
@@ -186,26 +229,8 @@ spec:
             - all
           readOnlyRootFilesystem: true
         env:
-        - name: CLUSTER_WANIPV4
-          value: cluster.wanIPv4
-        - name: CLUSTER_DYNDNSDOMAIN
+        - name: CLUSTER_DOMAIN
           value: cluster.domain
-        # Since coredns is scheduled on "node-role.kubernetes.io/control-plane"
-        # the kube-apiserver is also available on this node, so we can use the IP from the status field
-        - name: KUBE_APISERVER_IPV4
-          valueFrom:
-            fieldRef:
-              fieldPath: status.hostIP
-        # This one is bogus. We need to be able to do a little preprocessing on status.hostIPs
-        # But without embedding a script during startup I'm not sure how...
-        - name: KUBE_APISERVER_IPV6
-          valueFrom:
-            fieldRef:
-              fieldPath: status.hostIP
-        - name: CLUSTER_ETCD_FIXEDIPV4
-          value: cluster.etcd.fixedIPv4
-        - name: CLUSTER_ETCD_FIXEDIPV6
-          value: cluster.etcd.fixedIPv6
         ports:
         - containerPort: 53
           name: dns
@@ -248,7 +273,15 @@ spec:
         volumeMounts:
         - name: config
           mountPath: /etc/coredns
+        - name: imports
+          mountPath: /etc/coredns/imports
       volumes:
+      - name: scripts
+        configMap:
+          name: scripts
+          defaultMode: 0755
       - name: config
         configMap:
           name: coredns
+      - name: imports
+        emptyDir: {}

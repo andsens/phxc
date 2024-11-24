@@ -33,10 +33,6 @@ metadata:
 spec:
   ipFamilyPolicy: RequireDualStack
   type: ClusterIP
-  clusterIP: cluster.etcd.fixedIP
-  clusterIPs:
-  - cluster.etcd.fixedIPv4
-  - cluster.etcd.fixedIPv6
   selector:
     app.kubernetes.io/name: etcd
     app.kubernetes.io/component: etcd

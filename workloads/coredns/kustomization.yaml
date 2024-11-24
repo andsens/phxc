@@ -10,29 +10,10 @@ configMapGenerator:
 - files:
   - Corefile
   name: coredns
+- files:
+  - scripts/render-imports.sh
+  name: scripts
 replacements:
-- source: {fieldPath: data.cluster.coredns.svc.fixedIPv4, kind: ConfigMap, name: settings}
-  targets:
-  - select: {kind: Service, name: kube-dns}
-    fieldPaths: [spec.clusterIP]
-- source: {fieldPath: data.cluster.coredns.svc.fixedIPv4, kind: ConfigMap, name: settings}
-  targets:
-  - select: {kind: Service, name: kube-dns}
-    fieldPaths: [spec.clusterIPs.0]
-- source: {fieldPath: data.cluster.coredns.svc.fixedIPv6, kind: ConfigMap, name: settings}
-  targets:
-  - select: {kind: Service, name: kube-dns}
-    fieldPaths: [spec.clusterIPs.1]
-- source: {fieldPath: data.cluster.coredns.lb.fixedIPv4, kind: ConfigMap, name: settings}
-  targets:
-  - select: {kind: Service, name: external-coredns}
-    fieldPaths: [metadata.annotations.io\.cilium/lb-ipam-ips]
-    options: {delimiter: ',', index: 0}
-- source: {fieldPath: data.cluster.coredns.lb.fixedIPv6, kind: ConfigMap, name: settings}
-  targets:
-  - select: {kind: Service, name: external-coredns}
-    fieldPaths: [metadata.annotations.io\.cilium/lb-ipam-ips]
-    options: {delimiter: ',', index: 1}
 - source: {fieldPath: data.cluster.domain, kind: ConfigMap, name: settings}
   targets:
   - select: {kind: Service, name: external-coredns}
@@ -40,15 +21,3 @@ replacements:
     options: {delimiter: '.', index: 1}
   - select: {group: apps, kind: Deployment, name: coredns}
     fieldPaths: ["spec.template.spec.containers.[name=coredns].env.[name=CLUSTER_DOMAIN].value"]
-- source: {fieldPath: data.cluster.wanIPv4, kind: ConfigMap, name: settings}
-  targets:
-  - select: {group: apps, kind: Deployment, name: coredns}
-    fieldPaths: ["spec.template.spec.containers.[name=coredns].env.[name=CLUSTER_WANIPV4].value"]
-- source: {fieldPath: data.cluster.etcd.fixedIPv4, kind: ConfigMap, name: settings}
-  targets:
-  - select: {group: apps, kind: Deployment, name: coredns}
-    fieldPaths: ["spec.template.spec.containers.[name=coredns].env.[name=CLUSTER_ETCD_FIXEDIPV4].value"]
-- source: {fieldPath: data.cluster.etcd.fixedIPv6, kind: ConfigMap, name: settings}
-  targets:
-  - select: {group: apps, kind: Deployment, name: coredns}
-    fieldPaths: ["spec.template.spec.containers.[name=coredns].env.[name=CLUSTER_ETCD_FIXEDIPV6].value"]
