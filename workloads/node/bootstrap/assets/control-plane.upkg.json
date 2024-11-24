@@ -1,0 +1,20 @@
+{
+  "$schema": "https://schemas.orbit.dev/upkg/upkg-v0.28.0.schema.json",
+  "bin": [".upkg/.bin"],
+  "dependencies": [
+    {
+      "name": "cilium",
+      "bin": ["cilium"],
+      "os/arch": "Linux/x86_64",
+      "tar": "https://github.com/cilium/cilium-cli/releases/download/v0.16.10/cilium-linux-amd64.tar.gz",
+      "sha256": "aeb9d7c56108283a9fb9b370ec36b33f28f3126f6c4e6b4176a15cc6b2d3fc70"
+    },
+    {
+      "name": "cilium",
+      "bin": ["cilium"],
+      "os/arch": "Linux/aarch64",
+      "tar": "https://github.com/cilium/cilium-cli/releases/download/v0.16.10/cilium-linux-arm64.tar.gz",
+      "sha256": "625e880a9a5a9f38931a3e129fe2c811bd4883105b6f4dbe562734d48a082f7a"
+    }
+  ]
+}

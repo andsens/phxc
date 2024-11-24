@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 PACKAGES+=(
-  git # kpt
   open-iscsi nfs-common # longhorn
 )
 

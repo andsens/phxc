@@ -62,8 +62,6 @@ system_setup() {
     printf '[Unit]\nJobRunningTimeoutSec=infinity\n' >"/etc/systemd/system/$systemd_name.device.d/50-device-timeout.conf"
   done
 
-  ln -s ../lib/upkg/.upkg/home-cluster/.upkg/.bin/step /usr/local/bin/step
-
   cp_tpl --raw -r --chmod=0755 \
     /usr/local/bin/boot-server-available \
     /usr/local/bin/configure-networks \

@@ -1,11 +1,10 @@
 {
   "$schema": "https://schemas.orbit.dev/upkg/upkg-v0.28.0.schema.json",
-  "name": "home-cluster",
-  "bin": [],
   "dependencies": [
     {
-      "tar": "https://github.com/orbit-online/upkg/releases/download/v0.26.3/upkg.tar.gz",
-      "sha256": "577020f3987b2bd42dc8f92cf4b2fe9adfa445a59a354f1c225ae7e21d8ee273"
+      "tar": "https://github.com/andsens/docopt.sh/releases/download/v2.0.2/docopt-lib.sh.tar.gz",
+      "sha256": "d6997858e7f2470aa602fdd1e443d89b4e2084245b485e4b7924b0f388ec401e",
+      "name": "docopt-lib-v2.0.2"
     },
     {
       "tar": "https://github.com/orbit-online/trap.sh/releases/download/v1.1.1/trap.sh.tar.gz",
@@ -16,7 +15,6 @@
       "sha256": "201977ecc5fc9069d8eff12ba6adc9ce1286ba66c9aeee19184e26185cc6ef63"
     },
     {
-      "bin": [],
       "tar": "https://github.com/orbit-online/path-tools/releases/download/v1.0.0/path-tools.tar.gz",
       "sha256": "2ae2a98714aa81e2142b749dac9ecdb61e050e66bf8bd33aef0fccb2ce66c84b"
     },
@@ -25,81 +23,12 @@
       "sha256": "ca741323c2bd77f547fa9aea41050d85dfc5f1ce3ff42f73b7a12f7c90b9be2e"
     },
     {
-      "tar": "https://github.com/orbit-online/bgpid/releases/download/v1.0.0/bgpid.tar.gz",
-      "sha256": "bac9fbcf574fc69f28eea803cf95ca1c67b607410a45ba4646afc2581b674d2e"
-    },
-    {
-      "name": "kustomize",
-      "bin": ["kustomize"],
-      "os/arch": "Linux/x86_64",
-      "tar": "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.4.2/kustomize_v5.4.2_linux_amd64.tar.gz",
-      "sha256": "881c6e9007c7ea2b9ecc214d13f4cdd1f837635dcf4db49ce4479898f7d911a3"
-    },
-    {
-      "name": "kustomize",
-      "bin": ["kustomize"],
-      "os/arch": "Linux/aarch64",
-      "tar": "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.4.2/kustomize_v5.4.2_linux_arm64.tar.gz",
-      "sha256": "175af88af8a7d8d7d6b1f26659060950f0764d00b9979b4e11b61b8b212b7c22"
-    },
-    {
-      "name": "kpt",
-      "os/arch": "Linux/x86_64",
-      "file": "https://github.com/kptdev/kpt/releases/download/v1.0.0-beta.54/kpt_linux_amd64",
-      "sha256": "3fc249f71a8e7ff44fae4a909947c6cc9502726588a097757e1ac51a43e083d3"
-    },
-    {
-      "name": "kpt",
-      "os/arch": "Linux/aarch64",
-      "file": "https://github.com/kptdev/kpt/releases/download/v1.0.0-beta.54/kpt_linux_arm64",
-      "sha256": "ecb754a384f1cf32dfdcea6405e245c7bfc56a7c955826559bfe538a26cfb25f"
-    },
-    {
-      "os/arch": "Linux/x86_64",
-      "file": "https://dl.k8s.io/release/v1.30.3/bin/linux/amd64/kubectl",
-      "sha256": "abd83816bd236b266c3643e6c852b446f068fe260f3296af1a25b550854ec7e5"
-    },
-    {
-      "os/arch": "Linux/aarch64",
-      "file": "https://dl.k8s.io/release/v1.30.3/bin/linux/arm64/kubectl",
-      "sha256": "c6f9568f930b16101089f1036677bb15a3185e9ed9b8dbce2f518fb5a52b6787"
-    },
-    {
-      "name": "step-kms-plugin",
-      "bin": ["step-kms-plugin_0.11.4/step-kms-plugin"],
-      "os/arch": "Linux/x86_64",
-      "tar": "https://github.com/smallstep/step-kms-plugin/releases/download/v0.11.4/step-kms-plugin_0.11.4_linux_amd64.tar.gz",
-      "sha256": "e4bd82f4a4b0dab84cbbc7c267ccbee0aced807d92bae4ee4bee32e063584964"
-    },
-    {
-      "name": "step-kms-plugin",
-      "bin": ["step-kms-plugin_0.11.4/step-kms-plugin"],
-      "os/arch": "Linux/aarch64",
-      "tar": "https://github.com/smallstep/step-kms-plugin/releases/download/v0.11.4/step-kms-plugin_0.11.4_linux_arm64.tar.gz",
-      "sha256": "8c4fbc2338b372a079fcef17454689ed3eaf4eadaa9304f21bb89e28f39fd34f"
-    },
-    {
-      "name": "step",
-      "bin": ["step_0.27.4/bin/step"],
-      "os/arch": "Linux/x86_64",
-      "tar": "https://dl.smallstep.com/gh-release/cli/gh-release-header/v0.27.4/step_linux_0.27.4_amd64.tar.gz",
-      "sha256": "bde282299138be30dd0774a38fdc2ef3dba78d4b91e600beada6c9788647fd69"
-    },
-    {
-      "name": "step",
-      "bin": ["step_0.27.4/bin/step"],
-      "os/arch": "Linux/aarch64",
-      "tar": "https://dl.smallstep.com/gh-release/cli/gh-release-header/v0.27.4/step_linux_0.27.4_arm64.tar.gz",
-      "sha256": "1453b14b4dde7113ed6a7fe42772f4d091baba43405d79eac7b9fa1f3a027edd"
-    },
-    {
       "tar": "https://github.com/orbit-online/checkdeps/releases/download/v2.0.0/checkdeps.tar.gz",
       "sha256": "0b7ebb5e60163ccbd4966527f72c0e30f8cb183de6057ddad72b4e6b83ae1637"
     },
     {
-      "tar": "https://github.com/andsens/docopt.sh/releases/download/v2.0.2/docopt-lib.sh.tar.gz",
-      "sha256": "d6997858e7f2470aa602fdd1e443d89b4e2084245b485e4b7924b0f388ec401e",
-      "name": "docopt-lib-v2.0.2"
+      "tar": "https://github.com/orbit-online/bgpid/releases/download/v1.0.0/bgpid.tar.gz",
+      "sha256": "bac9fbcf574fc69f28eea803cf95ca1c67b607410a45ba4646afc2581b674d2e"
     }
   ]
 }

@@ -1,0 +1,17 @@
+[Unit]
+Description=Install packages needed to run the kubernetes control-plane
+Requires=create-persistent-dir@control-plane-pkgs.service
+After=create-persistent-dir@control-plane-pkgs.service
+Before=k3s.target
+
+[Install]
+WantedBy=k3s@server.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=upkg add /usr/local/lib/upkg/.upkg/home-cluster/workloads/node/bootstrap/assets/control-plane.upkg.json
+ExecStart=upkg add /usr/local/lib/upkg/.upkg/home-cluster/workloads/common-context/manifests.upkg.json
+# kpt dependency
+ExecStart=apt-get install -qq --no-install-recommends git
+WorkingDirectory=/var/lib/persistent/control-plane-pkgs

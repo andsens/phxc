@@ -23,7 +23,7 @@ Options:
   --debug   Enable debug build (installs less & nano, unlocks root, etc.)
 
 Supported variants:
-  amd64 - Standard x86_64 image
+  amd64 - x86_64 image
   arm64 - ARM 64-bit image
   rpi5 - ARM 64-bit image with modifications for Raspberry PI 5
 "
@@ -31,8 +31,8 @@ Supported variants:
 # shellcheck disable=2016,2086,2317,1090,1091,2034
 docopt() { local v='2.0.2'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
-%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:341};usage=${DOC:29:36}
-digest=388c3;options=(' --upload 0' ' --debug 0');node_0(){ switch __upload 0;}
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:332};usage=${DOC:29:36}
+digest=c6b42;options=(' --upload 0' ' --debug 0');node_0(){ switch __upload 0;}
 node_1(){ switch __debug 1;};node_2(){ value VARIANT a;};node_3(){ optional 0 1
 };node_4(){ sequence 3 2;};cat <<<' docopt_exit() { [[ -n $1 ]] && printf \
 "%s\n" "$1" >&2;printf "%s\n" "${DOC:29:36}" >&2;exit 1;}';local \

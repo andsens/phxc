@@ -1,0 +1,41 @@
+{
+  "$schema": "https://schemas.orbit.dev/upkg/upkg-v0.28.0.schema.json",
+  "dependencies": [
+    {
+      "name": "kustomize",
+      "bin": ["kustomize"],
+      "os/arch": "Linux/x86_64",
+      "tar": "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.4.2/kustomize_v5.4.2_linux_amd64.tar.gz",
+      "sha256": "881c6e9007c7ea2b9ecc214d13f4cdd1f837635dcf4db49ce4479898f7d911a3"
+    },
+    {
+      "name": "kustomize",
+      "bin": ["kustomize"],
+      "os/arch": "Linux/aarch64",
+      "tar": "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.4.2/kustomize_v5.4.2_linux_arm64.tar.gz",
+      "sha256": "175af88af8a7d8d7d6b1f26659060950f0764d00b9979b4e11b61b8b212b7c22"
+    },
+    {
+      "name": "kpt",
+      "os/arch": "Linux/x86_64",
+      "file": "https://github.com/kptdev/kpt/releases/download/v1.0.0-beta.54/kpt_linux_amd64",
+      "sha256": "3fc249f71a8e7ff44fae4a909947c6cc9502726588a097757e1ac51a43e083d3"
+    },
+    {
+      "name": "kpt",
+      "os/arch": "Linux/aarch64",
+      "file": "https://github.com/kptdev/kpt/releases/download/v1.0.0-beta.54/kpt_linux_arm64",
+      "sha256": "ecb754a384f1cf32dfdcea6405e245c7bfc56a7c955826559bfe538a26cfb25f"
+    },
+    {
+      "os/arch": "Linux/x86_64",
+      "file": "https://dl.k8s.io/release/v1.30.3/bin/linux/amd64/kubectl",
+      "sha256": "abd83816bd236b266c3643e6c852b446f068fe260f3296af1a25b550854ec7e5"
+    },
+    {
+      "os/arch": "Linux/aarch64",
+      "file": "https://dl.k8s.io/release/v1.30.3/bin/linux/arm64/kubectl",
+      "sha256": "c6f9568f930b16101089f1036677bb15a3185e9ed9b8dbce2f518fb5a52b6787"
+    }
+  ]
+}
