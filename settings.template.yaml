@@ -26,8 +26,6 @@ cluster:
     -----END PUBLIC KEY-----
   # Top-level domain name of your cluster
   domain: example.org
-  # Name of the PKI root & intermediate
-  pkiName: 'Elysium'
   # CIDRs for the Kubernetes cluster
   # The IPv6 subnet can be a prefix delegated one from your ISP
   cidrs:
