@@ -7,7 +7,7 @@ ENV ARCH=$ARCH
 RUN /workspace/common-context/setup-debian.sh; \
   apt-get -y update; apt-get -y install --no-install-recommends \
   squashfs-tools guestfish ipxe-qemu dosfstools linux-image-${ARCH} python3-venv binutils curl \
-  systemd-ukify systemd-boot-efi python3-pefile sbsigntool \
+  systemd-ukify systemd-boot-efi shim-signed python3-pefile sbsigntool gettext \
   ; rm -rf /var/cache/apt/lists/*; \
   upkg add -g /workspace/common-context/smallstep.upkg.json; \
   python3 -m venv /signify; \

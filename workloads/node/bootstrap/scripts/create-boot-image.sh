@@ -39,7 +39,6 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   declare -A authentihashes
   declare -A sha256sums
   declare -A boot_files
-  local pxe_boot_file
 
   #################################
   ### Extract container archive ###
@@ -82,7 +81,7 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   # Hash the root image so we can verify it during boot
   sha256sums[root.img]=$(sha256sum /workspace/root.img | cut -d ' ' -f1)
 
-  artifacts[/workspace/root.img]=root.${sha256sums[root.img]}.img
+  artifacts[/workspace/root.img]=root.img
   boot_files[/workspace/root.img]=/home-cluster/root.${sha256sums[root.img]}.img
   local kernel_cmdline="rd.neednet=1 rootovl"
   ! $DEBUG || kernel_cmdline+=" rd.shell"
@@ -115,8 +114,6 @@ EOF
   if [[ $VARIANT = rpi* ]]; then
 
     info "Building RaspberryPI boot.img"
-
-    pxe_boot_file=boot.img
 
     case $VARIANT in
       rpi5)
@@ -194,8 +191,6 @@ EOF
 
     info "Creating unified kernel image"
 
-    pxe_boot_file=uki.efi
-
     printf "%s" "$kernel_cmdline" > /workspace/root/boot/cmdline.txt
 
     local kernver
@@ -214,12 +209,6 @@ EOF
 
     artifacts[/workspace/root/boot/uki.efi]=uki.efi
 
-    case "$ARCH" in
-      amd64) boot_files[/workspace/root/boot/uki.efi]=/EFI/BOOT/BOOTX64.efi ;;
-      arm64) boot_files[/workspace/root/boot/uki.efi]=/EFI/BOOT/BOOTAA64.efi ;;
-      *) fatal "Unknown architecture: %s" "$ARCH" ;;
-    esac
-
     local uki_size_b
     uki_size_b=$(stat -c %s /workspace/root/boot/uki.efi)
     (( uki_size_b <= 1024 * 1024 * 64 )) || \
@@ -232,6 +221,27 @@ EOF
     # as to why we also measure the embedded kernel
     objcopy -O binary --only-section=.linux /workspace/root/boot/uki.efi /workspace/uki-vmlinuz
     authentihashes[vmlinuz]=$(/signify/bin/python3 /scripts/get-pe-digest.py --json /workspace/uki-vmlinuz)
+
+    # Create boot loader entry
+    local efi_arch
+    case "$ARCH" in
+      amd64) efi_arch=x64 ;;
+      arm64) efi_arch=aa64 ;;
+      *) fatal "Unknown architecture: %s" "$ARCH" ;;
+    esac
+
+    boot_files["/usr/lib/shim/shim${efi_arch}.efi.signed"]=/EFI/BOOT/BOOT${efi_arch^^}.efi
+    boot_files["/usr/lib/systemd/boot/efi/systemd-boot${efi_arch}.efi"]=/EFI/BOOT/grub${efi_arch}.efi
+    boot_files[/workspace/root/boot/uki.efi]=/EFI/Linux/${sha256sums[root.img]}.efi
+    # shellcheck disable=SC2016
+    SHA256=${sha256sums[root.img]} \
+    envsubst '$SHA256' <<'EOF' >/workspace/root/boot/loader.conf
+default ${SHA256}.efi
+timeout menu-hidden
+console-mode auto
+editor false
+EOF
+    boot_files[/workspace/root/boot/loader.conf]=/loader/loader.conf
   fi
 
   ###########################
@@ -241,9 +251,8 @@ EOF
   info "Creating image metadata file"
 
   local key meta
-  meta=$(jq -n --arg variant "$VARIANT" --arg pxe_boot_file "$pxe_boot_file" --arg now "$(date --iso-8601=seconds --utc)" '{
+  meta=$(jq -n --arg variant "$VARIANT" --arg now "$(date --iso-8601=seconds --utc)" '{
     "variant": $variant,
-    "boot-file": $pxe_boot_file,
     "build-date": $now,
     "sha256sums": {},
     "authentihashes": {}
@@ -261,7 +270,6 @@ EOF
   printf "%s\n" "$meta" >/workspace/meta.json
 
   artifacts[/workspace/meta.json]=meta.json
-  boot_files[/workspace/meta.json]=/home-cluster/meta.json
 
   ##################
   ### Disk image ###
