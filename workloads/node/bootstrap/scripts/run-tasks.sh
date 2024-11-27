@@ -3,9 +3,6 @@
 set -Eeo pipefail; shopt -s inherit_errexit
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../../..")
 source "$PKGROOT/.upkg/records.sh/records.sh"
-# shellcheck source=workloads/settings/env/settings.shellcheck.sh
-source "$PKGROOT/workloads/settings/env/settings.sh"
-eval_settings
 
 export DISK_UUID=caf66bff-edab-4fb1-8ad9-e570be5415d7
 export BOOT_UUID=c427f0ed-0366-4cb2-9ce2-3c8c51c3e89e
@@ -18,7 +15,7 @@ main() {
   sed -i 's/Components: main/Components: main contrib non-free non-free-firmware/' /etc/apt/sources.list.d/debian.sources
   apt-get update -qq
 
-  # Instal base deps
+  # Install base deps
   # gettext -> envsubst
   apt-get install -y --no-install-recommends gettext
 

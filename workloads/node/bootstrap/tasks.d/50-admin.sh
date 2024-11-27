@@ -9,12 +9,13 @@ fi
 
 admin() {
   if $DEBUG; then
-    usermod -p "${ADMIN_PWHASH:?}" root
+    :
+    # usermod -p "${ADMIN_PWHASH:?}" root
   else
     usermod -L root
   fi
   useradd -m -s /bin/bash -u 1000 admin
-  usermod -p "${ADMIN_PWHASH:?}" admin
+  # usermod -p "${ADMIN_PWHASH:?}" admin
   adduser admin adm
   adduser admin sudo
   userdir=$(getent passwd admin | cut -d: -f6)
