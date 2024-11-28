@@ -4,7 +4,7 @@ set -Eeo pipefail; shopt -s inherit_errexit
 main() {
   [[ $# -eq 0 ]] || usage
   local tarfile
-  for tarfile in /var/lib/persistent/container-images/*.tar; do
+  for tarfile in /var/lib/phoenix-cluster/container-images/*.tar; do
     printf "Importing %s\n" "$(basename "$tarfile" .tar)" >&2
     ctr -n k8s.io image import --snapshotter stargz "$tarfile"
     rm "$tarfile"

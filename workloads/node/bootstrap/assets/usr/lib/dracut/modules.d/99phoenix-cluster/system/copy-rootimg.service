@@ -1,0 +1,11 @@
+[Unit]
+Description=Copy the rootimg from the boot partition
+AssertPathExists=!/run/initramfs/root.img
+Requires=create-node-state.service mount-boot.service
+After=create-node-state.service mount-boot.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecCondition=bash -c 'test -e /boot/phoenix-cluster/root.${ROOT_SHA256}.img'
+ExecStart=cp /boot/phoenix-cluster/root.${ROOT_SHA256}.img /run/initramfs/root.img.tmp

@@ -1,9 +1,0 @@
-[Unit]
-Description=Create data directory for bind mounts
-Requires=var-lib-persistent.mount
-After=var-lib-persistent.mount
-
-[Service]
-Type=oneshot
-RemainAfterExit=yes
-ExecStart=mkdir -p /var/lib/persistent/%i

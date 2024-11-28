@@ -1,15 +1,15 @@
 [Unit]
 Description=/var/lib/longhorn
 DefaultDependencies=no
-Requires=create-persistent-dir@longhorn.service
-After=create-persistent-dir@longhorn.service
+Requires=create-data-dir@longhorn.service
+After=create-data-dir@longhorn.service
 Before=k3s.target
 
 [Install]
 RequiredBy=k3s.target
 
 [Mount]
-What=/var/lib/persistent/longhorn
+What=/var/lib/phoenix-cluster/longhorn
 Where=/var/lib/longhorn
 Type=none
 Options=bind

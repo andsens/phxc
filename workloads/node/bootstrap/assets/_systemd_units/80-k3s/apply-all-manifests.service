@@ -11,6 +11,6 @@ Type=oneshot
 Restart=on-failure
 RestartSec=15s
 Environment=HOME=/root KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-ExecCondition=bash -ec '! /usr/local/lib/upkg/.upkg/home-cluster/bin/manifest latest-applied-all'
-ExecStart=/usr/local/lib/upkg/.upkg/home-cluster/bin/manifest apply all
+ExecCondition=bash -ec '! /usr/local/lib/upkg/.upkg/phoenix-cluster/bin/manifest latest-applied-all'
+ExecStart=/usr/local/lib/upkg/.upkg/phoenix-cluster/bin/manifest apply all
 TimeoutSec=1200

@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+set -Eeo pipefail; shopt -s inherit_errexit
+PKGROOT=$(dirname "$(realpath "${BASH_SOURCE[0]}")")
+# shellcheck disable=SC1091
+source "$PKGROOT/../lib/phoenix-cluster/node.sh"
+
+main() {
+  local e; for e; do [[ "$e" != "--help" ]] || usage; done
+  [[ -n $1 && -n $2 && $# -eq 2 ]] || usage
+  local filepath=$1 key=$2
+  if yq -r 'paths | join(".")' "$filepath" | grep -q "^$key$"; then
+    key=$(escape_key "$key")
+    yq -r ".$key" "$filepath"
+  else
+    printf "%s is not set in '%s'\n" "$key" "$filepath" >&2
+    return 1
+  fi
+}
+
+escape_key() {
+  # Converts any path like some-path.to-something.here
+  # into ["some-path"]["to-something"]["here"]
+  # This means dots in keys are not allowed
+  local key=$1
+  key=${key//'.'/'"]["'}
+  key="[\"$key\"]"
+  printf "%s\n" "$key"
+}
+
+usage() {
+  printf "Usage: get-config FILEPATH KEY\n" >&2
+  return 1
+}
+
+main "$@"

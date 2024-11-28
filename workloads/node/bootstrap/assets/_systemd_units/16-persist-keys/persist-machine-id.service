@@ -4,7 +4,7 @@ DefaultDependencies=no
 Requires=boot-cache-dir.service systemd-machine-id-commit.service
 After=boot-cache-dir.service systemd-machine-id-commit.service
 Before=keys-persisted.target
-ConditionPathExists=!/boot/home-cluster/machine-id
+ConditionPathExists=!/boot/phoenix-cluster/machine-id
 AssertPathExists=/run/machine-id
 
 [Install]
@@ -13,4 +13,4 @@ RequiredBy=keys-persisted.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=cp /run/machine-id /boot/home-cluster/machine-id
+ExecStart=cp /run/machine-id /boot/phoenix-cluster/machine-id

@@ -11,7 +11,7 @@ main() {
   # shellcheck disable=SC2064
   trap "rm \"$bundle\"" EXIT
   "$PKGROOT/workloads/node/bootstrap/scripts/bundle" "$bundle"
-  item=$(kubectl create --dry-run=client -o yaml configmap bundle --from-file "home-cluster.tar.gz=$bundle")
+  item=$(kubectl create --dry-run=client -o yaml configmap bundle --from-file "phoenix-cluster.tar.gz=$bundle")
   # shellcheck disable=SC2016
   yq -y --indentless --argjson item "$(yq . <<<"$item")" '.items+=[$item]' <<<'kind: ResourceList
 items: []'

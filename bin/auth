@@ -62,13 +62,13 @@ local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
 
   elif $renew; then
 
-    step ca renew --context home-cluster-kube-api --force "$cert_path" "$key_path"
-    sign_ssh_pubkeys home-cluster-pki $ADMIN_USERNAME
+    step ca renew --context phoenix-cluster-kube-api --force "$cert_path" "$key_path"
+    sign_ssh_pubkeys phoenix-cluster-pki $ADMIN_USERNAME
 
   elif $kubectl_cert; then
 
     ! step certificate needs-renewal "$cert_path" 2>&1 | pipe_verbose || \
-      step ca renew --context home-cluster-kube-api --force "$cert_path" "$key_path" 2>&1 | pipe_verbose
+      step ca renew --context phoenix-cluster-kube-api --force "$cert_path" "$key_path" 2>&1 | pipe_verbose
     # shellcheck disable=SC2016
     yq \
       --arg cert "$(cat "$cert_path")" \
@@ -82,18 +82,18 @@ local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
 
     local profile ca_url fingerprint config_path config control_plane_hostname
 
-    control_plane_hostname=$(get_control_plane_hostname)
+    control_plane_hostname=k8s-nas.local
 
     ################################
     ### Setup kube client API CA ###
     ################################
-    context=home-cluster-kube-api
+    context=phoenix-cluster-kube-api
     info "Bootstrapping Smallstep %s context" $context
     ca_url=https://$control_plane_hostname:9001
     fingerprint=$(step certificate fingerprint <(curl -s --insecure "$ca_url/roots.pem")) # TOFU for the kube-api CA
     step ca bootstrap --context $context --force --ca-url="$ca_url" --fingerprint="$fingerprint"
 
-    # home-cluster-kube-api context/profile setup
+    # phoenix-cluster-kube-api context/profile setup
     profile=$context
     config_path=$(step path --profile $profile)/config/defaults.json
     config=$(jq --arg key "$key_path" '.key=$key' <<<'{}')
@@ -111,10 +111,10 @@ local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
     #########################
     ### Setup kube config ###
     #########################
-    local kube_config_path=$HOME/.kube/home-cluster.yaml kube_cluster=home-cluster kube_api_addr kube_context
-    kube_context=home-cluster
+    local kube_config_path=$HOME/.kube/phoenix-cluster.yaml kube_cluster=phoenix-cluster kube_api_addr kube_context
+    kube_context=phoenix-cluster
     kube_api_addr="https://$control_plane_hostname:6443"
-    kubectl config --kubeconfig "$kube_config_path" set-cluster home-cluster \
+    kubectl config --kubeconfig "$kube_config_path" set-cluster phoenix-cluster \
       --server="$kube_api_addr" \
       --embed-certs \
       --certificate-authority=<(step certificate inspect --insecure --format pem "$kube_api_addr") # TOFU again :-/
@@ -128,18 +128,18 @@ local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
     export KUBECONFIG=$kube_config_path
 
     ##############################
-    ### Setup the home-cluster ###
+    ### Setup the phoenix-cluster ###
     ##############################
     local smallstep_ipv4
     smallstep_ipv4=$(kubectl --context "$kube_context" -n smallstep get svc step-ca-external -o=jsonpath='{.status.loadBalancer.ingress[0].ip}')
-    context=home-cluster-pki
+    context=phoenix-cluster-pki
     info "Bootstrapping Smallstep %s context" $context
     ca_url=https://$smallstep_ipv4:9000
     # Retrieve the fingerprint by connecting to kubernetes, no TOFU needed
     fingerprint=$(step certificate fingerprint <(kubectl --context "$kube_context" -n smallstep get secret smallstep-root-cert -o=jsonpath='{.data.tls\.crt}' | base64 -d))
     step ca bootstrap --context $context --force --ca-url "$ca_url" --fingerprint="$fingerprint"
 
-    # home-cluster-pki context/profile setup
+    # phoenix-cluster-pki context/profile setup
     profile=$context
     config_path=$(step path --profile $profile)/config/defaults.json
     config=$(jq --arg key "$key_path" --arg crt "$cert_path" '.["x5c-key"]=$key | .["x5c-cert"]=$crt' <"$config_path")
@@ -174,8 +174,8 @@ local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
     ########################
     sign_ssh_pubkeys $context $ADMIN_USERNAME
 
-    if [[ $OLD_KUBECONFIG != *"$HOME/.kube/home-cluster.yaml"* ]]; then
-      warning "Remember to add the new client config to your \$KUBECONFIG with KUBECONFIG=\$KUBECONFIG:\$HOME/.kube/home-cluster.yaml"
+    if [[ $OLD_KUBECONFIG != *"$HOME/.kube/phoenix-cluster.yaml"* ]]; then
+      warning "Remember to add the new client config to your \$KUBECONFIG with KUBECONFIG=\$KUBECONFIG:\$HOME/.kube/phoenix-cluster.yaml"
     fi
 
   fi

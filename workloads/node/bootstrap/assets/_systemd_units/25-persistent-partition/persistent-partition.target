@@ -1,6 +1,0 @@
-[Unit]
-Description=The persistent partition has been created
-Before=var-lib-persistent.mount
-
-[Install]
-WantedBy=var-lib-persistent.mount

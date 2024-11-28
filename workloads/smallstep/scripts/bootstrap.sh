@@ -36,7 +36,7 @@ create_intermediate_ca() {
       --force --no-password --insecure \
       --not-after=87600h \
       --ca="$ROOT_CRT_PATH" --ca-key="$ROOT_KEY_PATH" \
-      "home-cluster Intermediate CA" "$INTERMEDIATE_CRT_PATH" "$INTERMEDIATE_KEY_PATH"
+      "phoenix-cluster Intermediate CA" "$INTERMEDIATE_CRT_PATH" "$INTERMEDIATE_KEY_PATH"
     kubectl delete -n smallstep secret smallstep-intermediate 2>/dev/null || true
     kubectl create -n smallstep secret tls smallstep-intermediate --cert="$INTERMEDIATE_CRT_PATH" --key="$INTERMEDIATE_KEY_PATH"
   fi

@@ -16,7 +16,7 @@ k3s() {
     80-k3s/etc-rancher-node.mount
     80-k3s/var-lib-longhorn.mount
     80-k3s/var-lib-rancher-k3s.mount
-    80-k3s/create-persistent-dir@.service
+    80-k3s/create-data-dir@.service
   )
   for filepath in "${systemd_units[@]}"; do
     cp_tpl --raw "_systemd_units/$filepath" -d "/etc/systemd/system/$(basename "$filepath")"

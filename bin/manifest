@@ -53,7 +53,7 @@ do declare -p "$p$varname";done;done;}
 
   if $latest_applied_all; then
     local latest_applied_all
-    latest_applied_all=$(kubectl -n default get configmap home-cluster-manifest -o jsonpath='{.data.latest-applied-all}' 2>/dev/null) || true
+    latest_applied_all=$(kubectl -n default get configmap phoenix-cluster-manifest -o jsonpath='{.data.latest-applied-all}' 2>/dev/null) || true
     if [[ -n $latest_applied_all ]]; then
       printf "%s\n" "$latest_applied_all"
       return 0
@@ -107,8 +107,8 @@ do declare -p "$p$varname";done;done;}
     fi
   done
   if $all && $apply; then
-    kubectl -n default delete configmap home-cluster-manifest 2>/dev/null || true
-    kubectl -n default create configmap home-cluster-manifest --from-literal "latest-applied-all=$(date --iso-8601=seconds)"
+    kubectl -n default delete configmap phoenix-cluster-manifest 2>/dev/null || true
+    kubectl -n default create configmap phoenix-cluster-manifest --from-literal "latest-applied-all=$(date --iso-8601=seconds)"
   fi
 }
 

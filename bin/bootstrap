@@ -61,7 +61,7 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
     step certificate create --profile root-ca \
       --force --no-password --insecure \
       --not-after $((20*365*24))h \
-      "home-cluster root" "$ROOT_CRT" "${root_key_arg[@]}" &>/dev/null
+      "phoenix-cluster root" "$ROOT_CRT" "${root_key_arg[@]}" &>/dev/null
   fi
 
   if [[ ! -e $SB_CRT ]]; then
@@ -72,7 +72,7 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
   "extKeyUsage": ["codeSigning"]
 }') --force --insecure --no-password --not-after $((20*365*24))h --kty RSA \
     --ca "$INTERMEDIATE_CRT" --ca-key "$INTERMEDIATE_KEY" \
-    "home-cluster Secure Boot" "$SB_CRT" "$SB_KEY"
+    "phoenix-cluster Secure Boot" "$SB_CRT" "$SB_KEY"
     step crypto key public "$SB_KEY" >"$SB_PUBKEY"
   fi
 
@@ -97,7 +97,7 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
   mkdir -p "$artifacts"
 
   local bundle
-  bundle=$(mktemp --suffix '-home-cluster-bundle.tar.gz')
+  bundle=$(mktemp --suffix '-phoenix-cluster-bundle.tar.gz')
   trap_append "rm \"$bundle\"" EXIT
   "$PKGROOT/workloads/node/bootstrap/scripts/bundle" "$bundle"
 
@@ -141,7 +141,7 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
     --platform "$DOCKER_PLATFORM" \
     -v "$PKGROOT/workloads/node/bootstrap/Dockerfile:/workspace/context/Dockerfile:ro" \
     -v "$PKGROOT/workloads/node/bootstrap/assets:/workspace/assets:ro" \
-    -v "$bundle:/workspace/home-cluster.tar.gz:ro" \
+    -v "$bundle:/workspace/phoenix-cluster.tar.gz:ro" \
     -v "$ROOT_CRT:/workspace/root_ca.crt:ro" \
     -v "$PKGROOT/workloads/common-context:/workspace/common-context:ro" \
     -v "$artifacts:/workspace/artifacts:rw" \

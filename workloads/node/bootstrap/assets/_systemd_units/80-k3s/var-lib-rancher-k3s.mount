@@ -1,15 +1,15 @@
 [Unit]
 Description=/var/lib/rancher/k3s
 DefaultDependencies=no
-Requires=create-persistent-dir@k3s.service
-After=create-persistent-dir@k3s.service
+Requires=create-data-dir@k3s.service
+After=create-data-dir@k3s.service
 Before=k3s.target
 
 [Install]
 RequiredBy=k3s.target
 
 [Mount]
-What=/var/lib/persistent/k3s
+What=/var/lib/phoenix-cluster/k3s
 Where=/var/lib/rancher/k3s
 Type=none
 Options=bind

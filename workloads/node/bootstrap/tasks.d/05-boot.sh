@@ -35,28 +35,19 @@ boot() {
   cp_tpl --var VARIANT /etc/systemd/system.conf.d/variant.conf
   cp_tpl --var DISK_UUID --var BOOT_UUID --var DATA_UUID /etc/systemd/system.conf.d/disk-uuids.conf
 
-  cp /workspace/root_ca.crt /usr/local/share/ca-certificates/home-cluster-root.crt
-  chmod 0644 /usr/local/share/ca-certificates/home-cluster-root.crt
+  cp /workspace/root_ca.crt /usr/local/share/ca-certificates/phoenix-cluster-root.crt
+  chmod 0644 /usr/local/share/ca-certificates/phoenix-cluster-root.crt
   update-ca-certificates
-
-  cp_tpl --raw /usr/local/lib/home-cluster/node.sh
-  cp_tpl --raw --chmod=0755 \
-    /usr/local/bin/curl-boot-server \
-    /usr/local/bin/find-boot-server \
-    /usr/local/bin/get-node-state \
-    /usr/local/bin/set-node-state \
-    /usr/local/bin/is-node-state \
-
 
   # Enable serial console
   systemctl enable serial-getty@ttyS0
 
-  cp_tpl --raw /etc/dracut.conf.d/home-cluster.conf
+  cp_tpl --raw /etc/dracut.conf.d/phoenix-cluster.conf
 
   cp_tpl --raw --chmod=0755 \
-    /usr/lib/dracut/modules.d/99home-cluster/parse-squashfs-root.sh \
-    /usr/lib/dracut/modules.d/99home-cluster/module-setup.sh
-  cp_tpl --raw -r /usr/lib/dracut/modules.d/99home-cluster/system
+    /usr/lib/dracut/modules.d/99phoenix-cluster/parse-squashfs-root.sh \
+    /usr/lib/dracut/modules.d/99phoenix-cluster/module-setup.sh
+  cp_tpl --raw -r /usr/lib/dracut/modules.d/99phoenix-cluster/system
 
   if [[ $VARIANT = rpi5 ]]; then
     # Remove Raspberry Pi 4 boot code

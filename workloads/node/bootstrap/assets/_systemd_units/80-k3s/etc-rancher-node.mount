@@ -1,15 +1,15 @@
 [Unit]
 Description=/etc/rancher/node
 DefaultDependencies=no
-Requires=create-persistent-dir@node-password.service
-After=create-persistent-dir@node-password.service
+Requires=create-data-dir@node-password.service
+After=create-data-dir@node-password.service
 Before=k3s.target
 
 [Install]
 RequiredBy=k3s.target
 
 [Mount]
-What=/var/lib/persistent/node-password
+What=/var/lib/phoenix-cluster/node-password
 Where=/etc/rancher/node
 Type=none
 Options=bind

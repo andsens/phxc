@@ -1,4 +1,4 @@
-# Home cluster
+# Phoenix cluster
 
 ## Requirements
 
@@ -10,7 +10,7 @@ Linux or WSL
 ### Clone & configure
 
 - Clone this repo your (WSL) workspace
-- Copy `config/config/home-cluster.template.yaml` to `config/config/home-cluster.yaml` and adjust values while you are doing the following:
+- Copy `config/config/phoenix-cluster.template.yaml` to `config/config/phoenix-cluster.yaml` and adjust values while you are doing the following:
   - Create the TrueNAS host bridge
     - Make sure to enable DHCP on the main NIC again after creating the host bridge
   - Clone this repo to your NAS
@@ -31,14 +31,14 @@ Linux or WSL
   For a random IPv4 subnet use random.org 1-255 for the two groups after the "10."
   For a random IPv6 subnet use https://unique-local-ipv6.com/
 
-### Setup home-cluster repo on TrueNAS
+### Setup phoenix-cluster repo on TrueNAS
 
 ```
-git init home-cluster
-cd home-cluster
+git init phoenix-cluster
+cd phoenix-cluster
 ssh-keygen -f deploy-key -t ed25519
 # Add deploy-key.pub to github repo
-git config --add --local core.sshCommand 'ssh -i /mnt/cluster/home-cluster/deploy-key'
+git config --add --local core.sshCommand 'ssh -i /mnt/cluster/phoenix-cluster/deploy-key'
 git remote add origin git@github.com:<REPO>
 git fetch origin
 git reset --hard origin/master
@@ -68,7 +68,7 @@ step ca bootstrap --ca-url pki.$(bin/settings get cluster.domain):9000 \
 
 # How to reauth when init admin cert has expired
 
-Simply copy home-cluster.yaml from the NFS mount. It is regenerated every 24h
+Simply copy phoenix-cluster.yaml from the NFS mount. It is regenerated every 24h
 and bin/auth is built to be re-run.
 
 # How to setup WSL

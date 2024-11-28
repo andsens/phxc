@@ -82,7 +82,7 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   sha256sums[root.img]=$(sha256sum /workspace/root.img | cut -d ' ' -f1)
 
   artifacts[/workspace/root.img]=root.img
-  boot_files[/workspace/root.img]=/home-cluster/root.${sha256sums[root.img]}.img
+  boot_files[/workspace/root.img]=/phoenix-cluster/root.${sha256sums[root.img]}.img
   local kernel_cmdline="rd.neednet=1 rootovl"
   ! $DEBUG || kernel_cmdline+=" rd.shell"
 

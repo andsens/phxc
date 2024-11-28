@@ -1,8 +1,0 @@
-[Unit]
-Description=The bootup keys have been persisted
-AssertPathExists=/boot/home-cluster/node-config.json.enc
-AssertPathExists=/boot/home-cluster/authn-key.json.enc
-AssertPathExists=/boot/home-cluster/machine-id
-
-[Install]
-WantedBy=sysinit.target

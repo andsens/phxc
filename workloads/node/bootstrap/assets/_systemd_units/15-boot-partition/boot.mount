@@ -1,8 +1,0 @@
-[Unit]
-Description=/boot
-
-[Mount]
-What=PARTUUID=${BOOT_UUID}
-Where=/boot
-Type=vfat
-Options=
