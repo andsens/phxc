@@ -1,0 +1,26 @@
+name: Update config schema
+
+on:
+  push:
+    branches: [ 'master' ]
+    paths:
+    - .github/workflows/update-schema.yaml
+    - workloads/node/bootstrap/assets/usr/local/lib/phoenix-cluster/config.schema.yaml
+
+jobs:
+  setup-gist:
+    name: Update setup gist
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        path: repo
+    - name: Convert config.schema.yaml to JSON
+      run: yq -o=json . repo/workloads/node/bootstrap/assets/usr/local/lib/phoenix-cluster/config.schema.yaml >config.schema.json
+    - name: Deploy to gist
+      uses: exuanbo/actions-deploy-gist@v1
+      with:
+        token: ${{ secrets.CONFIG_SCHEMA_GIST_TOKEN }}
+        gist_id: ${{ vars.CONFIG_SCHEMA_GIST_ID }}
+        file_path: config.schema.json
+        file_type: application/schema+json
