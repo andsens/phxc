@@ -7,6 +7,7 @@ AssertPathExists=/boot/phxc/root.img
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=cp /boot/phxc/root.${ROOT_SHA256}.img /run/initramfs/root.img.tmp
-ExecStart=bash -ec 'sha256sum -c - <<<"${ROOT_SHA256}  /run/initramfs/root.img.tmp"'
-ExecStart=mv /run/initramfs/root.img.tmp /run/initramfs/root.img
+ExecStartPre=cp /boot/phxc/root.${ROOT_SHA256}.img /run/initramfs/root.img.tmp
+ExecStart=sha256sum -c -
+StandardInputText=${ROOT_SHA256}  /run/initramfs/root.img.tmp
+ExecStartPost=mv /run/initramfs/root.img.tmp /run/initramfs/root.img

@@ -13,25 +13,23 @@ Usage:
   create-boot-image [options]
 
 Options:
-  --upload URL  Upload artifacts to the image-registry
-                [default: https://image-registry.node.svc.cluster.local:8021]
+  --upload URL  Upload artifacts to the specified WebDAV server URL
   --chown UID   Change the owner & group UID of the artifacts to UID when done
 "
 # docopt parser below, refresh this parser with `docopt.sh create-boot-image.sh`
 # shellcheck disable=2016,2086,2317,1090,1091,2034
 docopt() { local v='2.0.2'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
-%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:320};usage=${DOC:62:36}
-digest=6be94;options=(' --upload 1' ' --chown 1');node_0(){ value __upload 0;}
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:255};usage=${DOC:62:36}
+digest=ec9f8;options=(' --upload 1' ' --chown 1');node_0(){ value __upload 0;}
 node_1(){ value __chown 1;};node_2(){ optional 0 1;};cat <<<' docopt_exit() {
 [[ -n $1 ]] && printf "%s\n" "$1" >&2;printf "%s\n" "${DOC:62:36}" >&2;exit 1;}'
 local varnames=(__upload __chown) varname;for varname in "${varnames[@]}"; do
 unset "var_$varname";done;parse 2 "$@";local p=${DOCOPT_PREFIX:-''};for \
 varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
-'___upload:-https://image-registry.node.svc.cluster.local:8021};'$p'__chown=${'\
-'var___chown:-};';local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2
-for ((;docopt_i>0;docopt_i--)); do for varname in "${varnames[@]}"; do declare \
--p "$p$varname";done;done;}
+'___upload:-};'$p'__chown=${var___chown:-};';local docopt_i=1;[[ $BASH_VERSION \
+=~ ^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for varname in \
+"${varnames[@]}"; do declare -p "$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' create-boot-image.sh`
   eval "$(docopt "$@")"
 
@@ -83,7 +81,7 @@ for ((;docopt_i>0;docopt_i--)); do for varname in "${varnames[@]}"; do declare \
   # Hash the root image so we can verify it during boot
   sha256sums[root.img]=$(sha256sum /workspace/root.img | cut -d ' ' -f1)
 
-  artifacts[/workspace/root.img]=root.img
+  ! $DEBUG || artifacts[/workspace/root.img]=root.img
   boot_files[/workspace/root.img]=/phxc/root.${sha256sums[root.img]}.img
   local kernel_cmdline="rd.neednet=1 rootovl"
   ! $DEBUG || kernel_cmdline+=" rd.shell"
@@ -107,7 +105,7 @@ EOF
     cd /workspace/initramfs
     find . -print0 | cpio -o --null --format=newc 2>/dev/null | zstd -19 >/workspace/root/boot/initrd.img
   )
-  artifacts[/workspace/root/boot/initrd.img]=initrd.img
+  ! $DEBUG || artifacts[/workspace/root/boot/initrd.img]=initrd.img
 
   ############################
   ### RaspberryPI boot.img ###
@@ -117,24 +115,22 @@ EOF
 
     info "Building RaspberryPI boot.img"
 
+    unset 'artifacts[/workspace/root/boot/initrd.img]'
     case $VARIANT in
       rpi5)
         mv /workspace/root/boot/vmlinuz /workspace/root/boot/firmware/kernel_2712.img
         mv /workspace/root/boot/initrd.img /workspace/root/boot/firmware/initramfs_2712
-        unset 'artifacts[/workspace/root/boot/initrd.img]'
-        artifacts[/workspace/root/boot/firmware/initramfs_2712]=initrd.img
+        ! $DEBUG || artifacts[/workspace/root/boot/firmware/initramfs_2712]=initrd.img
         ;;
       rpi4)
         mv /workspace/root/boot/vmlinuz /workspace/root/boot/firmware/kernel8.img
         mv /workspace/root/boot/initrd.img /workspace/root/boot/firmware/initramfs8
-        unset 'artifacts[/workspace/root/boot/initrd.img]'
-        artifacts[/workspace/root/boot/firmware/initramfs8]=initrd.img
+        ! $DEBUG || artifacts[/workspace/root/boot/firmware/initramfs8]=initrd.img
         ;;
       rpi3)
         mv /workspace/root/boot/vmlinuz /workspace/root/boot/firmware/kernel7.img
         mv /workspace/root/boot/initrd.img /workspace/root/boot/firmware/initramfs7
-        unset 'artifacts[/workspace/root/boot/initrd.img]'
-        artifacts[/workspace/root/boot/firmware/initramfs7]=initrd.img
+        ! $DEBUG || artifacts[/workspace/root/boot/firmware/initramfs7]=initrd.img
         ;;
       *) printf "Unknown rpi* variant: %s\n" "$VARIANT" >&2; return 1 ;;
     esac
@@ -145,9 +141,7 @@ EOF
     boot_files["/assets/config-${VARIANT}.txt"]=config.txt
 
     # Adjust config.txt for being embedded in boot.img
-    sed 's/boot_ramdisk=1/auto_initramfs=1/' <"/assets/config-${VARIANT}.txt" >/workspace/config.txt
-    cp "/assets/config-${VARIANT}.txt" /workspace/config-netboot.txt
-    artifacts[/workspace/config-netboot.txt]=config.txt
+    boot_files["/assets/config-${VARIANT}.txt"]=config.txt
 
     local file_size fs_table_size_b firmware_size_b=0
     fs_table_size_b=$(( 1024 * 1024 )) # Total guess, but should be enough
@@ -209,7 +203,7 @@ EOF
       --secureboot-certificate=/secureboot/tls.crt \
       --output=/workspace/root/boot/uki.efi
 
-    artifacts[/workspace/root/boot/uki.efi]=uki.efi
+    ! $DEBUG || artifacts[/workspace/root/boot/uki.efi]=uki.efi
 
     local uki_size_b
     uki_size_b=$(stat -c %s /workspace/root/boot/uki.efi)
@@ -328,22 +322,23 @@ EOF
     cp "$src" "$dest"
     [[ -z $__chown ]] || chown "$__chown:$__chown" "$dest"
   done
+  $DEBUG || rm "/workspace/artifacts/node.tar"
 
   ##############
   ### Upload ###
   ##############
 
   # shellcheck disable=SC2154
-  if $__upload; then
+  if [[ -n $__upload ]]; then
 
-    info "Uploading artifacts to image-registry"
+    info "Uploading artifacts to the image-registry"
 
     local artifact upload_files=''
     for artifact in "${artifacts[@]}"; do
       upload_files="$upload_files,/workspace/artifacts/$artifact"
     done
     curl_img_reg -DELETE "$__upload/$VARIANT.tmp/" || true
-    curl -T "{${upload_files#,}}" "$__upload/$VARIANT.tmp/"
+    curl --upload-file "{${upload_files#,}}" "$__upload/$VARIANT.tmp/"
     curl -DELETE "$__upload/$VARIANT.old/" || true
     curl -XMOVE "$__upload/$VARIANT/" --header "Destination:$__upload/$VARIANT.old/"
     curl -XMOVE "$__upload/$VARIANT.tmp/" --header "Destination:$__upload/${VARIANT}/"

@@ -1,0 +1,17 @@
+[Unit]
+Description=Configure systemd-resolved to be able to resolve the cluster domain
+DefaultDependencies=no
+Requires=resource-ready@coredns.service
+After=systemd-networkd.service resource-ready@coredns.service
+AssertPathExists=/etc/phxc/cluster.yaml
+
+[Install]
+RequiredBy=k3s.target
+
+[Service]
+Type=oneshot
+ExecStart=bash -e
+StandardInputText=printf "[Resolve]\nDNS=%%s\nDomains=~%%s ~cluster.local\n" \
+  "$(kubectl -n kube-system get svc external-coredns -ojsonpath='{.status.loadBalancer.ingress[*].ip}')" \
+  "$(get-config /etc/phxc/cluster.yaml ${DEFAULT_CLUSTER_DOMAIN})"
+StandardOutput=file:/etc/systemd/resolved.conf.d/cluster-domain.conf

@@ -1,0 +1,12 @@
+[Unit]
+Description=Write the phoenix-cluster secureboot cert to the RPi OTP
+DefaultDependencies=no
+ConditionPathExists=/usr/local/lib/phxc/secureboot.der
+
+[Install]
+WantedBy=sysinit.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=

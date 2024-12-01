@@ -1,9 +1,0 @@
-apiVersion: cluster.local
-kind: SettingsReplacementsConfigMapGenerator
-metadata:
-  name: settings
-  annotations:
-    config.kubernetes.io/function: |
-      exec:
-        path: ./generate-settings-cm.sh
-spec: {}

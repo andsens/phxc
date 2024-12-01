@@ -9,9 +9,10 @@ PACKAGES+=(
 )
 
 networking() {
-  install_sd_unit 17-system/configure-hostname.service
-  install_sd_unit 17-system/configure-networks.service
+  install_sd_unit networking/configure-hostname.service
+  install_sd_unit networking/configure-networks.service
+  install_sd_unit networking/configure-resolved.service --var DEFAULT_CLUSTER_DOMAIN
+  mkdir -p /etc/systemd/resolved.conf.d
   systemctl enable systemd-networkd
   cp_tpl /etc/hosts.tmp
-  cp_tpl --chmod=0755 /usr/local/bin/configure-networks
 }

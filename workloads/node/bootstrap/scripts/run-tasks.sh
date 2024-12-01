@@ -36,6 +36,7 @@ main() {
 
   PACKAGES=(apt-utils jq)
   PACKAGES_TMP=()
+  PACKAGES_PURGE=()
   local taskfile
   for taskfile in "$PKGROOT/workloads/node/bootstrap/tasks.d/"??-*.sh; do
     # shellcheck disable=SC1090
@@ -67,8 +68,10 @@ main() {
 
   # `comm -13`: Only remove temp packages that don't also appear in PACKAGES_TMP
   local packages_purge=()
-  readarray -t -d $'\n' packages_purge < <(comm -13 <(printf "%s\n" "${PACKAGES[@]}" | sort -u) <(printf "%s\n" "${PACKAGES_TMP[@]}" | sort -u))
-  printf "%s\n" "${packages_purge[@]}"
+  readarray -t -d $'\n' packages_purge < <(\
+    comm -13 <(printf "%s\n" "${PACKAGES[@]}" | sort -u) <(printf "%s\n" "${PACKAGES_TMP[@]}" | sort -u)
+    printf "%s\n" "${PACKAGES_PURGE[@]}"
+  )
   apt-get purge -y "${packages_purge[@]}"
   apt-get autoremove -y
   apt-get autoclean

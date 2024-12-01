@@ -6,5 +6,7 @@ PACKAGES+=(
 )
 
 config() {
-  install_sd_unit 00-validate-boot-config.service
+  install_sd_unit config/copy-cluster-config.service
+  install_sd_unit config/persist-machine-id.service
+  install_sd_unit config/setup-admin-credentials.service
 }

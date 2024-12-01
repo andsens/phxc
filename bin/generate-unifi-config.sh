@@ -1,14 +1,10 @@
 #!/usr/bin/env bash
-# shellcheck source-path=../../..
+# shellcheck source-path=..
 set -Eeo pipefail; shopt -s inherit_errexit
-PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../..")
+PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
 
 main() {
   source "$PKGROOT/.upkg/records.sh/records.sh"
-  # shellcheck source=workloads/settings/env/settings.shellcheck.sh
-  source "$PKGROOT/workloads/settings/env/settings.sh"
-  # shellcheck disable=SC2119
-  eval_settings
 
   DOC="generate-unifi-config.sh - Generate config.gateway.json
 Usage:

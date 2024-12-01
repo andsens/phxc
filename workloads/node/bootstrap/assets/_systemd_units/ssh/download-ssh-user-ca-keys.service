@@ -1,7 +1,7 @@
 [Unit]
 Description=Download SSH User CA keys
-Requires=resource-ready@step-ca.service
-After=resource-ready@step-ca.service ssh.service
+Requires=resource-ready@step-ca.service bootstrap-smallstep.service
+After=resource-ready@step-ca.service bootstrap-smallstep.service ssh.service
 
 [Install]
 WantedBy=multi-user.target

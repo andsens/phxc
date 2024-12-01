@@ -5,7 +5,7 @@ Wants=systemd-networkd-wait-online.service
 After=systemd-networkd-wait-online.service
 
 [Service]
-ExecCondition=bash -ec '[[ $(get-config -q /boot/phxc/node.yaml k3s-mode node) = %i ]] || false'
+ExecCondition=bash -ec '[[ $(get-config -q /boot/phxc/node.yaml k3s-mode ${DEFAULT_NODE_K3S_MODE}) = %i ]] || false'
 Type=notify
 EnvironmentFile=-/etc/default/%N
 EnvironmentFile=-/etc/sysconfig/%N

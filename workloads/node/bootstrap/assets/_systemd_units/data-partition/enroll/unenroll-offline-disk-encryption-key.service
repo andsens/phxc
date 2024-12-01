@@ -1,0 +1,19 @@
+[Unit]
+Description=Enrolls a TPM-bound disk encryption key
+Requires=boot.mount disk-encryption-keys-enrolled.target
+After=boot.mount disk-encryption-keys-enrolled.target
+ConditionPathExists=/boot/phxc/node.yaml
+ConditionPathExists=/boot/phxc/disk-encryption.key
+
+[Install]
+WantedBy=sysinit.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecCondition=bash -ec '[[ $(get-config /boot/phxc/node.yaml disk-encryption ${DEFAULT_NODE_DISK_ENCRYPTION}) != insecure-offline ]] || return 1'
+ExecStart=cryptsetup luksRemoveKey \
+  --key-file /var/lib/phxc/disk-encryption-recovery.key \
+  /dev/disk/by-partuuid/${DATA_UUID} \
+  /boot/phxc/disk-encryption.key
+ExecStart=rm /boot/phxc/disk-encryption.key

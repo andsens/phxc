@@ -1,10 +1,12 @@
 [Unit]
 Description=Uploads the disk encryption recovery key to the cluster
-After=enroll-disk-encryption-recovery-key.service
+Requires=enroll-recovery-disk-encryption-key.service
+After=enroll-recovery-disk-encryption-key.service
+Before=disk-encryption-keys-enrolled.target
 AssertPathExists=/var/lib/phxc/disk-encryption-recovery.key
 
 [Install]
-WantedBy=cryptsetup-pre.target
+RequiredBy=disk-encryption-keys-enrolled.target
 
 [Service]
 Type=oneshot

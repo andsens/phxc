@@ -1,5 +1,5 @@
 [Unit]
-Description=Set k3s node-label & token
+Description=Set k3s node-label
 Before=k3s.target
 ConditionPathExists=/boot/phxc/node.yaml
 

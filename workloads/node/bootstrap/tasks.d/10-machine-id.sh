@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 machine_id() {
-  install_sd_unit 16-persist-keys/persist-machine-id.service
+  install_sd_unit config/persist-machine-id.service
 
   ln -sf ../run/machine-id /etc/machine-id
   ln -sf ../../../run/machine-id /var/lib/dbus/machine-id

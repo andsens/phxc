@@ -1,15 +1,17 @@
 [Unit]
 Description=Enrolls a disk encryption key derived from the RPi OTP memory
-Requires=boot.mount
-After=boot.mount rpi-init-otp.service
+Requires=boot.mount data-partition.target
+After=boot.mount data-partition.target rpi-init-otp.service
+Before=disk-encryption-keys-enrolled.target
 ConditionPathExists=/run/initramfs/disk-encryption.key
 
 [Install]
-WantedBy=cryptsetup-pre.target
+WantedBy=disk-encryption-keys-enrolled.target
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
+ExecCondition=bash -ec '[[ $(get-config /boot/phxc/node.yaml disk-encryption ${DEFAULT_NODE_DISK_ENCRYPTION}) == rpi-otp ]] || return 1'
 ExecCondition=bash -ec 'rpi-otp-private-key -c \
   -o $(get-config /boot/phxc/rpi-otp.yaml offset ${DEFAULT_RPI_OTP_OFFSET}) \
   -l $(get-config /boot/phxc/rpi-otp.yaml length ${DEFAULT_RPI_OTP_LENGTH})'

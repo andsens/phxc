@@ -10,9 +10,6 @@ main() {
   source "$PKGROOT/.upkg/trap.sh/trap.sh"
   source "$PKGROOT/.upkg/path-tools/path-tools.sh"
   PATH=$(path_prepend "$PKGROOT/.upkg/.bin")
-  # shellcheck source=workloads/settings/env/settings.shellcheck.sh
-  source "$PKGROOT/workloads/settings/env/settings.sh"
-  eval_settings
 
   DOC="bootstrap - Bootstrap images
 Usage:

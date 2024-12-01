@@ -1,0 +1,14 @@
+[Unit]
+Description=Enroll the phoenix-cluster secureboot cert
+DefaultDependencies=no
+ConditionSecurity=tpm2
+ConditionPathExists=/usr/local/lib/phxc/secureboot.der
+
+[Install]
+WantedBy=sysinit.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecCondition=bash -ec '[[ $(get-config /boot/phxc/node.yaml disk-encryption ${DEFAULT_NODE_DISK_ENCRYPTION}) =~ ^tpm|auto$ ]] || return 1'
+ExecStart=mokutil --import /usr/local/lib/phxc/secureboot.der --password

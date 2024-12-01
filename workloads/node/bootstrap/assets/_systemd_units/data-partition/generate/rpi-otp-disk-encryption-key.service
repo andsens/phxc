@@ -1,8 +1,8 @@
 [Unit]
 Description=Generate the disk encryption key using the RPi OTP memory
 Requires=boot.mount
-After=boot.mount copy-boot-disk-encryption-key.service
-Before=remove-ram-config@rpi-otp.service cryptsetup-pre.target
+After=boot.mount copy-offline-disk-encryption-key.service
+Before=cryptsetup-pre.target
 ConditionPathExists=!/run/initramfs/disk-encryption.key
 
 [Install]

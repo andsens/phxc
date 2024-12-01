@@ -1,6 +1,0 @@
-{
-  "ca-url": "https://$CLUSTER_SMALLSTEP_LB_FIXEDIPV4:9000",
-  "fingerprint": "$SMALLSTEP_ROOT_CA_FINGERPRINT",
-  "root": "/usr/local/share/ca-certificates/phoenix-cluster-root.crt",
-  "redirect-url": ""
-}

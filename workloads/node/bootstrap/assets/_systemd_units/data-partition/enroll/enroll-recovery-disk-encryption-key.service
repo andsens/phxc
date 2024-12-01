@@ -1,12 +1,13 @@
 [Unit]
 Description=Enrolls a disk encryption recovery key
-Requires=boot.mount
-After=boot.mount
+Requires=data-partition.target
+After=data-partition.target
+Before=disk-encryption-keys-enrolled.target
 ConditionPathExists=/run/initramfs/disk-encryption.key
 ConditionPathExists=!/var/lib/phxc/disk-encryption-recovery.key
 
 [Install]
-WantedBy=cryptsetup-pre.target
+WantedBy=disk-encryption-keys-enrolled.target
 
 [Service]
 Type=oneshot

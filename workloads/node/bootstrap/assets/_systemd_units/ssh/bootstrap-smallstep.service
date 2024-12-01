@@ -1,0 +1,16 @@
+[Unit]
+Description=Bootstrap the smallstep CA for the root user
+ConditionPathExists=/usr/local/share/ca-certificates/phoenix-cluster-root.crt
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=bash -e
+StandardInputText=jq -n --arg fp "$(step certificate fingerprint /usr/local/share/ca-certificates/phoenix-cluster-root.crt)" \
+  { \
+    "ca-url": "https://step-ca.smallstep.svc.cluster.local:9000", \
+    "fingerprint": "$SMALLSTEP_ROOT_CA_FINGERPRINT", \
+    "root": "/usr/local/share/ca-certificates/phoenix-cluster-root.crt", \
+    "redirect-url": "" \
+  }
+StandardOutput=/root/.step/config/defaults.json

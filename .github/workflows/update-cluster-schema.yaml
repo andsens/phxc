@@ -5,7 +5,7 @@ on:
     branches: [ 'master' ]
     paths:
     - .github/workflows/update-schema.yaml
-    - workloads/node/bootstrap/assets/usr/local/lib/phoenix-cluster/cluster.schema.yaml
+    - workloads/node/bootstrap/assets/usr/local/lib/phxc/schemas/cluster.schema.yaml
 
 jobs:
   update-node-config-schema:
@@ -16,7 +16,7 @@ jobs:
       with:
         path: repo
     - name: Convert cluster.schema.yaml to JSON
-      run: yq -o=json . repo/workloads/node/bootstrap/assets/usr/local/lib/phoenix-cluster/cluster.schema.yaml >cluster.schema.json
+      run: yq -o=json . repo/workloads/node/bootstrap/assets/usr/local/lib/phxc/schemas/cluster.schema.yaml >cluster.schema.json
     - name: Deploy to gist
       uses: exuanbo/actions-deploy-gist@v1
       with:

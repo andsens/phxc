@@ -9,7 +9,7 @@ main() {
   version_flag=$(jq -r '.version // empty' "$PKGROOT/upkg.json")
   [[ -z $version_flag ]] || version_flag=-V$version_flag
   PATH=$(path_prepend "$PKGROOT/.upkg/.bin")
-  local bundle_files=(README.md settings.template.yaml settings.yaml)
+  local bundle_files=(README.md)
   if [[ -e $PKGROOT/.git ]]; then
     local filepath
     while read -r -d $'\0' filepath; do

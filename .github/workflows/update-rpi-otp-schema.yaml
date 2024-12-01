@@ -5,7 +5,7 @@ on:
     branches: [ 'master' ]
     paths:
     - .github/workflows/update-schema.yaml
-    - workloads/node/bootstrap/assets/usr/local/lib/phoenix-cluster/rpi-otp.schema.yaml
+    - workloads/node/bootstrap/assets/usr/local/lib/phxc/schemas/rpi-otp.schema.yaml
 
 jobs:
   update-rpi-otp-schema:
@@ -16,7 +16,7 @@ jobs:
       with:
         path: repo
     - name: Convert rpi-otp.schema.yaml to JSON
-      run: yq -o=json . repo/workloads/node/bootstrap/assets/usr/local/lib/phoenix-cluster/rpi-otp.schema.yaml >rpi-otp.schema.json
+      run: yq -o=json . repo/workloads/node/bootstrap/assets/usr/local/lib/phxc/schemas/rpi-otp.schema.yaml >rpi-otp.schema.json
     - name: Deploy to gist
       uses: exuanbo/actions-deploy-gist@v1
       with:

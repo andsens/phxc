@@ -1,6 +1,6 @@
 [Unit]
 Description=Replace the keyfile reference in crypttab with TPM2 options
-After=copy-boot-disk-encryption-key.service
+After=copy-offline-disk-encryption-key.service
 Before=cryptsetup-pre.target
 ConditionSecurity=uefi-secureboot
 ConditionPathExists=!/run/initramfs/disk-encryption.key
