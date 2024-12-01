@@ -31,6 +31,7 @@ properties:
             $ref: "#/definitions/ipv4-cidr"
           IPv6:
             $ref: "#/definitions/ipv6-cidr"
+        additionalProperties: false
       svc:
         type: object
         properties:
@@ -38,6 +39,7 @@ properties:
             $ref: "#/definitions/ipv4-cidr"
           IPv6:
             $ref: "#/definitions/ipv6-cidr"
+        additionalProperties: false
       lb:
         type: object
         properties:
@@ -45,10 +47,9 @@ properties:
             $ref: "#/definitions/ipv4-cidr"
           IPv6:
             $ref: "#/definitions/ipv6-cidr"
+        additionalProperties: false
     additionalProperties: false
-  required: [domain, admin]
-  additionalProperties: false
-required: [cluster]
+required: [domain, admin]
 additionalProperties: false
 definitions:
   ipv4-cidr:

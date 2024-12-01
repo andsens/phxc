@@ -2,7 +2,7 @@
 Description=Configure systemd-networks using node-config
 DefaultDependencies=no
 After=systemd-networkd.service
-AssertPathExists=/var/lib/phxc/node.yaml
+AssertPathExists=/boot/phxc/node.yaml
 
 [Install]
 WantedBy=sysinit.target
@@ -10,9 +10,9 @@ WantedBy=sysinit.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecCondition=get-config /var/lib/phxc/node.yaml fixedIPs
+ExecCondition=get-config /boot/phxc/node.yaml fixedIPs
 ExecStart=bash -e
-StandardInputData=for macaddr in $(yq -r '(.fixedIPs // {}) | keys[]' /var/lib/phxc/node.yaml); do \
+StandardInputText=for macaddr in $(yq -r '(.fixedIPs // {}) | keys[]' /boot/phxc/node.yaml); do \
   yq -r --arg macaddr "$macaddr" '\
     ([.fixedIPs[$macaddr][] | "Address=\(.)"] | join("\n")) as $addrs | \
     "[Match]\nMACAddress=\($macaddr)\n[Network]\n\($addrs)\n"' \

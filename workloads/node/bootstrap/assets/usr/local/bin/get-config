@@ -1,23 +1,39 @@
 #!/usr/bin/env bash
 set -Eeo pipefail; shopt -s inherit_errexit
-PKGROOT=$(dirname "$(realpath "${BASH_SOURCE[0]}")")
-# shellcheck disable=SC1091
-source "$PKGROOT/../lib/phoenix-cluster/node.sh"
 
 main() {
   local e; for e; do [[ "$e" != "--help" ]] || usage; done
   [[ -n $1 && -n $2 && $# -ge 2 && $# -le 4 ]] || usage
   local quiet=false
   if [[ $1 = '-q' ]]; then quiet=true; shift; fi
-  local filepath=$1 key=$2 default=$3
-  if [[ -e $filepath ]] && yq -r 'paths | join(".")' "$filepath" | grep -q "^$key$"; then
-    key=$(escape_key "$key")
-    yq -r ".$key" "$filepath"
+  local filepath=$1 key=$2 default=$3 real_filepath contents schema
+  schema=$(basename "$filepath")
+  if [[ -e $filepath ]]; then
+    real_filepath=$(realpath "$filepath")
+    contents=$(cat "$real_filepath")
+    if [[ $real_filepath = /boot/* ]] && ! ssh-keygen -Y verify -f <(sed 's/^/admin /g' </home/admin/authorized_keys) -I admin -n file -s "$real_filepath.sig" <<<"$contents"; then
+      printf "Failed to verify signature of %s using /home/admin/authorized_keys\n" "$real_filepath" >&2
+      return 1
+    fi
+    jsonschema -i <(printf "%s\n" "$contents") <(yq . "/usr/local/lib/phxc/schemas/$schema.schema.yaml")
+    if [[ -n $key ]]; then
+      if yq -r 'paths | join(".")' <<<"$contents" | grep -q "^$key$"; then
+        key=$(escape_key "$key")
+        yq -r ".$key" <<<"$contents"
+      elif [[ -n $default ]]; then
+        printf "%s\n" "$default"
+      else
+        $quiet || printf "%s is not set in '%s'\n" "$key" "$filepath" >&2
+        return 1
+      fi
+    else
+      cat "$filepath"
+    fi
   elif [[ -n $default ]]; then
     printf "%s\n" "$default"
   else
-    $quiet || printf "%s is not set in '%s'\n" "$key" "$filepath" >&2
-    return 1
+    $quiet || printf "%s does not exist\n" "$filepath" >&2
+     return 1
   fi
 }
 
@@ -32,7 +48,7 @@ escape_key() {
 }
 
 usage() {
-  printf "Usage: get-config [-q] FILEPATH KEY DEFAULT\n" >&2
+  printf "Usage: get-config [-q] FILEPATH [KEY [DEFAULT]]\n" >&2
   return 1
 }
 

@@ -1,0 +1,13 @@
+[Unit]
+Description=Copies /boot/phxc/cluster.yaml to /etc/phxc/cluster.yaml
+DefaultDependencies=no
+Requires=boot.mount
+After=boot.mount setup-admin-credentials.yaml
+ConditionPathExists=/boot/phxc/cluster.yaml
+ConditionPathExists=!/etc/phxc/cluster.yaml
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=get-config /boot/phxc/cluster.yaml
+StandardOutput=file:/etc/phxc/cluster.yaml

@@ -1,12 +1,13 @@
 [Unit]
 Description=Set k3s node-label & token
 Before=k3s.target
-ConditionPathExists=/var/lib/phxc/node.yaml
+ConditionPathExists=/boot/phxc/node.yaml
 
 [Install]
 RequiredBy=k3s.target
 
 [Service]
 Type=oneshot
-ExecStart=yq -y '{"node-label": .labels // []}' /var/lib/phxc/node.yaml
+ExecStart=bash -e
+StandardInputText=yq -y '{"node-label": .labels // []}' <(get-config /boot/phxc/node.yaml)
 StandardOutput=file:/etc/rancher/k3s/config.yaml.d/node-label.yaml

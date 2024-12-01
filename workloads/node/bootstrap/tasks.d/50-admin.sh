@@ -8,25 +8,20 @@ if $DEBUG; then
 fi
 
 admin() {
-  if $DEBUG; then
-    :
-    # usermod -p "${ADMIN_PWHASH:?}" root
+  useradd -m -s /bin/bash -u 1000 admin
+  [[ -z $ADMIN_PWHASH ]] || \
+    usermod -p "$ADMIN_PWHASH" admin
+  adduser admin adm
+  adduser admin sudo
+  mkdir /home/admin/.ssh
+  [[ -z $ADMIN_SSH_KEY ]] || \
+    printf "%s\n" "$ADMIN_SSH_KEY" > /home/admin/.ssh/authorized_keys
+  chown -R admin:admin /home/admin/.ssh
+  chmod -R u=rwX,go=rX /home/admin/.ssh
+
+  if $DEBUG && [[ -n $ADMIN_PWHASH ]]; then
+    usermod -p "$ADMIN_PWHASH" root
   else
     usermod -L root
   fi
-  useradd -m -s /bin/bash -u 1000 admin
-  # usermod -p "${ADMIN_PWHASH:?}" admin
-  adduser admin adm
-  adduser admin sudo
-  userdir=$(getent passwd admin | cut -d: -f6)
-
-  mkdir "$userdir/.ssh"
-  local i key
-  for ((i=0;;i++)); do
-    key=ADMIN_AUTHORIZED_KEYS_$i
-    [[ -n ${!key} ]] || break
-    printf "%s\n" "${!key}" >> "$userdir/.ssh/authorized_keys"
-  done
-  chown -R admin:admin "$userdir/.ssh"
-  chmod -R u=rwX,go=rX "$userdir/.ssh"
 }

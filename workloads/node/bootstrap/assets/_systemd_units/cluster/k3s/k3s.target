@@ -1,7 +1,6 @@
 [Unit]
 Description=The startup target for k3s server and agent
 Wants=k3s@server.service k3s@agent.service
-After=update-boot.service
 
 [Install]
 WantedBy=multi-user.target

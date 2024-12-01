@@ -11,5 +11,5 @@ WantedBy=cryptsetup-pre.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=bash -c 'printf "# <target name> <source device>         <key file>                         <options>\n\
-  data            PARTUUID=$DATA_UUID     /dev/null                          tpm2-device=auto,luks,discard\n" >/etc/crypttab'
+ExecStart=bash -ec 'printf "# <target name> <source device>         <key file>                         <options>\n\
+  data            PARTUUID=${DATA_UUID}     /dev/null                          tpm2-device=auto,luks,discard\n" >/etc/crypttab'

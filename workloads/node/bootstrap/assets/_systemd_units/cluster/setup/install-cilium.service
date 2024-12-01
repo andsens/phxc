@@ -13,10 +13,10 @@ Environment=HOME=/root KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 TimeoutSec=1200
 ExecCondition=kubectl get -n kube-system deployment cilium-operator -o name
 ExecStart=bash -e
-StandardInputData= 'cilium install --version=1.15.5 \
+StandardInputText=cilium install --version=1.15.5 \
     --set ipam.mode=cluster-pool \
-    --set ipam.operator.clusterPoolIPv4PodCIDRList="$(get-config /var/lib/phxc/cluster.yaml cluster.cidrs.pod.ipv4 ${DEFAULT_CLUSTER_CIDRS_POD_IPV4})" \
-    --set ipam.operator.clusterPoolIPv6PodCIDRList="$(get-config /var/lib/phxc/cluster.yaml cluster.cidrs.pod.ipv4 ${DEFAULT_CLUSTER_CIDRS_POD_IPV6})" \
+    --set ipam.operator.clusterPoolIPv4PodCIDRList="$(get-config /etc/phxc/cluster.yaml cidrs.pod.ipv4 ${DEFAULT_CLUSTER_CIDRS_POD_IPV4})" \
+    --set ipam.operator.clusterPoolIPv6PodCIDRList="$(get-config /etc/phxc/cluster.yaml cidrs.pod.ipv4 ${DEFAULT_CLUSTER_CIDRS_POD_IPV6})" \
     --set ipam.operator.clusterPoolIPv4MaskSize=24 \
     --set ipam.operator.clusterPoolIPv6MaskSize=112 \
     --set k8sServiceHost="$CLUSTER_CILIUM_K8SSERVICEHOST" \
@@ -33,4 +33,4 @@ StandardInputData= 'cilium install --version=1.15.5 \
     --set encryption.nodeEncryption=true \
     --set socketLB.enabled=true \
     --set kubeConfigPath=/etc/rancher/k3s/k3s.yaml;\
-  kubectl patch -n kube-system cm cilium-config --patch-file <(printf "\ndata:\n  ipv6-service-range: \"%%s\"\n" "$(get-config /var/lib/phxc/cluster.yaml cluster.cidrs.svc.ipv6 ${DEFAULT_CLUSTER_CIDRS_svc_IPV6})");\
+  kubectl patch -n kube-system cm cilium-config --patch-file <(printf "\ndata:\n  ipv6-service-range: \"%%s\"\n" "$(get-config /etc/phxc/cluster.yaml cidrs.svc.ipv6 ${DEFAULT_CLUSTER_CIDRS_SVC_IPV6})")

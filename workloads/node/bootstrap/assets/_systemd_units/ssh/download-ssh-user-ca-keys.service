@@ -11,5 +11,5 @@ Type=oneshot
 Environment=HOME=/root KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 TimeoutSec=1200
 ExecStart=step ssh config --host --roots
-StandardOutput=/etc/ssh/user_ca_keys
+StandardOutput=file:/etc/ssh/user_ca_keys
 ExecStartPost=systemctl reload ssh
