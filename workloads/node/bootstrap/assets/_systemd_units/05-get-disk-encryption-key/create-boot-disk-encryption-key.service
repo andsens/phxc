@@ -1,0 +1,16 @@
+[Unit]
+Description=Create /boot/disk-encryption.key
+Requires=boot.mount
+After=boot.mount
+Before=cryptsetup-pre.target
+ConditionPathExists=!/boot/phxc/disk-encryption.key
+ConditionPathExists=!/run/initramfs/disk-encryption.key
+
+[Install]
+WantedBy=cryptsetup-pre.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecCondition=bash -ec 'lsblk -no partuuid | grep -q "${DATA_UUID}"'
+ExecStart=openssl rand -out /boot/phxc/disk-encryption.key 16

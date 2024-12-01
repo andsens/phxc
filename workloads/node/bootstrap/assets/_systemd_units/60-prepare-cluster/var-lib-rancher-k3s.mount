@@ -1,0 +1,15 @@
+[Unit]
+Description=/var/lib/rancher/k3s
+DefaultDependencies=no
+Requires=create-data-dir@k3s.service
+After=create-data-dir@k3s.service
+Before=k3s.target
+
+[Install]
+RequiredBy=k3s.target
+
+[Mount]
+What=/var/lib/phxc/k3s
+Where=/var/lib/rancher/k3s
+Type=none
+Options=bind

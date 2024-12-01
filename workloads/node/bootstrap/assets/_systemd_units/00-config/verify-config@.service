@@ -1,0 +1,14 @@
+[Unit]
+Description=Verifies the signature of /boot/phxc/%i.yaml and copies it to to /run/initramfs/%i.yaml.verified
+DefaultDependencies=no
+Requires=boot.mount
+After=boot.mount
+ConditionPathExists=/boot/phxc/%i.jws.json
+AssertPathExists=!/run/initramfs/%i.yaml.verified
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=bash -ec 'out=$(step crypto jws verify --key=/usr/local/share/phxc/admin.jwk.json);\
+  printf "%%s\n" "$out" >/run/initramfs/%i.yaml.verified'
+StandardInput=/boot/phxc/%i.jws.json

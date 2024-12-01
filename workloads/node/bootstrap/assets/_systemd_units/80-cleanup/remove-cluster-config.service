@@ -1,0 +1,12 @@
+[Unit]
+Description=Remove /boot/phxc/cluster.yaml
+DefaultDependencies=no
+Requires=boot.mount
+After=boot.mount
+ConditionPathExists=/boot/phxc/cluster.yaml
+AssertPathExists=/var/lib/phxc/cluster.yaml
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=rm /var/lib/phxc/cluster.yaml

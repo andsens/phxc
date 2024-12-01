@@ -1,6 +1,0 @@
-[Unit]
-Description=The data partition has been created
-Before=var-lib-phoenix\x2dcluster.mount
-
-[Install]
-WantedBy=var-lib-phoenix\x2dcluster.mount

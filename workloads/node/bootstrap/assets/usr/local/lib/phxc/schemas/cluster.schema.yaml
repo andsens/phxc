@@ -1,0 +1,59 @@
+---
+$schema: http://json-schema.org/draft-07/schema#
+type: object
+properties:
+  $schema:
+    type: string
+  domain:
+    description: The domain of the cluster
+    type: string
+    format: hostname
+  admin:
+    type: object
+    description: Configuration of the "admin" user
+    properties:
+      ssh-key:
+        description: The SSH key to add to /home/admin/.ssh/authorized_keys
+        type: string
+      pwhash:
+        description: sudo password for the admin (ssh password authentication is disabled)
+        type: string
+    required: [ssh-key, pwhash]
+    additionalProperties: false
+  cidrs:
+    type: object
+    description: CIDRs specifying the subnets the cluster should allocate for pods, services and loadbalancers
+    properties:
+      pod:
+        type: object
+        properties:
+          IPv4:
+            $ref: "#/definitions/ipv4-cidr"
+          IPv6:
+            $ref: "#/definitions/ipv6-cidr"
+      svc:
+        type: object
+        properties:
+          IPv4:
+            $ref: "#/definitions/ipv4-cidr"
+          IPv6:
+            $ref: "#/definitions/ipv6-cidr"
+      lb:
+        type: object
+        properties:
+          IPv4:
+            $ref: "#/definitions/ipv4-cidr"
+          IPv6:
+            $ref: "#/definitions/ipv6-cidr"
+    additionalProperties: false
+  required: [domain, admin]
+  additionalProperties: false
+required: [cluster]
+additionalProperties: false
+definitions:
+  ipv4-cidr:
+    type: string
+    pattern: "^[0-9.]+/[0-9]+$"
+  ipv6-cidr:
+    type: string
+    pattern: "^[0-9a-f:]+/[0-9]+$"

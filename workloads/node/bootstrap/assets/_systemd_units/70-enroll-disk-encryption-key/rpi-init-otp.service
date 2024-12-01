@@ -1,0 +1,20 @@
+[Unit]
+Description=Populate the RPi OTP memory with random data
+Requires=boot.mount
+After=boot.mount
+ConditionPathExists=/var/lib/phxc/node.yaml
+
+[Install]
+WantedBy=cryptsetup-pre.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecCondition=bash -ec '[[ $(get-config /var/lib/phxc/node.yaml disk-encryption auto) == rpi-otp ]] || return 1'
+ExecCondition=bash -ec '! rpi-otp-private-key -c \
+  -o $(get-config /var/lib/phxc/rpi-otp.yaml offset 0) \
+  -l $(get-config /var/lib/phxc/rpi-otp.yaml length 8)'
+ExecStart=bash -ec ':;\
+  $(get-config /var/lib/phxc/rpi-otp.yaml offset 0); \
+  l=$(get-config /var/lib/phxc/rpi-otp.yaml length 8); \
+  echo rpi-otp-private-key -w -o $o -l $l "$(openssl rand -hex $((l*2)))"'

@@ -22,7 +22,7 @@ install() {
     basename dirname realpath
   inst /usr/local/share/ca-certificates/phoenix-cluster-root.crt
   inst \
-    /usr/local/lib/phoenix-cluster/node.sh \
+    /usr/local/lib/phxc/node.sh \
     /etc/systemd/system.conf.d/disk-uuids.conf \
     /etc/systemd/system.conf.d/variant.conf \
     /etc/systemd/system/mount-boot.service

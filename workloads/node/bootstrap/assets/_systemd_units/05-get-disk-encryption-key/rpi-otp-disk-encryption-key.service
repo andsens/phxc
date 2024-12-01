@@ -1,0 +1,24 @@
+[Unit]
+Description=Generate the disk encryption key using the RPi OTP memory
+Requires=boot.mount
+After=boot.mount copy-boot-disk-encryption-key.service
+Before=cryptsetup-pre.target
+ConditionPathExists=!/run/initramfs/disk-encryption.key
+
+[Install]
+WantedBy=cryptsetup-pre.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecCondition=bash -ec 'rpi-otp-private-key -c \
+  -o $(get-config /boot/phxc/rpi-otp.yaml offset 0); \
+  -l $(get-config /boot/phxc/rpi-otp.yaml length 8)'
+ExecStart=bash -ec ':;\
+  o=$(get-config /boot/phxc/rpi-otp.yaml offset 0); \
+  l=$(get-config /boot/phxc/rpi-otp.yaml length 8); \
+  s=(get-config /boot/phxc/rpi-otp.yaml key-derivation-suffix 1) \
+  openssl kdf \
+    -kdfopt info:"disk-encryption-key-$s" -keylen 32 \
+    -kdfopt digest:SHA3-512 -kdfopt hexkey:"$(rpi-otp-private-key -o $o -l $l)" \
+    -out /run/initramfs/disk-encryption.key -binary HKDF'

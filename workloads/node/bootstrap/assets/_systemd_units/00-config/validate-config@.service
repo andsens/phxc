@@ -1,0 +1,13 @@
+[Unit]
+Description=Validate /run/initramfs/%i.yaml.verified
+DefaultDependencies=no
+Wants=copy-config@%i.service verify-config@%i.service
+After=copy-config@%i.service verify-config@%i.service
+ConditionPathExists=/run/initramfs/%i.yaml.verified
+AssertPathExists=!/run/initramfs/%i.yaml
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=bash -ec 'jsonschema -i <(yq . /run/initramfs/%i.yaml.verified) <(yq . /usr/local/lib/phxc/schemas/%i.schema.yaml)'
+ExecStart=mv /run/initramfs/%i.yaml.verified /run/initramfs/%i.yaml

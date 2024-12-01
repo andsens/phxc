@@ -1,6 +1,0 @@
-[Unit]
-Description=Import container images to containerd
-
-[Service]
-Type=oneshot
-ExecStart=import-container-images

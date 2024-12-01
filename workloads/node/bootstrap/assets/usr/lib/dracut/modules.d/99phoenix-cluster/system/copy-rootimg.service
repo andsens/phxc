@@ -7,5 +7,5 @@ After=create-node-state.service mount-boot.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecCondition=bash -c 'test -e /boot/phoenix-cluster/root.${ROOT_SHA256}.img'
-ExecStart=cp /boot/phoenix-cluster/root.${ROOT_SHA256}.img /run/initramfs/root.img.tmp
+ExecCondition=bash -c 'test -e /boot/phxc/root.${ROOT_SHA256}.img'
+ExecStart=cp /boot/phxc/root.${ROOT_SHA256}.img /run/initramfs/root.img.tmp

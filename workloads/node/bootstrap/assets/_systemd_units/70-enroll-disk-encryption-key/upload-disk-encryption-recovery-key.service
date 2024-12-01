@@ -1,0 +1,12 @@
+[Unit]
+Description=Uploads the disk encryption recovery key to the cluster
+After=enroll-disk-encryption-recovery-key.service
+AssertPathExists=/var/lib/phxc/disk-encryption-recovery.key
+
+[Install]
+WantedBy=cryptsetup-pre.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=kubectl -n node create secret 'diskenc-recovery-%m' /var/lib/phxc/disk-encryption-recovery.key

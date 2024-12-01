@@ -1,0 +1,15 @@
+[Unit]
+Description=Copy /boot/phxc/disk-encryption.key to /run/initramfs
+Requires=boot.mount
+After=boot.mount create-boot-disk-encryption-key.service
+Before=cryptsetup-pre.target
+ConditionPathExists=/boot/phxc/disk-encryption.key
+ConditionPathExists=!/run/initramfs/disk-encryption.key
+
+[Install]
+WantedBy=cryptsetup-pre.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=cp /boot/phxc/disk-encryption.key /run/initramfs/disk-encryption.key

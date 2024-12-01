@@ -1,0 +1,11 @@
+[Unit]
+Description=Import container images to containerd
+
+[Service]
+Type=oneshot
+ExecStart=bash -e
+StandardInputData=for tarfile in /var/lib/phxc/container-images/*.tar; do \
+    printf "Importing %s\n" "$(basename "$tarfile" .tar)" >&2 \
+    ctr -n k8s.io image import --snapshotter stargz "$tarfile" \
+    rm "$tarfile" \
+  done

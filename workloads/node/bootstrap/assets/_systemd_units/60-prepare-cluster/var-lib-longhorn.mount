@@ -1,0 +1,15 @@
+[Unit]
+Description=/var/lib/longhorn
+DefaultDependencies=no
+Requires=create-data-dir@longhorn.service
+After=create-data-dir@longhorn.service
+Before=k3s.target
+
+[Install]
+RequiredBy=k3s.target
+
+[Mount]
+What=/var/lib/phxc/longhorn
+Where=/var/lib/longhorn
+Type=none
+Options=bind

@@ -1,0 +1,15 @@
+[Unit]
+Description=Replace the keyfile reference in crypttab with TPM2 options
+After=copy-boot-disk-encryption-key.service
+Before=cryptsetup-pre.target
+ConditionSecurity=uefi-secureboot
+ConditionPathExists=!/run/initramfs/disk-encryption.key
+
+[Install]
+WantedBy=cryptsetup-pre.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=bash -c 'printf "# <target name> <source device>         <key file>                         <options>\n\
+  data            PARTUUID=$DATA_UUID     /dev/null                          tpm2-device=auto,luks,discard\n" >/etc/crypttab'

@@ -1,0 +1,9 @@
+[Unit]
+Description=Create data directory for bind mounts
+Requires=var-lib-phxc.mount
+After=var-lib-phxc.mount
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=mkdir -p /var/lib/phoenix/%i

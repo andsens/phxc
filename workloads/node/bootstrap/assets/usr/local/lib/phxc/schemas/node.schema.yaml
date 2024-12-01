@@ -1,0 +1,57 @@
+---
+$schema: http://json-schema.org/draft-07/schema#
+type: object
+properties:
+  $schema:
+    type: string
+  k3s:
+    type: object
+    properties:
+      mode:
+        description: "Whether to run k3s as an agent or a server. Default: agent"
+        type: string
+        enum: ['agent', 'server']
+      url:
+        description: "The URL of a control-plane node for k3s to connect to."
+        type: string
+        format: uri
+      token:
+        description: "The k3s joining token generated with `k3s token create`. May not be a server token."
+        type: string
+        pattern: ^K10[0-9a-f]+::(?!server).*
+    required: [url, token]
+    additionalProperties: false
+  disk-encryption:
+    description: "How the data partition should be unlocked. Default: auto"
+    type: string
+    enum: [rpi-otp, tpm, insecure-online, insecure-offline, auto]
+  hostname:
+    description: Hostname of the node
+    type: string
+    format: hostname
+  fixedIPs:
+    description: Per MAC-address fixed IP network configuration
+    patternProperties:
+      "([0-9a-f]{2}:){5}[0-9a-f]{2}":
+        type: array
+        items:
+          anyOf:
+          - type: string
+            format: ipv4
+          - type: string
+            format: ipv6
+    additionalProperties: false
+  labels:
+    description: List of labels to apply to the node
+    type: array
+    items:
+      type: string
+required: [hostname]
+additionalProperties: false
+definitions:
+  ipv4-cidr:
+    type: string
+    pattern: "^[0-9.]+/[0-9]+$"
+  ipv6-cidr:
+    type: string
+    pattern: "^[0-9a-f:]+/[0-9]+$"

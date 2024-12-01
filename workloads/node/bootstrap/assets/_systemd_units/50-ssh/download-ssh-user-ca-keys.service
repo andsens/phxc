@@ -1,0 +1,15 @@
+[Unit]
+Description=Download SSH User CA keys
+Requires=resource-ready@step-ca.service
+After=resource-ready@step-ca.service ssh.service
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=oneshot
+Environment=HOME=/root KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+TimeoutSec=1200
+ExecStart=step ssh config --host --roots
+StandardOutput=/etc/ssh/user_ca_keys
+ExecStartPost=systemctl reload ssh

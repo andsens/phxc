@@ -5,15 +5,15 @@ set -Eeo pipefail; shopt -s inherit_errexit
 main() {
   [[ $# -eq 0 ]] || usage
   local meta_json_new
-  mkdir -p /boot/phoenix-cluster
+  mkdir -p /boot/phxc
   if ! meta_json_new=$(curl-boot-server "images/$VARIANT/meta.json"); then
     printf "Unable to retrieve image metadata from boot server\n" >&2
     return 1
   fi
   local current_root_img_sha256 new_root_img_sha256 first_setup
-  if [[ -e /boot/phoenix-cluster/meta.json ]]; then
+  if [[ -e /boot/phxc/meta.json ]]; then
     first_setup=false
-    current_root_img_sha256=$(jq -re '.sha256sums["root.img"]' /boot/phoenix-cluster/meta.json 2>/dev/null || true)
+    current_root_img_sha256=$(jq -re '.sha256sums["root.img"]' /boot/phxc/meta.json 2>/dev/null || true)
   else
     first_setup=true
   fi
@@ -24,8 +24,8 @@ main() {
   fi
   printf "boot partition is outdated, updating now\n" >&2
   # shellcheck disable=SC2064
-  trap "rm -f \"/boot/phoenix-cluster/root.$new_root_img_sha256.img\"" EXIT
-  curl-boot-server "images/$VARIANT/root.$new_root_img_sha256.img" -o"/boot/phoenix-cluster/root.$new_root_img_sha256.img"
+  trap "rm -f \"/boot/phxc/root.$new_root_img_sha256.img\"" EXIT
+  curl-boot-server "images/$VARIANT/root.$new_root_img_sha256.img" -o"/boot/phxc/root.$new_root_img_sha256.img"
   if [[ $VARIANT = rpi* ]]; then
     if curl-boot-server "images/$VARIANT/boot.img" -o/boot/boot.img.new; then
       mv /boot/boot.img.new /boot/boot.img
@@ -51,8 +51,8 @@ main() {
     fi
   fi
   trap '' EXIT
-  printf "%s\n" "$meta_json_new" >/boot/phoenix-cluster/meta.json
-  rm -f "/boot/phoenix-cluster/root.$current_root_img_sha256.img"
+  printf "%s\n" "$meta_json_new" >/boot/phxc/meta.json
+  rm -f "/boot/phxc/root.$current_root_img_sha256.img"
   if $first_setup; then
     printf "boot partition has been updated\n" >&2
   else

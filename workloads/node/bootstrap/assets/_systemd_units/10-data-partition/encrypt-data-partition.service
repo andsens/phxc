@@ -1,0 +1,16 @@
+[Unit]
+Description=Encrypt the data partition
+DefaultDependencies=no
+Requires=create-data-partition.service
+After=create-data-partition.service
+Before=systemd-cryptsetup@data.service data-partition.target
+AssertPathExists=/boot/phxc/disk-encryption.key
+
+[Install]
+RequiredBy=data-partition.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecCondition=bash -ec "! cryptsetup isLuks /dev/disk/by-partuuid/${DATA_UUID}"
+ExecStart=cryptsetup luksFormat --batch-mode /dev/disk/by-partuuid/${DATA_UUID} /boot/phxc/disk-encryption.key

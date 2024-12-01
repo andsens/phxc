@@ -6,13 +6,17 @@ source "$PKGROOT/../lib/phoenix-cluster/node.sh"
 
 main() {
   local e; for e; do [[ "$e" != "--help" ]] || usage; done
-  [[ -n $1 && -n $2 && $# -eq 2 ]] || usage
-  local filepath=$1 key=$2
-  if yq -r 'paths | join(".")' "$filepath" | grep -q "^$key$"; then
+  [[ -n $1 && -n $2 && $# -ge 2 && $# -le 4 ]] || usage
+  local quiet=false
+  if [[ $1 = '-q' ]]; then quiet=true; shift; fi
+  local filepath=$1 key=$2 default=$3
+  if [[ -e $filepath ]] && yq -r 'paths | join(".")' "$filepath" | grep -q "^$key$"; then
     key=$(escape_key "$key")
     yq -r ".$key" "$filepath"
+  elif [[ -n $default ]]; then
+    printf "%s\n" "$default"
   else
-    printf "%s is not set in '%s'\n" "$key" "$filepath" >&2
+    $quiet || printf "%s is not set in '%s'\n" "$key" "$filepath" >&2
     return 1
   fi
 }
@@ -28,7 +32,7 @@ escape_key() {
 }
 
 usage() {
-  printf "Usage: get-config FILEPATH KEY\n" >&2
+  printf "Usage: get-config [-q] FILEPATH KEY DEFAULT\n" >&2
   return 1
 }
 

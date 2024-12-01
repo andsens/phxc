@@ -3,15 +3,10 @@
 PACKAGES+=(openssh-server)
 
 sshd() {
-  local filepath systemd_units=(
-    60-ssh/download-ssh-user-ca-keys.service
-    60-ssh/generate-ssh-host-keys.service
-    60-ssh/sign-ssh-host-keys.service
-    60-ssh/sign-ssh-host-keys.timer
-  )
-  for filepath in "${systemd_units[@]}"; do
-    cp_tpl --raw "_systemd_units/$filepath" -d "/etc/systemd/system/$(basename "$filepath")"
-  done
+  install_sd_unit 60-ssh/download-ssh-user-ca-keys.service
+  install_sd_unit 60-ssh/generate-ssh-host-keys.service
+  install_sd_unit 60-ssh/sign-ssh-host-keys.service
+  install_sd_unit 60-ssh/sign-ssh-host-keys.timer
   debconf-set-selections <<<"openssh-server  openssh-server/password-authentication  boolean false"
   rm /etc/ssh/ssh_host_*
 
@@ -19,7 +14,7 @@ sshd() {
   SMALLSTEP_ROOT_CA_FINGERPRINT=$(step certificate fingerprint /usr/local/share/ca-certificates/phoenix-cluster-root.crt)
   cp_tpl --chmod 0600 --var CLUSTER_SMALLSTEP_LB_FIXEDIPV4 --var SMALLSTEP_ROOT_CA_FINGERPRINT /root/.step/config/defaults.json
 
-  cp_tpl --raw \
+  cp_tpl \
     /etc/ssh/sshd_config.d/10-no-root-login.conf \
     /etc/ssh/sshd_config.d/20-host-key-certs.conf \
     /etc/ssh/sshd_config.d/30-user-ca-keys.conf \

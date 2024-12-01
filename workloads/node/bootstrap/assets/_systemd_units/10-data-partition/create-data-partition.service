@@ -1,0 +1,9 @@
+[Unit]
+Description=Create the data partition
+DefaultDependencies=no
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecCondition=bash -ec 'lsblk -no partuuid | grep -q "${DATA_UUID}"'
+ExecStart=bash -ec 'sfdisk "$(lsblk -JndO | jq -r '.blockdevices[] | select(.ptuuid=="${DISK_UUID}") | .path')" "size=+, uuid=${DATA_UUID}"'
