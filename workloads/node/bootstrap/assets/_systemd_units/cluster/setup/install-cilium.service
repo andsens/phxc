@@ -19,7 +19,8 @@ StandardInputText=cilium install --version=1.15.5 \
     --set ipam.operator.clusterPoolIPv6PodCIDRList="$(get-config /etc/phxc/cluster.yaml cidrs.pod.ipv4 ${DEFAULT_CLUSTER_CIDRS_POD_IPV6})" \
     --set ipam.operator.clusterPoolIPv4MaskSize=24 \
     --set ipam.operator.clusterPoolIPv6MaskSize=112 \
-    --set k8sServiceHost="$CLUSTER_CILIUM_K8SSERVICEHOST" \
+    --set k8sServiceHost=127.0.0.1 \
+    --set k8sServicePort=6444 \
     --set bgpControlPlane.enabled=true \
     --set ipv6.enabled=true \
     --set bpf.masquerade=true \
