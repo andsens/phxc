@@ -91,7 +91,7 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
   esac
 
   local artifacts
-  artifacts=$PKGROOT/images/$VARIANT.building
+  artifacts=$PKGROOT/images/$VARIANT.tmp
   trap_append "rm -rf \"$artifacts\"" EXIT
   rm -rf "$artifacts"
   mkdir -p "$artifacts"

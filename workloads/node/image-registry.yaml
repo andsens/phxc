@@ -1,0 +1,130 @@
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: image-registry
+  labels:
+    app.kubernetes.io/name: node
+    app.kubernetes.io/component: image-registry
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: node
+      app.kubernetes.io/component: image-registry
+  ingress:
+  - toPorts:
+    - ports:
+      - port: "8020"
+    fromEntities:
+    - host
+    - remote-node
+    - cluster
+  - toPorts:
+    - ports:
+      - port: "8021"
+    fromEndpoints:
+    - matchLabels:
+        app.kubernetes.io/name: bootstrap
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: image-registry
+  labels:
+    app.kubernetes.io/name: node
+    app.kubernetes.io/component: image-registry
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: node
+    app.kubernetes.io/component: image-registry
+  ports:
+  - name: image-registry
+    port: 8020
+    targetPort: images
+  - name: image-registry
+    port: 8021
+    targetPort: dav
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: image-registry
+  labels:
+    app.kubernetes.io/name: node
+    app.kubernetes.io/component: image-registry
+spec:
+  commonName: image-registry.node.svc.cluster.local
+  issuerRef:
+    group: certmanager.step.sm
+    kind: StepClusterIssuer
+    name: step-issuer
+  secretName: image-registry-tls
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: images
+  labels:
+    app.kubernetes.io/name: node
+    app.kubernetes.io/component: images
+spec:
+  storageClassName: longhorn
+  accessModes: [ReadWriteOnce]
+  resources: {requests: {storage: 10Gi}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: image-registry
+  labels:
+    app.kubernetes.io/name: node
+    app.kubernetes.io/component: image-registry
+spec:
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: node
+      app.kubernetes.io/component: image-registry
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: node
+        app.kubernetes.io/component: image-registry
+    spec:
+      serviceAccountName: image-registry
+      containers:
+      - name: image-registry
+        image: nginx:1.27.3
+        imagePullPolicy: Never
+        securityContext:
+          readOnlyRootFilesystem: true
+        ports:
+        - name: images
+          containerPort: 8020
+        - name: dav
+          containerPort: 8021
+        volumeMounts:
+        - name: config
+          mountPath: /etc/nginx/nginx.conf
+          subPath: nginx.conf
+        - name: image-registry-tls
+          mountPath: /etc/nginx/tls
+        - name: images
+          mountPath: /var/www
+          readOnly: true
+        - name: nginx-cache
+          mountPath: /var/cache/nginx
+      volumes:
+      - name: config
+        configMap:
+          name: image-registry-config
+      - name: images
+        persistentVolumeClaim:
+          claimName: images
+      - name: image-registry-tls
+        secret:
+          secretName: image-registry-tls
+      - name: nginx-cache
+        emptyDir: {}

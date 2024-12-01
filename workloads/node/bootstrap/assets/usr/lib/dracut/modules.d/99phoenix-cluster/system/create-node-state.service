@@ -1,9 +1,0 @@
-[Unit]
-Description=Create /run/initramfs/node-state.json
-DefaultDependencies=no
-ConditionPathExists=!/run/initramfs/node-state.json
-
-[Service]
-Type=oneshot
-RemainAfterExit=yes
-ExecStart=bash -ec 'umask 0177; printf "{\"variant\": \"%%s\", \"boot-time\": \"%%s\"}\n" "$VARIANT" "$(date +%%s)" >/run/initramfs/node-state.json'

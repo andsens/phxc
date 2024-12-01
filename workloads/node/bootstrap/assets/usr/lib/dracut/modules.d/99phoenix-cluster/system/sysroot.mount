@@ -1,8 +1,8 @@
 [Unit]
 Description=Mount the root squashfs image
 AssertPathExists=/run/initramfs/root.img
-Requires=rootimg.target
-After=rootimg.target
+Requires=copy-rootimg.service
+After=copy-rootimg.service
 Before=initrd-root-fs.target
 
 [Install]

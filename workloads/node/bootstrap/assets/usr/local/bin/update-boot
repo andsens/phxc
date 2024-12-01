@@ -1,65 +1,52 @@
 #!/usr/bin/env bash
-# shellcheck source-path=../../..
 set -Eeo pipefail; shopt -s inherit_errexit
 
 main() {
   [[ $# -eq 0 ]] || usage
   local meta_json_new
-  mkdir -p /boot/phxc
-  if ! meta_json_new=$(curl-boot-server "images/$VARIANT/meta.json"); then
+  if ! meta_json_new=$(curl_img_reg "${VARIANT:?}/meta.json"); then
     printf "Unable to retrieve image metadata from boot server\n" >&2
     return 1
   fi
-  local current_root_img_sha256 new_root_img_sha256 first_setup
-  if [[ -e /boot/phxc/meta.json ]]; then
-    first_setup=false
-    current_root_img_sha256=$(jq -re '.sha256sums["root.img"]' /boot/phxc/meta.json 2>/dev/null || true)
-  else
-    first_setup=true
-  fi
+  local current_root_img_sha256 try_root_img_sha256 new_root_img_sha256
+  current_root_img_sha256=$(sha256sum /run/initramfs/root.img)
+  try_root_img_sha256=$(sha256sum /boot/phxc/root.try.img 2>/dev/null || true)
   new_root_img_sha256=$(jq -re '.sha256sums["root.img"]' <<<"$meta_json_new")
   if [[ $current_root_img_sha256 = "$new_root_img_sha256" ]]; then
-    printf "boot partition is up-to-date\n" >&2
+    printf "boot partition is up-to-date (image is currently running)\n" >&2
+    return 0
+  fi
+  if [[ $try_root_img_sha256 = "$new_root_img_sha256" ]]; then
+    if [[ -e /run/initramfs/try-reboot ]]; then
+      printf "boot partition is up-to-date (image will be tried)\n" >&2
+    else
+      printf "boot partition is up-to-date (image failed to boot)\n" >&2
+    fi
     return 0
   fi
   printf "boot partition is outdated, updating now\n" >&2
+  rm -f /boot/phxc/root.try.img /boot/EFI/Linux/uki.try.efi /boot/tryboot.img
   # shellcheck disable=SC2064
-  trap "rm -f \"/boot/phxc/root.$new_root_img_sha256.img\"" EXIT
-  curl-boot-server "images/$VARIANT/root.$new_root_img_sha256.img" -o"/boot/phxc/root.$new_root_img_sha256.img"
+  trap "rm -f /boot/phxc/root.try.img /boot/EFI/Linux/uki.try.efi" EXIT
+  curl_img_reg "$VARIANT/root.img" -o/boot/phxc/root.try.img
   if [[ $VARIANT = rpi* ]]; then
-    if curl-boot-server "images/$VARIANT/boot.img" -o/boot/boot.img.new; then
-      mv /boot/boot.img.new /boot/boot.img
-    else
-      rm -f /boot/boot.img.new
-      printf "Failed downloading boot.img from boot-server\n" >&2
-      return 1
-    fi
+    curl_img_reg "$VARIANT/boot.img" -o/boot/tryboot.img
   else
-    local efipath
-    case $VARIANT in
-      amd64) efipath=/boot/EFI/BOOT/BOOTX64.efi ;;
-      arm64) efipath=/boot/EFI/BOOT/BOOTAA64.efi ;;
-      *) printf "Unknown variant: %s\n" "$VARIANT" >&2; return 1 ;;
-    esac
-    mkdir -p /boot/EFI/BOOT
-    if curl-boot-server "images/$VARIANT/uki.efi" -o$efipath.new ; then
-      mv $efipath.new $efipath
-    else
-      rm -f $efipath.new
-      printf "Failed downloading uki.efi from boot-server\n" >&2
-      return 1
-    fi
+    curl_img_reg "$VARIANT/uki.efi" -o/boot/EFI/Linux/uki.try.efi
   fi
+  touch /run/initramfs/try-reboot
+  printf "boot partition has been updated\n" >&2
   trap '' EXIT
-  printf "%s\n" "$meta_json_new" >/boot/phxc/meta.json
-  rm -f "/boot/phxc/root.$current_root_img_sha256.img"
-  if $first_setup; then
-    printf "boot partition has been updated\n" >&2
-  else
-    printf "boot partition has been updated, rebooting in 10s\n" >&2
-    sleep 10
-    systemctl reboot
-  fi
+  try-reboot
+}
+
+curl_img_reg() {
+  local path=$1
+  shift
+  curl --cacert /usr/local/share/ca-certificates/phoenix-cluster-root.crt \
+    -fL --no-progress-meter --connect-timeout 5 \
+    --retry 10 --retry-delay 60 \
+    "https://image-registry.node.svc.cluster.local:8020/$path" "$@"
 }
 
 usage() {

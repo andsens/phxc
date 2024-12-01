@@ -1,11 +1,12 @@
 [Unit]
-Description=Copy the rootimg from the boot partition
-AssertPathExists=!/run/initramfs/root.img
-Requires=create-node-state.service mount-boot.service
-After=create-node-state.service mount-boot.service
+Description=Copy the rootimg from /boot to /run/initramfs
+Requires=mount-boot.service
+After=mount-boot.service
+AssertPathExists=/boot/phxc/root.img
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecCondition=bash -c 'test -e /boot/phxc/root.${ROOT_SHA256}.img'
 ExecStart=cp /boot/phxc/root.${ROOT_SHA256}.img /run/initramfs/root.img.tmp
+ExecStart=bash -ec 'sha256sum -c - <<<"${ROOT_SHA256}  /run/initramfs/root.img.tmp"'
+ExecStart=mv /run/initramfs/root.img.tmp /run/initramfs/root.img

@@ -13,23 +13,25 @@ Usage:
   create-boot-image [options]
 
 Options:
-  --upload     Upload artifacts to the boot-server
-  --chown UID  Change the owner & group UID of the artifacts to UID when done
+  --upload URL  Upload artifacts to the image-registry
+                [default: https://image-registry.node.svc.cluster.local:8021]
+  --chown UID   Change the owner & group UID of the artifacts to UID when done
 "
 # docopt parser below, refresh this parser with `docopt.sh create-boot-image.sh`
 # shellcheck disable=2016,2086,2317,1090,1091,2034
 docopt() { local v='2.0.2'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
-%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:237};usage=${DOC:62:36}
-digest=8341d;options=(' --upload 0' ' --chown 1');node_0(){ switch __upload 0;}
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:320};usage=${DOC:62:36}
+digest=6be94;options=(' --upload 1' ' --chown 1');node_0(){ value __upload 0;}
 node_1(){ value __chown 1;};node_2(){ optional 0 1;};cat <<<' docopt_exit() {
 [[ -n $1 ]] && printf "%s\n" "$1" >&2;printf "%s\n" "${DOC:62:36}" >&2;exit 1;}'
 local varnames=(__upload __chown) varname;for varname in "${varnames[@]}"; do
 unset "var_$varname";done;parse 2 "$@";local p=${DOCOPT_PREFIX:-''};for \
 varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
-'___upload:-false};'$p'__chown=${var___chown:-};';local docopt_i=1;[[ \
-$BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for \
-varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
+'___upload:-https://image-registry.node.svc.cluster.local:8021};'$p'__chown=${'\
+'var___chown:-};';local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2
+for ((;docopt_i>0;docopt_i--)); do for varname in "${varnames[@]}"; do declare \
+-p "$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' create-boot-image.sh`
   eval "$(docopt "$@")"
 
@@ -232,11 +234,11 @@ EOF
 
     boot_files["/usr/lib/shim/shim${efi_arch}.efi.signed"]=/EFI/BOOT/BOOT${efi_arch^^}.efi
     boot_files["/usr/lib/systemd/boot/efi/systemd-boot${efi_arch}.efi"]=/EFI/BOOT/grub${efi_arch}.efi
-    boot_files[/workspace/root/boot/uki.efi]=/EFI/Linux/${sha256sums[root.img]}.efi
+    boot_files[/workspace/root/boot/uki.efi]=/EFI/Linux/uki.efi
     # shellcheck disable=SC2016
     SHA256=${sha256sums[root.img]} \
     envsubst '$SHA256' <<'EOF' >/workspace/root/boot/loader.conf
-default ${SHA256}.efi
+default uki.efi
 timeout menu-hidden
 console-mode auto
 editor false
@@ -320,7 +322,7 @@ EOF
 
   info "Archiving artifacts"
 
-  local src dest jwt_token curl_params=() url_path=images/$VARIANT retry=15
+  local src dest
   for src in "${!artifacts[@]}"; do
     dest="/workspace/artifacts/${artifacts[$src]}"
     cp "$src" "$dest"
@@ -334,27 +336,25 @@ EOF
   # shellcheck disable=SC2154
   if $__upload; then
 
-    info "Uploading artifacts to boot-server"
+    info "Uploading artifacts to image-registry"
 
-    local src jwt_token curl_params=() url_path=images/$VARIANT retry=15
-    for src in "${!artifacts[@]}"; do
-      curl_params+=(-F "${artifacts[$src]}=@$src")
+    local artifact upload_files=''
+    for artifact in "${artifacts[@]}"; do
+      upload_files="$upload_files,/workspace/artifacts/$artifact"
     done
-    while true; do
-      jwt_token=$(step crypto jwt sign --key /secureboot/tls.key --iss bootstrap --jti '' \
-        --aud boot-server --sub "PUT $url_path" --nbf "$(date -d'-30sec' +%s)" --exp "$(date -d'+30sec' +%s)")
-      if ! curl --cacert /workspace/root_ca.crt \
-          -H "Authorization: Bearer $jwt_token" \
-          -fL --no-progress-meter --connect-timeout 5 \
-          -XPUT "${curl_params[@]}" \
-          "https://boot-server.node.svc.cluster.local:8020/$url_path" >/dev/null; then
-        error "Failed to upload artifacts, retrying in %ds" $retry
-        sleep $retry
-        continue
-      fi
-      break
-    done
+    curl_img_reg -DELETE "$__upload/$VARIANT.tmp/" || true
+    curl -T "{${upload_files#,}}" "$__upload/$VARIANT.tmp/"
+    curl -DELETE "$__upload/$VARIANT.old/" || true
+    curl -XMOVE "$__upload/$VARIANT/" --header "Destination:$__upload/$VARIANT.old/"
+    curl -XMOVE "$__upload/$VARIANT.tmp/" --header "Destination:$__upload/${VARIANT}/"
   fi
+}
+
+curl_img_reg() {
+  curl --cacert /workspace/root_ca.crt \
+    -fL --no-progress-meter --connect-timeout 5 \
+    --retry 10 --retry-delay 60 \
+    "$@"
 }
 
 main "$@"
