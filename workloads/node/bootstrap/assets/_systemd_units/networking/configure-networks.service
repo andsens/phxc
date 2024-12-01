@@ -13,9 +13,9 @@ RemainAfterExit=yes
 ExecCondition=get-config /boot/phxc/node.yaml fixedIPs
 ExecStart=bash -e
 StandardInputText=for macaddr in $(yq -r '(.fixedIPs // {}) | keys[]' /boot/phxc/node.yaml); do \
-  yq -r --arg macaddr "$macaddr" '\
-    ([.fixedIPs[$macaddr][] | "Address=\(.)"] | join("\n")) as $addrs | \
-    "[Match]\nMACAddress=\($macaddr)\n[Network]\n\($addrs)\n"' \
-    > /etc/systemd/network/${macaddr//:/-}.network \
+    yq -r --arg macaddr "$macaddr" '\
+      ([.fixedIPs[$macaddr][] | "Address=\(.)"] | join("\n")) as $addrs | \
+      "[Match]\nMACAddress=\($macaddr)\n[Network]\n\($addrs)\n"' \
+      > /etc/systemd/network/${macaddr//:/-}.network \
   done
-ExecStart=-systemctl reload systemd-networkd
+ExecStartPost=-systemctl reload systemd-networkd

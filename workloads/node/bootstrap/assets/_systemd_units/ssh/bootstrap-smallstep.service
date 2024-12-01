@@ -7,10 +7,10 @@ Type=oneshot
 RemainAfterExit=yes
 ExecStart=bash -e
 StandardInputText=jq -n --arg fp "$(step certificate fingerprint /usr/local/share/ca-certificates/phoenix-cluster-root.crt)" \
-  { \
+  '{ \
     "ca-url": "https://step-ca.smallstep.svc.cluster.local:9000", \
-    "fingerprint": "$SMALLSTEP_ROOT_CA_FINGERPRINT", \
+    "fingerprint": $fp, \
     "root": "/usr/local/share/ca-certificates/phoenix-cluster-root.crt", \
     "redirect-url": "" \
-  }
+  }'
 StandardOutput=/root/.step/config/defaults.json

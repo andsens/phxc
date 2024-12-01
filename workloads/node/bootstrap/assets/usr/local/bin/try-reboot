@@ -4,30 +4,31 @@ set -Eeo pipefail; shopt -s inherit_errexit
 main() {
   local e; for e; do [[ "$e" != "--help" ]] || usage; done
   [[ $# -eq 1 ]] || usage
+  touch /run/initramfs/try-reboot
   case "$1" in
     try)
-    [[ -e /boot/phxc/root.try.img ]] || { printf "try-reboot: /boot/phxc/root.try.img does not exist\n" >&2; return 1; }
-    case ${VARIANT:?} in
-      rpi*)
-      # https://www.raspberrypi.com/documentation/computers/config_txt.html#the-tryboot-filter
-      [[ -e /boot/tryboot.img ]] || { printf "try-reboot: /boot/tryboot.img does not exist\n" >&2; return 1; }
+      if [[ $VARIANT = rpi* ]]; then
+        # https://www.raspberrypi.com/documentation/computers/config_txt.html#the-tryboot-filter
+        [[ -e /boot/tryboot.img ]] || { printf "try-reboot: /boot/tryboot.img does not exist\n" >&2; return 1; }
+      else
+        # https://manpages.debian.org/bookworm/systemd-boot/bootctl.1.en.html#BOOT_LOADER_SPECIFICATION_COMMANDS
+        [[ -e /boot/EFI/Linux/uki.try.efi ]] || { printf "try-reboot: /boot/EFI/Linux/uki.try.efi does not exist\n" >&2; return 1; }
+      fi
       get_lease
-      reboot "0 tryboot"
-      ;;
-      *)
-      # https://manpages.debian.org/bookworm/systemd-boot/bootctl.1.en.html#BOOT_LOADER_SPECIFICATION_COMMANDS
-      [[ -e /boot/EFI/Linux/uki.try.efi ]] || { printf "try-reboot: /boot/EFI/Linux/uki.try.efi does not exist\n" >&2; return 1; }
-      bootctl set-oneshot uki.try.efi
-      systemctl reboot
-      ;;
-    esac
+      if [[ -e /run/initramfs/try-reboot ]]; then
+        if [[ $VARIANT = rpi* ]]; then
+          reboot "0 tryboot"
+        else
+          bootctl set-oneshot uki.try.efi
+          systemctl reboot
+        fi
+      else
+        printf "try-reboot: /run/initramfs/try-reboot no longer exists, aborting\n" >&2
+        clear_lease
+        return 1
+      fi
     ;;
-    clear)
-    local holder_id
-    if holder_id=$(kubectl -n node get lease reboot -ojsonpath='{.spec.holderIdentity}') && [[ $holder_id = $(cat /etc/machine-id) ]]; then
-      kubectl -n node delete lease reboot
-    fi
-    ;;
+    clear) clear_lease ;;
   esac
 }
 
@@ -41,6 +42,15 @@ metadata:
   namespace: node') 2>/dev/null; do
     sleep 60
   done
+  printf "try-reboot: Reboot lease acquired\n" >&2
+}
+
+clear_lease() {
+  local holder_id
+  if holder_id=$(kubectl -n node get lease reboot -ojsonpath='{.spec.holderIdentity}') && [[ $holder_id = $(cat /etc/machine-id) ]]; then
+    kubectl -n node delete lease reboot
+    printf "try-reboot: Reboot lease cleared\n" >&2
+  fi
 }
 
 usage() {

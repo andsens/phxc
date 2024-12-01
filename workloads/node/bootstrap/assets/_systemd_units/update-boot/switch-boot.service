@@ -1,0 +1,13 @@
+[Unit]
+Description=Depending on whether we are running the new boot image, make it permanent or delete it
+Requires=boot.mount k3s.target
+After=boot.mount k3s.target
+ConditionPathExists=/run/initramfs/try-reboot
+
+[Install]
+WantedBy=sysinit.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=switch-boot

@@ -240,9 +240,9 @@ EOF
     boot_files[/workspace/root/boot/loader.conf]=/loader/loader.conf
   fi
 
-  ###########################
-  ### Create meta.json ###
-  ###########################
+  #######################
+  ### Create metadata ###
+  #######################
 
   info "Creating image metadata file"
 

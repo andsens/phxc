@@ -1,0 +1,2 @@
+# <device>             <dir>                    <type> <options>                             <dump> <fsck>
+PARTUUID=${BOOT_UUID}  /boot                    vfat   defaults,x-initrd.mount               0      2

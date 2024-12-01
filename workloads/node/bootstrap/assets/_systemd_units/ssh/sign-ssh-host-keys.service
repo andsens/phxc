@@ -18,4 +18,4 @@ ExecStart=bash -ec ':;\
     step ssh certificate --host --sign --force --provisioner=ssh-host --provisioner-password-file=<(printf "%%s" "$password") \
       "$(hostname -f)" "$pubkey";\
   done'
-ExecStart=systemctl reload ssh
+ExecStartPost=systemctl reload ssh

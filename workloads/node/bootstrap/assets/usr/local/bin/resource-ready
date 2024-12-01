@@ -32,8 +32,8 @@ main() {
   fi
 }
 
-boot_server_ready() {
-  boot-server-available
+image_registry_ready() {
+  deployment_ready node image-registry
 }
 
 k3s_ready() {

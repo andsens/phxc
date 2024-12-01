@@ -38,12 +38,18 @@ data_partition() {
       --var DEFAULT_RPI_OTP_OFFSET \
       --var DEFAULT_RPI_OTP_LENGTH \
       --var DEFAULT_RPI_OTP_KEY_DERIVATION_SUFFIX
+    systemctl enable rpi-init-otp.service
   else
     install_sd_unit data-partition/generate/tpm2-crypttab.service
     install_sd_unit data-partition/enroll/enroll-tpm2-disk-encryption-key.service \
       --var DATA_UUID \
       --var DEFAULT_NODE_DISK_ENCRYPTION
   fi
+  install_sd_unit data-partition/enroll/disk-encryption-keys-enrolled.target
+
+  systemctl enable \
+    disk-encryption-keys-enrolled.target \
+    unenroll-offline-disk-encryption-key.service
 
   local devpath
   for devpath in "/dev/disk/by-partuuid/$DATA_UUID" /dev/mapper/data; do

@@ -28,6 +28,7 @@ EOF
 esac
 
 initramfs() {
+  cp_tpl --var BOOT_UUID /etc/fstab.dracut
   cp_tpl /etc/systemd/system.conf.d/variant.conf --var VARIANT
   cp_tpl /etc/systemd/system.conf.d/disk-uuids.conf --var DISK_UUID --var BOOT_UUID --var DATA_UUID
 

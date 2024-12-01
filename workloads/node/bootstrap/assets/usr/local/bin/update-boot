@@ -5,37 +5,37 @@ main() {
   [[ $# -eq 0 ]] || usage
   local meta_json_new
   if ! meta_json_new=$(curl_img_reg "${VARIANT:?}/meta.json"); then
-    printf "Unable to retrieve image metadata from boot server\n" >&2
+    printf "update-boot: Unable to retrieve image metadata from image-registry\n" >&2
     return 1
   fi
-  local current_root_img_sha256 try_root_img_sha256 new_root_img_sha256
-  current_root_img_sha256=$(sha256sum /run/initramfs/root.img)
-  try_root_img_sha256=$(sha256sum /boot/phxc/root.try.img 2>/dev/null || true)
-  new_root_img_sha256=$(jq -re '.sha256sums["root.img"]' <<<"$meta_json_new")
-  if [[ $current_root_img_sha256 = "$new_root_img_sha256" ]]; then
-    printf "boot partition is up-to-date (image is currently running)\n" >&2
+  local current_rootimg_sha256 try_rootimg_sha256 new_rootimg_sha256
+  current_rootimg_sha256=$(compgen -G /run/initramfs/root.*.img | cut -d. -f2)
+  try_rootimg_sha256=$(cat /boot/phxc/try.sha256 2>/dev/null || true)
+  new_rootimg_sha256=$(jq -re '.sha256sums["root.img"]' <<<"$meta_json_new")
+  if [[ $current_rootimg_sha256 = "$new_rootimg_sha256" ]]; then
+    printf "update-boot: boot partition is up-to-date (image is currently running)\n" >&2
     return 0
   fi
-  if [[ $try_root_img_sha256 = "$new_root_img_sha256" ]]; then
+  if [[ $try_rootimg_sha256 = "$new_rootimg_sha256" ]]; then
     if [[ -e /run/initramfs/try-reboot ]]; then
-      printf "boot partition is up-to-date (image will be tried)\n" >&2
+      printf "update-boot: boot partition is up-to-date (newer image will be tried)\n" >&2
     else
-      printf "boot partition is up-to-date (image failed to boot)\n" >&2
+      printf "update-boot: boot partition is up-to-date (newer image failed to boot)\n" >&2
     fi
     return 0
   fi
-  printf "boot partition is outdated, updating now\n" >&2
-  rm -f /boot/phxc/root.try.img /boot/EFI/Linux/uki.try.efi /boot/tryboot.img
+  printf "update-boot: boot partition is outdated, updating now\n" >&2
+  rm -f /boot/phxc/try.sha256 /boot/phxc/root.try.img /boot/EFI/Linux/uki.try.efi /boot/tryboot.img /run/initramfs/try-reboot
   # shellcheck disable=SC2064
-  trap "rm -f /boot/phxc/root.try.img /boot/EFI/Linux/uki.try.efi" EXIT
-  curl_img_reg "$VARIANT/root.img" -o/boot/phxc/root.try.img
+  trap "rm -f /run/initramfs/try-reboot /boot/phxc/try.sha256 /boot/phxc/root.try.img /boot/EFI/Linux/uki.try.efi /boot/tryboot.img /run/initramfs/try-reboot" EXIT
+  printf "%s" "$new_rootimg_sha256" >/boot/phxc/try.sha256
+  curl_img_reg "$VARIANT/root.img" -o"/boot/phxc/root.${new_rootimg_sha256}.img"
   if [[ $VARIANT = rpi* ]]; then
     curl_img_reg "$VARIANT/boot.img" -o/boot/tryboot.img
   else
     curl_img_reg "$VARIANT/uki.efi" -o/boot/EFI/Linux/uki.try.efi
   fi
-  touch /run/initramfs/try-reboot
-  printf "boot partition has been updated\n" >&2
+  printf "update-boot: boot partition has been updated\n" >&2
   trap '' EXIT
   try-reboot
 }

@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+set -Eeo pipefail; shopt -s inherit_errexit
+
+main() {
+  [[ $# -eq 0 ]] || usage
+  local current_rootimg_sha256 try_rootimg_sha256
+  current_rootimg_sha256=$(compgen -G /run/initramfs/root.*.img | cut -d. -f2)
+  try_rootimg_sha256=$(cat /boot/phxc/try.sha256 2>/dev/null || true)
+  if [[ $current_rootimg_sha256 = "$try_rootimg_sha256" ]]; then
+    printf "switch-boot: Successfully booted new image\n" >&2
+    if [[ $VARIANT = rpi* ]]; then
+      mv /boot/tryboot.img /boot/boot.img
+    else
+      mv /boot/EFI/Linux/uki.try.efi /boot/EFI/Linux/uki.efi
+    fi
+    local rootimg
+    for rootimg in /boot/phxc/root.*.img; do
+      [[ $rootimg = /boot/phxc/root.$try_rootimg_sha256.img ]] || rm "$rootimg"
+    done
+    rm /boot/phxc/try.sha256
+  else
+    printf "switch-boot: Failed to boot new image\n" >&2
+    if [[ $VARIANT = rpi* ]]; then
+      rm /boot/tryboot.img
+    else
+      rm /boot/EFI/Linux/uki.try.efi
+    fi
+    rm "/boot/phxc/root.$try_rootimg_sha256.img"
+    # Don't remove try.sha256, it prevents update-boot from retrying this specific image
+  fi
+}
+
+usage() {
+  printf "Usage: switch-boot\n" >&2
+  return 1
+}
+
+main "$@"

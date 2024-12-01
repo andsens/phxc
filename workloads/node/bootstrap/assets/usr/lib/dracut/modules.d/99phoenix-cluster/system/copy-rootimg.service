@@ -1,13 +1,11 @@
 [Unit]
 Description=Copy the rootimg from /boot to /run/initramfs
-Requires=mount-boot.service
-After=mount-boot.service
-AssertPathExists=/boot/phxc/root.img
+Requires=boot.mount
+After=boot.mount
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStartPre=cp /boot/phxc/root.${ROOT_SHA256}.img /run/initramfs/root.img.tmp
-ExecStart=sha256sum -c -
-StandardInputText=${ROOT_SHA256}  /run/initramfs/root.img.tmp
-ExecStartPost=mv /run/initramfs/root.img.tmp /run/initramfs/root.img
+ExecStart=cp /boot/phxc/root.${ROOT_SHA256}.img /run/initramfs/root.${ROOT_SHA256}.img.tmp
+ExecStart=sh -c 'echo "${ROOT_SHA256}  /run/initramfs/root.${ROOT_SHA256}.img.tmp" | sha256sum -c -'
+ExecStart=mv /run/initramfs/root.${ROOT_SHA256}.img.tmp /run/initramfs/root.${ROOT_SHA256}.img

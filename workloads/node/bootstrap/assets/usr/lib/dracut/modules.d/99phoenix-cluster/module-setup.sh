@@ -8,12 +8,16 @@ check() {
 
 # Module dependency requirements.
 depends() {
-  echo "systemd-journald overlay-root"
+  local modules=(systemd-journald overlay-root)
+  ! $DEBUG || modules+=(bash)
+  echo "${modules[*]}"
   return 0
 }
 
 # Install the required file(s) and directories for the module in the initramfs.
 install() {
+  inst_binary sha256sum
+  ! $DEBUG || inst_binary cat nano
   inst \
     /etc/systemd/system.conf.d/disk-uuids.conf \
     /etc/systemd/system.conf.d/variant.conf

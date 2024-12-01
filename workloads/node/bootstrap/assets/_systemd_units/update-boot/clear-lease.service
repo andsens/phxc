@@ -1,0 +1,11 @@
+[Unit]
+Description=Clear the reboot lease
+Requires=k3s.target
+After=k3s.target
+
+[Install]
+WantedBy=sysinit.target
+
+[Service]
+Type=oneshot
+ExecStart=try-reboot clear

@@ -1,7 +1,7 @@
 [Unit]
 Description=Update the boot partition with the latest image
-Requires=boot.mount
-After=boot.mount final-node-state.service
+Requires=boot.mount resource-ready@image-registry.service
+After=boot.mount resource-ready@image-registry.service clear-lease.service switch-boot.service
 
 [Install]
 WantedBy=sysinit.target

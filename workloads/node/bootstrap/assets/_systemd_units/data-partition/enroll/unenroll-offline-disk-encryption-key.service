@@ -16,4 +16,4 @@ ExecStart=cryptsetup luksRemoveKey \
   --key-file /var/lib/phxc/disk-encryption-recovery.key \
   /dev/disk/by-partuuid/${DATA_UUID} \
   /boot/phxc/disk-encryption.key
-ExecStart=rm /boot/phxc/disk-encryption.key
+ExecStartPost=rm /boot/phxc/disk-encryption.key
