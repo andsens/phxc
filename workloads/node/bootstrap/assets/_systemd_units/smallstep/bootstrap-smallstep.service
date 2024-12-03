@@ -1,6 +1,8 @@
 [Unit]
 Description=Bootstrap the smallstep CA for the root user
-ConditionPathExists=/usr/local/share/ca-certificates/phoenix-cluster-root.crt
+Requires=trust-smallstep-root.service
+After=trust-smallstep-root.service
+AssertPathExists=/usr/local/share/ca-certificates/phoenix-cluster-root.crt
 
 [Service]
 Type=oneshot

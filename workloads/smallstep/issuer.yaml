@@ -23,7 +23,7 @@ spec:
     toEndpoints:
     - matchLabels:
         app.kubernetes.io/name: smallstep
-        app.kubernetes.io/component: certificates
+        app.kubernetes.io/component: step-ca
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding

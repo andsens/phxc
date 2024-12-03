@@ -3,8 +3,6 @@
 PACKAGES+=(openssh-server)
 
 sshd() {
-  mkdir -p /root/.step/config
-  install_sd_unit ssh/bootstrap-smallstep.service
   install_sd_unit ssh/download-ssh-user-ca-keys.service
   install_sd_unit ssh/generate-ssh-host-keys.service
   install_sd_unit ssh/sign-ssh-host-keys.service

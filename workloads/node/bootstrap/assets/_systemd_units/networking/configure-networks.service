@@ -2,7 +2,7 @@
 Description=Configure systemd-networks using node-config
 DefaultDependencies=no
 After=systemd-networkd.service
-AssertPathExists=/boot/phxc/node.yaml
+ConditionPathExists=/boot/phxc/node.yaml
 
 [Install]
 WantedBy=sysinit.target

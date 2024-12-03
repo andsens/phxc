@@ -17,7 +17,7 @@ depends() {
 # Install the required file(s) and directories for the module in the initramfs.
 install() {
   inst_binary sha256sum
-  ! $DEBUG || inst_binary cat nano
+  ! $DEBUG || inst_binary cat nano less
   inst \
     /etc/systemd/system.conf.d/disk-uuids.conf \
     /etc/systemd/system.conf.d/variant.conf

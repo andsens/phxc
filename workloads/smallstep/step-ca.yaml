@@ -1,19 +1,59 @@
 ---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: step-ca-root
+  labels:
+    app.kubernetes.io/name: smallstep
+    app.kubernetes.io/component: step-ca
+spec:
+  commonName: Phoenix Cluster Root CA
+  issuerRef:
+    name: selfsigned
+  secretName: step-ca-root
+  duration: 175200h
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: step-ca-root
+  labels:
+    app.kubernetes.io/name: smallstep
+    app.kubernetes.io/component: step-ca
+spec:
+  ca:
+    secretName: step-ca-root
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: step-ca-intermediate
+  labels:
+    app.kubernetes.io/name: smallstep
+    app.kubernetes.io/component: step-ca
+spec:
+  commonName: Phoenix Cluster Intermediate CA
+  issuerRef:
+    name: step-ca-root
+  secretName: step-ca-intermediate
+  duration: 175200h
+  isCA: true
+---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: certificates
+  name: step-ca
   labels:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: certificates
+    app.kubernetes.io/component: step-ca
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: certificates
+  name: step-ca
   labels:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: certificates
+    app.kubernetes.io/component: step-ca
 rules:
 - apiGroups: [""]
   resources: [services]
@@ -22,17 +62,17 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: certificates
+  name: step-ca
   labels:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: certificates
+    app.kubernetes.io/component: step-ca
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: certificates
+  name: step-ca
 subjects:
 - kind: ServiceAccount
-  name: certificates
+  name: step-ca
 ---
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
@@ -40,12 +80,12 @@ metadata:
   name: step-ca
   labels:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: certificates
+    app.kubernetes.io/component: step-ca
 spec:
   endpointSelector:
     matchLabels:
       app.kubernetes.io/name: smallstep
-      app.kubernetes.io/component: certificates
+      app.kubernetes.io/component: step-ca
   ingress:
   - toPorts:
     - ports:
@@ -59,7 +99,7 @@ metadata:
   name: step-ca-external
   labels:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: certificates
+    app.kubernetes.io/component: step-ca
   annotations:
     external-dns.alpha.kubernetes.io/hostname: pki.DOMAIN.
 spec:
@@ -68,7 +108,7 @@ spec:
   ipFamilyPolicy: RequireDualStack
   selector:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: certificates
+    app.kubernetes.io/component: step-ca
   ports:
   - name: api
     port: 9000
@@ -80,12 +120,12 @@ metadata:
   name: step-ca
   labels:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: certificates
+    app.kubernetes.io/component: step-ca
 spec:
   type: ClusterIP
   selector:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: certificates
+    app.kubernetes.io/component: step-ca
   ports:
   - name: api
     port: 9000
@@ -97,21 +137,21 @@ metadata:
   name: step-ca
   labels:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: certificates
+    app.kubernetes.io/component: step-ca
 spec:
   serviceName: step-ca
   selector:
     matchLabels:
       app.kubernetes.io/name: smallstep
-      app.kubernetes.io/component: certificates
+      app.kubernetes.io/component: step-ca
   template:
     metadata:
       labels:
         app.kubernetes.io/name: smallstep
-        app.kubernetes.io/component: certificates
+        app.kubernetes.io/component: step-ca
         cluster.local/allow-apiserver-egress: "true"
     spec:
-      serviceAccountName: certificates
+      serviceAccountName: step-ca
       securityContext:
         fsGroup: 1000
       initContainers:
@@ -150,7 +190,7 @@ spec:
         - name: config-rw
           mountPath: /home/step/config
       containers:
-      - name: step-certificates
+      - name: step-ca
         image: cr.step.sm/smallstep/step-ca:0.27.2
         command: [/usr/local/bin/step-ca]
         args: [/home/step/config/ca.json]
@@ -224,7 +264,7 @@ spec:
       name: database
       labels:
         app.kubernetes.io/name: smallstep
-        app.kubernetes.io/component: certificates
+        app.kubernetes.io/component: step-ca
     spec:
       storageClassName: longhorn
       accessModes: [ReadWriteOnce]

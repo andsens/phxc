@@ -193,14 +193,21 @@ EOF
     kernver=$(echo /workspace/root/lib/modules/*)
     kernver=${kernver#'/workspace/root/lib/modules/'}
 
-    /lib/systemd/ukify build \
+    local ukify_signing_opts=()
+    if [[ -e /secureboot/tls.key ]]; then
+      ukify_signing_opts=(
+        --signtool=sbsign
+        --secureboot-private-key=/secureboot/tls.key
+        --secureboot-certificate=/secureboot/tls.crt
+      )
+    fi
+
+
+    /lib/systemd/ukify build "${ukify_signing_opts[@]}" \
       --uname="$kernver" \
       --linux=/workspace/root/boot/vmlinuz \
       --initrd=/workspace/root/boot/initrd.img \
       --cmdline="$kernel_cmdline" \
-      --signtool=sbsign \
-      --secureboot-private-key=/secureboot/tls.key \
-      --secureboot-certificate=/secureboot/tls.crt \
       --output=/workspace/root/boot/uki.efi
 
     ! $DEBUG || artifacts[/workspace/root/boot/uki.efi]=uki.efi
@@ -210,13 +217,16 @@ EOF
     (( uki_size_b <= 1024 * 1024 * 64 )) || \
       warning "uki.efi size exceeds 64MiB (%dMiB). Transferring the image via TFTP will result in its truncation" "$((uki_size_b / 1024 / 1024))"
 
-    # Extract authentihashes used for PE signatures so we can use them for remote attestation
-    authentihashes[uki.efi]=$(/signify/bin/python3 /scripts/get-pe-digest.py --json /workspace/root/boot/uki.efi)
+    if [[ -e /secureboot/tls.key ]]; then
+      # Extract authentihashes used for PE signatures so we can use them for remote attestation
+      authentihashes[uki.efi]=$(/signify/bin/python3 /scripts/get-pe-digest.py --json /workspace/root/boot/uki.efi)
+      # See https://lists.freedesktop.org/archives/systemd-devel/2022-December/048694.html
+      # as to why we also measure the embedded kernel
+      objcopy -O binary --only-section=.linux /workspace/root/boot/uki.efi /workspace/uki-vmlinuz
+      authentihashes[vmlinuz]=$(/signify/bin/python3 /scripts/get-pe-digest.py --json /workspace/uki-vmlinuz)
+    fi
+
     sha256sums[uki.efi]=$(sha256sum /workspace/root/boot/uki.efi | cut -d ' ' -f1)
-    # See https://lists.freedesktop.org/archives/systemd-devel/2022-December/048694.html
-    # as to why we also measure the embedded kernel
-    objcopy -O binary --only-section=.linux /workspace/root/boot/uki.efi /workspace/uki-vmlinuz
-    authentihashes[vmlinuz]=$(/signify/bin/python3 /scripts/get-pe-digest.py --json /workspace/uki-vmlinuz)
 
     # Create boot loader entry
     local efi_arch
@@ -266,6 +276,15 @@ EOF
   printf "%s\n" "$meta" >/workspace/meta.json
 
   artifacts[/workspace/meta.json]=meta.json
+
+  ##########################
+  ### Embed cluster.yaml ###
+  ##########################
+
+  if [[ -e /workspace/cluster-yaml ]]; then
+    boot_files[/workspace/cluster-yaml/cluster.yaml]=/phxc/cluster.yaml
+    boot_files[/workspace/cluster-yaml/cluster.yaml.sig]=/phxc/cluster.yaml.sig
+  fi
 
   ##################
   ### Disk image ###

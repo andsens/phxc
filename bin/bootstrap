@@ -16,8 +16,10 @@ Usage:
   bootstrap [options] VARIANT
 
 Options:
-  --upload  Upload artifacts to the boot-server
+  --upload  Upload artifacts to the image-registry
   --debug   Enable debug build (installs less & nano, unlocks root, etc.)
+  --embed-cluster-yaml PATH  Embed a cluster config in the disk image and
+                             pre-configure the admin credentials
 
 Supported variants:
   amd64 - x86_64 image
@@ -28,50 +30,21 @@ Supported variants:
 # shellcheck disable=2016,2086,2317,1090,1091,2034
 docopt() { local v='2.0.2'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
-%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:332};usage=${DOC:29:36}
-digest=c6b42;options=(' --upload 0' ' --debug 0');node_0(){ switch __upload 0;}
-node_1(){ switch __debug 1;};node_2(){ value VARIANT a;};node_3(){ optional 0 1
-};node_4(){ sequence 3 2;};cat <<<' docopt_exit() { [[ -n $1 ]] && printf \
-"%s\n" "$1" >&2;printf "%s\n" "${DOC:29:36}" >&2;exit 1;}';local \
-varnames=(__upload __debug VARIANT) varname;for varname in "${varnames[@]}"; do
-unset "var_$varname";done;parse 4 "$@";local p=${DOCOPT_PREFIX:-''};for \
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:474};usage=${DOC:29:36}
+digest=3f46a;options=(' --upload 0' ' --debug 0' ' --embed-cluster-yaml 1')
+node_0(){ switch __upload 0;};node_1(){ switch __debug 1;};node_2(){ value \
+__embed_cluster_yaml 2;};node_3(){ value VARIANT a;};node_4(){ optional 0 1 2;}
+node_5(){ sequence 4 3;};cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" \
+"$1" >&2;printf "%s\n" "${DOC:29:36}" >&2;exit 1;}';local varnames=(__upload \
+__debug __embed_cluster_yaml VARIANT) varname;for varname in "${varnames[@]}"; \
+do unset "var_$varname";done;parse 5 "$@";local p=${DOCOPT_PREFIX:-''};for \
 varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
-'___upload:-false};'$p'__debug=${var___debug:-false};'$p'VARIANT=${var_VARIANT'\
-':-};';local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
-((;docopt_i>0;docopt_i--)); do for varname in "${varnames[@]}"; do declare -p \
-"$p$varname";done;done;}
+'___upload:-false};'$p'__debug=${var___debug:-false};'$p'__embed_cluster_yaml='\
+'${var___embed_cluster_yaml:-};'$p'VARIANT=${var_VARIANT:-};';local docopt_i=1
+[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do
+for varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' bootstrap`
   eval "$(docopt "$@")"
-
-  export STEPPATH=$PKGROOT/.step
-  mkdir -p "${STEPPATH:?}/certs" "$STEPPATH/secrets" "$STEPPATH/config"
-  ROOT_CRT=$STEPPATH/certs/root_ca.crt
-  ROOT_KEY=$STEPPATH/secrets/root_ca_key
-  SB_CRT=$STEPPATH/certs/secureboot.crt
-  SB_PUBKEY=$STEPPATH/certs/secureboot.pub
-  SB_KEY=$STEPPATH/secrets/secureboot_key
-
-  verbose "Setting up/checking root certificates"
-  if [[ ! -e $ROOT_KEY ]]; then
-    local root_key_arg=("--key" "$ROOT_KEY")
-    [[ -e $ROOT_KEY ]] || root_key_arg=("$ROOT_KEY")
-    step certificate create --profile root-ca \
-      --force --no-password --insecure \
-      --not-after $((20*365*24))h \
-      "phoenix-cluster root" "$ROOT_CRT" "${root_key_arg[@]}" &>/dev/null
-  fi
-
-  if [[ ! -e $SB_CRT ]]; then
-    # Key *must* be RSA. When sbsign signs the UKI it always specifies that the key is RSA regardless of the facts.
-    step certificate create --template <(printf '{
-  "subject": {{ toJson .Subject }},
-  "keyUsage": ["digitalSignature"],
-  "extKeyUsage": ["codeSigning"]
-}') --force --insecure --no-password --not-after $((20*365*24))h --kty RSA \
-    --ca "$INTERMEDIATE_CRT" --ca-key "$INTERMEDIATE_KEY" \
-    "phoenix-cluster Secure Boot" "$SB_CRT" "$SB_KEY"
-    step crypto key public "$SB_KEY" >"$SB_PUBKEY"
-  fi
 
   # shellcheck disable=SC2154
   local DEBUG=$__debug DOCKER_PLATFORM ARCH
@@ -98,16 +71,28 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
   trap_append "rm \"$bundle\"" EXIT
   "$PKGROOT/workloads/node/bootstrap/scripts/bundle" "$bundle"
 
-  local create_boot_image_opts=(--chown $UID) create_boot_image_docker_opts=()
+  local bootstrap_docker_opts=() create_boot_image_docker_opts=() create_boot_image_opts=(--chown $UID)
+
+  if [[ -n $__embed_cluster_yaml ]]; then
+    local cluster_yaml_tmp
+    cluster_yaml_tmp=$(mktemp -d --suffix '-phoenix-cluster.yaml')
+    trap_append "rm -rf \"$cluster_yaml_tmp\"" EXIT
+    cp "$__embed_cluster_yaml" "$cluster_yaml_tmp/cluster.yaml"
+    # shellcheck disable=SC2154
+    ssh-keygen -Y sign -f <(yq -r '.admin["ssh-key"]' cluster.yaml) -n file "$cluster_yaml_tmp/cluster.yaml"
+    bootstrap_docker_opts+=(-v "$cluster_yaml_tmp:/workspace/cluster-yaml")
+    create_boot_image_docker_opts+=(-v "$cluster_yaml_tmp:/workspace/cluster-yaml")
+  fi
+
   # shellcheck disable=SC2154
   if $__upload; then
-    local boot_server_ip retry=15
-    if ! boot_server_ip=$("$PKGROOT/workloads/node/bootstrap/assets/usr/local/bin/find-boot-server" --no-set-state); then
-      error "Failed to determine boot-server IP, retrying in %ds" $retry
+    local image_registry_ip retry=15
+    if ! image_registry_ip=$("$PKGROOT/workloads/node/bootstrap/assets/usr/local/bin/find-boot-server" --no-set-state); then
+      error "Failed to determine image-registry IP, retrying in %ds" $retry
       sleep $retry
     fi
-    create_boot_image_opts+=(--upload)
-    create_boot_image_docker_opts+=(--add-host "boot-server.node.svc.cluster.local:$boot_server_ip")
+    create_boot_image_opts+=(--upload https://image-registry.node.svc.cluster.local:8021)
+    create_boot_image_docker_opts+=(--add-host "image-registry.node.svc.cluster.local:$image_registry_ip")
   fi
 
   local containers=$PKGROOT/images/containers
@@ -135,11 +120,10 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
 
   info "Building '%s'" "node:$VARIANT"
   docker run --rm -ti \
-    --platform "$DOCKER_PLATFORM" \
+    --platform "$DOCKER_PLATFORM" "${bootstrap_docker_opts[@]}" \
     -v "$PKGROOT/workloads/node/bootstrap/Dockerfile:/workspace/context/Dockerfile:ro" \
     -v "$PKGROOT/workloads/node/bootstrap/assets:/workspace/assets:ro" \
     -v "$bundle:/workspace/phoenix-cluster.tar.gz:ro" \
-    -v "$ROOT_CRT:/workspace/root_ca.crt:ro" \
     -v "$PKGROOT/workloads/common-context:/workspace/common-context:ro" \
     -v "$artifacts:/workspace/artifacts:rw" \
     gcr.io/kaniko-project/executor:latest \
@@ -154,9 +138,6 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
 
   docker run --rm -ti "${create_boot_image_docker_opts[@]}" \
     --platform "$DOCKER_PLATFORM" \
-    -v "$SB_KEY:/secureboot/tls.key:ro" \
-    -v "$SB_CRT:/secureboot/tls.crt:ro" \
-    -v "$ROOT_CRT:/workspace/root_ca.crt:ro" \
     -v "$PKGROOT/workloads/node/bootstrap/create-boot-image-assets:/assets:ro" \
     -v "$PKGROOT/workloads/node/bootstrap/scripts:/scripts:ro" \
     -v "$artifacts:/workspace/artifacts:rw" \

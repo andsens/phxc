@@ -8,7 +8,7 @@ resources:
 - https://raw.githubusercontent.com/smallstep/helm-charts/v0.22.0/step-issuer/crds/certmanager.step.sm_stepclusterissuers.yaml
 - https://raw.githubusercontent.com/smallstep/helm-charts/v0.22.0/step-issuer/crds/certmanager.step.sm_stepissuers.yaml
 - bootstrap.yaml
-- certificates.yaml
+- step-ca.yaml
 - kube-apiserver-client-ca.yaml
 - issuer.yaml
 - namespace.yaml

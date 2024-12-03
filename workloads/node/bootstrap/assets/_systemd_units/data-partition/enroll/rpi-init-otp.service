@@ -5,7 +5,7 @@ After=boot.mount
 ConditionPathExists=/boot/phxc/node.yaml
 
 [Install]
-WantedBy=sysinit.target
+WantedBy=multi-user.target
 
 [Service]
 Type=oneshot

@@ -3,43 +3,12 @@ set -Eeo pipefail; shopt -s inherit_errexit
 # shellcheck disable=SC1091
 source /usr/local/lib/upkg/.upkg/records.sh/records.sh
 
-ROOT_KEY_PATH=$STEPPATH/certs/root_ca/tls.key
 ROOT_CRT_PATH=$STEPPATH/certs/root_ca/tls.crt
 
-INTERMEDIATE_KEY_PATH=$STEPPATH/certs/intermediate_ca_key
-INTERMEDIATE_CRT_PATH=$STEPPATH/certs/intermediate_ca.crt
-
 main() {
-  create_intermediate_ca
   create_step_issuer_provisioner
   create_ssh_host_provisioner
   create_kube_apiserver_client_ca_secret
-}
-
-create_intermediate_ca() {
-  info "Creating smallstep intermediate certificate secret"
-  if (kubectl get -n smallstep secret smallstep-intermediate -o jsonpath='{.data.tls\.crt}' | base64 -d) >"$INTERMEDIATE_CRT_PATH" 2>/dev/null; then
-    if step certificate verify "$INTERMEDIATE_CRT_PATH" --roots="$ROOT_CRT_PATH" && \
-       step certificate needs-renewal "$INTERMEDIATE_CRT_PATH"; then
-      info "Intermediate CA secret validation succeeded"
-    else
-      info "Intermediate CA validation failed"
-      rm "$INTERMEDIATE_CRT_PATH"
-    fi
-  else
-    info "Intermediate CA not found"
-    rm "$INTERMEDIATE_CRT_PATH"
-  fi
-  if [[ ! -e "$INTERMEDIATE_CRT_PATH" ]]; then
-    info "Creating intermediate CA"
-    step certificate create --profile=intermediate-ca \
-      --force --no-password --insecure \
-      --not-after=87600h \
-      --ca="$ROOT_CRT_PATH" --ca-key="$ROOT_KEY_PATH" \
-      "phoenix-cluster Intermediate CA" "$INTERMEDIATE_CRT_PATH" "$INTERMEDIATE_KEY_PATH"
-    kubectl delete -n smallstep secret smallstep-intermediate 2>/dev/null || true
-    kubectl create -n smallstep secret tls smallstep-intermediate --cert="$INTERMEDIATE_CRT_PATH" --key="$INTERMEDIATE_KEY_PATH"
-  fi
 }
 
 create_step_issuer_provisioner() {

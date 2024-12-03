@@ -4,7 +4,7 @@ DefaultDependencies=no
 ConditionPathExists=/usr/local/lib/phxc/secureboot.der
 
 [Install]
-WantedBy=sysinit.target
+WantedBy=multi-user.target
 
 [Service]
 Type=oneshot

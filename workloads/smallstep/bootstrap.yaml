@@ -20,7 +20,7 @@ rules:
   verbs: [create]
 - apiGroups: [""]
   resources: [secrets]
-  resourceNames: [smallstep-root-cert, smallstep-intermediate, step-issuer-provisioner, ssh-host-provisioner, kube-apiserver-client-ca]
+  resourceNames: [step-issuer-provisioner, ssh-host-provisioner, kube-apiserver-client-ca]
   verbs: [get, delete]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -132,7 +132,7 @@ spec:
           mountPath: /home/step/ssh-host-provisioner-password
         - name: certs
           mountPath: /home/step/certs
-        - name: smallstep-root
+        - name: step-ca-root
           mountPath: /home/step/certs/root_ca
         - name: kube-apiserver-client-ca-cert
           mountPath: /home/step/certs/kube_apiserver_client_ca.crt
@@ -141,9 +141,9 @@ spec:
         configMap:
           name: scripts
           defaultMode: 0755
-      - name: smallstep-root
+      - name: step-ca-root
         secret:
-          secretName: smallstep-root
+          secretName: step-ca-root
       - name: step-issuer-provisioner-password
         secret:
           secretName: step-issuer-provisioner-password

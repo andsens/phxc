@@ -14,7 +14,7 @@ case $VARIANT in
   amd64) PACKAGES_TMP+=(linux-image-amd64) ;;
   arm64) PACKAGES_TMP+=(linux-image-arm64) ;;
   rpi*)
-  wget -qO/etc/apt/trusted.gpg.d/raspberrypi.asc http://archive.raspberrypi.com/debian/raspberrypi.gpg.key
+  curl -Lso/etc/apt/trusted.gpg.d/raspberrypi.asc http://archive.raspberrypi.com/debian/raspberrypi.gpg.key
   cat <<EOF >/etc/apt/sources.list.d/raspberrypi.sources
 Types: deb
 URIs: http://archive.raspberrypi.com/debian

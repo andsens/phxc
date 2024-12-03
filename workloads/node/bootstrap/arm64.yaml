@@ -37,9 +37,6 @@ spec:
           mountPath: /workspace/context
         - name: common-context
           mountPath: /workspace/common-context
-        - name: smallstep-root-cert
-          mountPath: /workspace/root_ca.crt
-          readOnly: true
         - name: bundle
           mountPath: /workspace/phoenix-cluster.tar.gz
           subPath: phoenix-cluster.tar.gz

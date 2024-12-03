@@ -1,0 +1,10 @@
+[Unit]
+Description=Download and trust the smallstep root certificate
+Requires=resource-ready@smallstep.service configure-resolved.service
+After=resource-ready@smallstep.service configure-resolved.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=curl -kso/usr/local/share/ca-certificates/phoenix-cluster-root.crt https://step-ca.smallstep.svc.cluster.local:9000/roots.pem
+ExecStartPost=update-ca-certificates

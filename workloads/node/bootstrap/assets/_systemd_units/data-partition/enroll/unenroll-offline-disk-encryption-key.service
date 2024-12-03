@@ -6,7 +6,7 @@ ConditionPathExists=/boot/phxc/node.yaml
 ConditionPathExists=/boot/phxc/disk-encryption.key
 
 [Install]
-WantedBy=sysinit.target
+WantedBy=multi-user.target
 
 [Service]
 Type=oneshot

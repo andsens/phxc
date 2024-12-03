@@ -5,7 +5,6 @@ resources:
 - ../common-context
 - containers/create-boot-image
 - bootstrap
-- admin-pubkey.yaml
 - images.yaml
 - image-registry.yaml
 - namespace.yaml
