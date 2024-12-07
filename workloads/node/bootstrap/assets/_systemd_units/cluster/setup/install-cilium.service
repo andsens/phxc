@@ -18,7 +18,7 @@ ExecStart=bash -eo pipefail
 StandardInputText=/var/lib/phxc/control-plane-pkgs/.upkg/.bin/cilium install --version=1.15.5 \
     --set ipam.mode=cluster-pool \
     --set ipam.operator.clusterPoolIPv4PodCIDRList="$(get-config /etc/phxc/cluster.yaml cidrs.pod.ipv4 ${DEFAULT_CLUSTER_CIDRS_POD_IPV4})" \
-    --set ipam.operator.clusterPoolIPv6PodCIDRList="$(get-config /etc/phxc/cluster.yaml cidrs.pod.ipv4 ${DEFAULT_CLUSTER_CIDRS_POD_IPV6})" \
+    --set ipam.operator.clusterPoolIPv6PodCIDRList="$(get-config /etc/phxc/cluster.yaml cidrs.pod.ipv6 ${DEFAULT_CLUSTER_CIDRS_POD_IPV6})" \
     --set ipam.operator.clusterPoolIPv4MaskSize=24 \
     --set ipam.operator.clusterPoolIPv6MaskSize=112 \
     --set k8sServiceHost=127.0.0.1 \

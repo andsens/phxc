@@ -4,7 +4,7 @@ PACKAGES+=(
   sudo adduser
 )
 if $DEBUG; then
-  PACKAGES+=(less nano bsdextrautils tree)
+  PACKAGES+=(less nano bsdextrautils tree psmisc)
 fi
 
 admin() {

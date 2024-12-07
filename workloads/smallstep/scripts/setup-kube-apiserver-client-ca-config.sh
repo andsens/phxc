@@ -39,7 +39,7 @@ main() {
     --x5c-root "$KUBE_CLIENT_CA_CRT_PATH"
 
   info "Adding admin provisioner key"
-  step ca provisioner add admin --type JWK --public-key=<(step crypto key format --jwk <<<"${CLUSTER_ADMINPUBKEY:?}")
+  step ca provisioner add admin --type JWK --public-key=<(step crypto key format --jwk <<<"${CLUSTER_ADMIN_SSH_KEY:?}")
 
   config=$(cat "$STEPPATH/config/ca.json") # done messing with the physical ca.json, read it into $config
 

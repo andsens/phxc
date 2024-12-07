@@ -10,11 +10,11 @@ WantedBy=sysinit.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecCondition=get-config /boot/phxc/node.yaml fixedIPs
+ExecCondition=get-config /boot/phxc/node.yaml fixed-ips
 ExecStart=bash -e
-StandardInputText=for macaddr in $(yq -r '(.fixedIPs // {}) | keys[]' /boot/phxc/node.yaml); do \
+StandardInputText=for macaddr in $(yq -r '(.["fixed-ips"] // {}) | keys[]' /boot/phxc/node.yaml); do \
     yq -r --arg macaddr "$macaddr" '\
-      ([.fixedIPs[$macaddr][] | "Address=\\(.)"] | join("\\n")) as $addrs | \
+      ([.["fixed-ips"][$macaddr][] | "Address=\\(.)"] | join("\\n")) as $addrs | \
       "[Match]\\nMACAddress=\\($macaddr)\\n[Network]\\n\\($addrs)\\n"' \
       > /etc/systemd/network/${macaddr//:/-}.network \
   done

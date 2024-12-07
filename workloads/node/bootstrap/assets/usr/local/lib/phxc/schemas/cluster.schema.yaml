@@ -25,29 +25,47 @@ properties:
     description: CIDRs specifying the subnets the cluster should allocate for pods, services and loadbalancers
     properties:
       pod:
+        description: The subnet all pods will have an IP assigned from
         type: object
         properties:
-          IPv4:
+          ipv4:
             $ref: "#/definitions/ipv4-cidr"
-          IPv6:
+          ipv6:
             $ref: "#/definitions/ipv6-cidr"
         additionalProperties: false
       svc:
+        description: The subnet all services will have an IP assigned from
         type: object
         properties:
-          IPv4:
+          ipv4:
             $ref: "#/definitions/ipv4-cidr"
-          IPv6:
+          ipv6:
             $ref: "#/definitions/ipv6-cidr"
         additionalProperties: false
       lb:
+        description: The subnet all loadbalancer services will have an IP assigned from
         type: object
         properties:
-          IPv4:
+          ipv4:
             $ref: "#/definitions/ipv4-cidr"
-          IPv6:
+          ipv6:
             $ref: "#/definitions/ipv6-cidr"
         additionalProperties: false
+    additionalProperties: false
+  bgp:
+    type: object
+    description: BGP configuration for cilium to advertise routes for your router
+    properties:
+      router:
+        description: Router addresses
+        type: object
+        properties:
+          ipv4:
+            $ref: "#/definitions/ipv4-cidr"
+          ipv6:
+            $ref: "#/definitions/ipv6-cidr"
+        additionalProperties: false
+    required: [router]
     additionalProperties: false
 required: [domain, admin]
 additionalProperties: false

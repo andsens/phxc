@@ -2,7 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: smallstep
 resources:
-- ../settings/replacements
+- ../cluster-settings
 - ../common-context
 - containers/step-ca-bootstrap
 - https://raw.githubusercontent.com/smallstep/helm-charts/v0.22.0/step-issuer/crds/certmanager.step.sm_stepclusterissuers.yaml
@@ -34,7 +34,7 @@ configMapGenerator:
 - files: []
   name: ca-templates
 replacements:
-- source: {fieldPath: data.cluster.domain, kind: ConfigMap, name: settings}
+- source: {fieldPath: data.domain, kind: ConfigMap, name: settings}
   targets:
   - select: {kind: Service, name: step-ca-external}
     fieldPaths: [metadata.annotations.external-dns\.alpha\.kubernetes\.io/hostname]
@@ -46,7 +46,7 @@ replacements:
     fieldPaths: ["spec.template.spec.initContainers.[name=setup-step-ca-config].env.[name=CLUSTER_DOMAIN].value"]
   - select: {group: apps, kind: StatefulSet, name: kube-apiserver-client-ca}
     fieldPaths: ["spec.template.spec.initContainers.[name=setup-kube-apiserver-client-ca-config].env.[name=CLUSTER_DOMAIN].value"]
-- source: {fieldPath: data.cluster.adminPubkey, kind: ConfigMap, name: settings}
+- source: {fieldPath: data.admin.ssh-key, kind: ConfigMap, name: settings}
   targets:
   - select: {group: apps, kind: StatefulSet, name: kube-apiserver-client-ca}
-    fieldPaths: ["spec.template.spec.initContainers.[name=setup-kube-apiserver-client-ca-config].env.[name=CLUSTER_ADMINPUBKEY].value"]
+    fieldPaths: ["spec.template.spec.initContainers.[name=setup-kube-apiserver-client-ca-config].env.[name=CLUSTER_ADMIN_SSH_KEY].value"]

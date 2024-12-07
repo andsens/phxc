@@ -127,7 +127,7 @@ spec:
         env:
         - name: CLUSTER_DOMAIN
           value: cluster.domain
-        - name: CLUSTER_ADMINPUBKEY
+        - name: CLUSTER_ADMIN_SSH_KEY
           value: cluster.adminPubkey
         - name: NODENAME
           valueFrom:

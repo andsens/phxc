@@ -29,7 +29,7 @@ properties:
     description: Hostname of the node
     type: string
     format: hostname
-  fixedIPs:
+  fixed-ips:
     description: Per MAC-address fixed IP network configuration
     patternProperties:
       "([0-9a-f]{2}:){5}[0-9a-f]{2}":
