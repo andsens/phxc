@@ -1,0 +1,8 @@
+[Unit]
+Description=Create the overlay tmpfs
+
+[Mount]
+What=tmpfs
+Where=/overlay/rw
+Options=mode=0755
+Type=tmpfs

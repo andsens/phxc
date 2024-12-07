@@ -11,8 +11,8 @@ PACKAGES_TMP+=(
 )
 
 case $VARIANT in
-  amd64) PACKAGES_TMP+=(linux-image-amd64) ;;
-  arm64) PACKAGES_TMP+=(linux-image-arm64) ;;
+  amd64) PACKAGES+=(linux-image-amd64) ;;
+  arm64) PACKAGES+=(linux-image-arm64) ;;
   rpi*)
   curl -Lso/etc/apt/trusted.gpg.d/raspberrypi.asc http://archive.raspberrypi.com/debian/raspberrypi.gpg.key
   cat <<EOF >/etc/apt/sources.list.d/raspberrypi.sources
@@ -21,7 +21,7 @@ URIs: http://archive.raspberrypi.com/debian
 Suites: bookworm
 Components: main
 EOF
-  PACKAGES_TMP+=(linux-image-rpi-2712)
+  PACKAGES+=(linux-image-rpi-2712)
   PACKAGES+=(raspi-firmware)
   ;;
   *) printf "Unknown variant: %s\n" "$VARIANT" >&2; return 1 ;;
@@ -37,10 +37,18 @@ initramfs() {
 
   cp_tpl /etc/dracut.conf.d/phoenix-cluster.conf
 
+  cp_tpl \
+    /usr/lib/dracut/modules.d/99phoenix-cluster/system/copy-rootimg.service \
+    /usr/lib/dracut/modules.d/99phoenix-cluster/system/overlay-image.mount \
+    /usr/lib/dracut/modules.d/99phoenix-cluster/system/overlay-rw.mount \
+    /usr/lib/dracut/modules.d/99phoenix-cluster/system/create-overlay-dirs.service \
+    /usr/lib/dracut/modules.d/99phoenix-cluster/system/restore-machine-id.service \
+    /usr/lib/dracut/modules.d/99phoenix-cluster/system/sysroot.mount
   cp_tpl --chmod=0755 \
     /usr/lib/dracut/modules.d/99phoenix-cluster/parse-squashfs-root.sh \
     /usr/lib/dracut/modules.d/99phoenix-cluster/module-setup.sh
-  cp_tpl -r /usr/lib/dracut/modules.d/99phoenix-cluster/system
+
+  mkdir -p /mnt/overlay/image /mnt/overlay/upper
 
   if [[ $VARIANT = rpi5 ]]; then
     # Remove Raspberry Pi 4 boot code
@@ -55,5 +63,4 @@ initramfs() {
   mv "$(readlink /vmlinuz)" /boot/vmlinuz
   mv "$(readlink /initrd.img)" /boot/initrd.img
   rm -f /vmlinuz* /initrd.img*
-  PACKAGES_PURGE+=("linux-image-$kernver")
 }

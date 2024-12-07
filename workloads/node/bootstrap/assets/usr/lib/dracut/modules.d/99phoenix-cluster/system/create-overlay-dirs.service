@@ -1,0 +1,10 @@
+[Unit]
+Description=Create the overlay working & upper directories
+DefaultDependencies=no
+Requires=overlay-rw.mount
+After=overlay-rw.mount
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=mkdir /overlay/rw/work /overlay/rw/upper

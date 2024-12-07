@@ -1,5 +1,6 @@
 [Unit]
 Description=Copy the rootimg from /boot to /run/initramfs
+DefaultDependencies=no
 Requires=boot.mount
 After=boot.mount
 
