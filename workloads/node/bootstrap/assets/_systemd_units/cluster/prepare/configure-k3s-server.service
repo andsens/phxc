@@ -11,6 +11,6 @@ ExecStart=bash -e
 StandardInputText=yq -y '{ \
     "cluster-cidr": [.cluster.cidrs.pod.IPV4 // "${DEFAULT_CLUSTER_CIDRS_POD_IPV4}", .cluster.cidrs.pod.IPV6 // "${DEFAULT_CLUSTER_CIDRS_POD_IPV6}"], \
     "service-cidr": [.cluster.cidrs.svc.IPV4 // "${DEFAULT_CLUSTER_CIDRS_SVC_IPV4}", .cluster.cidrs.svc.IPV6 // "${DEFAULT_CLUSTER_CIDRS_SVC_IPV6}"], \
-    "tls-san": ["api.\(.cluster.domain // "${DEFAULT_CLUSTER_DOMAIN})"] \
+    "tls-san": ["api.\\(.cluster.domain // "${DEFAULT_CLUSTER_DOMAIN}")"] \
   }' <(get-config /etc/phxc/cluster.yaml)
 StandardOutput=file:/etc/rancher/k3s/config.yaml.d/cluster.yaml

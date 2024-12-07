@@ -1,12 +1,13 @@
 [Unit]
 Description=Replace the keyfile reference in crypttab with TPM2 options
+DefaultDependencies=no
 After=copy-offline-disk-encryption-key.service
-Before=cryptsetup-pre.target
+Before=systemd-cryptsetup@data.service
 ConditionSecurity=uefi-secureboot
 ConditionPathExists=!/run/initramfs/disk-encryption.key
 
 [Install]
-WantedBy=cryptsetup-pre.target
+WantedBy=systemd-cryptsetup@data.service
 
 [Service]
 Type=oneshot

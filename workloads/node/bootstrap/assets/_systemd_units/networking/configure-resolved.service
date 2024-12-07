@@ -11,7 +11,7 @@ RequiredBy=k3s.target
 [Service]
 Type=oneshot
 ExecStart=bash -e
-StandardInputText=printf "[Resolve]\nDNS=%%s\nDomains=~%%s ~cluster.local\n" \
+StandardInputText=printf "[Resolve]\\nDNS=%%s\\nDomains=~%%s ~cluster.local\\n" \
   "$(kubectl -n kube-system get svc external-coredns -ojsonpath='{.status.loadBalancer.ingress[*].ip}')" \
   "$(get-config /etc/phxc/cluster.yaml ${DEFAULT_CLUSTER_DOMAIN})"
 StandardOutput=file:/etc/systemd/resolved.conf.d/cluster-domain.conf

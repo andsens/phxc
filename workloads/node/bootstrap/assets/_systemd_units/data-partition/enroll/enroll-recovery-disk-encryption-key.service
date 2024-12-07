@@ -1,7 +1,7 @@
 [Unit]
 Description=Enrolls a disk encryption recovery key
-Requires=data-partition.target
-After=data-partition.target
+Requires=var-lib-phxc.mount
+After=var-lib-phxc.mount
 Before=disk-encryption-keys-enrolled.target
 ConditionPathExists=/run/initramfs/disk-encryption.key
 ConditionPathExists=!/var/lib/phxc/disk-encryption-recovery.key
@@ -16,4 +16,4 @@ ExecStart=systemd-cryptenroll \
   --unlock-key-file /run/initramfs/disk-encryption.key \
   --recovery-key --wipe-slot=1 \
   /dev/disk/by-partuuid/${DATA_UUID}
-StandardOutput=/var/lib/phxc/disk-encryption-recovery.key
+StandardOutput=file:/var/lib/phxc/disk-encryption-recovery.key

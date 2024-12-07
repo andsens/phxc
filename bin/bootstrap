@@ -62,7 +62,7 @@ for varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 
   local artifacts
   artifacts=$PKGROOT/images/$VARIANT.tmp
-  trap_append "rm -rf \"$artifacts\"" EXIT
+  $DEBUG || trap_append "rm -rf \"$artifacts\"" EXIT
   rm -rf "$artifacts"
   mkdir -p "$artifacts"
 

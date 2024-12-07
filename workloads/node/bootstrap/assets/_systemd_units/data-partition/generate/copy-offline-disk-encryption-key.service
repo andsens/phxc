@@ -1,15 +1,17 @@
 [Unit]
 Description=Copy /boot/phxc/disk-encryption.key to /run/initramfs
+DefaultDependencies=no
 Requires=boot.mount
-After=boot.mount create-boot-disk-encryption-key.service
-Before=cryptsetup-pre.target
+After=boot.mount create-offline-disk-encryption-key.service
+Before=systemd-cryptsetup@data.service
 ConditionPathExists=/boot/phxc/disk-encryption.key
 ConditionPathExists=!/run/initramfs/disk-encryption.key
 
 [Install]
-WantedBy=cryptsetup-pre.target
+WantedBy=systemd-cryptsetup@data.service
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
+UMask=0677
 ExecStart=cp /boot/phxc/disk-encryption.key /run/initramfs/disk-encryption.key

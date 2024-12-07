@@ -1,12 +1,13 @@
 [Unit]
 Description=Generate the disk encryption key using the RPi OTP memory
+DefaultDependencies=no
 Requires=boot.mount
 After=boot.mount copy-offline-disk-encryption-key.service
-Before=cryptsetup-pre.target
+Before=systemd-cryptsetup@data.service
 ConditionPathExists=!/run/initramfs/disk-encryption.key
 
 [Install]
-WantedBy=cryptsetup-pre.target
+WantedBy=systemd-cryptsetup@data.service
 
 [Service]
 Type=oneshot

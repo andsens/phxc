@@ -2,13 +2,13 @@
 
 PACKAGES+=(
   systemd-cryptsetup # encrypted data
-  fdisk cryptsetup-bin # disk tooling
+  parted cryptsetup-bin # disk tooling
 )
 
 data_partition() {
   cp_tpl --var BOOT_UUID /etc/fstab.tmp
   install_sd_unit data-partition/create-data-dir@.service
-  install_sd_unit data-partition/create-data-partition.service \
+  install_sd_unit data-partition/expand-data-partition.service \
     --var DISK_UUID \
     --var DATA_UUID
   install_sd_unit data-partition/data-partition.target
@@ -50,14 +50,6 @@ data_partition() {
   systemctl enable \
     disk-encryption-keys-enrolled.target \
     unenroll-offline-disk-encryption-key.service
-
-  local devpath
-  for devpath in "/dev/disk/by-partuuid/$DATA_UUID" /dev/mapper/data; do
-    local systemd_name
-    systemd_name=$(systemd-escape -p "$devpath")
-    mkdir -p "/etc/systemd/system/$systemd_name.device.d"
-    printf '[Unit]\nJobRunningTimeoutSec=infinity\n' >"/etc/systemd/system/$systemd_name.device.d/50-device-timeout.conf"
-  done
 
   cp_tpl --var DATA_UUID /etc/crypttab
 

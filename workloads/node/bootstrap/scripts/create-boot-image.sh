@@ -39,6 +39,8 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
   declare -A authentihashes
   declare -A sha256sums
   declare -A boot_files
+  ! $DEBUG || export LIBGUESTFS_TRACE=1
+  # LIBGUESTFS_DEBUG=1
 
   #################################
   ### Extract container archive ###
@@ -72,7 +74,7 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
 
   local noprogress=
   [[ -t 1 ]] || noprogress=-no-progress
-  mksquashfs /workspace/root /workspace/root.img -noappend -quiet $noprogress
+  mksquashfs /workspace/root /workspace/root.img -noappend -quiet -comp zstd $noprogress
 
   # Move boot dir back into place
   rm -rf /workspace/root/boot
@@ -83,7 +85,7 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
 
   ! $DEBUG || artifacts[/workspace/root.img]=root.img
   boot_files[/workspace/root.img]=/phxc/root.${sha256sums[root.img]}.img
-  local kernel_cmdline="rd.neednet=1 rootovl"
+  local kernel_cmdline=""
   ! $DEBUG || kernel_cmdline+=" rd.shell"
 
   ##################################################
@@ -103,7 +105,7 @@ DefaultEnvironment=ROOT_SHA256=${sha256sums[root.img]}
 EOF
   (
     cd /workspace/initramfs
-    find . -print0 | cpio -o --null --format=newc 2>/dev/null | zstd -19 >/workspace/root/boot/initrd.img
+    find . -print0 | cpio -o --null --format=newc 2>/dev/null | zstd -15 >/workspace/root/boot/initrd.img
   )
   ! $DEBUG || artifacts[/workspace/root/boot/initrd.img]=initrd.img
 
@@ -161,7 +163,6 @@ EOF
 
     (( disk_size_kib <= 1024 * 64 )) || \
       warning "boot.img size exceeds 64MiB (%dMiB). Transferring the image via TFTP will result in its truncation" "$((disk_size_kib / 1024))"
-    ! $DEBUG || export LIBGUESTFS_TRACE=1 LIBGUESTFS_DEBUG=1
     guestfish -xN /workspace/boot.img=disk:${disk_size_kib}K -- <<EOF
 mkfs fat /dev/sda
 mount /dev/sda /
@@ -305,27 +306,38 @@ EOF
     gpt_size_b \
     partition_offset_b=$((1024 * 1024)) \
     boot_partition_size_b=$(( 1024 * 1024 * 1024 )) \
+    data_partition_size_b=$(( 1024 * 1024 * 16 )) \
+    boot_sector_start boot_sector_end \
+    data_sector_start data_sector_end \
     disk_size_kib
   gpt_size_b=$((33 * sector_size_b))
+  boot_sector_start=$(( partition_offset_b / sector_size_b ))
+  boot_sector_end=$(( boot_sector_start + ( boot_partition_size_b / sector_size_b ) - 1 ))
+  data_sector_start=$(( boot_sector_end + 1 ))
+  data_sector_end=$(( data_sector_start + ( data_partition_size_b / sector_size_b ) - 1 ))
   disk_size_kib=$((
     (
       partition_offset_b +
       boot_partition_size_b +
+      data_partition_size_b +
       gpt_size_b +
       1023
     ) / 1024
   ))
   guestfish -xN /workspace/disk.img=disk:${disk_size_kib}K -- <<EOF
 part-init /dev/sda gpt
-part-add /dev/sda primary $(( partition_offset_b / sector_size_b )) $(( (partition_offset_b + boot_partition_size_b ) / sector_size_b - 1 ))
+part-add /dev/sda primary $boot_sector_start $boot_sector_end
 part-set-bootable /dev/sda 1 true
 part-set-disk-guid /dev/sda $DISK_UUID
 part-set-gpt-guid /dev/sda 1 $BOOT_UUID
+part-add /dev/sda primary $data_sector_start $data_sector_end
+part-set-gpt-guid /dev/sda 2 $DATA_UUID
 
 mkfs vfat /dev/sda1
 mount /dev/sda1 /
 
 tar-in /workspace/boot-files.tar /
+
 EOF
   artifacts[/workspace/disk.img]=disk.img
 

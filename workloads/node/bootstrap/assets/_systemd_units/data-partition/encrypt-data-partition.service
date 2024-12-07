@@ -1,8 +1,8 @@
 [Unit]
 Description=Encrypt the data partition
 DefaultDependencies=no
-Requires=create-data-partition.service
-After=create-data-partition.service
+Requires=expand-data-partition.service create-offline-disk-encryption-key.service
+After=expand-data-partition.service create-offline-disk-encryption-key.service
 Before=systemd-cryptsetup@data.service data-partition.target
 AssertPathExists=/boot/phxc/disk-encryption.key
 

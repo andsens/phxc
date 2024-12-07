@@ -1,0 +1,9 @@
+[Unit]
+Description=Expand the data partition
+DefaultDependencies=no
+Before=systemd-cryptsetup@data.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=parted -sfa optimal -- /dev/sda resizepart 2 100%
