@@ -2,22 +2,22 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: kube-system
 resources:
-- ../settings/replacements
+- ../cluster-settings
 - coredns.yaml
 - Kptfile
 - resourcegroup.yaml
 configMapGenerator:
 - files:
-  - Corefile
+  - config/Corefile
   name: coredns
 - files:
   - scripts/render-imports.sh
   name: scripts
 replacements:
-- source: {fieldPath: data.cluster.domain, kind: ConfigMap, name: settings}
+- source: {fieldPath: data.domain, kind: ConfigMap, name: settings}
   targets:
   - select: {kind: Service, name: external-coredns}
-    fieldPaths: [metadata.annotations.external-dns\.alpha\.kubernetes\.io/hostname]
+    fieldPaths: [metadata.annotations.coredns\.io/hostname]
     options: {delimiter: '.', index: 1}
   - select: {group: apps, kind: Deployment, name: coredns}
     fieldPaths: ["spec.template.spec.containers.[name=coredns].env.[name=CLUSTER_DOMAIN].value"]

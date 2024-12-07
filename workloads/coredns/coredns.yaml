@@ -36,14 +36,6 @@ spec:
     toEntities:
     - world
   - toPorts:
-    - ports:
-      - port: "2379"
-    toEndpoints:
-    - matchLabels:
-        "k8s:io.kubernetes.pod.namespace": etcd
-        app.kubernetes.io/name: etcd
-        app.kubernetes.io/component: etcd
-  - toPorts:
     # Needed for external IP resolution
     - ports:
       - port: "443"
@@ -87,6 +79,34 @@ subjects:
   name: coredns
   namespace: kube-system
 ---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: coredns-kube-gateway
+rules:
+- apiGroups: [""]
+  resources: [services, namespaces]
+  verbs: [list, watch]
+- apiGroups: [extensions, networking.k8s.io]
+  resources: [ingresses]
+  verbs: [list, watch]
+- apiGroups: [gateway.networking.k8s.io]
+  resources: ["*"]
+  verbs: [watch, list]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: coredns-kube-gateway
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: coredns-kube-gateway
+subjects:
+  - kind: ServiceAccount
+    name: coredns
+    namespace: kube-system
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -115,7 +135,7 @@ metadata:
     app.kubernetes.io/name: coredns
     app.kubernetes.io/component: coredns
   annotations:
-    external-dns.alpha.kubernetes.io/hostname: ns1.DOMAIN.
+    coredns.io/hostname: ns1.DOMAIN.
 spec:
   type: LoadBalancer
   ipFamilies: [IPv4, IPv6]
@@ -198,28 +218,9 @@ spec:
         - name: imports
           mountPath: /etc/coredns/imports
       containers:
-      - name: build-config
-        # See above
-        image: cr.step.sm/smallstep/step-ca-bootstrap@sha256:5270356cf91596afe18478eab60c6c0866b2cc62618f282d42827e58f84d6eae
-        command: [/scripts/render-imports.sh]
-        args: ['--watch']
-        securityContext:
-          readOnlyRootFilesystem: true
-        env:
-        # Since coredns is scheduled on "node-role.kubernetes.io/control-plane"
-        # the kube-apiserver is also available on this node, so we can use the IPs from the status field
-        - name: HOST_IPS
-          valueFrom:
-            fieldRef:
-              fieldPath: status.hostIPs
-        volumeMounts:
-        - name: scripts
-          mountPath: /scripts
-        - name: imports
-          mountPath: /etc/coredns/imports
       - name: coredns
         args: [-conf, /etc/coredns/Corefile]
-        image: coredns/coredns:1.11.1
+        image: quay.io/oriedge/k8s_gateway
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -273,6 +274,25 @@ spec:
         volumeMounts:
         - name: config
           mountPath: /etc/coredns
+        - name: imports
+          mountPath: /etc/coredns/imports
+      - name: update-config
+        # See above
+        image: cr.step.sm/smallstep/step-ca-bootstrap@sha256:5270356cf91596afe18478eab60c6c0866b2cc62618f282d42827e58f84d6eae
+        command: [/scripts/render-imports.sh]
+        args: ['--watch']
+        securityContext:
+          readOnlyRootFilesystem: true
+        env:
+        # Since coredns is scheduled on "node-role.kubernetes.io/control-plane"
+        # the kube-apiserver is also available on this node, so we can use the IPs from the status field
+        - name: HOST_IPS
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIPs
+        volumeMounts:
+        - name: scripts
+          mountPath: /scripts
         - name: imports
           mountPath: /etc/coredns/imports
       volumes:

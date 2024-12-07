@@ -71,8 +71,6 @@ do declare -p "$p$varname";done;done;}
       coredns
       snapshots
       longhorn
-      etcd
-      external-dns
       cert-manager
       cert-manager-issuers
       kubernetes-secret-generator

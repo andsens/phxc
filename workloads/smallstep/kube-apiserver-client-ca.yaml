@@ -79,7 +79,7 @@ metadata:
     app.kubernetes.io/name: smallstep
     app.kubernetes.io/component: kube-apiserver-client-ca
   annotations:
-    external-dns.alpha.kubernetes.io/hostname: pki-kube.DOMAIN.
+    coredns.io/hostname: pki-kube.DOMAIN.
 spec:
   type: LoadBalancer
   ipFamilies: [IPv4, IPv6]

@@ -101,7 +101,7 @@ metadata:
     app.kubernetes.io/name: smallstep
     app.kubernetes.io/component: step-ca
   annotations:
-    external-dns.alpha.kubernetes.io/hostname: pki.DOMAIN.
+    coredns.io/hostname: pki.DOMAIN.
 spec:
   type: LoadBalancer
   ipFamilies: [IPv4, IPv6]

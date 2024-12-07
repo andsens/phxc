@@ -13,22 +13,25 @@ main() {
     [[ -e $imports/kube-apiserver-ipv4.conf ]] || \
     printf 'template IN A api.{$CLUSTER_DOMAIN}. {
         answer "api.{$CLUSTER_DOMAIN}. 60 IN A %s"
-    }' "$apiserver_ip" >$imports/kube-apiserver-ipv4.conf
+    }\n' "$apiserver_ip" >$imports/kube-apiserver-ipv4.conf
 
     # shellcheck disable=SC2016
     [[ -e $imports/kube-apiserver-ipv6.conf ]] || \
     printf 'template IN AAAA api.{$CLUSTER_DOMAIN}. {
         answer "api.{$CLUSTER_DOMAIN}. 60 IN A %s"
-    }' "$apiserver_ip" >$imports/kube-apiserver-ipv6.conf
+    }\n' "$apiserver_ip" >$imports/kube-apiserver-ipv6.conf
 
   done
 
   local external_ip
   while true; do
-    external_ip=$(curl -sf https://api.ipify.org/) && \
-    printf 'template IN A . {
-        answer "{{.Name}} 60 IN A %s"
-    }' "$external_ip" >$imports/wan-ip.conf
+    if external_ip=$(curl -sf https://api.ipify.org/); then
+      printf 'template IN A . {
+          answer "{{.Name}} 60 IN A %s"
+      }\n' "$external_ip" >$imports/wan-ip.conf
+    else
+      printf "Failed retrieving WAN IP\n" >&2
+    fi
     [[ $1 = '--watch' ]] || break
     sleep 60
   done
