@@ -8,6 +8,6 @@ RequiredBy=k3s.target
 
 [Service]
 Type=oneshot
-ExecStart=bash -e
-StandardInputText=yq -y '{"node-label": .labels // []}' <(get-config /boot/phxc/node.yaml)
+ExecStart=bash -eo pipefail
+StandardInputText=get-config /boot/phxc/node.yaml | yq -y '{"node-label": .labels // []}'
 StandardOutput=file:/etc/rancher/k3s/config.yaml.d/node-label.yaml

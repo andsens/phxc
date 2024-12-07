@@ -6,4 +6,4 @@ After=var-lib-phxc.mount
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=mkdir -p /var/lib/phoenix/%i
+ExecStart=mkdir -p /var/lib/phxc/%i

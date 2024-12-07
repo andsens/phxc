@@ -282,9 +282,10 @@ EOF
   ### Embed cluster.yaml ###
   ##########################
 
-  if [[ -e /workspace/cluster-yaml ]]; then
-    boot_files[/workspace/cluster-yaml/cluster.yaml]=/phxc/cluster.yaml
-    boot_files[/workspace/cluster-yaml/cluster.yaml.sig]=/phxc/cluster.yaml.sig
+  if [[ -e /workspace/embed-configs ]]; then
+    for file in /workspace/embed-configs/*; do
+      boot_files["$file"]=/phxc/$(basename "$file")
+    done
   fi
 
   ##################

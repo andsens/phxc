@@ -2,8 +2,8 @@
 Description=Configure systemd-resolved to be able to resolve the cluster domain
 DefaultDependencies=no
 Requires=resource-ready@coredns.service
-After=systemd-networkd.service resource-ready@coredns.service
-AssertPathExists=/etc/phxc/cluster.yaml
+Wants=copy-cluster-config.service
+After=systemd-networkd.service resource-ready@coredns.service copy-cluster-config.service
 
 [Install]
 RequiredBy=k3s.target

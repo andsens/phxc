@@ -1,7 +1,7 @@
 [Unit]
 Description=Clear the reboot lease
-Requires=k3s.target
-After=k3s.target
+Requires=resource-ready@k3s.service
+After=resource-ready@k3s.service
 
 [Install]
 WantedBy=multi-user.target

@@ -7,7 +7,6 @@ source "$PKGROOT/.upkg/records.sh/records.sh"
 export DISK_UUID=caf66bff-edab-4fb1-8ad9-e570be5415d7
 export BOOT_UUID=c427f0ed-0366-4cb2-9ce2-3c8c51c3e89e
 export DATA_UUID=6f07821d-bb94-4d0f-936e-4060cadf18d8
-export DEFAULT_NODE_K3S_MODE=agent
 export DEFAULT_NODE_DISK_ENCRYPTION=auto
 export DEFAULT_RPI_OTP_OFFSET=0
 export DEFAULT_RPI_OTP_LENGTH=8

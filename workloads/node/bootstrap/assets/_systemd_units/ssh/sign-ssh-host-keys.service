@@ -10,7 +10,7 @@ WantedBy=multi-user.target
 Type=oneshot
 Environment=HOME=/root KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 TimeoutSec=1200
-ExecStart=bash -e
+ExecStart=bash -eo pipefail
 StandardInputText=rm /etc/ssh/sshd_config.d/20-host-key-certs.conf; \
   password=$(kubectl -n smallstep get secret ssh-host-provisioner-password -o=jsonpath='{.data.password}' | base64 -d); \
   for pubkey in /etc/ssh/ssh_host_*.pub; do \

@@ -1,19 +1,21 @@
 [Unit]
 Description=Install Cilium in K3S
 Documentation=https://docs.cilium.io/en/stable/installation/k3s/
-Requires=resource-ready@k3s.service
-After=resource-ready@k3s.service
+Requires=resource-ready@k3s.service install-control-plane-packages.service
+Wants=copy-cluster-config.service
+After=resource-ready@k3s.service install-control-plane-packages.service copy-cluster-config.service
 
 [Install]
 WantedBy=k3s@server.service
 
 [Service]
 Type=oneshot
-Environment=HOME=/root KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+Environment=HOME=/root KUBECONFIG=/etc/rancher/k3s/k3s.yaml \
+  PATH=/var/lib/phxc/control-plane-pkgs/.upkg/.bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 TimeoutSec=1200
-ExecCondition=kubectl get -n kube-system deployment cilium-operator -o name
-ExecStart=bash -e
-StandardInputText=cilium install --version=1.15.5 \
+ExecCondition=bash -ec '! kubectl get -n kube-system deployment cilium-operator -o name'
+ExecStart=bash -eo pipefail
+StandardInputText=/var/lib/phxc/control-plane-pkgs/.upkg/.bin/cilium install --version=1.15.5 \
     --set ipam.mode=cluster-pool \
     --set ipam.operator.clusterPoolIPv4PodCIDRList="$(get-config /etc/phxc/cluster.yaml cidrs.pod.ipv4 ${DEFAULT_CLUSTER_CIDRS_POD_IPV4})" \
     --set ipam.operator.clusterPoolIPv6PodCIDRList="$(get-config /etc/phxc/cluster.yaml cidrs.pod.ipv4 ${DEFAULT_CLUSTER_CIDRS_POD_IPV6})" \
@@ -33,5 +35,6 @@ StandardInputText=cilium install --version=1.15.5 \
     --set encryption.type=wireguard \
     --set encryption.nodeEncryption=true \
     --set socketLB.enabled=true \
-    --set kubeConfigPath=/etc/rancher/k3s/k3s.yaml;\
-  kubectl patch -n kube-system cm cilium-config --patch-file <(printf "\ndata:\n  ipv6-service-range: \"%%s\"\n" "$(get-config /etc/phxc/cluster.yaml cidrs.svc.ipv6 ${DEFAULT_CLUSTER_CIDRS_SVC_IPV6})")
+    --set kubeConfigPath=/etc/rancher/k3s/k3s.yaml; \
+  kubectl patch -n kube-system cm cilium-config --patch-file \
+    <(printf "\ndata:\n  ipv6-service-range: \"%%s\"\n" "$(get-config /etc/phxc/cluster.yaml cidrs.svc.ipv6 ${DEFAULT_CLUSTER_CIDRS_SVC_IPV6})")

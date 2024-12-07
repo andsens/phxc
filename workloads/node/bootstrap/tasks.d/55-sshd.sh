@@ -12,7 +12,6 @@ sshd() {
 
   cp_tpl \
     /etc/ssh/sshd_config.d/10-no-root-login.conf \
-    /etc/ssh/sshd_config.d/20-host-key-certs.conf \
     /etc/ssh/sshd_config.d/30-user-ca-keys.conf \
     /etc/ssh/sshd_config.d/50-tmux.conf
   systemctl enable \

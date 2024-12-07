@@ -1,5 +1,6 @@
 {
   "$schema": "https://schemas.orbit.dev/upkg/upkg-v0.28.0.schema.json",
+  "bin": [".upkg/.bin"],
   "dependencies": [
     {
       "name": "kustomize",

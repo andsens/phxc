@@ -26,3 +26,9 @@ replacements:
   - select: {group: networking.k8s.io, kind: Ingress, name: longhorn}
     fieldPaths: [spec.rules.0.host]
     options: {delimiter: ., index: 1}
+configMapGenerator:
+- name: longhorn-default-setting
+  files:
+  - config/default-setting.yaml
+generatorOptions:
+  disableNameSuffixHash: true

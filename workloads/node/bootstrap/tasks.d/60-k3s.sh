@@ -14,11 +14,10 @@ k3s() {
     --var DEFAULT_CLUSTER_CIDRS_SVC_IPV4 \
     --var DEFAULT_CLUSTER_CIDRS_SVC_IPV6 \
     --var DEFAULT_CLUSTER_DOMAIN
-  install_sd_unit cluster/k3s/k3s.target
-  install_sd_unit cluster/k3s/k3s@.service --var DEFAULT_NODE_K3S_MODE
-  install_sd_unit cluster/prepare/etc-rancher-node.mount
+  install_sd_unit cluster/prepare/link-k3s-config@.service
   install_sd_unit cluster/prepare/var-lib-rancher-k3s.mount
-  install_sd_unit cluster/prepare/var-lib-longhorn.mount
+  install_sd_unit cluster/k3s/k3s.target
+  install_sd_unit cluster/k3s/k3s@.service
   install_sd_unit cluster/setup/install-cilium.service
   install_sd_unit cluster/setup/apply-all-manifests.service
   install_sd_unit cluster/k3s/import-container-images.path
@@ -26,6 +25,8 @@ k3s() {
 
   install_sd_unit cluster/k3s/resource-ready@.service
   cp_tpl --chmod=0755 /usr/local/bin/resource-ready
+
+  mkdir -p /var/lib/rancher/k3s /etc/rancher/node
 
   cp_tpl /etc/rancher/k3s/server.yaml
   cp_tpl \

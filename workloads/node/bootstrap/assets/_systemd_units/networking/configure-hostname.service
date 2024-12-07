@@ -2,7 +2,6 @@
 Description=Set the hostname using the node-config
 DefaultDependencies=no
 Before=avahi-daemon.service
-ConditionPathExists=/boot/phxc/node.yaml
 
 [Install]
 WantedBy=sysinit.target

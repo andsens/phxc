@@ -1,0 +1,10 @@
+[Unit]
+Description=Link config.yaml to %i.yaml
+Before=k3s.target
+
+[Install]
+RequiredBy=k3s@%i.service
+
+[Service]
+Type=oneshot
+ExecStart=ln -sf %i.yaml /etc/rancher/k3s/config.yaml

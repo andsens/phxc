@@ -1,11 +1,14 @@
 [Unit]
 Description=Lightweight Kubernetes
 Documentation=https://k3s.io
+Requires=create-data-dir@node-password.service var-lib-rancher-k3s.mount
 Wants=systemd-networkd-wait-online.service
-After=systemd-networkd-wait-online.service
+After=systemd-networkd-wait-online.service create-data-dir@node-password.service var-lib-rancher-k3s.mount
 
 [Service]
-ExecCondition=bash -ec '[[ $(get-config -q /boot/phxc/node.yaml k3s-mode ${DEFAULT_NODE_K3S_MODE}) = %i ]] || false'
+ExecCondition=bash -ec 'if mode=$(get-config -q /boot/phxc/node.yaml k3s-mode); then [[ $mode = %i ]] || false; \
+                        else [[ -e /boot/phxc/cluster.yaml && server = %i ]] || false; fi'
+BindPaths=/var/lib/phxc/node-password:/etc/rancher/node
 Type=notify
 EnvironmentFile=-/etc/default/%N
 EnvironmentFile=-/etc/sysconfig/%N
@@ -23,4 +26,4 @@ RestartSec=5s
 ExecStartPre=/bin/sh -xc '! /usr/bin/systemctl is-enabled --quiet nm-cloud-setup.service 2>/dev/null'
 ExecStartPre=-/sbin/modprobe br_netfilter
 ExecStartPre=-/sbin/modprobe overlay
-ExecStart=/usr/local/bin/k3s %i --config /etc/rancher/k3s/%i.yaml
+ExecStart=/usr/local/bin/k3s %i

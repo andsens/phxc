@@ -4,7 +4,7 @@ PACKAGES+=(
   sudo adduser
 )
 if $DEBUG; then
-  PACKAGES+=(less nano bsdextrautils)
+  PACKAGES+=(less nano bsdextrautils tree)
 fi
 
 admin() {
@@ -12,11 +12,11 @@ admin() {
   adduser admin adm
   adduser admin sudo
   mkdir /home/admin/.ssh
-  if [[ -e /workspace/cluster-yaml ]]; then
-    usermod -p "$(yq -r '.admin["pwhash"]' /workspace/cluster-yaml/cluster.yaml)" admin
-    yq -r '.admin["ssh-key"]' /workspace/cluster-yaml/cluster.yaml > /home/admin/.ssh/authorized_keys
+  if [[ -e /workspace/embed-configs ]]; then
+    usermod -p "$(yq -r '.admin["pwhash"]' /workspace/embed-configs/cluster.yaml)" admin
+    yq -r '.admin["ssh-key"]' /workspace/embed-configs/cluster.yaml > /home/admin/.ssh/authorized_keys
     if $DEBUG; then
-      usermod -p "$(yq -r '.admin["pwhash"]' /workspace/cluster-yaml/cluster.yaml)" root
+      usermod -p "$(yq -r '.admin["pwhash"]' /workspace/embed-configs/cluster.yaml)" root
     else
       usermod -L root
     fi
