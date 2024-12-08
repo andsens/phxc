@@ -1,0 +1,30 @@
+name: Build coredns container with k8s_gateway
+
+on:
+  push:
+    branches: [ '*' ]
+    tags: [ 'v*' ]
+    paths:
+    - .github/workflows/build-coredns.yaml
+    - workloads/coredns/containers/coredns/Dockerfile
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout the repo
+      uses: actions/checkout@v4
+    - name: Set up buildx
+      uses: docker/setup-buildx-action@v2
+    - name: Login to docker hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ vars.DOCKER_HUB_USERNAME }}
+        password: ${{ secrets.DOCKER_HUB_TOKEN_RW }}
+    - name: Build & push
+      uses: docker/build-push-action@v5
+      with:
+        context: workloads/coredns/containers/coredns
+        platforms: linux/amd64,linux/arm64
+        tags: andsens/coredns:1.12.0
+        push: true
