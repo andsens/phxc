@@ -10,7 +10,10 @@ WantedBy=k3s@server.service k3s@agent.service
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=bash -eo pipefail
-ExecCondition=get-config -q /boot/phxc/node.yaml labels >/dev/null
-StandardInputText=get-config /boot/phxc/node.yaml | yq -y '{"node-label": .labels // []}'
+StandardInputText=yq -ny \
+    --argjson labels "$(get-config -q /boot/phxc/node.yaml | yq . || true)" \
+    --arg sha256 "$(compgen -G /run/initramfs/root.*.img | cut -d. -f2)" \
+    --arg variant "${VARIANT}" \
+    '{"node-label": (.labels + ["cluster.local/rootimg-sha256=" + $sha256[0:8], "cluster.local/rootimg-variant=" + $variant])}'
 StandardOutput=file:/etc/rancher/k3s/config.yaml.d/node-label.yaml
 StandardError=journal
