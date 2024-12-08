@@ -58,5 +58,5 @@ spec:
           defaultMode: 0755
       - name: images
         hostPath:
-          path: /var/lib/phoenix-cluster/container-images
+          path: /var/lib/phxc/container-images
           type: DirectoryOrCreate
