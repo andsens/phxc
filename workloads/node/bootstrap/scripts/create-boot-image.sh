@@ -370,10 +370,10 @@ EOF
       upload_files="$upload_files,/workspace/artifacts/$artifact"
     done
     curl_img_reg -DELETE "$__upload/$VARIANT.tmp/" || true
-    curl --upload-file "{${upload_files#,}}" "$__upload/$VARIANT.tmp/"
-    curl -DELETE "$__upload/$VARIANT.old/" || true
-    curl -XMOVE "$__upload/$VARIANT/" --header "Destination:$__upload/$VARIANT.old/"
-    curl -XMOVE "$__upload/$VARIANT.tmp/" --header "Destination:$__upload/${VARIANT}/"
+    curl_img_reg --upload-file "{${upload_files#,}}" "$__upload/$VARIANT.tmp/"
+    curl_img_reg -DELETE "$__upload/$VARIANT.old/" || true
+    curl_img_reg -XMOVE "$__upload/$VARIANT/" --header "Destination:$__upload/$VARIANT.old/" || true
+    curl_img_reg -XMOVE "$__upload/$VARIANT.tmp/" --header "Destination:$__upload/${VARIANT}/"
   fi
 }
 

@@ -93,6 +93,13 @@ spec:
         app.kubernetes.io/name: node
         app.kubernetes.io/component: image-registry
     spec:
+      initContainers:
+      - name: chown-images
+        image: busybox:1.37.0
+        args: [chown, 101:101, /var/www]
+        volumeMounts:
+        - name: images
+          mountPath: /var/www
       containers:
       - name: image-registry
         image: nginx:1.27.3

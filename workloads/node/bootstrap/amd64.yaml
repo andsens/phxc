@@ -32,6 +32,8 @@ spec:
         - name: VARIANT
           value: amd64
         volumeMounts:
+        - name: workspace
+          mountPath: /workspace
         - name: context
           mountPath: /workspace/context
         - name: common-context
@@ -44,7 +46,6 @@ spec:
         image: cluster.local/create-boot-image:amd64
         args: [--upload, https://image-registry.node.svc.cluster.local:8021]
         imagePullPolicy: Never
-        command: [upload]
         env:
         - name: VARIANT
           value: amd64

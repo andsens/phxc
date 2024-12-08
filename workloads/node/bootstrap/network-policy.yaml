@@ -1,0 +1,19 @@
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: bootstrap
+  labels:
+    app.kubernetes.io/name: bootstrap
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: bootstrap
+  egress:
+  - toPorts:
+    - ports:
+      - port: "8021"
+    toEndpoints:
+    - matchLabels:
+        app.kubernetes.io/name: node
+        app.kubernetes.io/component: image-registry

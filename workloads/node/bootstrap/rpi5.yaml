@@ -44,7 +44,6 @@ spec:
         image: cluster.local/create-boot-image:arm64
         args: [--upload, https://image-registry.node.svc.cluster.local:8021]
         imagePullPolicy: Never
-        command: [upload]
         env:
         - name: VARIANT
           value: rpi5
