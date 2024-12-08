@@ -9,7 +9,10 @@ metadata:
 spec:
   commonName: Phoenix Cluster Root CA
   issuerRef:
+    group: cert-manager.io
+    kind: ClusterIssuer
     name: selfsigned
+  isCA: true
   secretName: step-ca-root
   duration: 175200h
 ---
@@ -34,6 +37,8 @@ metadata:
 spec:
   commonName: Phoenix Cluster Intermediate CA
   issuerRef:
+    group: cert-manager.io
+    kind: Issuer
     name: step-ca-root
   secretName: step-ca-intermediate
   duration: 175200h
@@ -212,7 +217,7 @@ spec:
             scheme: HTTPS
           initialDelaySeconds: 5
         volumeMounts:
-        - name: root-cert
+        - name: root
           mountPath: /home/step/certs/root_ca.crt
           subPath: tls.crt
         - name: intermediate
@@ -248,12 +253,12 @@ spec:
       - name: ssh-host-provisioner-password
         secret:
           secretName: ssh-host-provisioner-password
-      - name: root-cert
+      - name: root
         secret:
-          secretName: smallstep-root-cert
+          secretName: step-ca-root
       - name: intermediate
         secret:
-          secretName: smallstep-intermediate
+          secretName: step-ca-intermediate
       - name: kube-apiserver-client-ca-cert
         secret:
           secretName: kube-apiserver-client-ca

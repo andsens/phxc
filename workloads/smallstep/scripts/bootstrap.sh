@@ -14,13 +14,19 @@ main() {
 create_step_issuer_provisioner() {
   info "Setting up step issuer provisioner"
   local step_issuer_dir=$STEPPATH/certs/step-issuer-provisioner
-
+set -x
   mkdir "$step_issuer_dir"
+  if ! kubectl get -n smallstep secret step-issuer-provisioner-password -o jsonpath='{.data.password}' >"$step_issuer_dir/password"; then
+    (tr -dc A-Za-z0-9_- </dev/urandom | head -c 32 || true) >"$step_issuer_dir/password"
+    info "step-issuer provisioner password does not exist, creating now"
+    kubectl create -n smallstep secret generic step-issuer-provisioner-password --from-file="$step_issuer_dir/password"
+  else
+    info "step-issuer provisioner password exists"
+  fi
   if ! kubectl get -n smallstep secret step-issuer-provisioner -o jsonpath='{.data.pub\.json}' | base64 -d >"$step_issuer_dir/pub.json"; then
     info "step-issuer provisioner validation failed, (re-)creating now"
     step crypto jwk create \
-      --force --password-file="$STEPPATH/step-issuer-provisioner-password/password" \
-      --use sig \
+      --force --password-file="$step_issuer_dir/password" --use sig \
       "$step_issuer_dir/pub.json" "$step_issuer_dir/priv.json"
     kubectl create -n smallstep secret generic step-issuer-provisioner \
       --from-file="$step_issuer_dir/pub.json" \
@@ -61,10 +67,17 @@ create_ssh_host_provisioner() {
   local ssh_host_dir=$STEPPATH/certs/ssh-host-provisioner
 
   mkdir "$ssh_host_dir"
+  if ! kubectl get -n smallstep secret ssh-host-provisioner-password -o jsonpath='{.data.password}' >"$ssh_host_dir/password"; then
+    info "step-host provisioner password does not exist, creating now"
+    (tr -dc A-Za-z0-9_- </dev/urandom | head -c 32 || true) >"$ssh_host_dir/password"
+    kubectl create -n smallstep secret generic ssh-host-provisioner-password --from-file="$ssh_host_dir/password"
+  else
+    info "step-host provisioner password exists"
+  fi
   if ! kubectl get -n smallstep secret ssh-host-provisioner -o jsonpath='{.data.pub\.json}' | base64 -d >"$ssh_host_dir/pub.json"; then
     info "ssh-host provisioner validation failed, (re-)creating now"
     step crypto jwk create \
-      --force --password-file="$STEPPATH/ssh-host-provisioner-password/password" \
+      --force --password-file="$ssh_host_dir/password" \
       --use sig \
       "$ssh_host_dir/pub.json" "$ssh_host_dir/priv.json"
     kubectl create -n smallstep secret generic ssh-host-provisioner \
