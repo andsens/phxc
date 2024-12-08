@@ -4,9 +4,10 @@ set -Eeo pipefail; shopt -s inherit_errexit
 main() {
   local e; for e; do [[ "$e" != "--help" ]] || usage; done
   [[ $# -eq 1 ]] || usage
-  touch /run/initramfs/try-reboot
   case "$1" in
     try)
+      touch /run/initramfs/try-reboot
+      trap 'rm /run/initramfs/try-reboot' EXIT
       if [[ $VARIANT = rpi* ]]; then
         # https://www.raspberrypi.com/documentation/computers/config_txt.html#the-tryboot-filter
         [[ -e /boot/tryboot.img ]] || { printf "try-reboot: /boot/tryboot.img does not exist\n" >&2; return 1; }
@@ -16,6 +17,7 @@ main() {
       fi
       get_lease
       if [[ -e /run/initramfs/try-reboot ]]; then
+        trap '' EXIT
         if [[ $VARIANT = rpi* ]]; then
           reboot "0 tryboot"
         else

@@ -8,10 +8,9 @@ resources:
 - https://raw.githubusercontent.com/longhorn/longhorn/v1.6.2/examples/network-policy/manager-network-policy.yaml
 - https://raw.githubusercontent.com/longhorn/longhorn/v1.6.2/examples/network-policy/recovery-backend-network-policy.yaml
 - https://raw.githubusercontent.com/longhorn/longhorn/v1.6.2/examples/network-policy/webhook-network-policy.yaml
-- ui.yaml
 - rwx-storage.yaml
 - snapshot.yaml
-- networkpolicies.yaml
+- network-policies.yaml
 - Kptfile
 - resourcegroup.yaml
 patches:

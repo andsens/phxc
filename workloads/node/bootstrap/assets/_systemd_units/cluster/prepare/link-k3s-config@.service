@@ -7,4 +7,5 @@ RequiredBy=k3s@%i.service
 
 [Service]
 Type=oneshot
+RemainAfterExit=yes
 ExecStart=ln -sf %i.yaml /etc/rancher/k3s/config.yaml

@@ -47,7 +47,8 @@ do declare -p "$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' manifest`
   eval "$(docopt "$@")"
 
-  if ! kubectl -n default get svc kubernetes -o jsonpath='{.status}' >/dev/null; then
+  # shellcheck disable=SC2154
+  if ! $build && ! kubectl -n default get svc kubernetes -o jsonpath='{.status}' >/dev/null; then
     fatal "Unable to connect to the cluster"
   fi
 
@@ -76,7 +77,6 @@ do declare -p "$p$varname";done;done;}
       kubernetes-secret-generator
       smallstep
       node
-      traefik
     )
     if $delete; then
       local unreversed_manifests=("${MANIFEST[@]}")

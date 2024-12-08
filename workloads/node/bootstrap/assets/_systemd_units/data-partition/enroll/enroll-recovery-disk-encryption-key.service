@@ -17,3 +17,4 @@ ExecStart=systemd-cryptenroll \
   --recovery-key --wipe-slot=1 \
   /dev/disk/by-partuuid/${DATA_UUID}
 StandardOutput=file:/var/lib/phxc/disk-encryption-recovery.key
+StandardError=journal

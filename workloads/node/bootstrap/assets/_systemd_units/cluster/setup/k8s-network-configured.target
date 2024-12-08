@@ -1,0 +1,4 @@
+[Unit]
+Description=The kubernetes network has been fully configured
+Requires=configure-cilium.service apply-network-policies.service setup-coredns.service
+After=configure-cilium.service apply-network-policies.service setup-coredns.service

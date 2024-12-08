@@ -1,0 +1,10 @@
+[Unit]
+Description=Apply cluster-wide network policies
+Requires=configure-cilium.service
+After=configure-cilium.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+Environment=HOME=/root KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+ExecStart=manifest apply network-policies

@@ -1,0 +1,15 @@
+[Unit]
+Description=/etc/rancher/node
+DefaultDependencies=no
+Requires=create-data-dir@node-password.service
+After=create-data-dir@node-password.service
+Before=k3s@server.service k3s@agent.service
+
+[Install]
+RequiredBy=k3s@server.service k3s@agent.service
+
+[Mount]
+What=/var/lib/phxc/node-password
+Where=/etc/rancher/node
+Type=none
+Options=bind

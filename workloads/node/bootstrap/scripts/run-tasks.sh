@@ -49,9 +49,6 @@ main() {
   apt-get install -y --no-install-recommends "${all_packages[@]}"
   rm -rf /var/cache/apt/lists/*
 
-  upkg add -g "$PKGROOT/workloads/node/bootstrap/assets/node.upkg.json"
-  upkg add -g "$PKGROOT/workloads/common-context/smallstep.upkg.json"
-
   local task
   for taskfile in "$PKGROOT/workloads/node/bootstrap/tasks.d/"??-*.sh; do
     task=$(basename "$taskfile" .sh)
@@ -159,9 +156,12 @@ $p'__destination=${var___destination:-};'$p'__recursive=${var___recursive:-fal'\
 
 
 function install_sd_unit() {
-  local filepath=$1
-  shift
-  cp_tpl "_systemd_units/$filepath" -d "/etc/systemd/system/$(basename "$filepath")" "$@"
+  local enable=false filepath unit_name
+  if [[ $1 = '-e' ]]; then enable=true; shift; fi
+  filepath=$1; shift
+  unit_name=$(basename "$filepath")
+  cp_tpl "_systemd_units/$filepath" -d "/etc/systemd/system/$unit_name" "$@"
+  ! $enable || systemctl enable "$unit_name"
 }
 
 main "$@"

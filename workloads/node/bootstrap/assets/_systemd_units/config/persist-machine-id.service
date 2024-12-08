@@ -7,7 +7,7 @@ ConditionPathExists=!/boot/phxc/machine-id
 AssertPathExists=/run/machine-id
 
 [Install]
-RequiredBy=keys-persisted.target
+RequiredBy=sysinit.target
 
 [Service]
 Type=oneshot

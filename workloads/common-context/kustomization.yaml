@@ -3,7 +3,6 @@ kind: Kustomization
 configMapGenerator:
 - files:
   - common.upkg.json
-  - control-plane.upkg.json
   - manifests.upkg.json
   - smallstep.upkg.json
   - setup-alpine.sh

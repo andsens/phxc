@@ -1,0 +1,16 @@
+[Unit]
+Description=Install packages needed to run the kubernetes node
+Requires=var-lib-phxc.mount
+After=var-lib-phxc.mount install-smallstep.service
+Before=k3s@server.service k3s@agent.service
+ConditionPathExists=!/var/lib/phxc/.upkg/node
+
+[Install]
+RequiredBy=k3s@server.service k3s@agent.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=bash -e
+StandardInputText=upkg add -fp node /usr/local/lib/upkg/.upkg/phoenix-cluster/workloads/node/bootstrap/assets/node.upkg.json
+WorkingDirectory=/var/lib/phxc

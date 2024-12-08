@@ -1,0 +1,7 @@
+[Unit]
+Description=Phoenix Cluster is started and configured
+Requires=k8s-network-configured.target setup-smallstep.service setup-node.service
+After=k8s-network-configured.target setup-smallstep.service setup-node.service
+
+[Install]
+WantedBy=k3s@server.service

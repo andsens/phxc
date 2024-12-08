@@ -4,7 +4,7 @@ on:
   push:
     branches: [ 'master' ]
     paths:
-    - .github/workflows/update-schema.yaml
+    - .github/workflows/update-cluster-schema.yaml
     - workloads/node/bootstrap/assets/usr/local/lib/phxc/schemas/cluster.schema.yaml
 
 jobs:

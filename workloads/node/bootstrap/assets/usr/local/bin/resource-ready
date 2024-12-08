@@ -48,6 +48,10 @@ coredns_ready() {
   deployment_ready kube-system coredns
 }
 
+cert_manager_ready() {
+  deployment_ready cert-manager cert-manager
+}
+
 smallstep_namespace_ready() {
   namespace_ready smallstep
 }

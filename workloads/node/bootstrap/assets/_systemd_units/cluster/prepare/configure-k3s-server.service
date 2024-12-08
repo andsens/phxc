@@ -2,13 +2,14 @@
 Description=Set k3s node-label & token
 Wants=copy-cluster-config.service
 After=copy-cluster-config.service
-Before=k3s.target
+Before=k3s@server.service
 
 [Install]
 RequiredBy=k3s@server.service
 
 [Service]
 Type=oneshot
+RemainAfterExit=yes
 ExecStart=bash -eo pipefail
 StandardInputText=get-config /etc/phxc/cluster.yaml | yq -y '{ \
     "cluster-cidr": [.cidrs.pod.ipv4 // "${DEFAULT_CLUSTER_CIDRS_POD_IPV4}", .cidrs.pod.ipv6 // "${DEFAULT_CLUSTER_CIDRS_POD_IPV6}"], \
@@ -16,3 +17,4 @@ StandardInputText=get-config /etc/phxc/cluster.yaml | yq -y '{ \
     "tls-san": ["api.\\(.domain // "${DEFAULT_CLUSTER_DOMAIN}")"] \
   }'
 StandardOutput=file:/etc/rancher/k3s/config.yaml.d/cluster.yaml
+StandardError=journal

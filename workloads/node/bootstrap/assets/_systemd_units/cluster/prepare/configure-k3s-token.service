@@ -1,15 +1,18 @@
 [Unit]
 Description=Set k3s url & token
-Before=k3s.target
 ConditionPathExists=/boot/phxc/node.yaml
 ConditionPathExists=!/etc/rancher/node/password
+Before=k3s@server.service k3s@agent.service
 
 [Install]
-RequiredBy=k3s.target
+RequiredBy=k3s@agent.service
+WantedBy=k3s@server.service
 
 [Service]
 Type=oneshot
+RemainAfterExit=yes
 ExecCondition=get-config -q /boot/phxc/node.yaml k3s.token
 ExecStart=bash -eo pipefail
 StandardInputText=get-config /boot/phxc/node.yaml | yq -y '{"server": .k3s.url, "token": .k3s.token}'
 StandardOutput=file:/etc/rancher/k3s/config.yaml.d/token.yaml
+StandardError=journal

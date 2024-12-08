@@ -1,0 +1,10 @@
+[Unit]
+Description=Setup the node bootstrapping jobs
+Requires=setup-cert-manager.service setup-smallstep.service setup-longhorn.service
+After=setup-cert-manager.service setup-smallstep.service setup-longhorn.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+Environment=HOME=/root KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+ExecStart=manifest apply node

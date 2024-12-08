@@ -1,0 +1,10 @@
+[Unit]
+Description=Setup smallstep
+Requires=setup-cert-manager.service
+After=setup-cert-manager.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+Environment=HOME=/root KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+ExecStart=manifest apply smallstep

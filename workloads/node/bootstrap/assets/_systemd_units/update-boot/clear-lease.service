@@ -1,7 +1,9 @@
 [Unit]
 Description=Clear the reboot lease
-Requires=resource-ready@k3s.service
-After=resource-ready@k3s.service
+Requires=resource-ready@k3s.service switch-boot.service
+After=resource-ready@k3s.service switch-boot.service
+ConditionPathExists=|/boot/tryboot.img
+ConditionPathExists=|/boot/EFI/Linux/uki.try.efi
 
 [Install]
 WantedBy=multi-user.target

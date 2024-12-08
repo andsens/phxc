@@ -5,5 +5,5 @@ ARG DEBUG=false
 
 RUN \
   /workspace/common-context/setup-debian.sh; \
-  upkg add -g /workspace/phoenix-cluster.tar.gz; \
+  upkg add -gb bin/manifest /workspace/phoenix-cluster.tar.gz; \
   /usr/local/lib/upkg/.upkg/phoenix-cluster/workloads/node/bootstrap/scripts/run-tasks.sh

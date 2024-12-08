@@ -4,7 +4,7 @@ on:
   push:
     branches: [ 'master' ]
     paths:
-    - .github/workflows/update-schema.yaml
+    - .github/workflows/update-rpi-otp-schema.yaml
     - workloads/node/bootstrap/assets/usr/local/lib/phxc/schemas/rpi-otp.schema.yaml
 
 jobs:

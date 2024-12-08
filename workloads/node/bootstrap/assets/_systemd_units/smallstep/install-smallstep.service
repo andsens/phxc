@@ -1,0 +1,12 @@
+[Unit]
+Description=Install smallstep
+Requires=var-lib-phxc.mount
+After=var-lib-phxc.mount
+ConditionPathExists=!/var/lib/phxc/.upkg/smallstep
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=bash -e
+StandardInputText=upkg add -fp smallstep /usr/local/lib/upkg/.upkg/phoenix-cluster/workloads/common-context/smallstep.upkg.json
+WorkingDirectory=/var/lib/phxc

@@ -1,0 +1,10 @@
+[Unit]
+Description=Setup cert-manager and cert-manager issuers
+Requires=k8s-network-configured.target
+After=k8s-network-configured.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+Environment=HOME=/root KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+ExecStart=manifest apply cert-manager cert-manager-issuers

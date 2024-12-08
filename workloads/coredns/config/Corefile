@@ -1,4 +1,5 @@
 .:53 {
+    log
     errors
     health
     ready

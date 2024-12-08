@@ -1,7 +1,7 @@
 [Unit]
 Description=Bootstrap the smallstep CA for the root user
-Requires=trust-smallstep-root.service
-After=trust-smallstep-root.service
+Requires=trust-smallstep-root.service install-smallstep.service
+After=trust-smallstep-root.service install-smallstep.service
 AssertPathExists=/usr/local/share/ca-certificates/phoenix-cluster-root.crt
 
 [Service]
@@ -16,3 +16,4 @@ StandardInputText=jq -n --arg fp "$(step certificate fingerprint /usr/local/shar
     "redirect-url": "" \
   }'
 StandardOutput=file:/root/.step/config/defaults.json
+StandardError=journal

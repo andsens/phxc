@@ -11,3 +11,4 @@ Type=oneshot
 RemainAfterExit=yes
 ExecStart=get-config /boot/phxc/cluster.yaml
 StandardOutput=file:/etc/phxc/cluster.yaml
+StandardError=journal

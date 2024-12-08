@@ -3,10 +3,10 @@ Description=/var/lib/rancher/k3s
 DefaultDependencies=no
 Requires=create-data-dir@k3s.service
 After=create-data-dir@k3s.service
-Before=k3s.target
+Before=k3s@server.service k3s@agent.service
 
 [Install]
-RequiredBy=k3s.target
+RequiredBy=k3s@server.service k3s@agent.service
 
 [Mount]
 What=/var/lib/phxc/k3s
