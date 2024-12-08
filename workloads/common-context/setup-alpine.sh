@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -Eeo pipefail; shopt -s inherit_errexit
 
+apk add jq gettext py3-virtualenv
+virtualenv /usr/local/lib/yq
+/usr/local/lib/yq/bin/pip3 install yq
+ln -s /usr/local/lib/yq/bin/yq /usr/local/bin/yq
+
 temp=$(mktemp)
 # shellcheck disable=SC2064
 trap "rm \"$temp\"" EXIT

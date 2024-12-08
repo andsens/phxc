@@ -9,12 +9,7 @@ k3s() {
   install_sd_unit cluster/prepare/install-node-packages.service
   install_sd_unit cluster/prepare/configure-k3s-labels.service
   install_sd_unit cluster/prepare/configure-k3s-token.service
-  install_sd_unit cluster/prepare/configure-k3s-server.service \
-    --var DEFAULT_CLUSTER_CIDRS_POD_IPV4 \
-    --var DEFAULT_CLUSTER_CIDRS_POD_IPV6 \
-    --var DEFAULT_CLUSTER_CIDRS_SVC_IPV4 \
-    --var DEFAULT_CLUSTER_CIDRS_SVC_IPV6 \
-    --var DEFAULT_CLUSTER_DOMAIN
+  install_sd_unit cluster/prepare/configure-k3s-server.service
   install_sd_unit cluster/prepare/link-k3s-config@.service
 
   install_sd_unit cluster/k3s/etc-rancher-node.mount

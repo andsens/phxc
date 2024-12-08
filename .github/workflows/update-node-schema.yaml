@@ -2,10 +2,10 @@ name: Upload the node.yaml schema to gist.github.com
 
 on:
   push:
-    branches: [ 'master' ]
+    branches: [ 'main' ]
     paths:
     - .github/workflows/update-node-schema.yaml
-    - workloads/node/bootstrap/assets/usr/local/lib/phxc/schemas/node.schema.yaml
+    - lib/schemas/node.yaml
 
 jobs:
   update-node-config-schema:
@@ -15,12 +15,12 @@ jobs:
     - uses: actions/checkout@v4
       with:
         path: repo
-    - name: Convert node.schema.yaml to JSON
-      run: yq -o=json . repo/workloads/node/bootstrap/assets/usr/local/lib/phxc/schemas/node.schema.yaml >node.schema.json
+    - name: Convert node.yaml to JSON
+      run: yq -o=json . repo/lib/schemas/node.yaml >node.json
     - name: Deploy to gist
       uses: exuanbo/actions-deploy-gist@v1
       with:
         token: ${{ secrets.GIST_TOKEN }}
         gist_id: ${{ vars.CONFIG_SCHEMAS_GIST_ID }}
-        file_path: node.schema.json
+        file_path: node.json
         file_type: application/schema+json

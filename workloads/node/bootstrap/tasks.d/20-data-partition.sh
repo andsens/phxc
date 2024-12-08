@@ -24,25 +24,14 @@ data_partition() {
   install_sd_unit -e data-partition/enroll/unenroll-offline-disk-encryption-key.service \
     --var DATA_UUID
   if [[ $VARIANT == rpi* ]]; then
-    install_sd_unit data-partition/generate/rpi-otp-disk-encryption-key.service \
-      --var DEFAULT_RPI_OTP_OFFSET \
-      --var DEFAULT_RPI_OTP_LENGTH \
-      --var DEFAULT_RPI_OTP_KEY_DERIVATION_SUFFIX
-    install_sd_unit -e data-partition/enroll/rpi-init-otp.service \
-      --var DEFAULT_NODE_DISK_ENCRYPTION \
-      --var DEFAULT_RPI_OTP_OFFSET \
-      --var DEFAULT_RPI_OTP_LENGTH
+    install_sd_unit data-partition/generate/rpi-otp-disk-encryption-key.service
+    install_sd_unit -e data-partition/enroll/rpi-init-otp.service
     install_sd_unit data-partition/enroll/enroll-rpi-otp-disk-encryption-key.service \
-      --var DATA_UUID \
-      --var DEFAULT_NODE_DISK_ENCRYPTION \
-      --var DEFAULT_RPI_OTP_OFFSET \
-      --var DEFAULT_RPI_OTP_LENGTH \
-      --var DEFAULT_RPI_OTP_KEY_DERIVATION_SUFFIX
+      --var DATA_UUID
   else
     install_sd_unit data-partition/generate/tpm2-crypttab.service
     install_sd_unit data-partition/enroll/enroll-tpm2-disk-encryption-key.service \
-      --var DATA_UUID \
-      --var DEFAULT_NODE_DISK_ENCRYPTION
+      --var DATA_UUID
   fi
   install_sd_unit -e data-partition/enroll/disk-encryption-keys-enrolled.target
 

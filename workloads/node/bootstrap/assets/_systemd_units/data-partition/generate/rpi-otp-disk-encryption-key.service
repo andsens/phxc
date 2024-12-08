@@ -13,11 +13,11 @@ WantedBy=systemd-cryptsetup@data.service
 Type=oneshot
 RemainAfterExit=yes
 ExecCondition=bash -ec 'rpi-otp-private-key -c \
-  -o $(get-config /boot/phxc/rpi-otp.yaml offset ${DEFAULT_RPI_OTP_OFFSET}); \
-  -l $(get-config /boot/phxc/rpi-otp.yaml length ${DEFAULT_RPI_OTP_LENGTH})'
+  -o $(get-config /boot/phxc/rpi-otp.yaml offset); \
+  -l $(get-config /boot/phxc/rpi-otp.yaml length)'
 ExecStart=bash -ec ':;\
-  o=$(get-config /boot/phxc/rpi-otp.yaml offset ${DEFAULT_RPI_OTP_OFFSET}); \
-  l=$(get-config /boot/phxc/rpi-otp.yaml length ${DEFAULT_RPI_OTP_LENGTH}); \
+  o=$(get-config /boot/phxc/rpi-otp.yaml offset); \
+  l=$(get-config /boot/phxc/rpi-otp.yaml length); \
   s=(get-config /boot/phxc/rpi-otp.yaml key-derivation-suffix ${DEFAULT_RPI_OTP_KEY_DERIVATION_SUFFIX}) \
   openssl kdf \
     -kdfopt info:"disk-encryption-key-$s" -keylen 32 \

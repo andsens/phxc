@@ -84,7 +84,7 @@ docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
       config_basename=$(basename "$config")
       [[ $config_basename =~ ^(cluster|node|rpi-otp)\.yaml$ ]] || \
         fatal 'Unknown basename "%s". The filename must be cluster.yaml, node.yaml, or rpi-otp.yaml'
-      cp "$config" "$config_tmp/cluster.yaml"
+      cp "$config" "$config_tmp/$config_basename"
     done
     [[ -e $config_tmp/cluster.yaml ]] || \
         fatal 'cluster.yaml must be embedded, in order for Phoenix Cluster to verify the signatures of the other configs.'

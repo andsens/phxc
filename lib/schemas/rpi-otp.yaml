@@ -1,4 +1,5 @@
 ---
+# yaml-language-server: $schema=http://json-schema.org/draft-07/schema#
 $schema: http://json-schema.org/draft-07/schema#
 type: object
 description: Configures the initialization of the RPi OTP memory and how the disk encryption key should be derived from it

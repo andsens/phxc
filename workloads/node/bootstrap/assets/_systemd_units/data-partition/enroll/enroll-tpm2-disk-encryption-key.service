@@ -13,7 +13,7 @@ WantedBy=disk-encryption-keys-enrolled.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecCondition=bash -ec '[[ $(get-config /boot/phxc/node.yaml disk-encryption ${DEFAULT_NODE_DISK_ENCRYPTION}) =~ ^tpm|auto$ ]] || return 1'
+ExecCondition=bash -ec '[[ $(get-config /boot/phxc/node.yaml disk-encryption) =~ ^tpm|auto$ ]] || return 1'
 ExecStart=systemd-cryptenroll \
   --unlock-key-file /run/initramfs/disk-encryption.key \
   --tpm2-device=auto --tpm2-pcrs=7,14 --wipe-slot=2 \

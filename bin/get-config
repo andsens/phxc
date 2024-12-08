@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+# shellcheck source-path=..
+set -Eeo pipefail; shopt -s inherit_errexit
+PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
+
+main() {
+  # shellcheck disable=SC1091
+  source "$PKGROOT/.upkg/records.sh/records.sh"
+  DOC="get-config - Retrieve phxc config values
+Usage:
+  get-config [-qD] FILEPATH [KEY]
+
+Options:
+  -q --quiet       No error message if file or setting is missing
+  -D --no-default  Don't use the default if file or setting is missing
+"
+# docopt parser below, refresh this parser with `docopt.sh get-config`
+# shellcheck disable=2016,2086,2317,1090,1091,2034
+docopt() { local v='2.0.2'; source \
+"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:228};usage=${DOC:41:40}
+digest=b229b;options=('-q --quiet 0' '-D --no-default 0');node_0(){ switch \
+__quiet 0;};node_1(){ switch __no_default 1;};node_2(){ value FILEPATH a;}
+node_3(){ value KEY a;};node_4(){ optional 0 1;};node_5(){ optional 3;}
+node_6(){ sequence 4 2 5;};cat <<<' docopt_exit() { [[ -n $1 ]] && printf \
+"%s\n" "$1" >&2;printf "%s\n" "${DOC:41:40}" >&2;exit 1;}';local \
+varnames=(__quiet __no_default FILEPATH KEY) varname;for varname in \
+"${varnames[@]}"; do unset "var_$varname";done;parse 6 "$@";local \
+p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset "$p$varname"
+done;eval $p'__quiet=${var___quiet:-false};'$p'__no_default=${var___no_default'\
+':-false};'$p'FILEPATH=${var_FILEPATH:-};'$p'KEY=${var_KEY:-};';local docopt_i=1
+[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do
+for varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
+# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' get-config`
+  eval "$(docopt "$@")"
+  local basename real_filepath contents schema use_default=false default
+  # shellcheck disable=SC2154
+  $__no_default || use_default=true
+  basename=$(basename "$FILEPATH")
+  schema=$PKGROOT/lib/schemas/$basename
+  [[ -e $schema ]] || \
+    fatal 'Unrecognized file basename "%s". Must be one of:\n%s' "$basename" "$(cd "$PKGROOT/lib/schemas"; echo * | xargs -n1 basename)"
+  if [[ -e $FILEPATH ]]; then
+    real_filepath=$(realpath "$FILEPATH")
+    contents=$(cat "$real_filepath")
+    if [[ $real_filepath = /boot/* ]] && ! ssh-keygen -q -Y verify -f <(sed 's/^/admin /g' </home/admin/.ssh/authorized_keys) -I admin -n file -s "$real_filepath.sig" <<<"$contents"; then
+      printf "Failed to verify signature of %s using /home/admin/.ssh/authorized_keys\n" "$real_filepath" >&2
+      return 1
+    fi
+    local validation_errors
+    if ! validation_errors=$(jsonschema -i <(yq . <<<"$contents") <(yq . "$schema") 2>&1); then
+      fatal 'Failed to validate "%s". Errors: %s' "$FILEPATH" "$validation_errors"
+    fi
+    if [[ -n $KEY ]]; then
+      if yq -r 'paths | join(".")' <<<"$contents" | grep -q "^$KEY$"; then
+        key=$(escape_key "$KEY")
+        yq -r ".$KEY" <<<"$contents"
+      elif $use_default && default=$(get_default "$basename" "$key"); then
+        printf "%s\n" "$default"
+      else
+        # shellcheck disable=SC2154
+        $__quiet || fatal "%s is not set in '%s'" "$KEY" "$FILEPATH"
+        return 1
+      fi
+    else
+      printf "%s\n" "$contents"
+    fi
+  elif $use_default && default=$(get_default "$basename" "$key"); then
+    printf "%s\n" "$default"
+  else
+    $__quiet || fatal "%s does not exist" "$FILEPATH"
+     return 1
+  fi
+}
+
+get_default() {
+  local basename=$1 key=$2 defaults_path
+  defaults_path=$PKGROOT/lib/defaults/$basename
+  if yq -r 'paths | join(".")' "$defaults_path" | grep -q "^$KEY$"; then
+    key=$(escape_key "$KEY")
+    yq -r ".$KEY" "$defaults_path"
+  else
+    return 1
+  fi
+}
+
+escape_key() {
+  # Converts any path like some-path.to-something.here
+  # into ["some-path"]["to-something"]["here"]
+  # This means dots in keys are not allowed
+  local key=$1
+  key=${key//'.'/'"]["'}
+  key="[\"$key\"]"
+  printf "%s\n" "$key"
+}
+
+usage() {
+  printf "Usage: get-config [-q] FILEPATH [KEY [DEFAULT]]\n" >&2
+  return 1
+}
+
+main "$@"

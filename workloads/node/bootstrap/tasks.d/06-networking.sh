@@ -11,7 +11,7 @@ PACKAGES+=(
 networking() {
   install_sd_unit networking/configure-hostname.service
   install_sd_unit networking/configure-networks.service
-  install_sd_unit networking/configure-resolved.service --var DEFAULT_CLUSTER_DOMAIN
+  install_sd_unit networking/configure-resolved.service
   mkdir -p /etc/systemd/resolved.conf.d
   systemctl enable systemd-networkd
   cp_tpl /etc/systemd/network/zzz-dhcp.network

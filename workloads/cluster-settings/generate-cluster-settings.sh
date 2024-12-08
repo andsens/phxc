@@ -31,13 +31,18 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   local cluster_yaml_path=/etc/phxc/cluster.yaml
   [[ -e $cluster_yaml_path ]] || cluster_yaml_path=$PKGROOT/cluster.yaml
   [[ -e $cluster_yaml_path ]] || fatal "Unable to find cluster.yaml in /etc/phxc or %s" "$PKGROOT"
+  defaults_path=$PKGROOT/lib/defaults/cluster.yaml
+  # shellcheck disable=SC2016
   printf -- 'kind: ResourceList
 items:
 - apiVersion: v1
   kind: ConfigMap
   metadata:
     name: cluster-settings
-  data:' | yq -y --indentless --argjson settings "$(yq . "$cluster_yaml_path")" ".items[0].data=\$settings"
+  data:' | yq -y --indentless \
+    --argjson defaults "$(yq . "$defaults_path")" \
+    --argjson settings "$(yq . "$cluster_yaml_path")" \
+    '.items[0].data=($defaults * $settings)'
 }
 
 main "$@"

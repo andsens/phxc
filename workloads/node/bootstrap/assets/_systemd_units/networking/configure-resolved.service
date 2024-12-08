@@ -13,7 +13,7 @@ Type=oneshot
 ExecStart=bash -e
 StandardInputText=printf "[Resolve]\\nDNS=%%s\\nDomains=~%%s ~cluster.local\\n" \
   "$(kubectl -n kube-system get svc external-coredns -ojsonpath='{.status.loadBalancer.ingress[*].ip}')" \
-  "$(get-config /etc/phxc/cluster.yaml domain ${DEFAULT_CLUSTER_DOMAIN})"
+  "$(get-config /etc/phxc/cluster.yaml domain)"
 StandardOutput=file:/etc/systemd/resolved.conf.d/cluster-domain.conf
 StandardError=journal
 ExecStartPost=systemctl reload systemd-resolved

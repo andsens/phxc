@@ -11,10 +11,16 @@ RequiredBy=k3s@server.service
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=bash -eo pipefail
-StandardInputText=get-config /etc/phxc/cluster.yaml | yq -y '{ \
-    "cluster-cidr": [.cidrs.pod.ipv4 // "${DEFAULT_CLUSTER_CIDRS_POD_IPV4}", .cidrs.pod.ipv6 // "${DEFAULT_CLUSTER_CIDRS_POD_IPV6}"], \
-    "service-cidr": [.cidrs.svc.ipv4 // "${DEFAULT_CLUSTER_CIDRS_SVC_IPV4}", .cidrs.svc.ipv6 // "${DEFAULT_CLUSTER_CIDRS_SVC_IPV6}"], \
-    "tls-san": ["api.\\(.domain // "${DEFAULT_CLUSTER_DOMAIN}")"] \
+StandardInputText=yq -ny \
+  --arg default_cluster_cidrs_pod_ipv4 "$(get-config /etc/phxc/cluster.yaml cidrs.pod.ipv4)" \
+  --arg default_cluster_cidrs_pod_ipv6 "$(get-config /etc/phxc/cluster.yaml cidrs.pod.ipv6)" \
+  --arg default_cluster_cidrs_svc_ipv4 "$(get-config /etc/phxc/cluster.yaml cidrs.svc.ipv4)" \
+  --arg default_cluster_cidrs_svc_ipv6 "$(get-config /etc/phxc/cluster.yaml cidrs.svc.ipv6)" \
+  --arg default_cluster_domain "$(get-config /etc/phxc/cluster.yaml domain)" \
+  '{ \
+    "cluster-cidr": [.cidrs.pod.ipv4 // $default_cluster_cidrs_pod_ipv4, .cidrs.pod.ipv6 // $default_cluster_cidrs_pod_ipv6], \
+    "service-cidr": [.cidrs.svc.ipv4 // $default_cluster_cidrs_svc_ipv4, .cidrs.svc.ipv6 // $default_cluster_cidrs_svc_ipv6], \
+    "tls-san": ["api.\\(.domain // $default_cluster_domain)"] \
   }'
 StandardOutput=file:/etc/rancher/k3s/config.yaml.d/cluster.yaml
 StandardError=journal

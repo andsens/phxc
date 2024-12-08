@@ -2,10 +2,10 @@ name: Upload the rpi-otp.yaml schema to gist.github.com
 
 on:
   push:
-    branches: [ 'master' ]
+    branches: [ 'main' ]
     paths:
     - .github/workflows/update-rpi-otp-schema.yaml
-    - workloads/node/bootstrap/assets/usr/local/lib/phxc/schemas/rpi-otp.schema.yaml
+    - lib/schemas/rpi-otp.yaml
 
 jobs:
   update-rpi-otp-schema:
@@ -15,12 +15,12 @@ jobs:
     - uses: actions/checkout@v4
       with:
         path: repo
-    - name: Convert rpi-otp.schema.yaml to JSON
-      run: yq -o=json . repo/workloads/node/bootstrap/assets/usr/local/lib/phxc/schemas/rpi-otp.schema.yaml >rpi-otp.schema.json
+    - name: Convert rpi-otp.yaml to JSON
+      run: yq -o=json . repo/lib/schemas/rpi-otp.yaml >rpi-otp.json
     - name: Deploy to gist
       uses: exuanbo/actions-deploy-gist@v1
       with:
         token: ${{ secrets.GIST_TOKEN }}
         gist_id: ${{ vars.CONFIG_SCHEMAS_GIST_ID }}
-        file_path: rpi-otp.schema.json
+        file_path: rpi-otp.json
         file_type: application/schema+json

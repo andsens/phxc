@@ -74,7 +74,6 @@ do declare -p "$p$varname";done;done;}
       longhorn
       cert-manager
       cert-manager-issuers
-      kubernetes-secret-generator
       smallstep
       node
     )
