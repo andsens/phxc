@@ -18,7 +18,6 @@ spec:
       restartPolicy: Never
       nodeSelector:
         kubernetes.io/arch: amd64
-      serviceAccountName: create-boot-image
       initContainers:
       - name: kaniko
         image: gcr.io/kaniko-project/executor:latest
