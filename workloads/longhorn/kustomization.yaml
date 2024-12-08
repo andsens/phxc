@@ -15,9 +15,5 @@ resources:
 - resourcegroup.yaml
 patches:
 - path: longhorn.yaml
-configMapGenerator:
-- name: longhorn-default-setting
-  files:
-  - config/default-setting.yaml
 generatorOptions:
   disableNameSuffixHash: true

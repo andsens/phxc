@@ -26,6 +26,7 @@ k3s() {
   install_sd_unit cluster/setup/apply-network-policies.service
   install_sd_unit cluster/setup/setup-coredns.service
   install_sd_unit cluster/setup/k8s-network-configured.target
+  install_sd_unit cluster/setup/var-lib-longhorn.mount
   install_sd_unit cluster/setup/setup-longhorn.service
   install_sd_unit cluster/setup/setup-cert-manager.service
   install_sd_unit cluster/setup/setup-smallstep.service
