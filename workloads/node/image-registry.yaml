@@ -42,7 +42,7 @@ spec:
   - name: image-registry
     port: 8020
     targetPort: images
-  - name: image-registry
+  - name: image-registry-mgmt
     port: 8021
     targetPort: dav
 ---
@@ -93,11 +93,9 @@ spec:
         app.kubernetes.io/name: node
         app.kubernetes.io/component: image-registry
     spec:
-      serviceAccountName: image-registry
       containers:
       - name: image-registry
         image: nginx:1.27.3
-        imagePullPolicy: Never
         securityContext:
           readOnlyRootFilesystem: true
         ports:
@@ -113,7 +111,6 @@ spec:
           mountPath: /etc/nginx/tls
         - name: images
           mountPath: /var/www
-          readOnly: true
         - name: nginx-cache
           mountPath: /var/cache/nginx
       volumes:
