@@ -6,6 +6,13 @@ resources:
 - coredns.yaml
 - Kptfile
 - resourcegroup.yaml
+generators:
+- generate-kube-dns-ip.yaml
+patches:
+- patch: |-
+    apiVersion: v1
+    kind: ConfigMap
+    metadata: {name: kube-dns-ip, annotations: {config.kubernetes.io/local-config: "true"}}
 configMapGenerator:
 - files:
   - config/Corefile
@@ -14,10 +21,20 @@ configMapGenerator:
   - scripts/render-imports.sh
   name: scripts
 replacements:
-- source: {fieldPath: data.domain, kind: ConfigMap, name: settings}
+- source: {fieldPath: data.domain, kind: ConfigMap, name: cluster-settings}
   targets:
   - select: {kind: Service, name: external-coredns}
     fieldPaths: [metadata.annotations.coredns\.io/hostname]
     options: {delimiter: '.', index: 1}
   - select: {group: apps, kind: Deployment, name: coredns}
     fieldPaths: ["spec.template.spec.containers.[name=coredns].env.[name=CLUSTER_DOMAIN].value"]
+- source: {fieldPath: data.ipv4, kind: ConfigMap, name: kube-dns-ip}
+  targets:
+  - select: {kind: Service, name: kube-dns}
+    fieldPaths: [spec.clusterIP]
+  - select: {kind: Service, name: kube-dns}
+    fieldPaths: [spec.clusterIPs.0]
+- source: {fieldPath: data.ipv6, kind: ConfigMap, name: kube-dns-ip}
+  targets:
+  - select: {kind: Service, name: kube-dns}
+    fieldPaths: [spec.clusterIPs.1]

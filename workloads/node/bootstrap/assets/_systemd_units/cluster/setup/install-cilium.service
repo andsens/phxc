@@ -32,5 +32,7 @@ StandardInputText=/var/lib/phxc/.upkg/.bin/cilium install --version=1.15.5 \
     --set encryption.nodeEncryption=true \
     --set socketLB.enabled=true \
     --set kubeConfigPath=/etc/rancher/k3s/k3s.yaml; \
-    kubectl patch -n kube-system cm cilium-config --patch \
-      "$(printf "\ndata:\n  ipv6-service-range: \"%%s\"\n" "$(get-config /etc/phxc/cluster.yaml cidrs.svc.ipv6 ${DEFAULT_CLUSTER_CIDRS_SVC_IPV6})")"
+    kubectl patch -n kube-system cm cilium-config --patch "$( \
+      printf "\ndata:\n  ipv4-service-range: \"%%s\"\n  ipv6-service-range: \"%%s\"\n" \
+        "$(get-config /etc/phxc/cluster.yaml cidrs.svc.ipv4 ${DEFAULT_CLUSTER_CIDRS_SVC_IPV4})" \
+        "$(get-config /etc/phxc/cluster.yaml cidrs.svc.ipv6 ${DEFAULT_CLUSTER_CIDRS_SVC_IPV6})")"

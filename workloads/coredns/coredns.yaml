@@ -119,6 +119,10 @@ spec:
   selector:
     k8s-app: kube-dns
   ipFamilyPolicy: RequireDualStack
+  clusterIP: fixedIPv4
+  clusterIPs:
+  - fixedIPv4
+  - fixedIPv6
   ports:
   - name: dns
     port: 53

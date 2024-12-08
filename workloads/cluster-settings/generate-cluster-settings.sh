@@ -36,7 +36,7 @@ items:
 - apiVersion: v1
   kind: ConfigMap
   metadata:
-    name: settings
+    name: cluster-settings
   data:' | yq -y --indentless --argjson settings "$(yq . "$cluster_yaml_path")" ".items[0].data=\$settings"
 }
 

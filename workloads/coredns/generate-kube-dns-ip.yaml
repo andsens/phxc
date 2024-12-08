@@ -1,9 +1,9 @@
 apiVersion: cluster.local
-kind: ClusterSettingsConfigMapGenerator
+kind: KubeDNSIPConfigMapGenerator
 metadata:
   name: settings
   annotations:
     config.kubernetes.io/function: |
       exec:
-        path: ./generate-cluster-settings.sh
+        path: ./scripts/kube-dns-ip.sh
 spec: {}

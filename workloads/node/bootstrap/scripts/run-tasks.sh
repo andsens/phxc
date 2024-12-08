@@ -12,12 +12,12 @@ export DEFAULT_RPI_OTP_OFFSET=0
 export DEFAULT_RPI_OTP_LENGTH=8
 export DEFAULT_RPI_OTP_KEY_DERIVATION_SUFFIX=1
 export DEFAULT_CLUSTER_DOMAIN=phxc.local
-export DEFAULT_CLUSTER_CIDRS_POD_IPV4=10.32.0.0/16
-export DEFAULT_CLUSTER_CIDRS_POD_IPV6=fdc5:4dcc:7263:cafe:0:32::/96
-export DEFAULT_CLUSTER_CIDRS_SVC_IPV4=10.33.0.0/16
-export DEFAULT_CLUSTER_CIDRS_SVC_IPV6=fdc5:4dcc:7263:cafe:0:33::/112
-export DEFAULT_CLUSTER_CIDRS_LB_IPV4=10.34.0.0/16
-export DEFAULT_CLUSTER_CIDRS_LB_IPV6=fdc5:4dcc:7263:cafe:0:34::/112
+export DEFAULT_CLUSTER_CIDRS_POD_IPV4=10.42.0.0/16
+export DEFAULT_CLUSTER_CIDRS_POD_IPV6=fdc5:4dcc:7263:cafe:0:42::/96
+export DEFAULT_CLUSTER_CIDRS_SVC_IPV4=10.43.0.0/16
+export DEFAULT_CLUSTER_CIDRS_SVC_IPV6=fdc5:4dcc:7263:cafe:0:43::/112
+export DEFAULT_CLUSTER_CIDRS_LB_IPV4=10.44.0.0/16
+export DEFAULT_CLUSTER_CIDRS_LB_IPV6=fdc5:4dcc:7263:cafe:0:44::/112
 
 main() {
   export DEBIAN_FRONTEND=noninteractive
@@ -32,6 +32,11 @@ main() {
 
   # Keep old/default config when there is a conflict
   cp_tpl /etc/apt/apt.conf.d/10-dpkg-keep-conf.conf
+
+  if ! $DEBUG; then
+    # Filter out locales and manpages when installing packages
+    cp_tpl /etc/dpkg/dpkg.cfg.d/excludes
+  fi
 
   PACKAGES=(apt-utils jq)
   PACKAGES_TMP=()

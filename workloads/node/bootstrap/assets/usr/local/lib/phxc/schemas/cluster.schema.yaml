@@ -61,18 +61,28 @@ properties:
         type: object
         properties:
           ipv4:
-            $ref: "#/definitions/ipv4-cidr"
+            $ref: "#/definitions/ipv4"
           ipv6:
-            $ref: "#/definitions/ipv6-cidr"
+            $ref: "#/definitions/ipv6"
         additionalProperties: false
     required: [router]
     additionalProperties: false
 required: [domain, admin]
 additionalProperties: false
 definitions:
+  ipv4:
+    description: An IPv4 Address
+    type: string
+    pattern: "^[0-9.]+"
+  ipv6:
+    description: An IPv6 Address
+    type: string
+    pattern: "^[0-9a-f:]+"
   ipv4-cidr:
+    description: An IPv4 CIDR
     type: string
     pattern: "^[0-9.]+/[0-9]+$"
   ipv6-cidr:
+    description: An IPv6 CIDR
     type: string
     pattern: "^[0-9a-f:]+/[0-9]+$"

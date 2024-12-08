@@ -4,7 +4,7 @@ ConditionPathExists=/boot/phxc/node.yaml
 Before=k3s@server.service k3s@agent.service
 
 [Install]
-RequiredBy=k3s@server.service k3s@agent.service
+WantedBy=k3s@server.service k3s@agent.service
 
 [Service]
 Type=oneshot
