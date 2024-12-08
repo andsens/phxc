@@ -12,7 +12,7 @@ RequiredBy=k3s.target
 Type=oneshot
 ExecStart=bash -e
 StandardInputText=printf "[Resolve]\\nDNS=%%s\\nDomains=~%%s ~cluster.local\\n" \
-  "$(kubectl -n kube-system get svc external-coredns -ojsonpath='{.status.loadBalancer.ingress[*].ip}')" \
+  "$(kubectl -n kube-system get svc kube-dns -ojsonpath='{.spec.clusterIPs[*]}')" \
   "$(get-config /etc/phxc/cluster.yaml domain)"
 StandardOutput=file:/etc/systemd/resolved.conf.d/cluster-domain.conf
 StandardError=journal
