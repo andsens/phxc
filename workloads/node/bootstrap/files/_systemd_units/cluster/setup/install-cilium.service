@@ -10,12 +10,14 @@ Type=oneshot
 RemainAfterExit=yes
 ExecCondition=bash -ec '! kubectl get -n kube-system deployment cilium-operator -o name'
 ExecStart=bash -eo pipefail
-StandardInputText=/var/lib/phxc/.upkg/.bin/cilium install --version=1.15.5 \
+StandardInputText=cidr_pod_ipv4=$(get-config /etc/phxc/cluster.yaml cidrs.pod.ipv4); \
+  cidr_pod_ipv6=$(get-config /etc/phxc/cluster.yaml cidrs.pod.ipv6); \
+  /var/lib/phxc/.upkg/.bin/cilium install --version=1.15.5 \
     --set ipam.mode=cluster-pool \
-    --set ipam.operator.clusterPoolIPv4PodCIDRList="$(get-config /etc/phxc/cluster.yaml cidrs.pod.ipv4)" \
-    --set ipam.operator.clusterPoolIPv6PodCIDRList="$(get-config /etc/phxc/cluster.yaml cidrs.pod.ipv6)" \
-    --set ipam.operator.clusterPoolIPv4MaskSize=24 \
-    --set ipam.operator.clusterPoolIPv6MaskSize=112 \
+    --set ipam.operator.clusterPoolIPv4PodCIDRList=$cidr_pod_ipv4 \
+    --set ipam.operator.clusterPoolIPv6PodCIDRList=$cidr_pod_ipv6 \
+    --set ipam.operator.clusterPoolIPv4MaskSize=${cidr_pod_ipv4#*/} \
+    --set ipam.operator.clusterPoolIPv6MaskSize=${cidr_pod_ipv6#*/} \
     --set k8sServiceHost=127.0.0.1 \
     --set k8sServicePort=6444 \
     --set bgpControlPlane.enabled=true \

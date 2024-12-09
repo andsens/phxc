@@ -10,8 +10,5 @@ disable:
 - metrics-server
 - servicelb
 - local-storage
-kube-controller-manager-arg:
-- node-cidr-mask-size-ipv4=24
-- node-cidr-mask-size-ipv6=112
 kube-apiserver-arg:
 - service-node-port-range=1024-32767
