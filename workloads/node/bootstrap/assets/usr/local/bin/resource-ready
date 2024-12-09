@@ -32,60 +32,85 @@ main() {
   fi
 }
 
-image_registry_ready() {
-  deployment_ready node image-registry
-}
-
 k3s_ready() {
   kubectl get -n default endpoints kubernetes -ojsonpath='{.subsets[0].addresses}' | jq -e 'length > 0' &>/dev/null
 }
 
 cilium_ready() {
-  deployment_ready kube-system cilium-operator
+  _crd_installed ciliumbgppeeringpolicies.cilium.io
 }
 
 coredns_ready() {
-  deployment_ready kube-system coredns
+  _deployment_ready kube-system coredns
 }
 
 cert_manager_ready() {
-  deployment_ready cert-manager cert-manager
+  _deployment_ready cert-manager cert-manager
 }
 
-smallstep_namespace_ready() {
-  namespace_ready smallstep
+longhorn_ready() {
+  _deployment_ready longhorn-system csi-attacher || return 1
+  _deployment_ready longhorn-system csi-provisioner || return 1
+  _deployment_ready longhorn-system csi-resizer || return 1
+  _deployment_ready longhorn-system csi-snapshotter || return 1
+  _deployment_ready longhorn-system longhorn-driver-deployer || return 1
 }
 
-node_namespace_ready() {
-  namespace_ready node
+step_ca_bootstrap_ready() {
+  _image_ready cluster.local/step-ca-bootstrap:latest
 }
 
 step_ca_ready() {
-  statefulset_ready smallstep step-ca
+  _statefulset_ready smallstep step-ca
 }
 
-deployment_ready() {
+smallstep_ready() {
+  _statefulset_ready smallstep step-ca || return 1
+  _statefulset_ready smallstep kube-apiserver-client-ca || return 1
+  _deployment_ready smallstep step-issuer || return 1
+}
+
+image_registry_ready() {
+  _deployment_ready node image-registry
+}
+
+_crd_installed() {
+  local crd=$1
+  kubectl get crd "$crd" || return 1
+}
+
+_deployment_ready() {
   local ns=$1 deployment=$2
   [[ $(kubectl get -n "$ns" deployment "$deployment" -ojsonpath='{.status.readyReplicas}') -gt 0 ]] || return 1
 }
 
-statefulset_ready() {
+_statefulset_ready() {
   local ns=$1 sts=$2
   [[ $(kubectl get -n "$ns" statefulset "$sts" -ojsonpath='{.status.readyReplicas}') -gt 0 ]] || return 1
 }
 
-pod_ready() {
+_pod_ready() {
   local ns=$1 pod=$2
   kubectl -n "$ns" get pod "$pod" -o=jsonpath='{.status.conditions}' | jq -re 'any(.[] | select(.type == "Ready"); .status == "True")' >/dev/null
 }
 
-namespace_ready() {
+_namespace_ready() {
   local ns=$1
   [[ $(kubectl get namespace "$ns" -o jsonpath='{.status.phase}' 2>/dev/null) = 'Active' ]] || return 1
 }
 
+_image_ready() {
+  local ref=$1
+  ctr -n k8s.io image ls -q | grep -q "^$ref$" || return 1
+}
+
 usage() {
-  printf "Usage: resource-ready [--wait] RESOURCE\n" >&2
+  printf "Usage:
+  resource-ready [--wait] RESOURCE
+
+Resources:
+%s
+" "$(compgen -A function | grep -P '^[^_].*_ready$' | sed 's/^/* /g' | sed 's/_ready//g' | sed 's/_/-/g')" >&2
   return 1
 }
 

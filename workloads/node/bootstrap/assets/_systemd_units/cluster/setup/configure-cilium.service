@@ -1,10 +1,9 @@
 [Unit]
 Description=Configure Cilium
-Requires=install-cilium.service resource-ready@cilium.service
-After=install-cilium.service resource-ready@cilium.service
+Requires=install-cilium.service
+After=install-cilium.service
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-Environment=HOME=/root KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 ExecStart=manifest apply cilium

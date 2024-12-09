@@ -2,10 +2,9 @@
 Description=Setup CoreDNS
 Requires=configure-cilium.service apply-network-policies.service
 After=configure-cilium.service apply-network-policies.service
-Before=resource-ready@coredns.service
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-Environment=HOME=/root KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 ExecStart=manifest apply coredns
+ExecStartPost=resource-ready --wait coredns

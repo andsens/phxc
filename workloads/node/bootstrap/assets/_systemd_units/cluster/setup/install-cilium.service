@@ -8,7 +8,6 @@ After=resource-ready@k3s.service install-control-plane-packages.service copy-clu
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-Environment=HOME=/root KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 ExecCondition=bash -ec '! kubectl get -n kube-system deployment cilium-operator -o name'
 ExecStart=bash -eo pipefail
 StandardInputText=/var/lib/phxc/.upkg/.bin/cilium install --version=1.15.5 \
@@ -36,3 +35,4 @@ StandardInputText=/var/lib/phxc/.upkg/.bin/cilium install --version=1.15.5 \
       printf "\ndata:\n  ipv4-service-range: \"%%s\"\n  ipv6-service-range: \"%%s\"\n" \
         "$(get-config /etc/phxc/cluster.yaml cidrs.svc.ipv4)" \
         "$(get-config /etc/phxc/cluster.yaml cidrs.svc.ipv6)")"
+ExecStartPost=resource-ready --wait cilium

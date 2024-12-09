@@ -6,5 +6,5 @@ After=k8s-network-configured.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-Environment=HOME=/root KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 ExecStart=manifest apply snapshots longhorn
+ExecStartPost=resource-ready --wait longhorn

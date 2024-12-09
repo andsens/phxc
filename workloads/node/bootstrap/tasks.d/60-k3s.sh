@@ -29,6 +29,7 @@ k3s() {
   install_sd_unit cluster/setup/var-lib-longhorn.mount
   install_sd_unit cluster/setup/setup-longhorn.service
   install_sd_unit cluster/setup/setup-cert-manager.service
+  install_sd_unit cluster/setup/build-step-ca-bootstrap.service
   install_sd_unit cluster/setup/setup-smallstep.service
   install_sd_unit cluster/setup/setup-node.service
   install_sd_unit cluster/setup/phoenix-cluster-setup.target
@@ -41,5 +42,6 @@ k3s() {
   cp_tpl \
     /etc/rancher/k3s/agent.yaml \
     /etc/rancher/k3s/registry.yaml \
-    /etc/rancher/k3s/config.yaml.d/shared.yaml
+    /etc/rancher/k3s/config.yaml.d/shared.yaml \
+    /etc/systemd/system.conf.d/kubeconfig.conf
 }

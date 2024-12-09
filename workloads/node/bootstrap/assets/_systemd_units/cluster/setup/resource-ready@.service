@@ -5,5 +5,4 @@ DefaultDependencies=no
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-Environment=KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 ExecStart=resource-ready --wait %i
