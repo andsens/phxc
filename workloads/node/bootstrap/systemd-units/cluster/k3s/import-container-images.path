@@ -1,5 +1,6 @@
 [Unit]
 Description=Watch for new container images
+DefaultDependencies=no
 Requires=create-data-dir@container-images.service
 After=create-data-dir@container-images.service
 
