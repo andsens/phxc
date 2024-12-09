@@ -21,8 +21,7 @@ URIs: http://archive.raspberrypi.com/debian
 Suites: bookworm
 Components: main
 EOF
-  PACKAGES+=(linux-image-rpi-2712)
-  PACKAGES+=(raspi-firmware)
+  PACKAGES+=(linux-image-rpi-2712 raspi-firmware)
   ;;
   *) printf "Unknown variant: %s\n" "$VARIANT" >&2; return 1 ;;
 esac

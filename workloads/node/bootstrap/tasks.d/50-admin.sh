@@ -1,11 +1,7 @@
 #!/usr/bin/env bash
 
-PACKAGES+=(
-  sudo adduser
-)
-if $DEBUG; then
-  PACKAGES+=(less nano bsdextrautils tree psmisc dnsutils)
-fi
+PACKAGES+=(sudo adduser)
+! $DEBUG || PACKAGES+=(less nano bsdextrautils tree psmisc dnsutils)
 
 admin() {
   useradd -m -s /bin/bash -u 1000 admin
