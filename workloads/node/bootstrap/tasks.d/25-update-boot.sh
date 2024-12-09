@@ -16,6 +16,7 @@ update_boot() {
   install_sd_unit -e update-boot/update-boot.timer
   install_sd_unit -e update-boot/switch-boot.service
   install_sd_unit -e update-boot/clear-lease.service
+  install_sd_unit update-boot/try-reboot.service
   cp_tpl --chmod=0755 \
     /usr/local/bin/update-boot \
     /usr/local/bin/try-reboot \
