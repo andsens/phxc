@@ -20,12 +20,24 @@ main() {
   # gettext -> envsubst
   apt-get install -y --no-install-recommends gettext
 
-  # Keep old/default config when there is a conflict
-  cp_tpl /etc/apt/apt.conf.d/10-dpkg-keep-conf.conf
+  info "Copying files"
+  # shellcheck disable=SC2016
+  local src dest unit enable_units files=$PKGROOT/workloads/node/bootstrap/files \
+    replacements=('${DISK_UUID}' '${BOOT_UUID}' '${DATA_UUID}' '${VARIANT}')
+  while IFS= read -r -d $'\0' src; do
+    dest=${src#"$files"}
+    if [[ $dest = /_systemd_units/* ]]; then
+      unit=$(basename "$src")
+      dest=/etc/systemd/system/$unit
+      ! grep -q '^\[Install\]$' "$src" || enable_units+=("$unit")
+    fi
+    mkdir -p "$(dirname "$dest")"
+    envsubst "${replacements[*]}" <"$src" >"$dest"
+  done < <(find "$files" -type f -print0)
 
-  if ! $DEBUG; then
-    # Filter out locales and manpages when installing packages
-    cp_tpl /etc/dpkg/dpkg.cfg.d/excludes
+  if $DEBUG; then
+    # Don't filter out locales and manpages when installing packages
+    rm /etc/dpkg/dpkg.cfg.d/excludes
   fi
 
   PACKAGES=(apt-utils jq)
@@ -57,6 +69,11 @@ main() {
     fi
   done
 
+  info "Enabling systemd units"
+  for unit in "${enable_units[@]}"; do
+    [[ ! -e /etc/systemd/system/$unit ]] || systemctl enable "$unit"
+  done
+
   # `comm -13`: Only remove temp packages that don't also appear in PACKAGES_TMP
   local packages_purge=()
   readarray -t -d $'\n' packages_purge < <(\
@@ -66,97 +83,6 @@ main() {
   apt-get purge -y "${packages_purge[@]}"
   apt-get autoremove -y
   apt-get autoclean
-}
-
-cp_tpl() {
-  DOC="cp_tpl - Render a template and save it at the corresponding container path
-Usage:
-  cp_tpl [--var VAR...] [--chmod MODE -d PATH] TPLPATH
-  cp_tpl [--var VAR...] [--chmod MODE -r] TPLPATH...
-
-Options:
-  -r --recursive         Recursively copy files if TPLPATH is a directory
-  -d --destination PATH  Override the destination path
-  --var VAR              Replace specified variables
-  --chmod MODE           chmod the destination
-"
-# docopt parser below, refresh this parser with `docopt.sh run-tasks.sh`
-# shellcheck disable=2016,2086,2317,1090,1091,2034,2154
-docopt() { local v='2.0.2'; source \
-"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
-%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:428};usage=${DOC:75:114}
-digest=2eda5;options=(' --var 1' ' --chmod 1' '-d --destination 1' '-r --recur'\
-'sive 0');node_0(){ value __var 0 true;};node_1(){ value __chmod 1;};node_2(){
-value __destination 2;};node_3(){ switch __recursive 3;};node_4(){ value \
-TPLPATH a true;};node_5(){ sequence 6 8 4;};node_6(){ optional 7;};node_7(){
-repeatable 0;};node_8(){ optional 1 2;};node_9(){ sequence 6 10 11;};node_10(){
-optional 1 3;};node_11(){ repeatable 4;};node_12(){ choice 5 9;};cat <<<' \
-docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2;printf "%s\n" \
-"${DOC:75:114}" >&2;exit 1;}';local varnames=(__var __chmod __destination \
-__recursive TPLPATH) varname;for varname in "${varnames[@]}"; do unset \
-"var_$varname";done;parse 12 "$@";local p=${DOCOPT_PREFIX:-''};for varname in \
-"${varnames[@]}"; do unset "$p$varname";done;if declare -p var___var \
->/dev/null 2>&1; then eval $p'__var=("${var___var[@]}")';else eval $p'__var=()'
-fi;if declare -p var_TPLPATH >/dev/null 2>&1; then eval $p'TPLPATH=("${var_TPL'\
-'PATH[@]}")';else eval $p'TPLPATH=()';fi;eval $p'__chmod=${var___chmod:-};'\
-$p'__destination=${var___destination:-};'$p'__recursive=${var___recursive:-fal'\
-'se};';local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
-((;docopt_i>0;docopt_i--)); do for varname in "${varnames[@]}"; do declare -p \
-"$p$varname";done;done;}
-# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' run-tasks.sh`
-  eval "$(docopt "$@")"
-
-  copy_tpl() {
-    local tplpath=${1#'/'}
-    local src=$PKGROOT/workloads/node/bootstrap/files/$tplpath
-    local dest="${__destination:-"/$tplpath"}"
-    if [[ -d $src ]]; then
-      # shellcheck disable=SC2154
-      if $__recursive; then
-        local subpath
-        for subpath in "$src"/*; do
-          copy_tpl "${subpath#"$PKGROOT/workloads/node/bootstrap/files/"}"
-        done
-      else
-        mkdir -p "$(dirname "$dest")"
-      fi
-    else
-      mkdir -p "$(dirname "$dest")"
-      # shellcheck disable=SC2154
-      if [[ -n $__destination ]]; then
-        info "Rendering template %s to %s" "$tplpath" "$dest"
-      else
-        info "Rendering template %s" "$tplpath"
-      fi
-      # shellcheck disable=SC2154
-      if [[ ${#__var} -gt 0 ]]; then
-        local var vars=()
-        for var in "${__var[@]}"; do
-          vars+=("\$$var")
-        done
-        envsubst "${vars[*]}" <"$src" >"$dest"
-      else
-        envsubst "" <"$src" >"$dest"
-      fi
-      [[ -z $__chmod ]] || chmod "$__chmod" "$dest"
-    fi
-  }
-
-  local tplpath
-  # shellcheck disable=SC2153
-  for tplpath in "${TPLPATH[@]}"; do
-    copy_tpl "$tplpath"
-  done
-}
-
-
-function install_sd_unit() {
-  local enable=false filepath unit_name
-  if [[ $1 = '-e' ]]; then enable=true; shift; fi
-  filepath=$1; shift
-  unit_name=$(basename "$filepath")
-  cp_tpl "_systemd_units/$filepath" -d "/etc/systemd/system/$unit_name" "$@"
-  ! $enable || systemctl enable "$unit_name"
 }
 
 main "$@"

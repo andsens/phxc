@@ -9,11 +9,6 @@ PACKAGES+=(
 )
 
 networking() {
-  install_sd_unit networking/configure-hostname.service
-  install_sd_unit networking/configure-networks.service
-  install_sd_unit networking/configure-resolved.service
   mkdir -p /etc/systemd/resolved.conf.d
   systemctl enable systemd-networkd
-  cp_tpl /etc/systemd/network/zzz-dhcp.network
-  cp_tpl /etc/hosts.tmp
 }

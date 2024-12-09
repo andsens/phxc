@@ -28,25 +28,11 @@ EOF
 esac
 
 initramfs() {
-  cp_tpl --var BOOT_UUID /etc/fstab.dracut
-  cp_tpl /etc/systemd/system.conf.d/variant.conf --var VARIANT
-  cp_tpl /etc/systemd/system.conf.d/disk-uuids.conf --var DISK_UUID --var BOOT_UUID --var DATA_UUID
-
   # Enable serial console
   systemctl enable serial-getty@ttyS0
 
-  cp_tpl /etc/dracut.conf.d/phoenix-cluster.conf
-
-  cp_tpl \
-    /usr/lib/dracut/modules.d/99phoenix-cluster/system/copy-rootimg.service \
-    /usr/lib/dracut/modules.d/99phoenix-cluster/system/overlay-image.mount \
-    /usr/lib/dracut/modules.d/99phoenix-cluster/system/overlay-rw.mount \
-    /usr/lib/dracut/modules.d/99phoenix-cluster/system/create-overlay-dirs.service \
-    /usr/lib/dracut/modules.d/99phoenix-cluster/system/restore-machine-id.service \
-    /usr/lib/dracut/modules.d/99phoenix-cluster/system/sysroot.mount
-  cp_tpl --chmod=0755 \
-    /usr/lib/dracut/modules.d/99phoenix-cluster/parse-squashfs-root.sh \
-    /usr/lib/dracut/modules.d/99phoenix-cluster/module-setup.sh
+  chmod 0755 /usr/lib/dracut/modules.d/99phoenix-cluster/parse-squashfs-root.sh \
+             /usr/lib/dracut/modules.d/99phoenix-cluster/module-setup.sh
 
   mkdir -p /mnt/overlay/image /mnt/overlay/upper
 
