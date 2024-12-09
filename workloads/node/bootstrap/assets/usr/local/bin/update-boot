@@ -37,7 +37,7 @@ main() {
   fi
   printf "update-boot: boot partition has been updated\n" >&2
   trap '' EXIT
-  try-reboot
+  try-reboot try
 }
 
 curl_img_reg() {

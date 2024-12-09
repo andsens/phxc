@@ -56,7 +56,7 @@ clear_lease() {
 }
 
 usage() {
-  printf "Usage: update-boot\n" >&2
+  printf "Usage: try-reboot try|clear\n" >&2
   return 1
 }
 
