@@ -6,22 +6,29 @@ properties:
   $schema:
     type: string
   k3s:
-    type: object
-    properties:
-      mode:
-        description: "Whether to run k3s as an agent or a server. Default: agent"
-        type: string
-        enum: ['agent', 'server']
-      url:
-        description: "The URL of a control-plane node for k3s to connect to."
-        type: string
-        format: uri
-      token:
-        description: "The k3s joining token generated with `k3s token create`. May not be a server token."
-        type: string
-        pattern: ^K10[0-9a-f]+::(?!server).*
-    required: [url, token]
-    additionalProperties: false
+    anyOf:
+    - type: object
+      properties:
+        mode:
+          description: "Whether to run k3s as an agent or a server. Default: agent"
+          type: string
+          const: server
+    - type: object
+      properties:
+        mode:
+          description: "Whether to run k3s as an agent or a server. Default: agent"
+          type: string
+          enum: ['agent', 'server']
+        url:
+          description: "The URL of a control-plane node for k3s to connect to."
+          type: string
+          format: uri
+        token:
+          description: "The k3s joining token generated with `k3s token create`. May not be a server token."
+          type: string
+          pattern: ^K10[0-9a-f]+::(?!server).*
+      required: [url, token]
+      additionalProperties: false
   disk-encryption:
     description: "How the data partition should be unlocked. Default: auto"
     type: string
