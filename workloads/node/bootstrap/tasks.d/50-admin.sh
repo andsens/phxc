@@ -8,6 +8,7 @@ if $DEBUG; then
 fi
 
 admin() {
+  cp_tpl /etc/sysctl.d/10-kprint.conf
   useradd -m -s /bin/bash -u 1000 admin
   adduser admin adm
   adduser admin sudo
