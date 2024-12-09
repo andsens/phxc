@@ -284,6 +284,7 @@ EOF
 
   if [[ -e /workspace/embed-configs ]]; then
     for file in /workspace/embed-configs/*; do
+      [[ $file != */cluster.yaml && $file != */cluster.yaml.sig ]] || continue
       boot_files["$file"]=/phxc/$(basename "$file")
     done
   fi

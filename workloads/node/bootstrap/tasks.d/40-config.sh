@@ -20,4 +20,8 @@ config() {
 
   cp_tpl /etc/systemd/system.conf.d/phxc-packages.conf
   cp_tpl /etc/profile.d/phxc-packages.sh
+
+  if [[ -e /workspace/embed-configs ]]; then
+    cp /workspace/embed-configs/cluster.yaml /etc/phxc/cluster.yaml
+  fi
 }

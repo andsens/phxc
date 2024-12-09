@@ -61,6 +61,9 @@ spec:
         - name: smallstep-root-cert
           mountPath: /workspace/root_ca.crt
           readOnly: true
+        - name: embed-configs
+          mountPath: /workspace/embed-configs/cluster.yaml
+          readOnly: true
       volumes:
       - name: context
         configMap:
@@ -79,6 +82,10 @@ spec:
       - name: smallstep-root-cert
         hostPath:
           path: /usr/local/share/ca-certificates/phoenix-cluster-root.crt
+          type: File
+      - name: embed-configs
+        hostPath:
+          path: /etc/phxc/cluster.yaml
           type: File
       - name: secureboot
         secret:
