@@ -22,18 +22,23 @@ main() {
 
   info "Copying files"
   # shellcheck disable=SC2016
-  local src dest unit enable_units files=$PKGROOT/workloads/node/bootstrap/files \
-    replacements=('${DISK_UUID}' '${BOOT_UUID}' '${DATA_UUID}' '${VARIANT}')
+  local replacements=('${DISK_UUID}' '${BOOT_UUID}' '${DATA_UUID}' '${VARIANT}')
+
+  local src dest files=$PKGROOT/workloads/node/bootstrap/root
   while IFS= read -r -d $'\0' src; do
     dest=${src#"$files"}
-    if [[ $dest = /_systemd_units/* ]]; then
-      unit=$(basename "$src")
-      dest=/etc/systemd/system/$unit
-      ! grep -q '^\[Install\]$' "$src" || enable_units+=("$unit")
-    fi
     mkdir -p "$(dirname "$dest")"
     envsubst "${replacements[*]}" <"$src" >"$dest"
   done < <(find "$files" -type f -print0)
+
+  local unit enable_units unit_files=$PKGROOT/workloads/node/bootstrap/systemd-units
+  while IFS= read -r -d $'\0' src; do
+    unit=$(basename "$src")
+    if grep -q '^\[Install\]$' "$src" && [[ $unit != *@* ]]; then
+      enable_units+=("$unit")
+    fi
+    envsubst "${replacements[*]}" <"$src" >"/etc/systemd/system/$unit"
+  done < <(find "$unit_files" -type f -print0)
 
   if $DEBUG; then
     # Don't filter out locales and manpages when installing packages
