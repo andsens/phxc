@@ -108,14 +108,14 @@ $p'__destination=${var___destination:-};'$p'__recursive=${var___recursive:-fal'\
 
   copy_tpl() {
     local tplpath=${1#'/'}
-    local src=$PKGROOT/workloads/node/bootstrap/assets/$tplpath
+    local src=$PKGROOT/workloads/node/bootstrap/files/$tplpath
     local dest="${__destination:-"/$tplpath"}"
     if [[ -d $src ]]; then
       # shellcheck disable=SC2154
       if $__recursive; then
         local subpath
         for subpath in "$src"/*; do
-          copy_tpl "${subpath#"$PKGROOT/workloads/node/bootstrap/assets/"}"
+          copy_tpl "${subpath#"$PKGROOT/workloads/node/bootstrap/files/"}"
         done
       else
         mkdir -p "$(dirname "$dest")"
