@@ -1,7 +1,7 @@
 [Unit]
 Description=Download and trust the smallstep root certificate
-Requires=resource-ready@step-ca.service configure-resolved.service
-After=resource-ready@step-ca.service configure-resolved.service
+Requires=workload-ready@smallstep.service configure-resolved.service
+After=workload-ready@smallstep.service configure-resolved.service
 
 [Service]
 Type=oneshot

@@ -2,7 +2,7 @@
 Description=Set k3s node-label & token
 Wants=copy-cluster-config.service
 After=copy-cluster-config.service
-Before=k3s@server.service
+Before=k3s-pre.target
 
 [Install]
 RequiredBy=k3s@server.service

@@ -1,10 +1,10 @@
 [Unit]
 Description=Set k3s node-label
 ConditionPathExists=/boot/phxc/node.yaml
-Before=k3s@server.service k3s@agent.service
+Before=k3s-pre.target
 
 [Install]
-WantedBy=k3s@server.service k3s@agent.service
+WantedBy=k3s.target
 
 [Service]
 Type=oneshot

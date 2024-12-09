@@ -6,6 +6,5 @@ PACKAGES+=(
 )
 
 k3s() {
-  chmod 0755 /usr/local/bin/resource-ready
   mkdir -p /var/lib/rancher/k3s /etc/rancher/node
 }

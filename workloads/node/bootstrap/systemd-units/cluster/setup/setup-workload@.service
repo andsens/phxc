@@ -1,0 +1,11 @@
+[Unit]
+Description=Applies the %i manifest
+Requires=install-control-plane-packages.service
+After=install-control-plane-packages.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=bash -e
+StandardInputText=kustomize build --enable-alpha-plugins --enable-exec "/usr/local/lib/upkg/.upkg/phoenix-cluster/workloads/%i" | \
+  kpt live apply --request-timeout 10m -

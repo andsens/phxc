@@ -1,9 +1,0 @@
-[Unit]
-Description=Setup the node bootstrapping jobs
-Requires=setup-cert-manager.service setup-smallstep.service setup-longhorn.service trust-smallstep-root.service
-After=setup-cert-manager.service setup-smallstep.service setup-longhorn.service trust-smallstep-root.service
-
-[Service]
-Type=oneshot
-RemainAfterExit=yes
-ExecStart=manifest apply node

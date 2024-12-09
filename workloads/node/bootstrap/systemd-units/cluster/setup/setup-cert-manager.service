@@ -1,9 +1,0 @@
-[Unit]
-Description=Setup cert-manager and cert-manager issuers
-Requires=k8s-network-configured.target
-After=k8s-network-configured.target
-
-[Service]
-Type=oneshot
-RemainAfterExit=yes
-ExecStart=manifest apply cert-manager cert-manager-issuers

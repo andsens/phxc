@@ -1,6 +1,6 @@
 [Unit]
 Description=Set k3s url & token
-Before=k3s@server.service k3s@agent.service
+Before=k3s.target
 ConditionPathExists=/boot/phxc/node.yaml
 ConditionPathExists=!/etc/rancher/node/password
 

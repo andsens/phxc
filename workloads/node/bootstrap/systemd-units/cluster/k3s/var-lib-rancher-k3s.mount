@@ -3,7 +3,7 @@ Description=/var/lib/rancher/k3s
 DefaultDependencies=no
 Requires=create-data-dir@k3s.service
 After=create-data-dir@k3s.service
-Before=k3s@server.service k3s@agent.service
+Before=pre-k3s.target
 
 [Install]
 RequiredBy=k3s@server.service k3s@agent.service

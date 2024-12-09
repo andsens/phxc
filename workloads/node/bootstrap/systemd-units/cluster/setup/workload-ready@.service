@@ -1,0 +1,8 @@
+[Unit]
+Description=Waits until the %i workload is ready
+DefaultDependencies=no
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/lib/upkg/.upkg/phoenix-cluster/workloads/%i/ready.sh --wait

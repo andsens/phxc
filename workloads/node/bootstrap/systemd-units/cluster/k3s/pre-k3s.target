@@ -1,0 +1,6 @@
+[Unit]
+Description=Reached right before k3s starts
+Before=k3s@server.service k3s@agent.service
+
+[Install]
+WantedBy=k3s.target

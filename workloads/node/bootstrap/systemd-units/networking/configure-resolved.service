@@ -1,19 +1,19 @@
 [Unit]
 Description=Configure systemd-resolved to be able to resolve the cluster domain
 DefaultDependencies=no
-Requires=resource-ready@coredns.service
+Requires=workload-ready@coredns.service
 Wants=copy-cluster-config.service
-After=systemd-networkd.service resource-ready@coredns.service copy-cluster-config.service
+After=systemd-networkd.service workload-ready@coredns.service copy-cluster-config.service
 
 [Install]
-RequiredBy=k3s.target
+RequiredBy=multi-user.target
 
 [Service]
 Type=oneshot
 ExecStart=bash -e
-StandardInputText=printf "[Resolve]\\nDNS=%%s\\nDomains=~%%s ~cluster.local\\n" \
-  "$(kubectl -n kube-system get svc kube-dns -ojsonpath='{.spec.clusterIPs[*]}')" \
-  "$(get-config /etc/phxc/cluster.yaml domain)"
+StandardInputText=kubedns_ip=$(kubectl -n kube-system get svc kube-dns -ojsonpath='{.spec.clusterIPs[*]}'); \
+  cluster_domain=$(get-config /etc/phxc/cluster.yaml domain); \
+  printf "[Resolve]\\nDNS=%%s\\nDomains=~%%s ~cluster.local\\n" "$kubedns_ip" "$cluster_domain"
 StandardOutput=file:/etc/systemd/resolved.conf.d/cluster-domain.conf
 StandardError=journal
 ExecStartPost=systemctl reload systemd-resolved

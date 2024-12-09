@@ -12,38 +12,34 @@ main() {
 
   DOC="manifest - Manage manifests
 Usage:
-  manifest apply (all|MANIFEST...) [-- kptargs...]
-  manifest build (all|MANIFEST...)
-  manifest delete (all|MANIFEST...)
-  manifest latest-applied-all
+  manifest apply MANIFEST... [-- kptargs...]
+  manifest build MANIFEST...
+  manifest delete MANIFEST...
 
 Note:
-  MANIFEST is a path relative to /manifests e.g. cert-manager
+  MANIFEST is a path relative to /workloads e.g. cert-manager
 "
 # docopt parser below, refresh this parser with `docopt.sh manifest`
 # shellcheck disable=2016,2086,2317,1090,1091,2034,2154
 docopt() { local v='2.0.2'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
-%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:255};usage=${DOC:28:158}
-digest=e7c1b;options=();node_0(){ value MANIFEST a true;};node_1(){ switch \
-apply a:apply;};node_2(){ switch all a:all;};node_3(){ switch kptargs \
-a:kptargs true;};node_4(){ switch build a:build;};node_5(){ switch delete \
-a:delete;};node_6(){ switch latest_applied_all a:latest-applied-all;};node_7(){
-switch __ a:--;};node_8(){ sequence 1 9 11;};node_9(){ choice 2 10;};node_10(){
-repeatable 0;};node_11(){ optional 7 12;};node_12(){ repeatable 3;};node_13(){
-sequence 4 9;};node_14(){ sequence 5 9;};node_15(){ choice 8 13 14 6;};cat \
-<<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2;printf "%s\n" \
-"${DOC:28:158}" >&2;exit 1;}';local varnames=(MANIFEST apply all kptargs build \
-delete latest_applied_all __) varname;for varname in "${varnames[@]}"; do
-unset "var_$varname";done;parse 15 "$@";local p=${DOCOPT_PREFIX:-''};for \
-varname in "${varnames[@]}"; do unset "$p$varname";done;if declare -p \
-var_MANIFEST >/dev/null 2>&1; then eval $p'MANIFEST=("${var_MANIFEST[@]}")';else
-eval $p'MANIFEST=()';fi;eval $p'apply=${var_apply:-false};'$p'all=${var_all:-f'\
-'alse};'$p'kptargs=${var_kptargs:-0};'$p'build=${var_build:-false};'$p'delete='\
-'${var_delete:-false};'$p'latest_applied_all=${var_latest_applied_all:-false};'\
-$p'__=${var___:-false};';local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && \
-docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for varname in "${varnames[@]}"; \
-do declare -p "$p$varname";done;done;}
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:207};usage=${DOC:28:110}
+digest=14b7c;options=();node_0(){ value MANIFEST a true;};node_1(){ switch \
+apply a:apply;};node_2(){ switch kptargs a:kptargs true;};node_3(){ switch \
+build a:build;};node_4(){ switch delete a:delete;};node_5(){ switch __ a:--;}
+node_6(){ sequence 1 7 8;};node_7(){ repeatable 0;};node_8(){ optional 5 9;}
+node_9(){ repeatable 2;};node_10(){ sequence 3 7;};node_11(){ sequence 4 7;}
+node_12(){ choice 6 10 11;};cat <<<' docopt_exit() { [[ -n $1 ]] && printf \
+"%s\n" "$1" >&2;printf "%s\n" "${DOC:28:110}" >&2;exit 1;}';local \
+varnames=(MANIFEST apply kptargs build delete __) varname;for varname in \
+"${varnames[@]}"; do unset "var_$varname";done;parse 12 "$@";local \
+p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset "$p$varname"
+done;if declare -p var_MANIFEST >/dev/null 2>&1; then eval $p'MANIFEST=("${var'\
+'_MANIFEST[@]}")';else eval $p'MANIFEST=()';fi;eval $p'apply=${var_apply:-fals'\
+'e};'$p'kptargs=${var_kptargs:-0};'$p'build=${var_build:-false};'$p'delete=${v'\
+'ar_delete:-false};'$p'__=${var___:-false};';local docopt_i=1;[[ $BASH_VERSION \
+=~ ^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for varname in \
+"${varnames[@]}"; do declare -p "$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' manifest`
   eval "$(docopt "$@")"
 
@@ -52,39 +48,6 @@ do declare -p "$p$varname";done;done;}
     fatal "Unable to connect to the cluster"
   fi
 
-  if $latest_applied_all; then
-    local latest_applied_all
-    latest_applied_all=$(kubectl -n default get configmap phoenix-cluster-manifest -o jsonpath='{.data.latest-applied-all}' 2>/dev/null) || true
-    if [[ -n $latest_applied_all ]]; then
-      printf "%s\n" "$latest_applied_all"
-      return 0
-    else
-      info "All manifests have never been successfully applied"
-      return 1
-    fi
-  fi
-
-  # shellcheck disable=2154
-  if $all; then
-    MANIFEST=(
-      cilium
-      networkpolicies
-      coredns
-      snapshots
-      longhorn
-      cert-manager
-      cert-manager-issuers
-      smallstep
-      node
-    )
-    if $delete; then
-      local unreversed_manifests=("${MANIFEST[@]}")
-      MANIFEST=()
-      for ((i=${#unreversed_manifests[@]} - 1; i >= 0; i--)) ; do
-        MANIFEST+=("${unreversed_manifests[i]}")
-      done
-    fi
-  fi
   local manifest_name manifest_data
   # shellcheck disable=2153
   for manifest_name in "${MANIFEST[@]}"; do
@@ -103,10 +66,6 @@ do declare -p "$p$varname";done;done;}
       printf "%s\n" "$manifest_data"
     fi
   done
-  if $all && $apply; then
-    kubectl -n default delete configmap phoenix-cluster-manifest 2>/dev/null || true
-    kubectl -n default create configmap phoenix-cluster-manifest --from-literal "latest-applied-all=$(date --iso-8601=seconds)"
-  fi
 }
 
 main "$@"

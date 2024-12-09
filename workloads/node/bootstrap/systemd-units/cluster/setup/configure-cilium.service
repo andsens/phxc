@@ -1,9 +1,0 @@
-[Unit]
-Description=Configure Cilium
-Requires=install-cilium.service
-After=install-cilium.service
-
-[Service]
-Type=oneshot
-RemainAfterExit=yes
-ExecStart=manifest apply cilium

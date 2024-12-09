@@ -1,9 +1,0 @@
-[Unit]
-Description=Apply cluster-wide network policies
-Requires=configure-cilium.service
-After=configure-cilium.service
-
-[Service]
-Type=oneshot
-RemainAfterExit=yes
-ExecStart=manifest apply network-policies

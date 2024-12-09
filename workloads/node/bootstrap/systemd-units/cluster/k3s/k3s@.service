@@ -5,8 +5,6 @@ Wants=systemd-networkd-wait-online.service
 After=systemd-networkd-wait-online.service
 
 [Service]
-ExecCondition=bash -ec 'if mode=$(get-config -q /boot/phxc/node.yaml k3s.mode); then [[ $mode = %i ]] || false; \
-                        else [[ -e /boot/phxc/cluster.yaml && server = %i ]] || false; fi'
 Type=notify
 EnvironmentFile=-/etc/default/%N
 EnvironmentFile=-/etc/sysconfig/%N
@@ -21,6 +19,9 @@ TasksMax=infinity
 TimeoutStartSec=0
 Restart=always
 RestartSec=5s
+ExecCondition=bash -ec 'if mode=$(get-config -q /boot/phxc/node.yaml k3s.mode); then [[ $mode = %i ]] || false; \
+                        else [[ -e /boot/phxc/cluster.yaml && server = %i ]] || false; fi'
+ExecStartPre=ln -sf %i.yaml /etc/rancher/k3s/config.yaml
 ExecStartPre=/bin/sh -xc '! /usr/bin/systemctl is-enabled --quiet nm-cloud-setup.service 2>/dev/null'
 ExecStartPre=-/sbin/modprobe br_netfilter
 ExecStartPre=-/sbin/modprobe overlay

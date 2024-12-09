@@ -1,5 +1,5 @@
 [Unit]
-Description=The startup target for k3s server and agent
+Description=Reached when k3s has started
 Wants=k3s@server.service k3s@agent.service
 
 [Install]
