@@ -8,15 +8,15 @@ WantedBy=multi-user.target
 
 [Service]
 Type=oneshot
-Environment=HOME=/root KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+Environment=HOME=/root
 ExecStart=bash -eo pipefail
-StandardInputText=rm /etc/ssh/sshd_config.d/20-host-key-certs.conf; \
+StandardInputText=printf "" >/etc/ssh/sshd_config.d/20-host-key-certs.conf; \
   password=$(kubectl -n smallstep get secret ssh-host-provisioner-password -o=jsonpath='{.data.password}' | base64 -d); \
   for pubkey in /etc/ssh/ssh_host_*.pub; do \
     [[ $pubkey != *-cert.pub ]] || continue; \
     printf "Signing %%s\n" "$pubkey" >&2; \
     step ssh certificate --host --sign --force --provisioner=ssh-host --provisioner-password-file=<(printf "%%s" "$password") \
       "$(hostname -f)" "$pubkey"; \
-    HostCertificate /etc/ssh/{$pubkey%'.pub'}-cert.pub >>/etc/ssh/sshd_config.d/20-host-key-certs.conf; \
+    printf "HostCertificate %%s-cert.pub\n" "${pubkey%%'.pub'}" >>/etc/ssh/sshd_config.d/20-host-key-certs.conf; \
   done
 ExecStartPost=systemctl reload ssh
