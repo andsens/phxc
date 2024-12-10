@@ -1,7 +1,7 @@
 [Unit]
 Description=Configure systemd-networks using node-config
 DefaultDependencies=no
-After=systemd-networkd.service
+Before=network-pre.target
 ConditionPathExists=/boot/phxc/node.yaml
 
 [Install]
@@ -18,4 +18,3 @@ StandardInputText=for macaddr in $(yq -r '(.["fixed-ips"] // {}) | keys[]' /boot
       "[Match]\\nMACAddress=\\($macaddr)\\n[Network]\\n\\($addrs)\\n"' \
       > /etc/systemd/network/${macaddr//:/-}.network \
   done
-ExecStartPost=-systemctl reload systemd-networkd

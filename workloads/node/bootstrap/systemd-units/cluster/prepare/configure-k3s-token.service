@@ -11,7 +11,7 @@ WantedBy=k3s@server.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecCondition=get-config -q /boot/phxc/node.yaml k3s.token
+ExecCondition=get-config /boot/phxc/node.yaml k3s.token
 ExecStart=bash -eo pipefail
 StandardInputText=yq -ny \
   --arg k3s_url "$(get-config /boot/phxc/node.yaml k3s.url)" \
