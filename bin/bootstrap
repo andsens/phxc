@@ -17,7 +17,7 @@ Usage:
 
 Options:
   --upload  Upload artifacts to the image-registry
-  --debug   Enable debug build (installs less & nano, unlocks root, etc.)
+  --debug   Enable debug build (installs less & nano, no artifact cleanup, etc.)
   --embed PATH  Sign & embed a config on boot partition. If used cluster.yaml
                 must be included so the ssh key signature can be verified.
 
@@ -30,8 +30,8 @@ Supported variants:
 # shellcheck disable=2016,2086,2317,1090,1091,2034,2154
 docopt() { local v='2.0.2'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
-%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:506};usage=${DOC:29:54}
-digest=0b54c;options=(' --upload 0' ' --debug 0' ' --embed 1');node_0(){
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:513};usage=${DOC:29:54}
+digest=ec1b1;options=(' --upload 0' ' --debug 0' ' --embed 1');node_0(){
 switch __upload 0;};node_1(){ switch __debug 1;};node_2(){ value __embed 2 true
 };node_3(){ value VARIANT a;};node_4(){ optional 0 1;};node_5(){ optional 6;}
 node_6(){ repeatable 2;};node_7(){ sequence 4 5 3;};cat <<<' docopt_exit() {
@@ -91,7 +91,7 @@ docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
     for config in "${__embed[@]}"; do
       config_basename=$(basename "$config")
       # shellcheck disable=SC2154
-      ssh-keygen -Y sign -f <(yq -r '.admin["ssh-key"]' "$config_tmp/cluster.yaml") -n file "$config_tmp/$config_basename"
+      ssh-keygen -Y sign -f <(yq -r '.["admin-ssh-key"]' "$config_tmp/cluster.yaml") -n file "$config_tmp/$config_basename"
     done
     bootstrap_docker_opts+=(-v "$config_tmp:/workspace/embed-configs")
     create_boot_image_docker_opts+=(-v "$config_tmp:/workspace/embed-configs")

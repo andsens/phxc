@@ -9,18 +9,9 @@ properties:
     description: The domain of the cluster
     type: string
     format: hostname
-  admin:
-    type: object
-    description: Configuration of the "admin" user
-    properties:
-      ssh-key:
-        description: The SSH key to add to /home/admin/.ssh/authorized_keys
-        type: string
-      pwhash:
-        description: sudo password for the admin (ssh password authentication is disabled)
-        type: string
-    required: [ssh-key, pwhash]
-    additionalProperties: false
+  admin-ssh-key:
+    description: The admin SSH key. Used for SSH login & Kubernetes authentication
+    type: string
   cidrs:
     type: object
     description: CIDRs specifying the subnets the cluster should allocate for pods, services and loadbalancers
