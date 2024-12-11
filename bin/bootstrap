@@ -90,8 +90,9 @@ docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
         fatal 'cluster.yaml must be embedded, in order for Phoenix Cluster to verify the signatures of the other configs.'
     for config in "${__embed[@]}"; do
       config_basename=$(basename "$config")
-      # shellcheck disable=SC2154
-      ssh-keygen -Y sign -f <(yq -r '.["admin-ssh-key"]' "$config_tmp/cluster.yaml") -n file "$config_tmp/$config_basename"
+      local admin_ssh_key
+      admin_ssh_key=$(yq -r '.["admin-ssh-key"]' "$config_tmp/cluster.yaml")
+      ssh-keygen -Y sign -f <(printf "%s" "$admin_ssh_key") -n file "$config_tmp/$config_basename"
     done
     bootstrap_docker_opts+=(-v "$config_tmp:/workspace/embed-configs")
     create_boot_image_docker_opts+=(-v "$config_tmp:/workspace/embed-configs")

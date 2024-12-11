@@ -8,10 +8,21 @@
     "type": "badgerv2",
     "dataSource": "/home/step/db"
   },
-  "root": "/home/step/certs/kube_apiserver_client_ca.crt",
-  "crt": "/home/step/certs/kube_apiserver_client_ca.crt",
-  "key": "/home/step/certs/kube_apiserver_client_ca_key",
+  "root": "/home/step/secrets/kube_apiserver_client_ca.crt",
+  "crt": "/home/step/secrets/kube_apiserver_client_ca.crt",
+  "key": "/home/step/secrets/kube_apiserver_client_ca_key",
   "authority": {
+    "claims": {
+      "minTLSCertDuration": "30m",
+      "maxTLSCertDuration": "30m",
+      "defaultTLSCertDuration": "30m",
+      "disableRenewal": true,
+      "minHostSSHCertDuration": "36h",
+      "maxHostSSHCertDuration": "36h",
+      "minUserSSHCertDuration": "30m",
+      "maxUserSSHCertDuration": "30m",
+      "enableSSHCA": false
+    },
     "provisioners": [
       {
         "type": "JWK",
@@ -19,18 +30,6 @@
         "options": {
           "x509": {
             "templateFile": "/home/step/templates/admin.tpl"
-          }
-        }
-      },
-      {
-        "type": "X5C",
-        "name": "kube-apiserver-client-ca",
-        "claims": {
-          "allowRenewalAfterExpiry": true
-        },
-        "options": {
-          "x509": {
-            "templateFile": "/home/step/templates/kube-apiserver-client-cert-renewal.tpl"
           }
         }
       }

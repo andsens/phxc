@@ -5,7 +5,6 @@ resources:
 - ../cluster-settings
 - https://raw.githubusercontent.com/smallstep/helm-charts/v0.22.0/step-issuer/crds/certmanager.step.sm_stepclusterissuers.yaml
 - https://raw.githubusercontent.com/smallstep/helm-charts/v0.22.0/step-issuer/crds/certmanager.step.sm_stepissuers.yaml
-- bootstrap.yaml
 - step-ca.yaml
 - kube-apiserver-client-ca.yaml
 - issuer.yaml
@@ -13,7 +12,6 @@ resources:
 - resourcegroup.yaml
 configMapGenerator:
 - files:
-  - scripts/bootstrap.sh
   - scripts/setup-kube-apiserver-client-ca-config.sh
   - scripts/setup-step-ca-config.sh
   name: scripts
@@ -22,7 +20,6 @@ configMapGenerator:
   name: kube-apiserver-client-ca-config
 - files:
   - config/templates/admin.tpl
-  - config/templates/kube-apiserver-client-cert-renewal.tpl
   name: kube-apiserver-client-ca-templates
 - files:
   - config/ca.json

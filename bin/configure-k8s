@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# shellcheck source-path=..
+set -Eeo pipefail; shopt -s inherit_errexit
+PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
+
+main() {
+  local \
+    keyname=$1 \
+    kube_config_default_path=$HOME/.kube/config.yaml \
+    kube_config_path=$HOME/.kube/phxc.yaml \
+    kube_cluster=phxc \
+    control_plane_hostname=k8s-hyperv-1.local \
+    kube_context=phxc \
+    username=system:admin \
+    exec_path=$PKGROOT/bin/issue-k8s-cert \
+    kube_api_addr apiserver_cert
+
+  kube_api_addr="https://$control_plane_hostname:6443"
+  apiserver_cert=$(step certificate inspect --insecure --format pem "$kube_api_addr") # TOFU :-/
+  kubectl config --kubeconfig "$kube_config_path" set-cluster "$kube_cluster" \
+    --server="$kube_api_addr" \
+    --embed-certs \
+    --certificate-authority=<(printf "%s" "$apiserver_cert")
+  kubectl config --kubeconfig "$kube_config_path" set-credentials "$username@$kube_cluster" \
+    --exec-api-version="client.authentication.k8s.io/v1beta1" \
+    --exec-command="$exec_path" \
+    --exec-arg="$keyname"
+  kubectl config --kubeconfig "$kube_config_default_path" set-context $kube_context \
+    --cluster "$kube_cluster" --user "$username@$kube_cluster"
+}
+
+main "$@"

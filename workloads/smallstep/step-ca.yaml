@@ -63,6 +63,18 @@ rules:
 - apiGroups: [""]
   resources: [services]
   verbs: [get]
+- apiGroups: [""]
+  resources: [secrets]
+  verbs: [create]
+- apiGroups: [""]
+  resources: [secrets]
+  resourceNames:
+  - step-issuer-provisioner
+  - step-issuer-provisioner-password
+  - ssh-host-provisioner
+  - ssh-host-provisioner-password
+  - kube-apiserver-client-ca
+  verbs: [get, delete]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -74,6 +86,37 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
+  name: step-ca
+subjects:
+- kind: ServiceAccount
+  name: step-ca
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: step-ca
+  labels:
+    app.kubernetes.io/name: smallstep
+    app.kubernetes.io/component: step-ca
+rules:
+- apiGroups: [certmanager.step.sm]
+  resources: [stepclusterissuers]
+  verbs: [create]
+- apiGroups: [certmanager.step.sm]
+  resources: [stepclusterissuers]
+  resourceNames: [step-issuer]
+  verbs: [get, patch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: step-ca
+  labels:
+    app.kubernetes.io/name: smallstep
+    app.kubernetes.io/component: step-ca
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
   name: step-ca
 subjects:
 - kind: ServiceAccount
@@ -170,30 +213,17 @@ spec:
         - name: CLUSTER_DOMAIN
           value: cluster.domain
         volumeMounts:
+        - name: root
+          mountPath: /home/step/certs/root_ca.crt
+          subPath: tls.crt
         - name: scripts
           mountPath: /home/step/scripts
         - name: config
           mountPath: /home/step/config-ro
-        - name: step-issuer-provisioner
-          mountPath: /home/step/step-issuer-provisioner
-          readOnly: true
-        - name: step-issuer-provisioner-password
-          mountPath: /home/step/step-issuer-provisioner-password
-          subPath: password
-          readOnly: true
-        - name: ssh-host-provisioner
-          mountPath: /home/step/ssh-host-provisioner
-          readOnly: true
-        - name: ssh-host-provisioner-password
-          mountPath: /home/step/ssh-host-provisioner-password
-          subPath: password
-          readOnly: true
-        - name: kube-apiserver-client-ca-cert
-          mountPath: /home/step/certs/kube_apiserver_client_ca.crt
-          subPath: tls.crt
-          readOnly: true
         - name: config-rw
           mountPath: /home/step/config
+        - name: provisioner-secrets
+          mountPath: /home/step/provisioner-secrets
       containers:
       - name: step-ca
         image: cr.step.sm/smallstep/step-ca:0.27.2
@@ -228,6 +258,8 @@ spec:
           subPath: tls.key
         - name: config-rw
           mountPath: /home/step/config
+        - name: provisioner-secrets
+          mountPath: /home/step/provisioner-secrets
         - name: database
           mountPath: /home/step/db
       volumes:
@@ -238,30 +270,15 @@ spec:
       - name: config
         configMap:
           name: ca-config
-      - name: templates
-        configMap:
-          name: ca-templates
-      - name: step-issuer-provisioner
-        secret:
-          secretName: step-issuer-provisioner
-      - name: step-issuer-provisioner-password
-        secret:
-          secretName: step-issuer-provisioner-password
-      - name: ssh-host-provisioner
-        secret:
-          secretName: ssh-host-provisioner
-      - name: ssh-host-provisioner-password
-        secret:
-          secretName: ssh-host-provisioner-password
+      - name: provisioner-secrets
+        emptyDir:
+          medium: Memory
       - name: root
         secret:
           secretName: step-ca-root
       - name: intermediate
         secret:
           secretName: step-ca-intermediate
-      - name: kube-apiserver-client-ca-cert
-        secret:
-          secretName: kube-apiserver-client-ca
       - name: config-rw
         emptyDir: {}
   volumeClaimTemplates:

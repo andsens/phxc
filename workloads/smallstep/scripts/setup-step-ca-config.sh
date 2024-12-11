@@ -3,79 +3,115 @@ set -Eeo pipefail; shopt -s inherit_errexit
 # shellcheck disable=SC1091
 source /usr/local/lib/upkg/.upkg/records.sh/records.sh
 
-
-KUBE_CLIENT_CA_CRT_PATH=$STEPPATH/certs/kube_apiserver_client_ca.crt
+ROOT_CRT_PATH=/home/step/certs/root_ca.crt
+STEP_ISSUER_DIR=$STEPPATH/provisioner-secrets/step-issuer
+SSH_HOST_DIR=$STEPPATH/provisioner-secrets/ssh-host
 
 main() {
-  local config lb_pv4 lb_ipv6
-  lb_pv4=$(kubectl -n smallstep get svc step-ca-external -o=jsonpath='{.status.loadBalancer.ingress[0].ip}')
+  create_step_issuer_provisioner
+  create_ssh_host_provisioner
+  local lb_ipv4 lb_ipv6 step_issuer_jwk step_issuer_enc_key ssh_host_jwk ssh_host_enc_key
+  lb_ipv4=$(kubectl -n smallstep get svc step-ca-external -o=jsonpath='{.status.loadBalancer.ingress[0].ip}')
   lb_ipv6=$(kubectl -n smallstep get svc step-ca-external -o=jsonpath='{.status.loadBalancer.ingress[1].ip}')
-  config=$(jq \
-    --arg ipv4 "$lb_pv4" \
+  step_issuer_jwk=$(cat "$STEP_ISSUER_DIR/pub.json")
+  step_issuer_enc_key=$(jq -cS . "$STEP_ISSUER_DIR/priv.json" | base64 -w0 | tr -d '=' | tr '/+' '_-')
+  ssh_host_jwk=$(cat "$SSH_HOST_DIR/pub.json")
+  ssh_host_enc_key=$(jq -cS . "$SSH_HOST_DIR/priv.json" | base64 -w0 | tr -d '=' | tr '/+' '_-')
+  info "Creating CA config"
+  jq \
+    --arg ipv4 "$lb_ipv4" \
     --arg ipv6 "$lb_ipv6" \
     --arg domain "pki.$CLUSTER_DOMAIN" \
-    '.dnsNames+=[$ipv4, $ipv6, $domain]' \
-    "$STEPPATH/config-ro/ca.json")
+    --argjson step_issuer_jwk "$step_issuer_jwk" \
+    --arg step_issuer_enc_key "$step_issuer_enc_key" \
+    --argjson ssh_host_jwk "$ssh_host_jwk" \
+    --arg ssh_host_enc_key "$ssh_host_enc_key" '
+    .dnsNames+=[$ipv4, $ipv6, $domain] |
+    (.authority.provisioners[] | select(.name=="step-issuer") | .key) |= $step_issuer_jwk |
+    (.authority.provisioners[] | select(.name=="step-issuer") | .encryptedKey) |= $step_issuer_enc_key |
+    (.authority.provisioners[] | select(.name=="ssh-host") | .key) |= $ssh_host_jwk |
+    (.authority.provisioners[] | select(.name=="ssh-host") | .encryptedKey) |= $ssh_host_enc_key
+    ' "$STEPPATH/config-ro/ca.json" >"$STEPPATH/config/ca.json"
+}
 
-  local name provisioner_names=(step-issuer ssh-host kube-apiserver-client-ca)
+create_step_issuer_provisioner() {
+  info "Setting up step issuer provisioner"
 
-  info "Storing and then removing %s provisioners" "${provisioner_names[*]}"
+  mkdir -p "$STEP_ISSUER_DIR"
+  if ! kubectl get -n smallstep secret step-issuer-provisioner-password -o jsonpath='{.data.password}' >"$STEP_ISSUER_DIR/password"; then
+    (tr -dc A-Za-z0-9_- </dev/urandom | head -c 32 || true) >"$STEP_ISSUER_DIR/password"
+    info "step-issuer provisioner password does not exist, creating now"
+    kubectl create -n smallstep secret generic step-issuer-provisioner-password --from-file="$STEP_ISSUER_DIR/password"
+  else
+    info "step-issuer provisioner password exists"
+  fi
+  if ! kubectl get -n smallstep secret step-issuer-provisioner -o jsonpath='{.data.pub\.json}' | base64 -d >"$STEP_ISSUER_DIR/pub.json"; then
+    info "step-issuer provisioner validation failed, (re-)creating now"
+    step crypto jwk create \
+      --force --password-file="$STEP_ISSUER_DIR/password" --use sig \
+      "$STEP_ISSUER_DIR/pub.json" "$STEP_ISSUER_DIR/priv.json"
+    kubectl create -n smallstep secret generic step-issuer-provisioner \
+      --from-file="$STEP_ISSUER_DIR/pub.json" \
+      --from-file="$STEP_ISSUER_DIR/priv.json"
+  else
+    kubectl get -n smallstep secret step-issuer-provisioner -o jsonpath='{.data.priv\.json}' | base64 -d >"$STEP_ISSUER_DIR/priv.json"
+    info "step-issuer provisioner validation succeeded"
+  fi
 
-  declare -A configured_provisioners
-  for name in "${provisioner_names[@]}"; do
-    # 1. Store the configured provisioner
-    configured_provisioners[$name]=$(jq --arg name "$name" '.authority.provisioners[] | select(.name==$name)' <<<"$config")
-    # 2. Remove the provisioner
-    config=$(jq --arg name "$name" 'del(.authority.provisioners[] | select(.name==$name))'  <<<"$config")
-  done
+  kubectl get -n smallstep stepclusterissuer step-issuer -ojsonpath='{.spec.caBundle}' | base64 -d >"$STEP_ISSUER_DIR/caBundle.key" || true
+  local expected_kid actual_kid
+  expected_kid=$(step crypto jwk thumbprint < "$STEP_ISSUER_DIR/pub.json")
+  actual_kid=$(kubectl get -n smallstep stepclusterissuer step-issuer -ojsonpath='{.spec.provisioner.kid}' || true)
+  if ! diff -q "$ROOT_CRT_PATH" "$STEP_ISSUER_DIR/caBundle.key" || [[ $actual_kid != "$expected_kid" ]]; then
+    info "StepClusterIssuer validation failed, (re-)creating now"
+    local root_b64 step_issuer_fp
+    root_b64=$(base64 -w0 "$ROOT_CRT_PATH")
+    step_issuer_fp=$(step crypto jwk thumbprint < "$STEP_ISSUER_DIR/pub.json")
+    kubectl apply -f <(printf -- "apiVersion: certmanager.step.sm/v1beta1
+kind: StepClusterIssuer
+metadata:
+  name: step-issuer
+  namespace: %s
+spec:
+  url: https://step-ca.smallstep.svc.cluster.local:9000
+  caBundle: %s
+  provisioner:
+    name: step-issuer
+    kid: %s
+    passwordRef:
+      namespace: smallstep
+      name: step-issuer-provisioner-password
+      key: password" smallstep "$root_b64" "$step_issuer_fp"
+    )
+  else
+    info "StepClusterIssuer validation succeeded"
+  fi
+}
 
-  # 3. Add the provisioner keys through `step ca provisioner add`
+create_ssh_host_provisioner() {
+  info "Setting up SSH host provisioner"
 
-  printf "%s\n" "$config" >"$STEPPATH/config/ca.json" # step operates on config/ca.json
-
-  info "Adding step-issuer provisioner key"
-  step ca provisioner add step-issuer --type JWK \
-    --public-key="$STEPPATH/step-issuer-provisioner/pub.json" \
-    --private-key="$STEPPATH/step-issuer-provisioner/priv.json" \
-    --password-file="$STEPPATH/step-issuer-provisioner-password"
-
-  info "Adding ssh-host provisioner key"
-  step ca provisioner add ssh-host --type JWK \
-    --public-key="$STEPPATH/ssh-host-provisioner/pub.json" \
-    --private-key="$STEPPATH/ssh-host-provisioner/priv.json" \
-    --password-file="$STEPPATH/ssh-host-provisioner-password"
-
-  info "Adding kube-apiserver client CA provisioner certificate"
-  step ca provisioner add kube-apiserver-client-ca --type X5C --x5c-root "$KUBE_CLIENT_CA_CRT_PATH"
-
-  config=$(cat "$STEPPATH/config/ca.json") # done messing with the physical ca.json, read it into $config
-
-  # 4. Extract the added keys
-  info "Merging new provisioner keys with stored provisioner config"
-
-  declare -A provisioner_keys
-  for name in "${provisioner_names[@]}"; do
-    provisioner_keys[$name]=$(jq --arg name "$name" '.authority.provisioners[] | select(.name==$name)' <<<"$config")
-  done
-
-  # 5. Apply the extracted keys to the stored configs
-  configured_provisioners[step-issuer]=$(jq --argjson provisioner "${provisioner_keys[step-issuer]}" \
-    '.key=$provisioner.key | .encryptedKey=$provisioner.encryptedKey' <<<"${configured_provisioners[step-issuer]}")
-  configured_provisioners[ssh-host]=$(jq --argjson provisioner "${provisioner_keys[ssh-host]}" \
-    '.key=$provisioner.key | .encryptedKey=$provisioner.encryptedKey' <<<"${configured_provisioners[ssh-host]}")
-  configured_provisioners[kube-apiserver-client-ca]=$(jq --argjson provisioner "${provisioner_keys[$name]}" \
-    '.roots=$provisioner.roots' <<<"${configured_provisioners[kube-apiserver-client-ca]}")
-
-  info "Replacing added provisioners with merged config"
-
-  for name in "${provisioner_names[@]}"; do
-    # 6. Remove the added provisioner
-    config=$(jq --arg name "$name" 'del(.authority.provisioners[] | select(.name==$name))' <<<"$config")
-    # 7. Insert the updated provisioner
-    config=$(jq --argjson provisioner "${configured_provisioners[$name]}" '.authority.provisioners += [$provisioner]' <<<"$config")
-  done
-
-  printf "%s\n" "$config" >"$STEPPATH/config/ca.json" # done, write the config
+  mkdir -p "$SSH_HOST_DIR"
+  if ! kubectl get -n smallstep secret ssh-host-provisioner-password -o jsonpath='{.data.password}' >"$SSH_HOST_DIR/password"; then
+    info "step-host provisioner password does not exist, creating now"
+    (tr -dc A-Za-z0-9_- </dev/urandom | head -c 32 || true) >"$SSH_HOST_DIR/password"
+    kubectl create -n smallstep secret generic ssh-host-provisioner-password --from-file="$SSH_HOST_DIR/password"
+  else
+    info "step-host provisioner password exists"
+  fi
+  if ! kubectl get -n smallstep secret ssh-host-provisioner -o jsonpath='{.data.pub\.json}' | base64 -d >"$SSH_HOST_DIR/pub.json"; then
+    info "ssh-host provisioner validation failed, (re-)creating now"
+    step crypto jwk create \
+      --force --password-file="$SSH_HOST_DIR/password" \
+      --use sig \
+      "$SSH_HOST_DIR/pub.json" "$SSH_HOST_DIR/priv.json"
+    kubectl create -n smallstep secret generic ssh-host-provisioner \
+      --from-file="$SSH_HOST_DIR/pub.json" \
+      --from-file="$SSH_HOST_DIR/priv.json"
+  else
+    kubectl get -n smallstep secret ssh-host-provisioner -o jsonpath='{.data.priv\.json}' | base64 -d >"$SSH_HOST_DIR/priv.json"
+    info "ssh-host provisioner validation succeeded"
+  fi
 }
 
 main "$@"

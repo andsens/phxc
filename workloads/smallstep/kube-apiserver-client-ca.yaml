@@ -139,13 +139,13 @@ spec:
         - name: config
           mountPath: /home/step/config-ro
         - name: kube-apiserver-client-ca-cert
-          mountPath: /home/step/certs/kube_apiserver_client_ca.crt
+          mountPath: /home/step/kube-api-secrets/kube_apiserver_client_ca.crt
           readOnly: true
         - name: kube-apiserver-client-ca-key
-          mountPath: /home/step/certs/kube_apiserver_client_ca_key
+          mountPath: /home/step/kube-api-secrets/kube_apiserver_client_ca_key
           readOnly: true
-        - name: certs
-          mountPath: /home/step/certs-ram
+        - name: secrets
+          mountPath: /home/step/secrets
         - name: config-rw
           mountPath: /home/step/config
       containers:
@@ -171,8 +171,8 @@ spec:
             scheme: HTTPS
           initialDelaySeconds: 5
         volumeMounts:
-        - name: certs
-          mountPath: /home/step/certs
+        - name: secrets
+          mountPath: /home/step/secrets
           readOnly: true
         - name: templates
           mountPath: /home/step/templates
@@ -192,7 +192,7 @@ spec:
       - name: templates
         configMap:
           name: kube-apiserver-client-ca-templates
-      - name: certs
+      - name: secrets
         emptyDir:
           medium: Memory
       - name: kube-apiserver-client-ca-cert
