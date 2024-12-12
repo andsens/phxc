@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# shellcheck source-path=../../../..
+# shellcheck source-path=../..
 set -Eeo pipefail; shopt -s inherit_errexit
-PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../../..")
+PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../..")
 source "$PKGROOT/.upkg/records.sh/records.sh"
 
 export DISK_UUID=caf66bff-edab-4fb1-8ad9-e570be5415d7
@@ -24,14 +24,14 @@ main() {
   # shellcheck disable=SC2016
   local replacements=('${DISK_UUID}' '${BOOT_UUID}' '${DATA_UUID}' '${VARIANT}')
 
-  local src dest files=$PKGROOT/workloads/node/bootstrap/root
+  local src dest files=$PKGROOT/bootstrap/root
   while IFS= read -r -d $'\0' src; do
     dest=${src#"$files"}
     mkdir -p "$(dirname "$dest")"
     envsubst "${replacements[*]}" <"$src" >"$dest"
   done < <(find "$files" -type f -print0)
 
-  local unit enable_units unit_files=$PKGROOT/workloads/node/bootstrap/systemd-units
+  local unit enable_units unit_files=$PKGROOT/bootstrap/systemd-units
   while IFS= read -r -d $'\0' src; do
     unit=$(basename "$src")
     if grep -q '^\[Install\]$' "$src" && [[ $unit != *@* ]]; then
@@ -49,7 +49,7 @@ main() {
   PACKAGES_TMP=()
   PACKAGES_PURGE=()
   local taskfile
-  for taskfile in "$PKGROOT/workloads/node/bootstrap/tasks.d/"??-*.sh; do
+  for taskfile in "$PKGROOT/bootstrap/tasks.d/"??-*.sh; do
     # shellcheck disable=SC1090
     source "$taskfile"
   done
@@ -62,7 +62,7 @@ main() {
   rm -rf /var/cache/apt/lists/*
 
   local task
-  for taskfile in "$PKGROOT/workloads/node/bootstrap/tasks.d/"??-*.sh; do
+  for taskfile in "$PKGROOT/bootstrap/tasks.d/"??-*.sh; do
     task=$(basename "$taskfile" .sh)
     task=${task#[0-9][0-9]-}
     task=${task//[^a-z0-9_]/_}

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# shellcheck source-path=../../../..
+# shellcheck source-path=../../..
 set -Eeo pipefail; shopt -s inherit_errexit
 PKGROOT=/usr/local/lib/upkg
 

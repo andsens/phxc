@@ -12,11 +12,11 @@ configMapGenerator:
   - Dockerfile
   name: node
 - files:
-  - create-boot-image-assets/config-rpi5.txt
-  name: create-boot-image-assets
+  - assets/config-rpi5.txt
+  name: assets
 - files:
   - scripts/create-boot-image.sh
   - scripts/get-pe-digest.py
-  name: create-boot-image-scripts
+  name: scripts
 generators:
 - generate-bundle-cm.yaml

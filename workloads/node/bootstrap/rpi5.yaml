@@ -67,11 +67,11 @@ spec:
           name: node
       - name: scripts
         configMap:
-          name: create-boot-image-scripts
+          name: scripts
           defaultMode: 0755
       - name: assets
         configMap:
-          name: create-boot-image-assets
+          name: assets
       - name: common-context
         configMap:
           name: common-context

@@ -71,7 +71,7 @@ docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
   local bundle
   bundle=$(mktemp --suffix '-phoenix-cluster-bundle.tar.gz')
   trap_append "rm \"$bundle\"" EXIT
-  "$PKGROOT/workloads/node/bootstrap/scripts/bundle" "$bundle"
+  "$PKGROOT/bootstrap/scripts/bundle" "$bundle"
 
   local bootstrap_docker_opts=() create_boot_image_docker_opts=() create_boot_image_opts=(--chown $UID)
 
@@ -101,7 +101,7 @@ docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
   # shellcheck disable=SC2154
   if $__upload; then
     local image_registry_ip retry=15
-    if ! image_registry_ip=$("$PKGROOT/workloads/node/bootstrap/assets/usr/local/bin/find-boot-server" --no-set-state); then
+    if ! image_registry_ip=$("$PKGROOT/bootstrap/assets/usr/local/bin/find-boot-server" --no-set-state); then
       error "Failed to determine image-registry IP, retrying in %ds" $retry
       sleep $retry
     fi
@@ -136,7 +136,6 @@ docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
   docker run --rm -ti \
     --platform "$DOCKER_PLATFORM" "${bootstrap_docker_opts[@]}" \
     -v "$PKGROOT/workloads/node/bootstrap/Dockerfile:/workspace/context/Dockerfile:ro" \
-    -v "$PKGROOT/workloads/node/bootstrap/assets:/workspace/assets:ro" \
     -v "$bundle:/workspace/phoenix-cluster.tar.gz:ro" \
     -v "$PKGROOT/workloads/common-context:/workspace/common-context:ro" \
     -v "$artifacts:/workspace/artifacts:rw" \
@@ -152,7 +151,7 @@ docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
 
   docker run --rm -ti "${create_boot_image_docker_opts[@]}" \
     --platform "$DOCKER_PLATFORM" \
-    -v "$PKGROOT/workloads/node/bootstrap/create-boot-image-assets:/assets:ro" \
+    -v "$PKGROOT/bootstrap/assets:/assets:ro" \
     -v "$PKGROOT/workloads/node/bootstrap/scripts:/scripts:ro" \
     -v "$artifacts:/workspace/artifacts:rw" \
     -e "VARIANT=$VARIANT" \

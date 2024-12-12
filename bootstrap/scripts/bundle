@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# shellcheck source-path=../../../..
+# shellcheck source-path=../..
 set -Eeo pipefail; shopt -s inherit_errexit
-PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../../..")
+PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../..")
 
 main() {
   source "$PKGROOT/.upkg/path-tools/path-tools.sh"
@@ -14,9 +14,9 @@ main() {
     local filepath
     while read -r -d $'\0' filepath; do
       [[ ! -e $PKGROOT/$filepath ]] || bundle_files+=("$filepath")
-    done < <(cd "$PKGROOT"; git -C "$PKGROOT" ls-files -zco --exclude-standard bin lib workloads)
+    done < <(cd "$PKGROOT"; git -C "$PKGROOT" ls-files -zco --exclude-standard bin bootstrap lib workloads)
   else
-    bundle_files+=(bin lib workloads)
+    bundle_files+=(bin bootstrap lib workloads)
   fi
   # shellcheck disable=SC2086
   (
