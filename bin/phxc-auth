@@ -5,10 +5,6 @@ PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
 source "$PKGROOT/.upkg/records.sh/records.sh"
 
 KUBE_CFG_DEFAULT_PATH=$HOME/.kube/config.yaml
-KUBE_CFG_PATH=$HOME/.kube/phxc.yaml
-USERNAME=system:admin
-KUBE_CONTEXT=phxc
-KUBE_CLUSTER=phxc
 CONFIG_DIR=$HOME/.config/phxc
 
 main() {
@@ -27,6 +23,7 @@ configure() {
   [[ $# -eq 2 ]] || usage
   mkdir -p "$CONFIG_DIR"
   local keyname=$1 kube_api_hostname=$2 kube_api_addr ca_url api_server_cert api_client_cert_fp yesno
+  local kube_cfg_path=$HOME/.kube/phxc.yaml kube_context=phxc kube_cluster=phxc username=system:admin
   [[ ! $kube_api_hostname =~ ^(https?://)?([^:]+) ]] || kube_api_hostname=${BASH_REMATCH[2]}
   kube_api_addr="https://$kube_api_hostname:6443"
   ca_url=${kube_api_addr%:*}:9001
@@ -39,29 +36,31 @@ configure() {
   printf "Do you want to establish trust with these certificates? [y/N]"
   read -r yesno
   [[ $yesno =~ ^[Yy](es)?$ ]] || fatal "User aborted operation"
-  kubectl config --kubeconfig "$KUBE_CFG_PATH" set-cluster "$KUBE_CLUSTER" \
+  kubectl config --kubeconfig "$kube_cfg_path" set-cluster "$kube_cluster" \
     --server="$kube_api_addr" \
     --embed-certs \
     --certificate-authority=<(printf "%s" "$api_server_cert")
-  kubectl config --kubeconfig "$KUBE_CFG_PATH" set-credentials "$USERNAME@$KUBE_CLUSTER" \
+  kubectl config --kubeconfig "$kube_cfg_path" set-credentials "$username@$kube_cluster" \
     --exec-api-version="client.authentication.k8s.io/v1beta1" \
     --exec-command="$(realpath "${BASH_SOURCE[0]}")" \
     --exec-arg="get-cert" \
     --exec-arg="$keyname" \
-    --exec-arg="$api_client_cert_fp"
-  kubectl config --kubeconfig "$KUBE_CFG_DEFAULT_PATH" set-context $KUBE_CONTEXT \
-    --cluster "$KUBE_CLUSTER" --user "$USERNAME@$KUBE_CLUSTER"
+    --exec-arg="$api_client_cert_fp" \
+    --exec-arg="$kube_cfg_path" \
+    --exec-arg="$kube_cluster" \
+    --exec-arg="$username"
+  kubectl config --kubeconfig "$KUBE_CFG_DEFAULT_PATH" set-context $kube_context \
+    --cluster "$kube_cluster" --user "$username@$kube_cluster"
 }
 
 get_cert() {
-  set -x
-  [[ $# -eq 2 ]] || usage
-  local keyname=$1 ca_fp=$2
-  if [[ ! -e $CONFIG_DIR/$USERNAME.crt ]] || \
-      step certificate needs-renewal --expires-in 0s "$CONFIG_DIR/$USERNAME.crt" 2>&1 | LOGPROGRAM=step pipe_verbose; then
+  [[ $# -eq 5 ]] || usage
+  local keyname=$1 ca_fp=$2 kube_cfg_path=$3 cluster=$4 username=$5
+  if [[ ! -e $CONFIG_DIR/$username.crt ]] || \
+      step certificate needs-renewal --expires-in 0s "$CONFIG_DIR/$username.crt" 2>&1 | LOGPROGRAM=step pipe_verbose; then
     local kube_config kube_api_addr ca_url ca_cert remote_ca_fp ssh_pem header payload signature
-    kube_config=$(kubectl config view --raw --kubeconfig "$KUBE_CFG_PATH" -o json | \
-      jq --arg cluster "$KUBE_CLUSTER" '.clusters[] | select(.name == $cluster) | .cluster')
+    kube_config=$(kubectl config view --raw --kubeconfig "$kube_cfg_path" -o json | \
+      jq --arg cluster "$cluster" '.clusters[] | select(.name == $cluster) | .cluster')
     kube_api_addr=$(jq -re '.server' <<<"$kube_config")
     ca_url=${kube_api_addr%:*}:9001
     ca_cert=$(step certificate inspect --insecure --format pem "$ca_url/roots.pem")
@@ -77,7 +76,7 @@ get_cert() {
       "typ": "JWT"
     }' | jq -cS . | base64 -w0 | tr -d '=' | tr '/+' '_-')
     payload=$(jq -n --arg ca_url "$ca_url" --argjson now "$(date +%s)" \
-                    --arg jti "$(openssl rand -hex 32)" --arg sub "$USERNAME" '{
+                    --arg jti "$(openssl rand -hex 32)" --arg sub "$username" '{
       "aud": ($ca_url + "/1.0/sign"),
       "exp": ($now + 30),
       "iat": $now,
@@ -90,11 +89,11 @@ get_cert() {
     signature=$(step kms sign --format jws --in <(printf "%s.%s" "$header" "$payload") \
       --kms "sshagentkms" "sshagentkms:$keyname")
     step ca certificate --ca-url="$ca_url" --root=<(printf "%s\n" "$ca_cert") --token="$header.$payload.$signature" --force \
-      "$USERNAME" "$CONFIG_DIR/$USERNAME.crt" "$CONFIG_DIR/$USERNAME.key" 2>&1 | LOGPROGRAM=step pipe_verbose
+      "$username" "$CONFIG_DIR/$username.crt" "$CONFIG_DIR/$username.key" 2>&1 | LOGPROGRAM=step pipe_verbose
   fi
   local cert key
-  cert=$(cat "$CONFIG_DIR/$USERNAME.crt")
-  key=$(cat "$CONFIG_DIR/$USERNAME.key")
+  cert=$(cat "$CONFIG_DIR/$username.crt")
+  key=$(cat "$CONFIG_DIR/$username.key")
   printf '{
   "apiVersion": "client.authentication.k8s.io/v1beta1",
   "kind": "ExecCredential",
@@ -109,7 +108,7 @@ get_cert() {
 usage() {
   printf "Usage:
   phxc-auth configure <ssh-key-name> <kube-api-hostname>
-  phxc-auth get-cert <ssh-key-name> <kube-api-client-ca-fp>
+  phxc-auth get-cert <ssh-key-name> <kube-api-client-ca-fp> <kube-cfg-path> <cluster> <username>
 " >&2
   return 1
 }
