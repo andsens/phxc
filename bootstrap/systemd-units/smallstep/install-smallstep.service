@@ -8,5 +8,5 @@ ConditionPathExists=!/var/lib/phxc/.upkg/smallstep
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=bash -e
-StandardInputText=upkg add -fp smallstep /usr/local/lib/upkg/.upkg/phoenix-cluster/workloads/common-context/smallstep.upkg.json
+StandardInputText=upkg add -fp smallstep /usr/local/lib/upkg/.upkg/phoenix-cluster/lib/common-context/smallstep.upkg.json
 WorkingDirectory=/var/lib/phxc

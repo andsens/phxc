@@ -9,5 +9,5 @@ Type=oneshot
 RemainAfterExit=yes
 ExecStart=bash -e
 StandardInputText=upkg add -fp control-plane /usr/local/lib/upkg/.upkg/phoenix-cluster/bootstrap/control-plane.upkg.json; \
-                  upkg add -fp manifests /usr/local/lib/upkg/.upkg/phoenix-cluster/workloads/common-context/manifests.upkg.json
+                  upkg add -fp manifests /usr/local/lib/upkg/.upkg/phoenix-cluster/lib/common-context/manifests.upkg.json
 WorkingDirectory=/var/lib/phxc
