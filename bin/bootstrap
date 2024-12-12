@@ -105,14 +105,14 @@ docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
 
   local containers=$PKGROOT/images/containers
   if [[ ! -e "$containers/create-boot-image-$ARCH.tar" ]] || \
-     find "$PKGROOT/workloads/node/containers/create-boot-image" "$PKGROOT/workloads/common-context" \
+     find "$PKGROOT/workloads/bootstrap/containers/create-boot-image" "$PKGROOT/workloads/common-context" \
        -newer "$containers/create-boot-image-$ARCH.tar" 2>/dev/null | grep -q .; then
     info "Building '%s'" "create-boot-image:$ARCH"
     mkdir -p "$PKGROOT/images"
     docker run --rm -ti \
       --platform "$DOCKER_PLATFORM" \
       -v "$PKGROOT/lib/common-context:/workspace/common-context:ro" \
-      -v "$PKGROOT/workloads/node/containers/create-boot-image:/workspace/context:ro" \
+      -v "$PKGROOT/workloads/bootstrap/containers/create-boot-image:/workspace/context:ro" \
       -v "$containers:/workspace/containers:rw" \
       gcr.io/kaniko-project/executor:latest \
       --dockerfile context/Dockerfile \
@@ -129,7 +129,7 @@ docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
   info "Building '%s'" "node:$VARIANT"
   docker run --rm -ti \
     --platform "$DOCKER_PLATFORM" "${bootstrap_docker_opts[@]}" \
-    -v "$PKGROOT/workloads/node/bootstrap/Dockerfile:/workspace/context/Dockerfile:ro" \
+    -v "$PKGROOT/workloads/bootstrap/Dockerfile:/workspace/context/Dockerfile:ro" \
     -v "$bundle:/workspace/phoenix-cluster.tar.gz:ro" \
     -v "$PKGROOT/lib/common-context:/workspace/common-context:ro" \
     -v "$artifacts:/workspace/artifacts:rw" \
@@ -146,7 +146,7 @@ docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
   docker run --rm -ti "${create_boot_image_docker_opts[@]}" \
     --platform "$DOCKER_PLATFORM" \
     -v "$PKGROOT/bootstrap/assets:/assets:ro" \
-    -v "$PKGROOT/workloads/node/bootstrap/scripts:/scripts:ro" \
+    -v "$PKGROOT/workloads/bootstrap/scripts:/scripts:ro" \
     -v "$artifacts:/workspace/artifacts:rw" \
     -e "VARIANT=$VARIANT" \
     -e "DEBUG=$DEBUG" \

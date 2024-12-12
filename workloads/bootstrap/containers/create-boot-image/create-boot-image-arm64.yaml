@@ -41,7 +41,7 @@ spec:
       containers:
       - name: move-image
         image: busybox
-        args: [mv, /images/create-boot-image:$(ARCH).tar.tmp, /images/create-boot-image:$(ARCH).tar]
+        args: [mv, '/images/create-boot-image:$(ARCH).tar.tmp', '/images/create-boot-image:$(ARCH).tar']
         env:
         - name: ARCH
           value: arm64

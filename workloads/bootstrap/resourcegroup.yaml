@@ -1,0 +1,6 @@
+apiVersion: kpt.dev/v1alpha1
+kind: ResourceGroup
+metadata:
+  name: bootstrap
+  labels:
+    cli-utils.sigs.k8s.io/inventory-id: b49c50fb5665d6b426574da573e6b360a36ab4d8-1734041381137132397

@@ -1,12 +1,14 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-namespace: node
+namespace: phxc
 resources:
+- ../../lib/common-context
+- containers/create-boot-image
 - network-policy.yaml
 - secureboot.yaml
-- amd64.yaml
-- arm64.yaml
-- rpi5.yaml
+- variants/amd64.yaml
+- variants/arm64.yaml
+- variants/rpi5.yaml
 configMapGenerator:
 - files:
   - Dockerfile

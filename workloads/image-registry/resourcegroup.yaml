@@ -1,6 +1,6 @@
 apiVersion: kpt.dev/v1alpha1
 kind: ResourceGroup
 metadata:
-  name: node
+  name: image-registry
   labels:
     cli-utils.sigs.k8s.io/inventory-id: f60cac43a0a8308fb2ecf72480b8c7e779299d60-1716243453404361383
