@@ -14,9 +14,9 @@ main() {
   lb_ipv4=$(kubectl -n smallstep get svc step-ca-external -o=jsonpath='{.status.loadBalancer.ingress[0].ip}')
   lb_ipv6=$(kubectl -n smallstep get svc step-ca-external -o=jsonpath='{.status.loadBalancer.ingress[1].ip}')
   step_issuer_jwk=$(cat "$STEP_ISSUER_DIR/pub.json")
-  step_issuer_enc_key=$(jq -cS . "$STEP_ISSUER_DIR/priv.json" | base64 -w0 | tr -d '=' | tr '/+' '_-')
+  step_issuer_enc_key=$(jq -rcS '. | join(".")' "$STEP_ISSUER_DIR/priv.json")
   ssh_host_jwk=$(cat "$SSH_HOST_DIR/pub.json")
-  ssh_host_enc_key=$(jq -cS . "$SSH_HOST_DIR/priv.json" | base64 -w0 | tr -d '=' | tr '/+' '_-')
+  ssh_host_enc_key=$(jq -rcS '. | join(".")' "$SSH_HOST_DIR/priv.json")
   info "Creating CA config"
   jq \
     --arg ipv4 "$lb_ipv4" \
