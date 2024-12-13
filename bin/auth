@@ -107,8 +107,8 @@ get_cert() {
 
 usage() {
   printf "Usage:
-  phxc-auth configure <ssh-key-name> <kube-api-hostname>
-  phxc-auth get-cert <ssh-key-name> <kube-api-client-ca-fp> <kube-cfg-path> <cluster> <username>
+  auth configure <ssh-key-name> <kube-api-hostname>
+  auth get-cert <ssh-key-name> <kube-api-client-ca-fp> <kube-cfg-path> <cluster> <username>
 " >&2
   return 1
 }
