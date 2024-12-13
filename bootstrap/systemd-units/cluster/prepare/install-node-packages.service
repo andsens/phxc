@@ -12,5 +12,5 @@ RequiredBy=k3s.target
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=bash -e
-StandardInputText=upkg add -fp node /usr/local/lib/upkg/.upkg/phoenix-cluster/bootstrap/assets/node.upkg.json
+StandardInputText=upkg add -fp node /usr/local/lib/upkg/.upkg/phoenix-cluster/bootstrap/node.upkg.json
 WorkingDirectory=/var/lib/phxc

@@ -10,6 +10,7 @@ admin() {
   adduser admin sudo
   mkdir /home/admin/.ssh
   if [[ -e /workspace/embed-configs ]]; then
+    info "Copying admin ssh key to /home/admin/.ssh/authorized_keys"
     yq -r '.["admin-ssh-key"]' /workspace/embed-configs/cluster.yaml > /home/admin/.ssh/authorized_keys
   fi
   usermod -L root

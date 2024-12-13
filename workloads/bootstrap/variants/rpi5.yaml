@@ -41,7 +41,7 @@ spec:
       containers:
       - name: create-boot-image
         image: cluster.local/create-boot-image:arm64
-        args: [--upload, 'https://image-registry.node.svc.cluster.local:8021']
+        args: [--upload, 'https://image-registry.phxc.svc.cluster.local:8021']
         imagePullPolicy: Never
         env:
         - name: VARIANT

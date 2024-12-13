@@ -3,7 +3,7 @@ kind: Certificate
 metadata:
   name: secureboot
   labels:
-    app.kubernetes.io/name: node
+    app.kubernetes.io/name: bootstrap
     app.kubernetes.io/component: secureboot
 spec:
   commonName: Phoenix Cluster Secure Boot

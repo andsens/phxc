@@ -59,7 +59,7 @@ properties:
         additionalProperties: false
     required: [router]
     additionalProperties: false
-required: [domain, admin]
+required: [admin-ssh-key]
 additionalProperties: false
 definitions:
   ipv4:

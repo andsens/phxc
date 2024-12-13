@@ -9,6 +9,8 @@ resources:
 - variants/amd64.yaml
 - variants/arm64.yaml
 - variants/rpi5.yaml
+- Kptfile
+- resourcegroup.yaml
 configMapGenerator:
 - files:
   - Dockerfile
