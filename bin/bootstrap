@@ -76,14 +76,12 @@ docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
   local bootstrap_docker_opts=() create_boot_image_docker_opts=() create_boot_image_opts=(--chown $UID)
 
   # shellcheck disable=SC2154
-  if $__upload; then
-    create_boot_image_opts+=(--upload "$__upload")
-  fi
+  ! $__upload || create_boot_image_opts+=(--upload "$__upload")
 
   # shellcheck disable=SC2154
   if [[ ${#__embed[@]} -gt 0 ]]; then
     local config_tmp config config_basename
-    config_tmp=$(mktemp -d --suffix '-phoenix-cluster.yaml')
+    config_tmp=$(mktemp -d --suffix '-phoenix-cluster-config')
     trap_append "rm -rf \"$config_tmp\"" EXIT
     for config in "${__embed[@]}"; do
       config_basename=$(basename "$config")

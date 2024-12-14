@@ -44,8 +44,7 @@ for varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
     real_filepath=$(realpath "$FILEPATH")
     contents=$(cat "$real_filepath")
     if [[ $real_filepath = /boot/* ]] && ! ssh-keygen -q -Y verify -f <(sed 's/^/admin /g' </home/admin/.ssh/authorized_keys) -I admin -n file -s "$real_filepath.sig" <<<"$contents"; then
-      printf "Failed to verify signature of %s using /home/admin/.ssh/authorized_keys\n" "$real_filepath" >&2
-      return 1
+      fatal "Failed to verify signature of %s using /home/admin/.ssh/authorized_keys" "$real_filepath"
     fi
     local validation_errors
     if ! validation_errors=$(jsonschema -i <(yq . <<<"$contents") <(yq . "$schema") 2>&1); then
@@ -53,13 +52,19 @@ for varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
     fi
     if [[ -n $KEY ]]; then
       if yq -r 'paths | join(".")' <<<"$contents" | grep -q "^$KEY$"; then
+        debug "Getting value of '%s' in '%s'" "$KEY" "$FILEPATH"
         key=$(escape_key "$KEY")
         yq -r ".$KEY" <<<"$contents"
       elif $use_default && default=$(get_default "$basename" "$key"); then
+        verbose "Key '%s' is not set in '%s', using default ('%s')" "$KEY" "$FILEPATH" "$default"
         printf "%s\n" "$default"
       else
         # shellcheck disable=SC2154
-        $__quiet || fatal "%s is not set in '%s'" "$KEY" "$FILEPATH"
+        if $__quiet; then
+          verbose "'%s' is not set in '%s'" "$KEY" "$FILEPATH"
+        else
+          fatal "'%s' is not set in '%s'" "$KEY" "$FILEPATH"
+        fi
         return 1
       fi
     else
@@ -92,11 +97,6 @@ escape_key() {
   key=${key//'.'/'"]["'}
   key="[\"$key\"]"
   printf "%s\n" "$key"
-}
-
-usage() {
-  printf "Usage: get-config [-q] FILEPATH [KEY [DEFAULT]]\n" >&2
-  return 1
 }
 
 main "$@"

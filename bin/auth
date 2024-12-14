@@ -51,6 +51,7 @@ configure() {
     --exec-arg="$username"
   kubectl config --kubeconfig "$KUBE_CFG_DEFAULT_PATH" set-context $kube_context \
     --cluster "$kube_cluster" --user "$username@$kube_cluster"
+  rm -f "$CONFIG_DIR/$username.crt" "$CONFIG_DIR/$username.key"
 }
 
 get_cert() {

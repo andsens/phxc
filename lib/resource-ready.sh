@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# shellcheck source-path=..
+
+source "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../.upkg/records.sh/records.sh"
 
 check_ready() {
   local wait=false ret
@@ -22,32 +25,51 @@ check_ready() {
 
 crd_installed() {
   local crd=$1
-  kubectl get crd "$crd" || return 1
+  if kubectl get crd "$crd"; then
+    verbose "The CRD '%s' is installed" "$crd"
+  else
+    verbose "The CRD '%s' has not been installed yet" "$crd"
+    return 1
+  fi
 }
 
 deployment_ready() {
-  local ns=$1 deployment=$2
-  [[ $(kubectl get -n "$ns" deployment "$deployment" -ojsonpath='{.status.readyReplicas}') -gt 0 ]] || return 1
+  local ns=$1 deployment=$2 count
+  count=$(kubectl get -n "$ns" deployment "$deployment" -ojsonpath='{.status.readyReplicas}')
+  verbose "The deployment '%s' in '%s' has %d ready replicas" "$deployment" "$ns" "$count"
+  [[ $count -gt 0 ]] || return 1
 }
 
 statefulset_ready() {
-  local ns=$1 sts=$2
-  [[ $(kubectl get -n "$ns" statefulset "$sts" -ojsonpath='{.status.readyReplicas}') -gt 0 ]] || return 1
+  local ns=$1 sts=$2 count
+  count=$(kubectl get -n "$ns" statefulset "$sts" -ojsonpath='{.status.readyReplicas}')
+  verbose "The stateful set '%s' in '%s' has %d ready replicas" "$sts" "$ns" "$count"
+  [[ $count -gt 0 ]] || return 1
 }
 
 pod_ready() {
   local ns=$1 pod=$2
-  kubectl -n "$ns" get pod "$pod" -o=jsonpath='{.status.conditions}' | status_is_ready
+  if kubectl -n "$ns" get pod "$pod" -o=jsonpath='{.status.conditions}' | status_is_ready; then
+    verbose "The pod '%s' in '%s' is ready" "$pod" "$ns"
+    return 0
+  else
+    verbose "The pod '%s' in '%s' is not ready" "$pod" "$ns"
+    return 1
+  fi
 }
 
 namespace_ready() {
-  local ns=$1
-  [[ $(kubectl get namespace "$ns" -o jsonpath='{.status.phase}' 2>/dev/null) = 'Active' ]] || return 1
+  local ns=$1 phase
+  phase=$(kubectl get namespace "$ns" -o jsonpath='{.status.phase}' 2>/dev/null)
+  verbose "The namespace '%s' is in the '%s' phase" "$ns" "$phase"
+  [[ $phase = 'Active' ]] || return 1
 }
 
 endpoint_ready() {
-  local ns=$1 endpoint=$2
-  kubectl -n "$ns" get endpoints "$endpoint" -ojsonpath='{.subsets[*].addresses}' | jq -e 'length > 0'
+  local ns=$1 endpoint=$2 addrcount
+  addrcount=$(kubectl -n "$ns" get endpoints "$endpoint" -ojsonpath='{.subsets[*].addresses}' | jq -re 'length')
+  verbose "The endpoint '%s' in '%s' has %d addresses" "$endpoint" "$ns"
+  [[ $addrcount -gt 0 ]] || return 1
 }
 
 status_is_ready() {
@@ -56,5 +78,11 @@ status_is_ready() {
 
 image_ready() {
   local ref=$1
-  ctr -n k8s.io image ls -q | grep -q "^$ref$" || return 1
+  if ctr -n k8s.io image ls -q | grep -q "^$ref$"; then
+    verbose "The image '%s' exists in the registry" "$ref"
+    return 0
+  else
+    verbose "The image '%s' does not exist in the registry" "$ref"
+    return 1
+  fi
 }

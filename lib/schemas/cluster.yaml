@@ -45,8 +45,8 @@ properties:
         additionalProperties: false
     additionalProperties: false
   bgp:
-    type: object
     description: BGP configuration for cilium to advertise routes for your router
+    type: object
     properties:
       router:
         description: Router addresses
