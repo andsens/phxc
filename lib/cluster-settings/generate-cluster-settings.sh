@@ -42,7 +42,7 @@ items:
   data:' | yq -y --indentless \
     --argjson defaults "$(yq . "$defaults_path")" \
     --argjson settings "$(yq . "$cluster_yaml_path")" \
-    '.items[0].data=($defaults * $settings)'
+    '.items[0].data=($defaults * $settings | walk(if type == "array" then join(",") else . end))'
 }
 
 main "$@"

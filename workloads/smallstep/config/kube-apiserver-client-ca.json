@@ -23,17 +23,7 @@
       "maxUserSSHCertDuration": "30m",
       "enableSSHCA": false
     },
-    "provisioners": [
-      {
-        "type": "JWK",
-        "name": "admin",
-        "options": {
-          "x509": {
-            "templateFile": "/home/step/templates/admin.tpl"
-          }
-        }
-      }
-    ]
+    "provisioners": []
   },
   "tls": {
     "cipherSuites": [

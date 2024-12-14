@@ -7,22 +7,33 @@ KUBE_CLIENT_CA_KEY_PATH=$STEPPATH/kube-api-secrets/kube_apiserver_client_ca_key
 KUBE_CLIENT_CA_CRT_PATH=$STEPPATH/kube-api-secrets/kube_apiserver_client_ca.crt
 
 main() {
-  local lb_ipv4 lb_ipv6 admin_jwk
+  local config lb_ipv4 lb_ipv6
   lb_ipv4=$(kubectl -n smallstep get svc kube-apiserver-client-ca-external -o=jsonpath='{.status.loadBalancer.ingress[0].ip}')
   lb_ipv6=$(kubectl -n smallstep get svc kube-apiserver-client-ca-external -o=jsonpath='{.status.loadBalancer.ingress[1].ip}')
-  admin_jwk=$(step crypto key format --jwk <<<"${CLUSTER_ADMIN_SSH_KEY:?}")
-  admin_jwk=$(jq --arg kid "$(step crypto jwk thumbprint <<<"$admin_jwk")" '.kid=$kid' <<<"$admin_jwk")
   info "Creating CA config"
-  jq \
+  config=$(jq \
     --arg uqnodename "${NODENAME%'.local'}" \
     --arg nodename "$NODENAME" \
     --arg ipv4 "$lb_ipv4" \
     --arg ipv6 "$lb_ipv6" \
-    --arg domain "pki-kube.$CLUSTER_DOMAIN" \
-    --argjson admin_jwk "$admin_jwk" '
-      .dnsNames+=([$uqnodename, $nodename, $ipv4, $ipv6, $domain] | unique) |
-      (.authority.provisioners[] | select(.name=="admin") | .key) |= $admin_jwk
-    ' "$STEPPATH/config-ro/kube-apiserver-client-ca.json" >"$STEPPATH/config/ca.json"
+    --arg domain "pki-kube.$CLUSTER_DOMAIN" '
+      .dnsNames+=([$uqnodename, $nodename, $ipv4, $ipv6, $domain] | unique)
+    ' "$STEPPATH/config-ro/kube-apiserver-client-ca.json")
+  local ssh_key admin_jwk
+  while IFS= read -r -d , ssh_key || [[ -n $ssh_key ]]; do
+    admin_jwk=$(step crypto key format --jwk <<<"$ssh_key")
+    admin_jwk=$(jq --arg kid "$(step crypto jwk thumbprint <<<"$admin_jwk")" '.kid=$kid' <<<"$admin_jwk")
+    # shellcheck disable=SC2016
+    config=$(yq --argjson key "$admin_jwk" '.authority.provisioners += [{
+      "type": "JWK",
+      "name": $key.kid,
+      "key": $key,
+      "options": { "x509": { "templateFile": "/home/step/templates/admin.tpl" } },
+    }]' <<<"$config")
+
+  done <<<"${CLUSTER_ADMIN_SSH_KEYS:?}"
+
+  printf "%s\n" "$config" >"$STEPPATH/config/ca.json"
 
   local certs_ram_path=$STEPPATH/secrets
   info "Copying kube-apiserver-client-ca cert & key to RAM backed volume"

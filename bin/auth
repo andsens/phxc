@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # shellcheck source-path=..
-set -Eeo pipefail; shopt -s inherit_errexit
+set -eo pipefail; shopt -s inherit_errexit
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
 source "$PKGROOT/.upkg/records.sh/records.sh"
 
@@ -8,94 +8,114 @@ KUBE_CFG_DEFAULT_PATH=$HOME/.kube/config.yaml
 CONFIG_DIR=$HOME/.config/phxc
 
 main() {
-  local e; for e; do [[ "$e" != "--help" ]] || usage; done
-  [[ $# -gt 0 ]] || usage
-  local cmd=$1
-  shift
-  case "$cmd" in
-    configure) configure "$@" ;;
-    get-cert) get_cert "$@" ;;
-    *) usage ;;
-  esac
-}
+  DOC="auth
+Usage:
+  auth configure [options] <ssh-keyname> <kube-api-hostname>
+  auth get-cert [options] <ssh-keyname> <kube-api-hostname> <kube-api-ca-fp>
 
-configure() {
-  [[ $# -eq 2 ]] || usage
-  mkdir -p "$CONFIG_DIR"
-  local keyname=$1 kube_api_hostname=$2 kube_api_addr ca_url api_server_cert api_client_cert_fp yesno
-  local kube_cfg_path=$HOME/.kube/phxc.yaml kube_context=phxc kube_cluster=phxc username=system:admin
-  [[ ! $kube_api_hostname =~ ^(https?://)?([^:]+) ]] || kube_api_hostname=${BASH_REMATCH[2]}
-  kube_api_addr="https://$kube_api_hostname:6443"
-  ca_url=${kube_api_addr%:*}:9001
-  # TOFU for both the api server & client certs
-  api_server_cert=$(step certificate inspect --insecure --format pem "$kube_api_addr/roots.pem")
-  api_client_cert_fp=$(step certificate fingerprint <(step certificate inspect --insecure --format pem "$ca_url"))
-  warning "The Kubernetes API server and client CA certificate fingerprints are:"
-  printf "Server:    %s\n" "$(step certificate fingerprint <(printf "%s\n" "$api_server_cert"))" >&2
-  printf "Client CA: %s\n" "$api_client_cert_fp" >&2
-  printf "Do you want to establish trust with these certificates? [y/N]"
-  read -r yesno
-  [[ $yesno =~ ^[Yy](es)?$ ]] || fatal "User aborted operation"
-  kubectl config --kubeconfig "$kube_cfg_path" set-cluster "$kube_cluster" \
-    --server="$kube_api_addr" \
-    --embed-certs \
-    --certificate-authority=<(printf "%s" "$api_server_cert")
-  kubectl config --kubeconfig "$kube_cfg_path" set-credentials "$username@$kube_cluster" \
-    --exec-api-version="client.authentication.k8s.io/v1beta1" \
-    --exec-command="$(realpath "${BASH_SOURCE[0]}")" \
-    --exec-arg="get-cert" \
-    --exec-arg="$keyname" \
-    --exec-arg="$api_client_cert_fp" \
-    --exec-arg="$kube_cfg_path" \
-    --exec-arg="$kube_cluster" \
-    --exec-arg="$username"
-  kubectl config --kubeconfig "$KUBE_CFG_DEFAULT_PATH" set-context $kube_context \
-    --cluster "$kube_cluster" --user "$username@$kube_cluster"
-  rm -f "$CONFIG_DIR/$username.crt" "$CONFIG_DIR/$username.key"
-}
+Options:
+  -u --username USERNAME  Kubernetes username [default: system:admin]
+"
+# docopt parser below, refresh this parser with `docopt.sh auth`
+# shellcheck disable=2016,2086,2317,1090,1091,2034
+docopt() { local v='2.0.2'; source \
+"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:229};usage=${DOC:5:144}
+digest=b1c7c;options=('-u --username 1');node_0(){ value __username 0;}
+node_1(){ value _ssh_keyname_ a;};node_2(){ value _kube_api_hostname_ a;}
+node_3(){ value _kube_api_ca_fp_ a;};node_4(){ switch configure a:configure;}
+node_5(){ switch get_cert a:get-cert;};node_6(){ sequence 4 7 1 2;};node_7(){
+optional 0;};node_8(){ sequence 5 7 1 2 3;};node_9(){ choice 6 8;};cat <<<' \
+docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2;printf "%s\n" \
+"${DOC:5:144}" >&2;exit 1;}';local varnames=(__username _ssh_keyname_ \
+_kube_api_hostname_ _kube_api_ca_fp_ configure get_cert) varname;for varname \
+in "${varnames[@]}"; do unset "var_$varname";done;parse 9 "$@";local \
+p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset "$p$varname"
+done;eval $p'__username=${var___username:-system:admin};'$p'_ssh_keyname_=${va'\
+'r__ssh_keyname_:-};'$p'_kube_api_hostname_=${var__kube_api_hostname_:-};'$p'_'\
+'kube_api_ca_fp_=${var__kube_api_ca_fp_:-};'$p'configure=${var_configure:-fals'\
+'e};'$p'get_cert=${var_get_cert:-false};';local docopt_i=1;[[ $BASH_VERSION =~ \
+^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for varname in \
+"${varnames[@]}"; do declare -p "$p$varname";done;done;}
+# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' auth`
+  eval "$(docopt "$@")"
+  local kube_api_addr kube_api_addr ca_url
+  [[ ! $_kube_api_hostname_ =~ ^(https?://)?([^:]+) ]] || _kube_api_hostname_=${BASH_REMATCH[2]}
+  kube_api_addr=https://$_kube_api_hostname_:6443
+  ca_url=https://$_kube_api_hostname_:9001
 
-get_cert() {
-  [[ $# -eq 5 ]] || usage
-  local keyname=$1 ca_fp=$2 kube_cfg_path=$3 cluster=$4 username=$5
-  if [[ ! -e $CONFIG_DIR/$username.crt ]] || \
-      step certificate needs-renewal --expires-in 0s "$CONFIG_DIR/$username.crt" 2>&1 | LOGPROGRAM=step pipe_verbose; then
-    local kube_config kube_api_addr ca_url ca_cert remote_ca_fp ssh_pem header payload signature
-    kube_config=$(kubectl config view --raw --kubeconfig "$kube_cfg_path" -o json | \
-      jq --arg cluster "$cluster" '.clusters[] | select(.name == $cluster) | .cluster')
-    kube_api_addr=$(jq -re '.server' <<<"$kube_config")
-    ca_url=${kube_api_addr%:*}:9001
-    ca_cert=$(step certificate inspect --insecure --format pem "$ca_url/roots.pem")
-    remote_ca_fp=$(step certificate fingerprint <(printf "%s\n" "$ca_cert"))
-    [[ $ca_fp = "$remote_ca_fp" ]] || \
-      fatal "The fingerprint of %s does not match the one embedded in the kube config (%s vs. %s)" \
-        "$ca_url" "$remote_ca_fp" "$ca_fp"
-    ssh_pem=$(step-kms-plugin key "sshagentkms:$keyname")
-    header=$(step crypto jwk create --force --use sig --from-pem=<(printf "%s\n" "$ssh_pem") \
-      /dev/stdout /dev/null 2>/dev/null | jq '{
-      "alg": .alg,
-      "kid": .kid,
-      "typ": "JWT"
-    }' | jq -cS . | base64 -w0 | tr -d '=' | tr '/+' '_-')
-    payload=$(jq -n --arg ca_url "$ca_url" --argjson now "$(date +%s)" \
-                    --arg jti "$(openssl rand -hex 32)" --arg sub "$username" '{
-      "aud": ($ca_url + "/1.0/sign"),
-      "exp": ($now + 30),
-      "iat": $now,
-      "iss": "admin",
-      "jti": $jti,
-      "nbf": ($now - 30),
-      "sans": [$sub],
-      "sub": $sub
-    }' | jq -cS . | base64 -w0 | tr -d '=' | tr '/+' '_-')
-    signature=$(step kms sign --format jws --in <(printf "%s.%s" "$header" "$payload") \
-      --kms "sshagentkms" "sshagentkms:$keyname")
-    step ca certificate --ca-url="$ca_url" --root=<(printf "%s\n" "$ca_cert") --token="$header.$payload.$signature" --force \
-      "$username" "$CONFIG_DIR/$username.crt" "$CONFIG_DIR/$username.key" 2>&1 | LOGPROGRAM=step pipe_verbose
-  fi
-  local cert key
-  cert=$(cat "$CONFIG_DIR/$username.crt")
-  key=$(cat "$CONFIG_DIR/$username.key")
-  printf '{
+  # shellcheck disable=SC2154
+  if $configure; then
+    trap 'error "Failed to configure, run with LOGLEVEL=verbose to see more details errors"' ERR
+    mkdir -p "$CONFIG_DIR"
+    local kube_api_server_cert kube_api_client_ca_fp yesno
+    local kube_cfg_path=$HOME/.kube/phxc.yaml kube_context=phxc kube_cluster=phxc
+    # TOFU for both the api server & client certs
+    kube_api_client_ca_fp=$(step certificate fingerprint <(curl -k --no-progress-meter "$ca_url/roots.pem") 2> >(LOGPROGRAM=step pipe_verbose))
+    kube_api_server_cert=$(step certificate inspect --insecure --format pem "$kube_api_addr" 2> >(LOGPROGRAM=step pipe_verbose))
+    warning "The Kubernetes API server and client CA certificate fingerprints are:"
+    printf "Server:    %s\n" "$(step certificate fingerprint <(printf "%s\n" "$kube_api_server_cert"))" >&2
+    printf "Client CA: %s\n" "$kube_api_client_ca_fp" >&2
+    printf "Do you want to establish trust with these certificates? [y/N]"
+    read -r yesno
+    [[ $yesno =~ ^[Yy](es)?$ ]] || fatal "User aborted operation"
+    kubectl config --kubeconfig "$kube_cfg_path" set-cluster "$kube_cluster" \
+      --server="$kube_api_addr" \
+      --embed-certs \
+      --certificate-authority=<(printf "%s" "$kube_api_server_cert")
+    kubectl config --kubeconfig "$kube_cfg_path" set-credentials "$__username@$kube_cluster" \
+      --exec-api-version="client.authentication.k8s.io/v1beta1" \
+      --exec-command="$(realpath "${BASH_SOURCE[0]}")" \
+      --exec-arg="get-cert" \
+      --exec-arg="--username=$__username" \
+      --exec-arg="$_ssh_keyname_" \
+      --exec-arg="$_kube_api_hostname_" \
+      --exec-arg="$kube_api_client_ca_fp"
+    kubectl config --kubeconfig "$KUBE_CFG_DEFAULT_PATH" set-context $kube_context \
+      --cluster "$kube_cluster" --user "$__username@$kube_cluster"
+    rm -f "$CONFIG_DIR/$__username.crt" "$CONFIG_DIR/$__username.key"
+  elif $get_cert; then
+    trap 'error "Failed to get certificate, run with LOGLEVEL=verbose to see more details errors"' ERR
+    if [[ ! -e $CONFIG_DIR/$__username.crt ]] || \
+        step certificate needs-renewal --expires-in 0s "$CONFIG_DIR/$__username.crt" 2>&1 | LOGPROGRAM=step pipe_verbose; then
+      local kube_api_client_ca_cert remote_kube_api_client_ca_fp ssh_pem admin_jwk kid header payload signature step_logs
+      kube_api_client_ca_cert=$(curl -k --no-progress-meter "$ca_url/roots.pem")
+      remote_kube_api_client_ca_fp=$(step certificate fingerprint <(printf "%s\n" "$kube_api_client_ca_cert") 2> >(LOGPROGRAM=step pipe_verbose))
+      [[ $_kube_api_ca_fp_ = "$remote_kube_api_client_ca_fp" ]] || \
+        fatal "The fingerprint of %s does not match the one embedded in the kube config (%s vs. %s)" \
+          "$ca_url" "$remote_kube_api_client_ca_fp" "$_kube_api_ca_fp_"
+      ssh_pem=$(step kms key "sshagentkms:$_ssh_keyname_" 2> >(LOGPROGRAM=step pipe_verbose))
+      admin_jwk=$(step crypto jwk create --force --use sig --from-pem=<(printf "%s\n" "$ssh_pem") \
+        /dev/stdout /dev/null 2> >(LOGPROGRAM=step pipe_verbose))
+      kid=$(jq -r .kid <<<"$admin_jwk")
+      header=$(jq '{
+        "alg": .alg,
+        "kid": .kid,
+        "typ": "JWT"
+      }' <<<"$admin_jwk" | jq -cS . | base64 -w0 | tr -d '=' | tr '/+' '_-')
+      payload=$(jq -n --arg ca_url "$ca_url" --argjson now "$(date +%s)" --arg kid "$kid" \
+                      --arg jti "$(openssl rand -hex 32)" --arg sub "$__username" '{
+        "aud": ($ca_url + "/1.0/sign"),
+        "exp": ($now + 30),
+        "iat": $now,
+        "iss": $kid,
+        "jti": $jti,
+        "nbf": ($now - 30),
+        "sans": [$sub],
+        "sub": $sub
+      }' | jq -cS . | base64 -w0 | tr -d '=' | tr '/+' '_-')
+      signature=$(step kms sign --format jws --in <(printf "%s.%s" "$header" "$payload") \
+        --kms "sshagentkms" "sshagentkms:$_ssh_keyname_")
+      if ! step_logs=$(step ca certificate --ca-url="$ca_url" --root=<(printf "%s\n" "$kube_api_client_ca_cert") \
+        --token="$header.$payload.$signature" --force \
+        "$__username" "$CONFIG_DIR/$__username.crt" "$CONFIG_DIR/$__username.key" 2>&1); then
+        fatal "Failed to issue kube-api certificate:\n%s" "$step_logs"
+      fi
+    fi
+    local cert key
+    cert=$(cat "$CONFIG_DIR/$__username.crt")
+    key=$(cat "$CONFIG_DIR/$__username.key")
+    printf '{
   "apiVersion": "client.authentication.k8s.io/v1beta1",
   "kind": "ExecCredential",
   "status": {
@@ -104,6 +124,7 @@ get_cert() {
   }
 }
 ' "${cert//$'\n'/'\n'}" "${key//$'\n'/'\n'}"
+  fi
 }
 
 usage() {

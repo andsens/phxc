@@ -127,8 +127,8 @@ spec:
         env:
         - name: CLUSTER_DOMAIN
           value: cluster.domain
-        - name: CLUSTER_ADMIN_SSH_KEY
-          value: cluster.adminPubkey
+        - name: CLUSTER_ADMIN_SSH_KEYS
+          value: cluster.admin.ssh-keys
         - name: NODENAME
           valueFrom:
             fieldRef:
