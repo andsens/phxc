@@ -1,4 +1,5 @@
 [Unit]
 Description=Applies the %i manifest and waits for it to be ready
-Requires=setup-workload@%i.service workload-ready@%i.service
+Requires=workload-ready@%i.service
+Wants=setup-workload@%i.service
 After=setup-workload@%i.service workload-ready@%i.service
