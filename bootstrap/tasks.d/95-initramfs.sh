@@ -4,10 +4,11 @@ PACKAGES+=(
   systemd systemd-sysv # systemd bootup
   dosfstools # Used for mounting ESP
   systemd-resolved # DNS resolution setup
+  dracut # Leave installed to avoid reinstalling initramfs-tools
 )
 
 PACKAGES_TMP+=(
-  dracut dracut-network binutils zstd # initramfs
+  dracut-network binutils zstd # initramfs
 )
 
 case $VARIANT in
