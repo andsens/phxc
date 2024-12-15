@@ -37,4 +37,3 @@ StandardInputText=cidr_pod_ipv4=$(get-config /etc/phxc/cluster.yaml cidrs.pod.ip
       printf "\ndata:\n  ipv4-service-range: \"%%s\"\n  ipv6-service-range: \"%%s\"\n" \
         "$(get-config /etc/phxc/cluster.yaml cidrs.svc.ipv4)" \
         "$(get-config /etc/phxc/cluster.yaml cidrs.svc.ipv6)")"
-ExecStartPost=bash -ec 'until kubectl get crd ciliumbgppeeringpolicies.cilium.io &>/dev/null; do sleep 1; done'
