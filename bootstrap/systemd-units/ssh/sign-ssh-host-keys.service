@@ -1,7 +1,7 @@
 [Unit]
 Description=Sign SSH host keys
 Requires=workload-ready@smallstep.service bootstrap-smallstep.service
-After=workload-ready@smallstep.service bootstrap-smallstep.service ssh.service
+After=workload-ready@smallstep.service bootstrap-smallstep.service generate-ssh-host-keys.service ssh.service
 
 [Install]
 WantedBy=multi-user.target
@@ -19,4 +19,3 @@ StandardInputText=printf "" >/etc/ssh/sshd_config.d/20-host-key-certs.conf; \
       "$(hostname -f)" "$pubkey"; \
     printf "HostCertificate %%s-cert.pub\n" "${pubkey%%'.pub'}" >>/etc/ssh/sshd_config.d/20-host-key-certs.conf; \
   done
-ExecStartPost=systemctl reload ssh

@@ -9,7 +9,6 @@ WantedBy=multi-user.target
 [Service]
 Type=oneshot
 Environment=HOME=/root
-ExecStart=/var/lib/phxc/.upkg/.bin/step ssh config --host --roots
-StandardOutput=file:/etc/ssh/user_ca_keys
-StandardError=journal
-ExecStartPost=systemctl reload ssh
+ExecStart=bash -eo pipefail
+StandardInputText=/var/lib/phxc/.upkg/.bin/step ssh config --host --roots >/etc/ssh/user_ca_keys; \
+  printf "TrustedUserCAKeys /etc/ssh/user_ca_keys\n" >/etc/ssh/sshd_config.d/30-user-ca-keys.conf
