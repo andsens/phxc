@@ -72,6 +72,17 @@ endpoint_ready() {
   [[ $addrcount -gt 0 ]] || return 1
 }
 
+certificate_ready() {
+  local ns=$1 cert=$2
+  if kubectl -n "$ns" get certificate "$cert" -o=jsonpath='{.status.conditions}' | status_is_ready; then
+    verbose "The certificate '%s' in '%s' is ready" "$cert" "$ns"
+    return 0
+  else
+    verbose "The certificate '%s' in '%s' is not ready" "$cert" "$ns"
+    return 1
+  fi
+}
+
 status_is_ready() {
   jq -re 'any(.[] | select(.type == "Ready"); .status == "True")' >/dev/null
 }

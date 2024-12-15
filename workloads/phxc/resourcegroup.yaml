@@ -1,0 +1,6 @@
+apiVersion: kpt.dev/v1alpha1
+kind: ResourceGroup
+metadata:
+  name: phxc
+  labels:
+    cli-utils.sigs.k8s.io/inventory-id: acb57a95e973970bddf7f2da6c0857353155d720-1734271617414030516

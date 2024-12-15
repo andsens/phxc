@@ -1,7 +1,7 @@
 [Unit]
 Description=Replace the keyfile reference in crypttab with TPM2 options
 DefaultDependencies=no
-After=copy-offline-disk-encryption-key.service
+After=copy-diskenc-offline-key.service
 Before=systemd-cryptsetup@data.service
 ConditionSecurity=uefi-secureboot
 ConditionPathExists=!/run/initramfs/disk-encryption.key

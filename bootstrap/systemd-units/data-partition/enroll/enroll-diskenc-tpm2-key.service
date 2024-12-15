@@ -2,13 +2,13 @@
 Description=Enrolls a TPM-bound disk encryption key
 Requires=boot.mount data-partition.target
 After=boot.mount data-partition.target
-Before=disk-encryption-keys-enrolled.target
+Before=diskenc-keys-enrolled.target
 ConditionSecurity=uefi-secureboot
 ConditionPathExists=/boot/phxc/node.yaml
 ConditionPathExists=/run/initramfs/disk-encryption.key
 
 [Install]
-WantedBy=disk-encryption-keys-enrolled.target
+WantedBy=diskenc-keys-enrolled.target
 
 [Service]
 Type=oneshot

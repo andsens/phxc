@@ -2,12 +2,12 @@
 Description=Enrolls a disk encryption recovery key
 Requires=var-lib-phxc.mount
 After=var-lib-phxc.mount
-Before=disk-encryption-keys-enrolled.target
+Before=diskenc-keys-enrolled.target
 ConditionPathExists=/run/initramfs/disk-encryption.key
 ConditionPathExists=!/var/lib/phxc/disk-encryption-recovery.key
 
 [Install]
-WantedBy=disk-encryption-keys-enrolled.target
+WantedBy=diskenc-keys-enrolled.target
 
 [Service]
 Type=oneshot

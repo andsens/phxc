@@ -1,7 +1,7 @@
 [Unit]
 Description=Enrolls a TPM-bound disk encryption key
-Requires=boot.mount disk-encryption-keys-enrolled.target
-After=boot.mount disk-encryption-keys-enrolled.target
+Requires=boot.mount diskenc-keys-enrolled.target
+After=boot.mount diskenc-keys-enrolled.target
 ConditionPathExists=/boot/phxc/node.yaml
 ConditionPathExists=/boot/phxc/disk-encryption.key
 
