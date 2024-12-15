@@ -1,0 +1,6 @@
+apiVersion: kpt.dev/v1alpha1
+kind: ResourceGroup
+metadata:
+  name: backup-server
+  labels:
+    cli-utils.sigs.k8s.io/inventory-id: 34cae82d536e243d02f67c8c220bdb4893d6b3df-1734256208512396643

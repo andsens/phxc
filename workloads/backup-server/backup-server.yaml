@@ -1,0 +1,140 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: backup-server
+  labels:
+    app.kubernetes.io/name: backup-server
+    app.kubernetes.io/component: backup-server
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: backup-server
+      app.kubernetes.io/component: backup-server
+  ingress:
+  - toPorts:
+    - ports:
+      - port: "8050"
+    fromEntities:
+    - all
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backup-server
+  labels:
+    app.kubernetes.io/name: backup-server
+    app.kubernetes.io/component: backup-server
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: backup-server
+    app.kubernetes.io/component: backup-server
+  ports:
+  - name: backup-server
+    port: 8050
+    targetPort: backup
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backup-server-host
+  labels:
+    app.kubernetes.io/name: backup-server
+    app.kubernetes.io/component: backup-server
+spec:
+  type: NodePort
+  selector:
+    app.kubernetes.io/name: backup-server
+    app.kubernetes.io/component: backup-server
+  ports:
+  - name: backup-server
+    port: 8050
+    nodePort: 8050
+    targetPort: backup
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: backup-server
+  labels:
+    app.kubernetes.io/name: backup-server
+    app.kubernetes.io/component: backup-server
+spec:
+  commonName: backup-server.phxc.svc.cluster.local
+  issuerRef:
+    group: certmanager.step.sm
+    kind: StepClusterIssuer
+    name: step-issuer
+  secretName: backup-server-tls
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backup-server
+  labels:
+    app.kubernetes.io/name: backup-server
+    app.kubernetes.io/component: backup-server
+spec:
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: backup-server
+      app.kubernetes.io/component: backup-server
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: backup-server
+        app.kubernetes.io/component: backup-server
+    spec:
+      containers:
+      - name: backup-server
+        image: nginx:1.27.3
+        securityContext:
+          readOnlyRootFilesystem: true
+        ports:
+        - name: backup
+          containerPort: 8050
+        volumeMounts:
+        - name: config
+          mountPath: /etc/nginx/nginx.conf
+          subPath: nginx.conf
+        - name: backup-server-tls
+          mountPath: /etc/nginx/tls
+        - name: nginx-cache
+          mountPath: /var/cache/nginx
+
+        - name: phoenix-cluster-root-cert
+          mountPath: /var/www/certs/phoenix-cluster-root.crt
+        - name: kube-apiserver-server-ca-cert
+          mountPath: /var/www/certs/kube-apiserver-server-ca-cert.crt
+        - name: kube-apiserver-client-ca-cert
+          mountPath: /var/www/certs/kube-apiserver-client-ca-cert.crt
+        - name: secureboot
+          mountPath: /var/www/certs/secureboot.crt
+          subPath: tls.crt
+      volumes:
+      - name: config
+        configMap:
+          name: backup-server-config
+      - name: backup-server-tls
+        secret:
+          secretName: backup-server-tls
+      - name: nginx-cache
+        emptyDir: {}
+
+      - name: phoenix-cluster-root-cert
+        hostPath:
+          path: /usr/local/share/ca-certificates/phoenix-cluster-root.crt
+          type: File
+      - name: kube-apiserver-server-ca-cert
+        hostPath:
+          path: /var/lib/rancher/k3s/server/tls/server-ca.crt
+          type: File
+      - name: kube-apiserver-client-ca-cert
+        hostPath:
+          path: /var/lib/rancher/k3s/server/tls/client-ca.crt
+          type: File
+      - name: secureboot
+        secret:
+          secretName: secureboot
