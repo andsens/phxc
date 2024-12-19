@@ -2,6 +2,7 @@
 Description=Copies /boot/phxc/cluster.yaml to /etc/phxc/cluster.yaml
 DefaultDependencies=no
 Requires=boot.mount
+Wants=setup-admin-credentials.service
 After=boot.mount setup-admin-credentials.service
 ConditionPathExists=/boot/phxc/cluster.yaml
 ConditionPathExists=!/etc/phxc/cluster.yaml

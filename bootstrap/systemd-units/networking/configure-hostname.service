@@ -1,6 +1,8 @@
 [Unit]
 Description=Set the hostname using the node-config
 DefaultDependencies=no
+Wants=setup-admin-credentials.service
+After=setup-admin-credentials.service
 Before=avahi-daemon.service
 
 [Install]
