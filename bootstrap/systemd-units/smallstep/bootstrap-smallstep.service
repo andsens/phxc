@@ -14,6 +14,5 @@ StandardInputText=jq -n --arg fp "$(step certificate fingerprint /usr/local/shar
     "fingerprint": $fp, \
     "root": "/usr/local/share/ca-certificates/phoenix-cluster-root.crt", \
     "redirect-url": "" \
-  }'
-StandardOutput=file:/root/.step/config/defaults.json
-StandardError=journal
+  }' \
+  >/root/.step/config/defaults.json

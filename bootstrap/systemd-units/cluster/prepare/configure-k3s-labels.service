@@ -1,7 +1,7 @@
 [Unit]
 Description=Set k3s node-label
+Before=pre-k3s.target
 ConditionPathExists=/boot/phxc/node.yaml
-Before=k3s-pre.target
 
 [Install]
 WantedBy=k3s.target
@@ -14,6 +14,6 @@ StandardInputText=yq -ny \
     --argjson labels "$(get-config -q /boot/phxc/node.yaml | yq . || true)" \
     --arg sha256 "$(compgen -G /run/initramfs/root.*.img | cut -d. -f2)" \
     --arg variant "${VARIANT}" \
-    '{"node-label": (.labels + ["cluster.local/rootimg-sha256=" + $sha256[0:8], "cluster.local/rootimg-variant=" + $variant])}'
-StandardOutput=file:/etc/rancher/k3s/config.yaml.d/node-label.yaml
+    '{"node-label": (.labels + ["cluster.local/rootimg-sha256=" + $sha256[0:8], "cluster.local/rootimg-variant=" + $variant])}' \
+    >/etc/rancher/k3s/config.yaml.d/node-label.yaml
 StandardError=journal

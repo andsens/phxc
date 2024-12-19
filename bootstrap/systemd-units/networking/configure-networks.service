@@ -1,8 +1,7 @@
 [Unit]
 Description=Configure systemd-networks using node-config
 DefaultDependencies=no
-Wants=setup-admin-credentials.service
-After=setup-admin-credentials.service
+After=configs-available.target
 Before=network-pre.target
 ConditionPathExists=/boot/phxc/node.yaml
 

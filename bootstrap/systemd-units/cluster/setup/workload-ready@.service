@@ -1,6 +1,5 @@
 [Unit]
 Description=Waits until the %i workload is ready
-DefaultDependencies=no
 
 [Service]
 Type=oneshot

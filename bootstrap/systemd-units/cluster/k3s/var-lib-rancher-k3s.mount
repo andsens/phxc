@@ -1,6 +1,5 @@
 [Unit]
 Description=/var/lib/rancher/k3s
-DefaultDependencies=no
 Requires=create-data-dir@k3s.service
 After=create-data-dir@k3s.service
 Before=pre-k3s.target

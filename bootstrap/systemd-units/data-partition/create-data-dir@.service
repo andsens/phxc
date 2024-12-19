@@ -1,5 +1,6 @@
 [Unit]
 Description=Create data directory for bind mounts
+DefaultDependencies=no
 Requires=var-lib-phxc.mount
 After=var-lib-phxc.mount
 

@@ -1,8 +1,7 @@
 [Unit]
 Description=Set k3s node-label & token
-Wants=copy-cluster-config.service
-After=copy-cluster-config.service
-Before=k3s-pre.target
+After=configs-available.target
+Before=pre-k3s.target
 
 [Install]
 RequiredBy=k3s@server.service
@@ -23,6 +22,5 @@ StandardInputText=yq -ny \
     "service-cidr": [$cluster_cidrs_svc_ipv4, $cluster_cidrs_svc_ipv6], \
     "kube-controller-manager-arg": ["node-cidr-mask-size-ipv4=24", "node-cidr-mask-size-ipv6=112"], \
     "tls-san": ["api." + $cluster_domain] \
-  }'
-StandardOutput=file:/etc/rancher/k3s/config.yaml.d/cluster.yaml
-StandardError=journal
+  }' \
+  >/etc/rancher/k3s/config.yaml.d/cluster.yaml

@@ -2,12 +2,13 @@
 Description=Install Cilium in K3S
 Documentation=https://docs.cilium.io/en/stable/installation/k3s/
 Requires=k3s@server.service
-Wants=copy-cluster-config.service install-control-plane-packages.service
-After=k3s@server.service install-control-plane-packages.service copy-cluster-config.service
+Wants=install-control-plane-packages.service
+After=k3s@server.service install-control-plane-packages.service configs-available.target
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
+ExecCondition=bash -ec '[ $(get-config -q /boot/phxc/node.yaml k3s.mode) = server ]'
 ExecCondition=bash -ec '! kubectl get -n kube-system deployment cilium-operator -o name'
 ExecStart=bash -eo pipefail
 StandardInputText=cidr_pod_ipv4=$(get-config /etc/phxc/cluster.yaml cidrs.pod.ipv4); \

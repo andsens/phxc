@@ -1,6 +1,5 @@
 [Unit]
 Description=Enroll the phoenix-cluster secureboot cert
-DefaultDependencies=no
 ConditionSecurity=tpm2
 ConditionPathExists=/usr/local/lib/phxc/secureboot.der
 
