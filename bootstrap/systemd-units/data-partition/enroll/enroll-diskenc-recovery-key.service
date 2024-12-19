@@ -12,6 +12,7 @@ WantedBy=diskenc-keys-enrolled.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
+UMask=0077
 ExecStart=systemd-cryptenroll \
   --unlock-key-file /run/initramfs/disk-encryption.key \
   --recovery-key --wipe-slot=1 \

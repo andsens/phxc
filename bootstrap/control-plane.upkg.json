@@ -6,15 +6,15 @@
       "name": "cilium",
       "bin": ["cilium"],
       "os/arch": "Linux/x86_64",
-      "tar": "https://github.com/cilium/cilium-cli/releases/download/v0.16.10/cilium-linux-amd64.tar.gz",
-      "sha256": "aeb9d7c56108283a9fb9b370ec36b33f28f3126f6c4e6b4176a15cc6b2d3fc70"
+      "tar": "https://github.com/cilium/cilium-cli/releases/download/v0.16.22/cilium-linux-amd64.tar.gz",
+      "sha256": "8bd9faae272aef2e75c686a55de782018013098b66439a1ee0c8ff1e05c5d32c"
     },
     {
       "name": "cilium",
       "bin": ["cilium"],
       "os/arch": "Linux/aarch64",
-      "tar": "https://github.com/cilium/cilium-cli/releases/download/v0.16.10/cilium-linux-arm64.tar.gz",
-      "sha256": "625e880a9a5a9f38931a3e129fe2c811bd4883105b6f4dbe562734d48a082f7a"
+      "tar": "https://github.com/cilium/cilium-cli/releases/download/v0.16.22/cilium-linux-arm64.tar.gz",
+      "sha256": "b70c15e40b36ac34d59597f2448c5b4e0033964c517f926dbb9654aa07fb1e5b"
     }
   ]
 }

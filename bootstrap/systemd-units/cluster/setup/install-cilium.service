@@ -16,8 +16,6 @@ StandardInputText=cidr_pod_ipv4=$(get-config /etc/phxc/cluster.yaml cidrs.pod.ip
     --set ipam.mode=cluster-pool \
     --set ipam.operator.clusterPoolIPv4PodCIDRList=$cidr_pod_ipv4 \
     --set ipam.operator.clusterPoolIPv6PodCIDRList=$cidr_pod_ipv6 \
-    --set ipam.operator.clusterPoolIPv4MaskSize=${cidr_pod_ipv4#*/} \
-    --set ipam.operator.clusterPoolIPv6MaskSize=${cidr_pod_ipv6#*/} \
     --set k8sServiceHost=127.0.0.1 \
     --set k8sServicePort=6444 \
     --set bgpControlPlane.enabled=true \

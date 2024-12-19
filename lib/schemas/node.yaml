@@ -10,13 +10,13 @@ properties:
     - type: object
       properties:
         mode:
-          description: "Whether to run k3s as an agent or a server. Default: agent"
+          description: "Whether to run k3s as an agent or a server. Default: server"
           type: string
           const: server
     - type: object
       properties:
         mode:
-          description: "Whether to run k3s as an agent or a server. Default: agent"
+          description: "Whether to run k3s as an agent or a server. Default: server"
           type: string
           enum: ['agent', 'server']
         url:
@@ -27,7 +27,7 @@ properties:
           description: "The k3s joining token generated with `k3s token create`. May not be a server token."
           type: string
           pattern: ^K10[0-9a-f]+::(?!server).*
-      required: [url, token]
+      required: [mode, url, token]
       additionalProperties: false
   disk-encryption:
     description: "How the data partition should be unlocked. Default: auto"
@@ -54,7 +54,6 @@ properties:
     type: array
     items:
       type: string
-required: [hostname]
 additionalProperties: false
 definitions:
   ipv4-cidr:

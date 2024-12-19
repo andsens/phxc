@@ -3,7 +3,7 @@ domain: phxc.local
 cidrs:
   pod:
     ipv4: "10.42.0.0/16"
-    ipv6: "fdc5:4dcc:7263:cafe:0:42::/96"
+    ipv6: "fdc5:4dcc:7263:cafe:0:42::/112"
   svc:
     ipv4: "10.43.0.0/16"
     ipv6: "fdc5:4dcc:7263:cafe:0:43::/112"

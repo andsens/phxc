@@ -10,6 +10,7 @@ RequiredBy=k3s@server.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
+ExecCondition=bash -ec '[ $(get-config -q /boot/phxc/node.yaml k3s.mode) = server ]'
 ExecStart=bash -eo pipefail
 StandardInputText=yq -ny \
   --arg cluster_cidrs_pod_ipv4 "$(get-config /etc/phxc/cluster.yaml cidrs.pod.ipv4)" \

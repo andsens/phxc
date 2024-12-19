@@ -6,6 +6,7 @@ After=install-control-plane-packages.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
+ExecCondition=bash -ec '[ $(get-config -q /boot/phxc/node.yaml k3s.mode) = server ]'
 ExecStart=bash -e
 StandardInputText=kustomize build --enable-alpha-plugins --enable-exec "/usr/local/lib/upkg/.upkg/phoenix-cluster/workloads/%i" | \
   kpt live apply --request-timeout 10m -

@@ -339,7 +339,6 @@ mkfs vfat /dev/sda1
 mount /dev/sda1 /
 
 tar-in /workspace/boot-files.tar /
-
 EOF
   artifacts[/workspace/disk.img]=disk.img
 
