@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+# shellcheck source-path=..
+set -Eeo pipefail; shopt -s inherit_errexit
+PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
+export DOCKER_CLI_HINTS=false
+
+main() {
+  source "$PKGROOT/.upkg/records.sh/records.sh"
+  source "$PKGROOT/.upkg/bgpid/bgpid.sh"
+  source "$PKGROOT/.upkg/trap.sh/trap.sh"
+  source "$PKGROOT/.upkg/path-tools/path-tools.sh"
+  PATH=$(path_prepend "$PKGROOT/.upkg/.bin")
+
+  DOC="embed-configs - Embed configuration in the FAT32 partition of a disk image
+Usage:
+  embed-configs IMAGE CLUSTER [NODE [RPIOTP]]
+"
+# docopt parser below, refresh this parser with `docopt.sh embed-configs`
+# shellcheck disable=2016,2086,2317,1090,1091,2034
+docopt() { local v='2.0.2'; source \
+"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:127};usage=${DOC:75:52}
+digest=70a0d;options=();node_0(){ value IMAGE a;};node_1(){ value CLUSTER a;}
+node_2(){ value NODE a;};node_3(){ value RPIOTP a;};node_4(){ optional 2 3;}
+node_5(){ sequence 0 1 4;};cat <<<' docopt_exit() { [[ -n $1 ]] && printf \
+"%s\n" "$1" >&2;printf "%s\n" "${DOC:75:52}" >&2;exit 1;}';local \
+varnames=(IMAGE CLUSTER NODE RPIOTP) varname;for varname in "${varnames[@]}"; do
+unset "var_$varname";done;parse 5 "$@";local p=${DOCOPT_PREFIX:-''};for \
+varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'IMAGE=${var_IM'\
+'AGE:-};'$p'CLUSTER=${var_CLUSTER:-};'$p'NODE=${var_NODE:-};'$p'RPIOTP=${var_R'\
+'PIOTP:-};';local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
+((;docopt_i>0;docopt_i--)); do for varname in "${varnames[@]}"; do declare -p \
+"$p$varname";done;done;}
+# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' embed-configs`
+  eval "$(docopt "$@")"
+
+  local host_arch
+  host_arch=$(uname -m)
+  case "$host_arch" in
+    x86_64) ARCH=amd64;;
+    aarch64) ARCH=arm64;;
+    *) fatal "Unknown host architecture: %s" "$host_arch" ;;
+  esac
+
+  local containers=$PKGROOT/images/containers
+  if [[ ! -e "$containers/embed-configs.tar" ]] || \
+     find "$PKGROOT/bootstrap/containers/embed-configs" "$PKGROOT/workloads/common-context" \
+       -newer "$containers/embed-configs.tar" 2>/dev/null | grep -q .; then
+    info "Building '%s'" "embed-configs:latest"
+    mkdir -p "$PKGROOT/images"
+    docker run --rm -ti \
+      -v "$PKGROOT/lib/common-context:/workspace/common-context:ro" \
+      -v "$PKGROOT/bootstrap/containers/embed-configs:/workspace/context:ro" \
+      -v "$containers:/workspace/containers:rw" \
+      gcr.io/kaniko-project/executor:latest \
+      --dockerfile context/Dockerfile \
+      --build-arg "ARCH=$ARCH" \
+      --destination "cluster.local/embed-configs:latest" \
+      --tar-path "/workspace/containers/embed-configs.tar" \
+      --no-push
+    docker load -i "$containers/embed-configs.tar"
+  else
+    info "Not building '%s', no files have changed since last run" "embed-configs:latest"
+  fi
+
+  # shellcheck disable=SC2154
+  local config_tmp
+  config_tmp=$(mktemp -d --suffix '-phxc-embed-configs')
+  trap_append "rm -rf \"$config_tmp\"" EXIT
+  # shellcheck disable=SC2154
+  cp "$CLUSTER" "$config_tmp/cluster.yaml"
+  [[ -z $NODE ]] || cp "$NODE" "$config_tmp/node.yaml"
+  [[ -z $RPI_OTP ]] || cp "$RPI_OTP" "$config_tmp/rpi-otp.yaml"
+  local admin_ssh_key config_path
+  admin_ssh_key=$(yq -r '.admin["ssh-keys"][0]' "$config_tmp/cluster.yaml")
+  for config_path in "$config_tmp"/*; do
+    ssh-keygen -Y sign -f <(printf "%s" "$admin_ssh_key") -n file "$config_path"
+  done
+
+  docker run --rm -ti \
+    -v "$config_tmp:/workspace/embed-configs" \
+    -v "$PKGROOT/bootstrap/scripts:/scripts:ro" \
+    -v "$(realpath "$IMAGE"):/workspace/disk.img:rw" \
+    -e "DEBUG=$DEBUG" \
+    --device=/dev/kvm \
+    --group-add "$(stat -c %g /dev/kvm)" \
+    "cluster.local/embed-configs:latest"
+}
+
+main "$@"

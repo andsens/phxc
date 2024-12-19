@@ -13,13 +13,11 @@ main() {
 
   DOC="bootstrap - Bootstrap images
 Usage:
-  bootstrap [options] [--embed PATH...] VARIANT
+  bootstrap [options] VARIANT
 
 Options:
   --debug  Enable debug build (installs debug tools, no artifact cleanup, etc.)
   --upload URL  Upload artifacts to the specified WebDAV server URL
-  --embed PATH  Sign & embed a config on boot partition. If used, cluster.yaml
-                must also be included so the ssh key signature can be verified.
 
 Supported variants:
   amd64 - x86_64 image
@@ -27,22 +25,19 @@ Supported variants:
   rpi5 - ARM 64-bit image with modifications for Raspberry PI 5
 "
 # docopt parser below, refresh this parser with `docopt.sh bootstrap`
-# shellcheck disable=2016,2086,2317,1090,1091,2034,2154
+# shellcheck disable=2016,2086,2317,1090,1091,2034
 docopt() { local v='2.0.2'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
-%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:535};usage=${DOC:29:54}
-digest=a3a5c;options=(' --debug 0' ' --upload 1' ' --embed 1');node_0(){
-switch __debug 0;};node_1(){ value __upload 1;};node_2(){ value __embed 2 true;}
-node_3(){ value VARIANT a;};node_4(){ optional 0 1;};node_5(){ optional 6;}
-node_6(){ repeatable 2;};node_7(){ sequence 4 5 3;};cat <<<' docopt_exit() {
-[[ -n $1 ]] && printf "%s\n" "$1" >&2;printf "%s\n" "${DOC:29:54}" >&2;exit 1;}'
-local varnames=(__debug __upload __embed VARIANT) varname;for varname in \
-"${varnames[@]}"; do unset "var_$varname";done;parse 7 "$@";local \
-p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset "$p$varname"
-done;if declare -p var___embed >/dev/null 2>&1; then eval $p'__embed=("${var__'\
-'_embed[@]}")';else eval $p'__embed=()';fi;eval $p'__debug=${var___debug:-fals'\
-'e};'$p'__upload=${var___upload:-};'$p'VARIANT=${var_VARIANT:-};';local \
-docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:358};usage=${DOC:29:36}
+digest=db197;options=(' --debug 0' ' --upload 1');node_0(){ switch __debug 0;}
+node_1(){ value __upload 1;};node_2(){ value VARIANT a;};node_3(){ optional 0 1
+};node_4(){ sequence 3 2;};cat <<<' docopt_exit() { [[ -n $1 ]] && printf \
+"%s\n" "$1" >&2;printf "%s\n" "${DOC:29:36}" >&2;exit 1;}';local \
+varnames=(__debug __upload VARIANT) varname;for varname in "${varnames[@]}"; do
+unset "var_$varname";done;parse 4 "$@";local p=${DOCOPT_PREFIX:-''};for \
+varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__debug=${var_'\
+'__debug:-false};'$p'__upload=${var___upload:-};'$p'VARIANT=${var_VARIANT:-};'
+local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
 ((;docopt_i>0;docopt_i--)); do for varname in "${varnames[@]}"; do declare -p \
 "$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' bootstrap`
@@ -73,33 +68,9 @@ docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
   trap_append "rm \"$bundle\"" EXIT
   "$PKGROOT/bootstrap/scripts/bundle" "$bundle"
 
-  local bootstrap_docker_opts=() create_boot_image_docker_opts=() create_boot_image_opts=(--chown $UID)
-
+  local create_boot_image_opts=(--chown $UID)
   # shellcheck disable=SC2154
   ! $__upload || create_boot_image_opts+=(--upload "$__upload")
-
-  # shellcheck disable=SC2154
-  if [[ ${#__embed[@]} -gt 0 ]]; then
-    local config_tmp config config_basename
-    config_tmp=$(mktemp -d --suffix '-phoenix-cluster-config')
-    trap_append "rm -rf \"$config_tmp\"" EXIT
-    for config in "${__embed[@]}"; do
-      config_basename=$(basename "$config")
-      [[ $config_basename =~ ^(cluster|node|rpi-otp)\.yaml$ ]] || \
-        fatal 'Unknown basename "%s". The filename must be cluster.yaml, node.yaml, or rpi-otp.yaml'
-      cp "$config" "$config_tmp/$config_basename"
-    done
-    [[ -e $config_tmp/cluster.yaml ]] || \
-        fatal 'cluster.yaml must be embedded, in order for Phoenix Cluster to verify the signatures of the other configs.'
-    local admin_ssh_key
-    admin_ssh_key=$(yq -r '.admin["ssh-keys"][0]' "$config_tmp/cluster.yaml")
-    for config in "${__embed[@]}"; do
-      config_basename=$(basename "$config")
-      ssh-keygen -Y sign -f <(printf "%s" "$admin_ssh_key") -n file "$config_tmp/$config_basename"
-    done
-    bootstrap_docker_opts+=(-v "$config_tmp:/workspace/embed-configs")
-    create_boot_image_docker_opts+=(-v "$config_tmp:/workspace/embed-configs")
-  fi
 
   local containers=$PKGROOT/images/containers
   if [[ ! -e "$containers/create-boot-image-$ARCH.tar" ]] || \
@@ -126,7 +97,7 @@ docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
 
   info "Building '%s'" "node:$VARIANT"
   docker run --rm -ti \
-    --platform "$DOCKER_PLATFORM" "${bootstrap_docker_opts[@]}" \
+    --platform "$DOCKER_PLATFORM" \
     -v "$PKGROOT/workloads/bootstrap/Dockerfile:/workspace/context/Dockerfile:ro" \
     -v "$bundle:/workspace/phoenix-cluster.tar.gz:ro" \
     -v "$PKGROOT/lib/common-context:/workspace/common-context:ro" \
@@ -141,7 +112,7 @@ docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
     --tar-path "/workspace/artifacts/node.tar" \
     --no-push
 
-  docker run --rm -ti "${create_boot_image_docker_opts[@]}" \
+  docker run --rm -ti \
     --platform "$DOCKER_PLATFORM" \
     -v "$PKGROOT/bootstrap/assets:/assets:ro" \
     -v "$PKGROOT/workloads/bootstrap/scripts:/scripts:ro" \
