@@ -1,13 +1,17 @@
 # Source: https://github.com/ori-edge/k8s_gateway/blob/v0.4.0/Dockerfile
-FROM --platform=$BUILDPLATFORM golang:1.23.4-bookworm AS build
+ARG GO_VERSION
+FROM golang:${GO_VERSION}-bookworm AS build
 SHELL [ "/bin/bash", "-ec" ]
+
+ARG COREDNS_VERSION
+ARG K8SGW_VERSION
 
 WORKDIR /src
 RUN apt-get update; apt-get install -y ca-certificates wget libcap2-bin
-RUN wget -qO- https://github.com/coredns/coredns/archive/refs/tags/v1.12.0.tar.gz | tar xz --strip-components=1
-RUN go get github.com/ori-edge/k8s_gateway@v0.4.0
+RUN wget -qO- https://github.com/coredns/coredns/archive/refs/tags/v${COREDNS_VERSION}.tar.gz | tar xz --strip-components=1
+RUN go get github.com/ori-edge/k8s_gateway@v${K8SGW_VERSION}
 RUN echo k8s_gateway:github.com/ori-edge/k8s_gateway >>plugin.cfg
-RUN make coredns BINARY=coredns SYSTEM="GOOS=linux GOARCH=${BUILDPLATFORM}"
+RUN make coredns BINARY=coredns SYSTEM="GOOS=linux GOARCH=${TARGETPLATFORM}"
 RUN setcap cap_net_bind_service=+ep /src/coredns
 
 FROM gcr.io/distroless/static-debian12:nonroot

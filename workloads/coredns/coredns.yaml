@@ -224,7 +224,7 @@ spec:
       containers:
       - name: coredns
         args: [-conf, /etc/coredns/Corefile]
-        image: andsens/coredns:1.12.0
+        image: ghcr.io/andsens/phxc-coredns:1.12.0
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
