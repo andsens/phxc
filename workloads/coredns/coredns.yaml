@@ -201,7 +201,7 @@ spec:
       dnsPolicy: Default
       initContainers:
       - name: build-config
-        image: ghcr.io/andsens/phxc-utils:latest
+        image: ghcr.io/andsens/phxc-utils
         command: [/scripts/render-imports.sh]
         securityContext:
           readOnlyRootFilesystem: true
@@ -220,7 +220,7 @@ spec:
       containers:
       - name: coredns
         args: [-conf, /etc/coredns/Corefile]
-        image: ghcr.io/andsens/phxc-coredns:1.12.0
+        image: ghcr.io/andsens/phxc-coredns
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -277,7 +277,7 @@ spec:
         - name: imports
           mountPath: /etc/coredns/imports
       - name: update-config
-        image: ghcr.io/andsens/phxc-utils:latest
+        image: ghcr.io/andsens/phxc-utils
         command: [/scripts/render-imports.sh]
         args: ['--watch']
         securityContext:

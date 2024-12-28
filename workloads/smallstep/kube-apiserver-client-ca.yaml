@@ -119,7 +119,7 @@ spec:
         fsGroup: 1000
       initContainers:
       - name: setup-kube-apiserver-client-ca-config
-        image: ghcr.io/andsens/phxc-utils:latest
+        image: ghcr.io/andsens/phxc-utils
         command: [/home/step/scripts/setup-kube-apiserver-client-ca-config.sh]
         securityContext:
           readOnlyRootFilesystem: true

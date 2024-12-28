@@ -55,7 +55,7 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'IMAGE=${var_IM'\
     -e "DEBUG=$DEBUG" \
     --device=/dev/kvm \
     --group-add "$(stat -c %g /dev/kvm)" \
-    ghcr.io/andsens/phxc-embed-configs:latest
+    ghcr.io/andsens/phxc-embed-configs:sha-3e0c5ff
 }
 
 main "$@"
