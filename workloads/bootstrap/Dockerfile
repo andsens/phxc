@@ -3,7 +3,11 @@ SHELL ["/usr/bin/bash", "-Eeo", "pipefail", "-c"]
 ARG VARIANT
 ARG DEBUG=false
 
-RUN \
-  /workspace/common-context/setup-debian.sh; \
+RUN apt-get -y update; apt-get -y install --no-install-recommends \
+  jq wget ca-certificates \
+  ; temp=$(mktemp); \
+  wget -qO"$temp" "https://github.com/orbit-online/upkg/releases/download/v0.28.2/upkg-install.tar.gz"; \
+  sha256sum -c <(echo "4a2956232b059b11395b9d575a817233a67a56528217a576e9016cbaa62f007c  $temp"); \
+  tar xzC /usr/local -f "$temp"; \
   upkg add -g /workspace/phoenix-cluster.tar.gz; \
   /usr/local/lib/upkg/.upkg/phoenix-cluster/bootstrap/scripts/run-tasks.sh

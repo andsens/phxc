@@ -1,0 +1,17 @@
+{
+  "$schema": "https://schemas.orbit.dev/upkg/upkg-v0.28.0.schema.json",
+  "name": "kubectl",
+  "bin": [".upkg/.bin/kubectl"],
+  "dependencies": [
+    {
+      "os/arch": "Linux/x86_64",
+      "file": "https://dl.k8s.io/release/v1.30.3/bin/linux/amd64/kubectl",
+      "sha256": "abd83816bd236b266c3643e6c852b446f068fe260f3296af1a25b550854ec7e5"
+    },
+    {
+      "os/arch": "Linux/aarch64",
+      "file": "https://dl.k8s.io/release/v1.30.3/bin/linux/arm64/kubectl",
+      "sha256": "c6f9568f930b16101089f1036677bb15a3185e9ed9b8dbce2f518fb5a52b6787"
+    }
+  ]
+}

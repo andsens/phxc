@@ -3,6 +3,7 @@ kind: Kustomization
 namespace: smallstep
 resources:
 - ../../lib/cluster-settings
+- namespace.yaml
 - https://raw.githubusercontent.com/smallstep/helm-charts/v0.22.0/step-issuer/crds/certmanager.step.sm_stepclusterissuers.yaml
 - https://raw.githubusercontent.com/smallstep/helm-charts/v0.22.0/step-issuer/crds/certmanager.step.sm_stepissuers.yaml
 - step-ca.yaml

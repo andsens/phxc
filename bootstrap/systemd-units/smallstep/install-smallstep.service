@@ -1,12 +1,12 @@
 [Unit]
-Description=Install smallstep
+Description=Install step-cli
 Requires=var-lib-phxc.mount
 After=var-lib-phxc.mount
-ConditionPathExists=!/var/lib/phxc/.upkg/smallstep
+ConditionPathExists=!/var/lib/phxc/.upkg/step-cli
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=bash -e
-StandardInputText=upkg add -fp smallstep /usr/local/lib/upkg/.upkg/phoenix-cluster/lib/common-context/smallstep.upkg.json
+StandardInputText=upkg add -f /usr/local/lib/upkg/.upkg/phoenix-cluster/lib/common-context/step-cli.upkg.json
 WorkingDirectory=/var/lib/phxc

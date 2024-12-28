@@ -204,8 +204,7 @@ spec:
         fsGroup: 1000
       initContainers:
       - name: setup-step-ca-config
-        image: cluster.local/step-ca-bootstrap:latest
-        imagePullPolicy: Never
+        image: ghcr.io/andsens/phxc-utils:latest
         command: [/home/step/scripts/setup-step-ca-config.sh]
         securityContext:
           readOnlyRootFilesystem: true

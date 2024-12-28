@@ -1,17 +1,15 @@
-name: Build coredns image with k8s_gateway
+name: Build utilities image
 
 on:
   push:
     branches: [ '*' ]
     tags: [ 'v*' ]
     paths:
-    - .github/workflows/build-coredns.yaml
-    - .github/assets/coredns.Dockerfile
+    - .github/workflows/build-utils.yaml
+    - .github/assets/utils.Dockerfile
 
 env:
-  COREDNS_VERSION: '1.12.0'
-  GO_VERSION: '1.23.4'
-  K8SGW_VERSION: '0.4.0'
+  ALPINE_VERSION: '3.21'
 
 jobs:
   build:
@@ -38,21 +36,19 @@ jobs:
       id: meta
       uses: docker/metadata-action@v4
       with:
-        images: ghcr.io/andsens/phxc-coredns
+        images: ghcr.io/andsens/phxc-utils
         tags: type=sha
     - name: Build and push Docker image
       id: push
       uses: docker/build-push-action@v5
       with:
         context: lib/common-context
-        file: .github/assets/coredns.Dockerfile
+        file: .github/assets/utils.Dockerfile
         platforms: linux/amd64,linux/arm64
         provenance: false
         push: true
         build-args: |
-          GO_VERSION=${{ env.GO_VERSION }}
-          COREDNS_VERSION=${{ env.COREDNS_VERSION }}
-          K8SGW_VERSION=${{ env.K8SGW_VERSION }}
+          ALPINE_VERSION=${{ env.ALPINE_VERSION }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: |
-          org.opencontainers.image.description="Standard CoreDNS image with the k8s_gateway plugin added"
+          org.opencontainers.image.description="Utility image for various workloads. Contains jq, envsubst, step, kubectl, and more"

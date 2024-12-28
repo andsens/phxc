@@ -3,6 +3,7 @@ set -Eeo pipefail; shopt -s inherit_errexit
 # shellcheck disable=SC1091
 source /usr/local/lib/upkg/.upkg/records.sh/records.sh
 
+export STEPPATH=/home/step
 KUBE_CLIENT_CA_KEY_PATH=$STEPPATH/kube-api-secrets/kube_apiserver_client_ca_key
 KUBE_CLIENT_CA_CRT_PATH=$STEPPATH/kube-api-secrets/kube_apiserver_client_ca.crt
 
@@ -39,8 +40,8 @@ main() {
   info "Copying kube-apiserver-client-ca cert & key to RAM backed volume"
   cp "$KUBE_CLIENT_CA_CRT_PATH" "$certs_ram_path/$(basename "$KUBE_CLIENT_CA_CRT_PATH")"
   cp "$KUBE_CLIENT_CA_KEY_PATH" "$certs_ram_path/$(basename "$KUBE_CLIENT_CA_KEY_PATH")"
-  chown step:step "$certs_ram_path/$(basename "$KUBE_CLIENT_CA_CRT_PATH")"
-  chown step:step "$certs_ram_path/$(basename "$KUBE_CLIENT_CA_KEY_PATH")"
+  chown 1000:1000 "$certs_ram_path/$(basename "$KUBE_CLIENT_CA_CRT_PATH")"
+  chown 1000:1000 "$certs_ram_path/$(basename "$KUBE_CLIENT_CA_KEY_PATH")"
 }
 
 main "$@"

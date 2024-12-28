@@ -201,11 +201,7 @@ spec:
       dnsPolicy: Default
       initContainers:
       - name: build-config
-        # Image choice may seem a bit weird here.
-        # We use it (#1) because it is one we already need anyways for smallstep,
-        # and (#2) because it has all the tools we need installed: curl, ca-certificates, and bash.
-        # There's also kubectl installed if we need that at some point.
-        image: cr.step.sm/smallstep/step-ca-bootstrap@sha256:5270356cf91596afe18478eab60c6c0866b2cc62618f282d42827e58f84d6eae
+        image: ghcr.io/andsens/phxc-utils:latest
         command: [/scripts/render-imports.sh]
         securityContext:
           readOnlyRootFilesystem: true
@@ -281,8 +277,7 @@ spec:
         - name: imports
           mountPath: /etc/coredns/imports
       - name: update-config
-        # See above
-        image: cr.step.sm/smallstep/step-ca-bootstrap@sha256:5270356cf91596afe18478eab60c6c0866b2cc62618f282d42827e58f84d6eae
+        image: ghcr.io/andsens/phxc-utils:latest
         command: [/scripts/render-imports.sh]
         args: ['--watch']
         securityContext:

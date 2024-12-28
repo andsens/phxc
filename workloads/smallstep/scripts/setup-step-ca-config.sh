@@ -3,6 +3,7 @@ set -Eeo pipefail; shopt -s inherit_errexit
 # shellcheck disable=SC1091
 source /usr/local/lib/upkg/.upkg/records.sh/records.sh
 
+export STEPPATH=/home/step
 ROOT_CRT_PATH=/home/step/certs/root_ca.crt
 STEP_ISSUER_DIR=$STEPPATH/provisioner-secrets/step-issuer
 SSH_HOST_DIR=$STEPPATH/provisioner-secrets/ssh-host

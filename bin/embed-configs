@@ -34,35 +34,6 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'IMAGE=${var_IM'\
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' embed-configs`
   eval "$(docopt "$@")"
 
-  local host_arch
-  host_arch=$(uname -m)
-  case "$host_arch" in
-    x86_64) ARCH=amd64;;
-    aarch64) ARCH=arm64;;
-    *) fatal "Unknown host architecture: %s" "$host_arch" ;;
-  esac
-
-  local containers=$PKGROOT/images/containers
-  if [[ ! -e "$containers/embed-configs.tar" ]] || \
-     find "$PKGROOT/bootstrap/containers/embed-configs" "$PKGROOT/workloads/common-context" \
-       -newer "$containers/embed-configs.tar" 2>/dev/null | grep -q .; then
-    info "Building '%s'" "embed-configs:latest"
-    mkdir -p "$PKGROOT/images"
-    docker run --rm -ti \
-      -v "$PKGROOT/lib/common-context:/workspace/common-context:ro" \
-      -v "$PKGROOT/bootstrap/containers/embed-configs:/workspace/context:ro" \
-      -v "$containers:/workspace/containers:rw" \
-      gcr.io/kaniko-project/executor:latest \
-      --dockerfile context/Dockerfile \
-      --build-arg "ARCH=$ARCH" \
-      --destination "cluster.local/embed-configs:latest" \
-      --tar-path "/workspace/containers/embed-configs.tar" \
-      --no-push
-    docker load -i "$containers/embed-configs.tar"
-  else
-    info "Not building '%s', no files have changed since last run" "embed-configs:latest"
-  fi
-
   # shellcheck disable=SC2154
   local config_tmp
   config_tmp=$(mktemp -d --suffix '-phxc-embed-configs')
@@ -84,7 +55,7 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'IMAGE=${var_IM'\
     -e "DEBUG=$DEBUG" \
     --device=/dev/kvm \
     --group-add "$(stat -c %g /dev/kvm)" \
-    "cluster.local/embed-configs:latest"
+    ghcr.io/andsens/phxc-embed-configs:latest
 }
 
 main "$@"

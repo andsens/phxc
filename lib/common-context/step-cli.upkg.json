@@ -1,6 +1,6 @@
 {
   "$schema": "https://schemas.orbit.dev/upkg/upkg-v0.28.0.schema.json",
-  "name": "smallstep",
+  "name": "step-cli",
   "bin": [".upkg/.bin/step"],
   "dependencies": [
     {

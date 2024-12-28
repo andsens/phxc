@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
-# shellcheck source-path=../..
 set -Eeo pipefail; shopt -s inherit_errexit
-PKGROOT=/usr/local/lib/upkg
-source "$PKGROOT/.upkg/records.sh/records.sh"
 
 main() {
   local src dest tar_mode=-c

@@ -44,16 +44,10 @@ local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
   eval "$(docopt "$@")"
 
   # shellcheck disable=SC2154
-  local DEBUG=$__debug DOCKER_PLATFORM ARCH
+  local DEBUG=$__debug DOCKER_PLATFORM
   case $VARIANT in
-    amd64)
-    DOCKER_PLATFORM=linux/amd64
-    ARCH=amd64
-    ;;
-    arm64|rpi*)
-    DOCKER_PLATFORM=linux/arm64
-    ARCH=arm64
-    ;;
+    amd64) DOCKER_PLATFORM=linux/amd64 ;;
+    arm64|rpi*) DOCKER_PLATFORM=linux/arm64 ;;
     *) fatal "Unknown variant: %s" "$VARIANT" ;;
   esac
 
@@ -71,29 +65,6 @@ local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
   local create_boot_image_opts=(--chown $UID)
   # shellcheck disable=SC2154
   ! $__upload || create_boot_image_opts+=(--upload "$__upload")
-
-  local containers=$PKGROOT/images/containers
-  if [[ ! -e "$containers/create-boot-image-$ARCH.tar" ]] || \
-     find "$PKGROOT/workloads/bootstrap/containers/create-boot-image" "$PKGROOT/workloads/common-context" \
-       -newer "$containers/create-boot-image-$ARCH.tar" 2>/dev/null | grep -q .; then
-    info "Building '%s'" "create-boot-image:$ARCH"
-    mkdir -p "$PKGROOT/images"
-    docker run --rm -ti \
-      --platform "$DOCKER_PLATFORM" \
-      -v "$PKGROOT/lib/common-context:/workspace/common-context:ro" \
-      -v "$PKGROOT/workloads/bootstrap/containers/create-boot-image:/workspace/context:ro" \
-      -v "$containers:/workspace/containers:rw" \
-      gcr.io/kaniko-project/executor:latest \
-      --dockerfile context/Dockerfile \
-      --build-arg "ARCH=$ARCH" \
-      --custom-platform="$DOCKER_PLATFORM" \
-      --destination "cluster.local/create-boot-image:$ARCH" \
-      --tar-path "/workspace/containers/create-boot-image-$ARCH.tar" \
-      --no-push
-    docker load -i "$containers/create-boot-image-$ARCH.tar"
-  else
-    info "Not building '%s', no files have changed since last run" "create-boot-image:$ARCH"
-  fi
 
   info "Building '%s'" "node:$VARIANT"
   docker run --rm -ti \
@@ -121,7 +92,7 @@ local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
     -e "DEBUG=$DEBUG" \
     --device=/dev/kvm \
     --group-add "$(stat -c %g /dev/kvm)" \
-    "cluster.local/create-boot-image:$ARCH" "${create_boot_image_opts[@]}"
+    ghcr.io/andsens/phxc-create-boot-image:latest "${create_boot_image_opts[@]}"
 
   rm -rf "$PKGROOT/images/$VARIANT.old"
   mv "$PKGROOT/images/$VARIANT" "$PKGROOT/images/$VARIANT.old"

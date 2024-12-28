@@ -1,6 +1,0 @@
-apiVersion: kpt.dev/v1alpha1
-kind: ResourceGroup
-metadata:
-  name: step-ca-bootstrap
-  labels:
-    cli-utils.sigs.k8s.io/inventory-id: 0809cd6149ee8c2adc3bbb7910c85281a22780c1-1733732611503960329

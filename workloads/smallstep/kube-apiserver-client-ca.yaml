@@ -119,8 +119,7 @@ spec:
         fsGroup: 1000
       initContainers:
       - name: setup-kube-apiserver-client-ca-config
-        image: cluster.local/step-ca-bootstrap:latest
-        imagePullPolicy: Never
+        image: ghcr.io/andsens/phxc-utils:latest
         command: [/home/step/scripts/setup-kube-apiserver-client-ca-config.sh]
         securityContext:
           readOnlyRootFilesystem: true
