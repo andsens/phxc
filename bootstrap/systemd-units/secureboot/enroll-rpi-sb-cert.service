@@ -1,5 +1,5 @@
 [Unit]
-Description=Write the phoenix-cluster secureboot cert to the RPi OTP
+Description=Write the Phoenix Cluster secureboot cert to the RPi OTP
 ConditionPathExists=/usr/local/lib/phxc/secureboot.der
 
 [Install]

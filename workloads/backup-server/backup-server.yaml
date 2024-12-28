@@ -104,8 +104,8 @@ spec:
         - name: nginx-cache
           mountPath: /var/cache/nginx
 
-        - name: phoenix-cluster-root-cert
-          mountPath: /var/www/certs/phoenix-cluster-root.crt
+        - name: phxc-root-cert
+          mountPath: /var/www/certs/phxc-root.crt
         - name: kube-apiserver-server-ca-cert
           mountPath: /var/www/certs/kube-apiserver-server-ca-cert.crt
         - name: kube-apiserver-client-ca-cert
@@ -123,9 +123,9 @@ spec:
       - name: nginx-cache
         emptyDir: {}
 
-      - name: phoenix-cluster-root-cert
+      - name: phxc-root-cert
         hostPath:
-          path: /usr/local/share/ca-certificates/phoenix-cluster-root.crt
+          path: /usr/local/share/ca-certificates/phxc-root.crt
           type: File
       - name: kube-apiserver-server-ca-cert
         hostPath:

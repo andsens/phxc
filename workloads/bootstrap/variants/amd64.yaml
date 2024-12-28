@@ -36,8 +36,8 @@ spec:
         - name: context
           mountPath: /workspace/context
         - name: bundle
-          mountPath: /workspace/phoenix-cluster.tar.gz
-          subPath: phoenix-cluster.tar.gz
+          mountPath: /workspace/phxc.tar.gz
+          subPath: phxc.tar.gz
       containers:
       - name: create-boot-image
         image: ghcr.io/andsens/phxc-create-boot-image
@@ -73,7 +73,7 @@ spec:
           name: assets
       - name: smallstep-root-cert
         hostPath:
-          path: /usr/local/share/ca-certificates/phoenix-cluster-root.crt
+          path: /usr/local/share/ca-certificates/phxc-root.crt
           type: File
       - name: embed-configs
         hostPath:

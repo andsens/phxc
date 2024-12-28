@@ -4,4 +4,4 @@ Description=Waits until the %i workload is ready
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/local/lib/upkg/.upkg/phoenix-cluster/workloads/%i/ready.sh --wait
+ExecStart=/usr/local/lib/upkg/.upkg/phxc/workloads/%i/ready.sh --wait

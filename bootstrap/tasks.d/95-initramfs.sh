@@ -31,8 +31,8 @@ initramfs() {
   # Enable serial console
   systemctl enable serial-getty@ttyS0
 
-  chmod 0755 /usr/lib/dracut/modules.d/99phoenix-cluster/parse-squashfs-root.sh \
-             /usr/lib/dracut/modules.d/99phoenix-cluster/module-setup.sh
+  chmod 0755 /usr/lib/dracut/modules.d/99phxc/parse-squashfs-root.sh \
+             /usr/lib/dracut/modules.d/99phxc/module-setup.sh
 
   mkdir -p /mnt/overlay/image /mnt/overlay/upper
 

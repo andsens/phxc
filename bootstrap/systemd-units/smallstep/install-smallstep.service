@@ -8,5 +8,5 @@ ConditionPathExists=!/var/lib/phxc/.upkg/step-cli
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=bash -e
-StandardInputText=upkg add -f /usr/local/lib/upkg/.upkg/phoenix-cluster/lib/common-context/step-cli.upkg.json
+StandardInputText=upkg add -f /usr/local/lib/upkg/.upkg/phxc/lib/common-context/step-cli.upkg.json
 WorkingDirectory=/var/lib/phxc

@@ -2,17 +2,17 @@
 Description=Bootstrap the smallstep CA for the root user
 Requires=trust-smallstep-root.service install-smallstep.service
 After=trust-smallstep-root.service install-smallstep.service
-AssertPathExists=/usr/local/share/ca-certificates/phoenix-cluster-root.crt
+AssertPathExists=/usr/local/share/ca-certificates/phxc-root.crt
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=bash -e
-StandardInputText=jq -n --arg fp "$(step certificate fingerprint /usr/local/share/ca-certificates/phoenix-cluster-root.crt)" \
+StandardInputText=jq -n --arg fp "$(step certificate fingerprint /usr/local/share/ca-certificates/phxc-root.crt)" \
   '{ \
     "ca-url": "https://step-ca.smallstep.svc.cluster.local:9000", \
     "fingerprint": $fp, \
-    "root": "/usr/local/share/ca-certificates/phoenix-cluster-root.crt", \
+    "root": "/usr/local/share/ca-certificates/phxc-root.crt", \
     "redirect-url": "" \
   }' \
   >/root/.step/config/defaults.json

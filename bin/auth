@@ -6,7 +6,7 @@ source "$PKGROOT/.upkg/records.sh/records.sh"
 
 KUBE_CFG_DEFAULT_PATH=$HOME/.kube/config.yaml
 CONFIG_DIR=$HOME/.config/phxc
-ROOT_CRT_PATH=$CONFIG_DIR/phoenix-cluster-root.crt
+ROOT_CRT_PATH=$CONFIG_DIR/phxc-root.crt
 
 main() {
   DOC="auth
@@ -60,7 +60,7 @@ done;eval $p'__username=${var___username:-system:admin};'$p'_ssh_keyname_=${va'\
     trap 'error "Failed to configure, run with LOGLEVEL=verbose to see more detailed errors"' ERR
     mkdir -p "$CONFIG_DIR"
     # TOFU for phoenix cluster root CA
-    phxc_root_crt=$(curl -k --no-progress-meter "$backup_server_url/certs/phoenix-cluster-root.crt")
+    phxc_root_crt=$(curl -k --no-progress-meter "$backup_server_url/certs/phxc-root.crt")
     phxc_root_crt_fp=$(step certificate fingerprint <(printf "%s\n" "$phxc_root_crt"))
     if [[ -e "$ROOT_CRT_PATH" ]]; then
       local remote_phxc_root_crt_fp

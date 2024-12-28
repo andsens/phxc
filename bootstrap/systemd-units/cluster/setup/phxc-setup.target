@@ -1,5 +1,5 @@
 [Unit]
-Description=Phoenix Cluster is started and configured
+Description=The Phoenix Cluster is started and configured
 Requires=k3s-network-ready.target workload@smallstep.target workload@backup-server.target workload@bootstrap.target
 After=k3s-network-ready.target workload@smallstep.target workload@backup-server.target workload@bootstrap.target
 
