@@ -8,6 +8,8 @@ Type=oneshot
 RemainAfterExit=yes
 ExecCondition=bash -ec '[ $(get-config -q /boot/phxc/node.yaml k3s.mode) = server ]'
 Environment=KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+Restart=always
+RestartSec=30
 ExecStart=bash -e
 StandardInputText=kustomize build --enable-alpha-plugins --enable-exec "/usr/local/lib/upkg/.upkg/phxc/workloads/%i" | \
   kpt live apply --request-timeout 10m -
