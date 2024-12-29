@@ -1,7 +1,7 @@
 [Unit]
 Description=Configure systemd-resolved to be able to resolve the cluster domain
 Requires=workload-ready@coredns.service
-After=systemd-networkd.service workload-ready@coredns.service configs-available.target
+After=systemd-networkd.service workload-ready@coredns.service configs-available.target sys-subsystem-net-devices-cilium_host.device
 
 [Install]
 WantedBy=multi-user.target
