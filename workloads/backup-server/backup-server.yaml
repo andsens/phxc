@@ -130,11 +130,11 @@ spec:
           type: File
       - name: kube-apiserver-server-ca-cert
         hostPath:
-          path: /var/lib/rancher/k3s/server/tls/server-ca.crt
+          path: /var/lib/rancher/k3s/agent/server-ca.crt
           type: File
       - name: kube-apiserver-client-ca-cert
         hostPath:
-          path: /var/lib/rancher/k3s/server/tls/client-ca.crt
+          path: /var/lib/rancher/k3s/agent/client-ca.crt
           type: File
       - name: secureboot
         secret:
