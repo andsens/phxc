@@ -1,13 +1,14 @@
 [Unit]
 Description=Install Cilium in K3S
 Documentation=https://docs.cilium.io/en/stable/installation/k3s/
-Requires=k3s@server.service
+Requires=k3s@server.service workload@ready-checks.target
 Wants=install-control-plane-packages.service
-After=k3s@server.service install-control-plane-packages.service configs-available.target
+After=k3s@server.service workload@ready-checks.target install-control-plane-packages.service configs-available.target
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
+Environment=KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 ExecCondition=bash -ec '[ $(get-config -q /boot/phxc/node.yaml k3s.mode) = server ]'
 ExecCondition=bash -ec '! kubectl get -n kube-system deployment cilium-operator -o name'
 ExecStart=bash -eo pipefail

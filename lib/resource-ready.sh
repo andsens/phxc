@@ -86,14 +86,3 @@ certificate_ready() {
 status_is_ready() {
   jq -re 'any(.[] | select(.type == "Ready"); .status == "True")' >/dev/null
 }
-
-image_ready() {
-  local ref=$1
-  if ctr -n k8s.io image ls -q | grep -q "^$ref$"; then
-    verbose "The image '%s' exists in the registry" "$ref"
-    return 0
-  else
-    verbose "The image '%s' does not exist in the registry" "$ref"
-    return 1
-  fi
-}

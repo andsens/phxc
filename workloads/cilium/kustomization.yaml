@@ -4,6 +4,7 @@ resources:
 - ../../lib/cluster-settings
 - pool.yaml
 - bgpp.yaml
+- ready-checks.yaml
 - Kptfile
 - resourcegroup.yaml
 replacements:
