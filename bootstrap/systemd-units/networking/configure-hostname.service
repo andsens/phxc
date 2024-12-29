@@ -11,8 +11,9 @@ WantedBy=sysinit.target
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=bash -e
-StandardInputText=hostname=$(get-config -q /boot/phxc/node.yaml hostname || printf "k8s-%%s.local" "$(sha256sum /etc/machine-id | head -c8)"); \
-                  printf "%%s\\n" "$hostname" >/etc/hostname; \
+StandardInputText=hostname=$(get-config -q /boot/phxc/node.yaml hostname || printf "k8s-%%s" "$(sha256sum /etc/machine-id | head -c8)"); \
+                  hostname=${hostname%%'.'*}; \
+                  printf "%%s.local\\n" "$hostname" >/etc/hostname; \
                   hostname -F /etc/hostname; \
-                  hostsFile=$(cat /etc/hosts | grep -v 127.0.1.1); \
-                  printf "127.0.1.1       %%s %%s\\n%%s\\n" "$hostname" "${hostname%%.local}" "$hostsFile" >/etc/hosts
+                  hostsFile=$(cat /etc/hosts | grep -vF 127.0.1.1); \
+                  printf "127.0.1.1       %%s %%s.local\\n%%s\\n" "$hostname" "$hostname" "$hostsFile" >/etc/hosts
