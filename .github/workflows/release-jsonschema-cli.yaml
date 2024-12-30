@@ -1,0 +1,39 @@
+name: Build & release the jsonschema-cli binary
+
+on:
+  push:
+    tags: [ 'jsonschema-cli-*' ]
+    paths:
+    - .github/workflows/release-jsonschema-cli.yaml
+
+env:
+  JSONSCHEMA_CLI_VERSION: '0.28.0'
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+    - name: Build jsonschema-cli
+      run: |
+        wget -qO>(tar -xz --strip-components 1) https://github.com/Stranger6667/jsonschema/archive/refs/tags/rust-v${{ env.JSONSCHEMA_CLI_VERSION }}.tar.gz
+        cat <<EOF >>.cargo/config.toml
+        [target.aarch64-unknown-linux-gnu]
+        linker = "/usr/bin/aarch64-linux-gnu-gcc"
+        EOF
+        sudo dpkg --add-architecture arm64
+        sudo apt-get install -qq --no-install-recommends gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+        export PKG_CONFIG_ALLOW_CROSS=1
+        rustup target add aarch64-unknown-linux-gnu
+        cargo build -r --target x86_64-unknown-linux-gnu --manifest-path crates/jsonschema-cli/Cargo.toml
+        cargo build -r --target aarch64-unknown-linux-gnu --manifest-path crates/jsonschema-cli/Cargo.toml
+        tar -czf jsonschema-cli-${{ env.JSONSCHEMA_CLI_VERSION }}_linux_amd64.tar.gz -C target/x86_64-unknown-linux-gnu/release jsonschema-cli
+        tar -czf jsonschema-cli-${{ env.JSONSCHEMA_CLI_VERSION }}_linux_arm64.tar.gz -C target/aarch64-unknown-linux-gnu/release jsonschema-cli
+    - uses: ncipollo/release-action@v1
+      with:
+        body: Compiled binaries of jsonschema-cli from https://github.com/Stranger6667/jsonschema
+        draft: false
+        prerelease: false
+        artifacts: jsonschema-cli-${{ env.JSONSCHEMA_CLI_VERSION }}_linux_amd64.tar.gz,jsonschema-cli-${{ env.JSONSCHEMA_CLI_VERSION }}_linux_arm64.tar.gz
+        artifactErrorsFailBuild: true
