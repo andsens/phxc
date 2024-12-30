@@ -16,4 +16,4 @@ StandardInputText=hostname=$(get-config -q /boot/phxc/node.yaml hostname || prin
                   printf "%%s.local\\n" "$hostname" >/etc/hostname; \
                   hostname -F /etc/hostname; \
                   hostsFile=$(cat /etc/hosts | grep -vF 127.0.1.1); \
-                  printf "127.0.1.1       %%s %%s.local\\n%%s\\n" "$hostname" "$hostname" "$hostsFile" >/etc/hosts
+                  printf "127.0.1.1       %%s.local %%s\\n%%s\\n" "$hostname" "$hostname" "$hostsFile" >/etc/hosts
