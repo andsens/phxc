@@ -12,14 +12,14 @@ check_ready() {
 
   # shellcheck disable=SC2154
   if $wait; then
-    set +e; (set -e; is_ready &>/dev/null); ret=$?; set -e
+    set +e; (set -e; is_ready >/dev/null 2> >(pipe_verbose)); ret=$?; set -e
     until [[ $ret = 0 ]]; do
       sleep 1
-      set +e; (set -e; is_ready &>/dev/null); ret=$?; set -e
+      set +e; (set -e; is_ready >/dev/null 2> >(pipe_verbose)); ret=$?; set -e
     done
     return 0
   else
-    is_ready &>/dev/null
+    is_ready >/dev/null 2> >(pipe_verbose)
   fi
 }
 
@@ -60,7 +60,7 @@ pod_ready() {
 
 namespace_ready() {
   local ns=$1 phase
-  phase=$(kubectl get namespace "$ns" -o jsonpath='{.status.phase}' 2>/dev/null)
+  phase=$(kubectl get namespace "$ns" -o jsonpath='{.status.phase}')
   verbose "The namespace '%s' is in the '%s' phase" "$ns" "$phase"
   [[ $phase = 'Active' ]] || return 1
 }
@@ -68,7 +68,7 @@ namespace_ready() {
 endpoint_ready() {
   local ns=$1 endpoint=$2 addrcount
   addrcount=$(kubectl -n "$ns" get endpoints "$endpoint" -ojsonpath='{.subsets[*].addresses}' | jq -re 'length')
-  verbose "The endpoint '%s' in '%s' has %d addresses" "$endpoint" "$ns"
+  verbose "The endpoint '%s' in '%s' has %d addresses" "$endpoint" "$ns" "$addrcount"
   [[ $addrcount -gt 0 ]] || return 1
 }
 
