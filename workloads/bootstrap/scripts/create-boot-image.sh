@@ -359,10 +359,10 @@ EOF
     for artifact in "${artifacts[@]}"; do
       upload_files="$upload_files,/workspace/artifacts/$artifact"
     done
-    curl_img_reg -DELETE "$__upload/$VARIANT.tmp/" || true
+    curl_img_reg -DELETE "$__upload/$VARIANT.tmp/" || info "404 => No previous %s.tmp/ to delete" "$VARIANT"
     curl_img_reg --upload-file "{${upload_files#,}}" "$__upload/$VARIANT.tmp/"
-    curl_img_reg -DELETE "$__upload/$VARIANT.old/" || true
-    curl_img_reg -XMOVE "$__upload/$VARIANT/" --header "Destination:$__upload/$VARIANT.old/" || true
+    curl_img_reg -DELETE "$__upload/$VARIANT.old/" || info "404 => No previous %s.old/ to delete" "$VARIANT"
+    curl_img_reg -XMOVE "$__upload/$VARIANT/" --header "Destination:$__upload/$VARIANT.old/" || info "404 => No previous %s/ to move to %s.old/" "$VARIANT" "$VARIANT"
     curl_img_reg -XMOVE "$__upload/$VARIANT.tmp/" --header "Destination:$__upload/${VARIANT}/"
   fi
 }
