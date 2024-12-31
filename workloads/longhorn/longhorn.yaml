@@ -19,13 +19,13 @@ spec:
         - name: longhorn-driver-deployer
           env:
           - name: CSI_ATTACHER_REPLICA_COUNT
-            value: "1"
+            value: "2"
           - name: CSI_PROVISIONER_REPLICA_COUNT
-            value: "1"
+            value: "2"
           - name: CSI_RESIZER_REPLICA_COUNT
-            value: "1"
+            value: "2"
           - name: CSI_SNAPSHOTTER_REPLICA_COUNT
-            value: "1"
+            value: "2"
 ---
 apiVersion: v1
 data:
@@ -41,12 +41,11 @@ data:
     reclaimPolicy: "Delete"
     volumeBindingMode: Immediate
     parameters:
-      numberOfReplicas: "1"
+      numberOfReplicas: "2"
 kind: ConfigMap
 metadata:
   labels:
     app.kubernetes.io/instance: longhorn
     app.kubernetes.io/name: longhorn
-    app.kubernetes.io/version: v1.6.2
   name: longhorn-storageclass
   namespace: longhorn-system
