@@ -1,11 +1,11 @@
-name: Upload the cluster.yaml schema to gist.github.com
+name: Upload the cluster.json schema to gist.github.com
 
 on:
   push:
     branches: [ 'main' ]
     paths:
     - .github/workflows/update-cluster-schema.yaml
-    - lib/schemas/cluster.yaml
+    - lib/schemas/cluster.json
 
 jobs:
   update-node-config-schema:
@@ -15,12 +15,10 @@ jobs:
     - uses: actions/checkout@v4
       with:
         path: repo
-    - name: Convert cluster.yaml to JSON
-      run: yq -o=json . repo/lib/schemas/cluster.yaml >cluster.json
     - name: Deploy to gist
       uses: exuanbo/actions-deploy-gist@v1
       with:
         token: ${{ secrets.GIST_TOKEN }}
         gist_id: ${{ vars.CONFIG_SCHEMAS_GIST_ID }}
-        file_path: cluster.json
+        file_path: repo/lib/schemas/cluster.json
         file_type: application/schema+json

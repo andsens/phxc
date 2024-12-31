@@ -6,5 +6,5 @@ After=workload-ready@smallstep.service configure-resolved.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=curl -k --no-progress-meter -o/usr/local/share/ca-certificates/phxc-root.crt https://step-ca.smallstep.svc.cluster.local:9000/roots.pem
+ExecStart=curl -k --no-progress-meter --retry 1000 -o/usr/local/share/ca-certificates/phxc-root.crt https://step-ca.smallstep.svc.cluster.local:9000/roots.pem
 ExecStartPost=update-ca-certificates

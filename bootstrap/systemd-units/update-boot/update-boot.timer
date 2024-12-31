@@ -1,11 +1,9 @@
 [Unit]
-Description=Check if there are updates to the boot image every 24h
+Description=Check if there are updates to the boot image every hour and try to reboot the node
 
 [Install]
 WantedBy=timers.target
 
 [Timer]
-OnCalendar=*-*-* 00:00:00
-RandomizedDelaySec=86399
-FixedRandomDelay=true
-Persistent=true
+OnCalendar=*-*-* *:00:00
+RandomizedDelaySec=3599

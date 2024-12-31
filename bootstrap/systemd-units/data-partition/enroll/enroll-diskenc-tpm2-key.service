@@ -4,7 +4,7 @@ Requires=boot.mount data-partition.target
 After=boot.mount data-partition.target
 Before=diskenc-keys-enrolled.target
 ConditionSecurity=uefi-secureboot
-ConditionPathExists=/boot/phxc/node.yaml
+ConditionPathExists=/boot/phxc/node.json
 ConditionPathExists=/run/initramfs/disk-encryption.key
 
 [Install]
@@ -13,7 +13,7 @@ WantedBy=diskenc-keys-enrolled.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecCondition=bash -ec '[[ $(get-config /boot/phxc/node.yaml disk-encryption) =~ ^tpm|auto$ ]] || return 1'
+ExecCondition=bash -ec '[[ $(get-config /boot/phxc/node.json disk-encryption) =~ ^tpm|auto$ ]] || return 1'
 ExecStart=systemd-cryptenroll \
   --unlock-key-file /run/initramfs/disk-encryption.key \
   --tpm2-device=auto --tpm2-pcrs=7,14 --wipe-slot=2 \

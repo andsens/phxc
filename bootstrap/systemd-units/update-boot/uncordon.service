@@ -1,0 +1,12 @@
+[Unit]
+Description=Uncordon the node
+Requires=k3s.target switch-boot.service
+After=k3s.target switch-boot.service
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=bash -eo pipefail
+StandardInputText=kubectl uncordon "%H"

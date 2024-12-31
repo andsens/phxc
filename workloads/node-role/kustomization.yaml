@@ -3,5 +3,6 @@ kind: Kustomization
 namespace: kube-system
 resources:
 - ready-checks.yaml
+- drain-node.yaml
 - Kptfile
 - resourcegroup.yaml

@@ -1,0 +1,19 @@
+[Unit]
+Description=Set the hostname using the node-config
+DefaultDependencies=no
+Requires=boot.mount sysroot.mount
+After=boot.mount sysroot.mount
+ConditionPathExists=/boot/phxc/node.json
+
+[Install]
+WantedBy=sysinit.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecCondition=jq -re .hostname /boot/phxc/node.json
+ExecStart=sh -e
+StandardInputText=hostname=$(jq -r .hostname /boot/phxc/node.json); \
+                  printf "%%s\\n" "$hostname" >/sysroot/etc/hostname; \
+                  hostsFile=$(grep -vF 127.0.1.1 /sysroot/etc/hosts); \
+                  printf "127.0.1.1       %%s %%s\\n%%s\\n" "$hostname" "${hostname%%'.'*}" "$hostsFile" >/sysroot/etc/hosts

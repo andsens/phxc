@@ -1,9 +1,8 @@
 [Unit]
 Description=Install packages needed to run the kubernetes node
 Requires=var-lib-phxc.mount
-After=var-lib-phxc.mount install-smallstep.service
+After=var-lib-phxc.mount install-smallstep.service network-online.target
 Before=pre-k3s.target
-ConditionPathExists=!/var/lib/phxc/.upkg/node
 
 [Install]
 RequiredBy=k3s.target
@@ -11,6 +10,5 @@ RequiredBy=k3s.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=bash -e
-StandardInputText=upkg add -fp node /usr/local/lib/upkg/.upkg/phxc/bootstrap/node.upkg.json
+ExecStart=upkg add -fp node /usr/local/lib/upkg/.upkg/phxc/bootstrap/node.upkg.json
 WorkingDirectory=/var/lib/phxc

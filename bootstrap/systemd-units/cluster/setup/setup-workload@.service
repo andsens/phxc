@@ -1,14 +1,14 @@
 [Unit]
 Description=Applies the %i manifest
-Wants=install-control-plane-packages.service
+Requires=install-control-plane-packages.service
 After=install-control-plane-packages.service
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecCondition=bash -ec '[ $(get-config -q /boot/phxc/node.yaml k3s.mode) = server ]'
+ExecCondition=bash -ec '[ $(get-config -q /boot/phxc/node.json k3s.mode) = server ]'
 Environment=KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-Restart=always
+Restart=on-failure
 RestartSec=30
 ExecStart=bash -e
 StandardInputText=kustomize build --enable-alpha-plugins --enable-exec "/usr/local/lib/upkg/.upkg/phxc/workloads/%i" | \

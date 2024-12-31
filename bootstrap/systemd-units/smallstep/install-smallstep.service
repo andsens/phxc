@@ -1,12 +1,10 @@
 [Unit]
 Description=Install step-cli
 Requires=var-lib-phxc.mount
-After=var-lib-phxc.mount
-ConditionPathExists=!/var/lib/phxc/.upkg/step-cli
+After=var-lib-phxc.mount network-online.target
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=bash -e
-StandardInputText=upkg add -f /usr/local/lib/upkg/.upkg/phxc/lib/common-context/step-cli.upkg.json
+ExecStart=upkg add -f /usr/local/lib/upkg/.upkg/phxc/lib/common-context/step-cli.upkg.json
 WorkingDirectory=/var/lib/phxc

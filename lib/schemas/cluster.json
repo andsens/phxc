@@ -1,0 +1,130 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "domain": {
+      "description": "The domain of the cluster",
+      "type": "string",
+      "format": "hostname"
+    },
+    "admin": {
+      "description": "Configuration of the \"admin\" user",
+      "type": "object",
+      "properties": {
+        "ssh-keys": {
+          "type": "array",
+          "items": {
+            "description": "The admin SSH key. Used for SSH login, Kubernetes authentication, and config signing",
+            "type": "string"
+          }
+        },
+        "pwhash": {
+          "description": "sudo password for the admin (ssh password authentication is disabled)",
+          "type": "string"
+        }
+      },
+      "required": [
+        "ssh-keys"
+      ],
+      "additionalProperties": false
+    },
+    "cidrs": {
+      "type": "object",
+      "description": "CIDRs specifying the subnets the cluster should allocate for pods, services and loadbalancers",
+      "properties": {
+        "pod": {
+          "description": "The subnet all pods will have an IP assigned from",
+          "type": "object",
+          "properties": {
+            "ipv4": {
+              "$ref": "#/definitions/ipv4-cidr"
+            },
+            "ipv6": {
+              "$ref": "#/definitions/ipv6-cidr"
+            }
+          },
+          "additionalProperties": false
+        },
+        "svc": {
+          "description": "The subnet all services will have an IP assigned from",
+          "type": "object",
+          "properties": {
+            "ipv4": {
+              "$ref": "#/definitions/ipv4-cidr"
+            },
+            "ipv6": {
+              "$ref": "#/definitions/ipv6-cidr"
+            }
+          },
+          "additionalProperties": false
+        },
+        "lb": {
+          "description": "The subnet all loadbalancer services will have an IP assigned from",
+          "type": "object",
+          "properties": {
+            "ipv4": {
+              "$ref": "#/definitions/ipv4-cidr"
+            },
+            "ipv6": {
+              "$ref": "#/definitions/ipv6-cidr"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "bgp": {
+      "description": "BGP configuration for cilium to advertise routes for your router",
+      "type": "object",
+      "properties": {
+        "router": {
+          "description": "Router addresses",
+          "type": "object",
+          "properties": {
+            "ipv4": {
+              "$ref": "#/definitions/ipv4"
+            },
+            "ipv6": {
+              "$ref": "#/definitions/ipv6"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "router"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "admin"
+  ],
+  "additionalProperties": false,
+  "definitions": {
+    "ipv4": {
+      "description": "An IPv4 Address",
+      "type": "string",
+      "pattern": "^[0-9.]+"
+    },
+    "ipv6": {
+      "description": "An IPv6 Address",
+      "type": "string",
+      "pattern": "^[0-9a-f:]+"
+    },
+    "ipv4-cidr": {
+      "description": "An IPv4 CIDR",
+      "type": "string",
+      "pattern": "^[0-9.]+/[0-9]+$"
+    },
+    "ipv6-cidr": {
+      "description": "An IPv6 CIDR",
+      "type": "string",
+      "pattern": "^[0-9a-f:]+/[0-9]+$"
+    }
+  }
+}

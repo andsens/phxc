@@ -19,7 +19,7 @@ TasksMax=infinity
 TimeoutStartSec=0
 Restart=always
 RestartSec=5s
-ExecCondition=bash -ec '[ $(get-config -q /boot/phxc/node.yaml k3s.mode) = %i ]'
+ExecCondition=bash -ec '[ $(get-config -q /boot/phxc/node.json k3s.mode) = %i ]'
 ExecStartPre=ln -sf %i.yaml /etc/rancher/k3s/config.yaml
 ExecStartPre=/bin/sh -xc '! /usr/bin/systemctl is-enabled --quiet nm-cloud-setup.service 2>/dev/null'
 ExecStartPre=-/sbin/modprobe br_netfilter

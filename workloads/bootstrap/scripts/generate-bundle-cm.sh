@@ -6,15 +6,13 @@ PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../..")
 main() {
   source "$PKGROOT/.upkg/path-tools/path-tools.sh"
   PATH=$(path_prepend "$PKGROOT/.upkg/.bin")
-  local bundle item
+  local bundle
   bundle=$(mktemp --suffix .tar.gz)
   # shellcheck disable=SC2064
   trap "rm \"$bundle\"" EXIT
   "$PKGROOT/bootstrap/scripts/bundle" "$bundle"
-  item=$(kubectl create --dry-run=client -o yaml configmap bundle --from-file "phxc.tar.gz=$bundle")
-  # shellcheck disable=SC2016
-  yq -y --indentless --argjson item "$(yq . <<<"$item")" '.items+=[$item]' <<<'kind: ResourceList
-items: []'
+  kubectl create --dry-run=client -o json configmap bundle --from-file "phxc.tar.gz=$bundle" | \
+    jq '{"kind": "ResourceList", "items": [.]}'
 }
 
 main "$@"

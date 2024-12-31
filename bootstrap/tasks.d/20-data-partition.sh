@@ -11,7 +11,7 @@ data_partition() {
        /etc/systemd/system/enroll-diskenc-tpm2-key.service
   else
     rm /etc/systemd/system/diskenc-rpi-otp-key.service \
-       /etc/systemd/system/rpi-init-otp.service \
+       /etc/systemd/system/init-rpi-otp.service \
        /etc/systemd/system/enroll-diskenc-rpi-otp-key.service
   fi
   mkdir /var/lib/phxc

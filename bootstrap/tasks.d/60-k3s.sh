@@ -3,6 +3,7 @@
 PACKAGES+=(
   git # kpt
   open-iscsi nfs-common # longhorn
+  python3 # kube-dns-ip.py
 )
 
 k3s() {

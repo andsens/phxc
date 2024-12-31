@@ -1,7 +1,7 @@
 [Unit]
-Description=Set k3s joining token
+Description=Set k3s server url & joining token
 Before=pre-k3s.target
-ConditionPathExists=/boot/phxc/node.yaml
+ConditionPathExists=/boot/phxc/node.json
 
 [Install]
 RequiredBy=k3s@agent.service
@@ -10,10 +10,10 @@ WantedBy=k3s@server.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecCondition=bash -ec 'get-config -q /boot/phxc/node.yaml k3s.token >/dev/null'
+ExecCondition=bash -ec 'get-config -q /boot/phxc/node.json k3s.token >/dev/null'
 UMask=0077
 ExecStart=bash -eo pipefail
-StandardInputText=yq -ny \
-  --arg k3s_url "$(get-config /boot/phxc/node.yaml k3s.url)" \
-  --arg k3s_token  "$(get-config /boot/phxc/node.yaml k3s.token)" \
+StandardInputText=jq -n \
+  --arg k3s_url "$(get-config /boot/phxc/node.json k3s.url)" \
+  --arg k3s_token  "$(get-config /boot/phxc/node.json k3s.token)" \
   '{"server": $k3s_url, "token": $k3s_token}' >/etc/rancher/k3s/config.yaml.d/node.yaml

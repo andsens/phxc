@@ -25,3 +25,5 @@ configMapGenerator:
   name: scripts
 generators:
 - generate-bundle-cm.yaml
+generatorOptions:
+  disableNameSuffixHash: true

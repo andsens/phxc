@@ -9,6 +9,5 @@ esac
 
 update_boot() {
   chmod 0755 /usr/local/bin/update-boot \
-             /usr/local/bin/try-reboot \
              /usr/local/bin/switch-boot
 }

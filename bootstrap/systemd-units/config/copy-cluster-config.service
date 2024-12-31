@@ -1,12 +1,12 @@
 [Unit]
-Description=Copies /boot/phxc/cluster.yaml to /etc/phxc/cluster.yaml
+Description=Copies /boot/phxc/cluster.json to /etc/phxc/cluster.json
 DefaultDependencies=no
 Requires=boot.mount
 Wants=setup-admin-credentials.service
 After=boot.mount setup-admin-credentials.service
 Before=configs-available.target
-ConditionPathExists=/boot/phxc/cluster.yaml
-ConditionPathExists=!/etc/phxc/cluster.yaml
+ConditionPathExists=/boot/phxc/cluster.json
+ConditionPathExists=!/etc/phxc/cluster.json
 
 [Install]
 WantedBy=configs-available.target
@@ -15,4 +15,4 @@ WantedBy=configs-available.target
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=bash -e
-StandardInputText=get-config /boot/phxc/cluster.yaml >/etc/phxc/cluster.yaml
+StandardInputText=get-config /boot/phxc/cluster.json >/etc/phxc/cluster.json

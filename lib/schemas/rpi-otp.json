@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "description": "Configures the initialization of the RPi OTP memory and how the disk encryption key should be derived from it",
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "offset": {
+      "description": "OTP offset in words (4 bits). Default 0",
+      "type": "integer"
+    },
+    "length": {
+      "description": "OTP length in words (4 bits). Default: 8",
+      "type": "integer"
+    },
+    "key-derivation-suffix": {
+      "description": "Suffix to add to the disk encryption key derivation label. Default: 1",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

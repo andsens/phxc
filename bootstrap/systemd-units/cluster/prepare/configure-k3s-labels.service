@@ -1,7 +1,7 @@
 [Unit]
 Description=Set k3s node-label
 Before=pre-k3s.target
-ConditionPathExists=/boot/phxc/node.yaml
+ConditionPathExists=/boot/phxc/node.json
 
 [Install]
 WantedBy=k3s.target
@@ -10,8 +10,8 @@ WantedBy=k3s.target
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=bash -eo pipefail
-StandardInputText=yq -ny \
-    --argjson labels "$(get-config -q /boot/phxc/node.yaml | yq . || true)" \
+StandardInputText=jq -n \
+    --argjson labels "$(get-config -q /boot/phxc/node.json | jq .labels || true)" \
     --arg sha256 "$(compgen -G /run/initramfs/root.*.img | cut -d. -f2)" \
     --arg variant "${VARIANT}" \
     '{"node-label": (.labels + ["cluster.local/rootimg-sha256=" + $sha256[0:8], "cluster.local/rootimg-variant=" + $variant])}' \

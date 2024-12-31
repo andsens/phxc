@@ -23,19 +23,28 @@ installkernel() {
 # Install the required file(s) and directories for the module in the initramfs.
 install() {
   inst_binary sha256sum
-  ! $DEBUG || inst_binary cat nano less lsblk grep
+  inst_binary jq
+  if $DEBUG; then
+    inst_binary cat
+    inst_binary nano
+    inst_binary less
+    inst_binary lsblk
+    inst_binary grep
+  fi
   inst /etc/systemd/system.conf.d/disk-uuids.conf
   inst /etc/systemd/system.conf.d/variant.conf
-  # shellcheck disable=SC2154
 
+  # shellcheck disable=SC2154
   inst "$moddir/system/copy-rootimg.service" "$systemdsystemconfdir/copy-rootimg.service"
   inst "$moddir/system/overlay-image.mount" "$systemdsystemconfdir/overlay-image.mount"
   inst "$moddir/system/overlay-rw.mount" "$systemdsystemconfdir/overlay-rw.mount"
   inst "$moddir/system/create-overlay-dirs.service" "$systemdsystemconfdir/create-overlay-dirs.service"
+  inst "$moddir/system/configure-hostname.service" "$systemdsystemconfdir/configure-hostname.service"
   inst "$moddir/system/sysroot.mount" "$systemdsystemconfdir/sysroot.mount"
   inst "$moddir/system/restore-machine-id.service" "$systemdsystemconfdir/restore-machine-id.service"
   # shellcheck disable=SC2154
   $SYSTEMCTL -q --root "$initdir" enable \
+    configure-hostname.service \
     restore-machine-id.service \
     sysroot.mount
   # shellcheck disable=SC2154

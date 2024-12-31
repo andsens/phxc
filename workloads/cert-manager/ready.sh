@@ -5,7 +5,7 @@ source "$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../..")/lib/res
 is_ready() {
   deployment_ready cert-manager cert-manager
   deployment_ready cert-manager cert-manager-cainjector
-  deployment_ready cert-manager cert-manager-webhook
+  endpoint_ready cert-manager cert-manager-webhook
   crd_installed certificates.cert-manager.io
 }
 check_ready "$@"

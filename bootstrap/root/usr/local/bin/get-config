@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
-# shellcheck source-path=../../../../../../..
+# shellcheck source-path=../../../../..
 set -Eeo pipefail; shopt -s inherit_errexit
 PKGROOT=/usr/local/lib/upkg/.upkg/phxc
 
 main() {
-  # shellcheck disable=SC1091
   source "$PKGROOT/.upkg/records.sh/records.sh"
   DOC="get-config - Retrieve phxc config values
 Usage:
@@ -47,14 +46,14 @@ for varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
       fatal "Failed to verify signature of %s using /home/admin/.ssh/authorized_keys" "$real_filepath"
     fi
     local validation_errors
-    if ! validation_errors=$(jsonschema -i <(yq . <<<"$contents") <(yq . "$schema") 2>&1); then
+    if ! validation_errors=$(jsonschema-cli -i <(printf "%s\n" "$contents") "$schema" 2>&1); then
       fatal 'Failed to validate "%s". Errors: %s' "$FILEPATH" "$validation_errors"
     fi
     if [[ -n $KEY ]]; then
-      if yq -r 'paths | join(".")' <<<"$contents" | grep -q "^$KEY$"; then
+      if jq -r 'paths | join(".")' <<<"$contents" | grep -q "^$KEY$"; then
         debug "Getting value of '%s' in '%s'" "$KEY" "$FILEPATH"
         key=$(escape_key "$KEY")
-        yq -r ".$KEY" <<<"$contents"
+        jq -r ".$KEY" <<<"$contents"
       elif $use_default && default=$(get_default "$basename" "$key"); then
         verbose "Key '%s' is not set in '%s', using default ('%s')" "$KEY" "$FILEPATH" "$default"
         printf "%s\n" "$default"
@@ -81,9 +80,9 @@ for varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 get_default() {
   local basename=$1 key=$2 defaults_path
   defaults_path=$PKGROOT/lib/defaults/$basename
-  if yq -r 'paths | join(".")' "$defaults_path" | grep -q "^$KEY$"; then
+  if jq -r 'paths | join(".")' "$defaults_path" | grep -q "^$KEY$"; then
     key=$(escape_key "$KEY")
-    yq -r ".$KEY" "$defaults_path"
+    jq -r ".$KEY" "$defaults_path"
   else
     return 1
   fi

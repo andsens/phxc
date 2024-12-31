@@ -16,6 +16,6 @@ StandardInputText=printf "" >/etc/ssh/sshd_config.d/20-host-key-certs.conf; \
     [[ $pubkey != *-cert.pub ]] || continue; \
     printf "Signing %%s\n" "$pubkey" >&2; \
     step ssh certificate --host --sign --force --provisioner=ssh-host --provisioner-password-file=<(printf "%%s" "$password") \
-      "$(hostname -f)" "$pubkey"; \
+      "%H" "$pubkey"; \
     printf "HostCertificate %%s-cert.pub\n" "${pubkey%%'.pub'}" >>/etc/ssh/sshd_config.d/20-host-key-certs.conf; \
   done

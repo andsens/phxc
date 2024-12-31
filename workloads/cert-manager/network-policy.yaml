@@ -19,3 +19,4 @@ spec:
       - port: "10250"
     fromEntities:
     - kube-apiserver
+    - cluster

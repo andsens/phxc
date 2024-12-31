@@ -1,9 +1,0 @@
-[Unit]
-Description=Reboot with a new root.img
-After=update-boot.service
-ConditionPathExists=|/boot/tryboot.img
-ConditionPathExists=|/boot/EFI/Linux/uki.try.efi
-
-[Service]
-Type=oneshot
-ExecStart=try-reboot try

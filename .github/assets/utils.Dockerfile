@@ -3,12 +3,7 @@ FROM alpine:${ALPINE_VERSION}
 RUN apk add --no-cache bash
 SHELL ["/bin/bash", "-Eeo", "pipefail", "-c"]
 
-RUN <<EOR
-apk add jq py3-virtualenv gettext-envsubst curl
-virtualenv /usr/local/lib/yq
-/usr/local/lib/yq/bin/pip3 install yq
-ln -s /usr/local/lib/yq/bin/yq /usr/local/bin/yq
-EOR
+RUN apk add jq py3-virtualenv gettext-envsubst curl
 
 COPY --chmod=0755 setup-upkg.sh ./
 COPY kubectl.upkg.json step-cli.upkg.json ./

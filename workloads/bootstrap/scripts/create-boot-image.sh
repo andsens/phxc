@@ -87,6 +87,7 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
   boot_files[/workspace/root.img]=/phxc/root.${sha256sums[root.img]}.img
   local kernel_cmdline=""
   ! $DEBUG || kernel_cmdline+=" rd.shell"
+  # ! $DEBUG || kernel_cmdline+=" rd.break"
 
   ##################################################
   ### Inject root.img SHA-256 sum into initramfs ###
@@ -195,11 +196,11 @@ EOF
     kernver=${kernver#'/workspace/root/lib/modules/'}
 
     local ukify_signing_opts=()
-    if [[ -e /secureboot/tls.key ]]; then
+    if [[ -e /workspace/secureboot/tls.key ]]; then
       ukify_signing_opts=(
         --signtool=sbsign
-        --secureboot-private-key=/secureboot/tls.key
-        --secureboot-certificate=/secureboot/tls.crt
+        --secureboot-private-key=/workspace/secureboot/tls.key
+        --secureboot-certificate=/workspace/secureboot/tls.crt
       )
     fi
 
@@ -218,7 +219,7 @@ EOF
     (( uki_size_b <= 1024 * 1024 * 64 )) || \
       warning "uki.efi size exceeds 64MiB (%dMiB). Transferring the image via TFTP will result in its truncation" "$((uki_size_b / 1024 / 1024))"
 
-    if [[ -e /secureboot/tls.key ]]; then
+    if [[ -e /workspace/secureboot/tls.key ]]; then
       # Extract authentihashes used for PE signatures so we can use them for remote attestation
       authentihashes[uki.efi]=$(/signify/bin/python3 /scripts/get-pe-digest.py --json /workspace/root/boot/uki.efi)
       # See https://lists.freedesktop.org/archives/systemd-devel/2022-December/048694.html
@@ -277,17 +278,6 @@ EOF
   printf "%s\n" "$meta" >/workspace/meta.json
 
   artifacts[/workspace/meta.json]=meta.json
-
-  ##########################
-  ### Embed cluster.yaml ###
-  ##########################
-
-  if [[ -e /workspace/embed-configs ]]; then
-    for file in /workspace/embed-configs/*; do
-      [[ $file != */cluster.yaml && $file != */cluster.yaml.sig ]] || continue
-      boot_files["$file"]=/phxc/$(basename "$file")
-    done
-  fi
 
   ##################
   ### Disk image ###

@@ -1,5 +1,7 @@
 [Unit]
 Description=Waits until the %i workload is ready
+Requires=install-node-packages.service
+After=install-node-packages.service
 
 [Service]
 Type=oneshot

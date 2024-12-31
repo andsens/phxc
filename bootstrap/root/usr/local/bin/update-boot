@@ -1,20 +1,23 @@
 #!/usr/bin/env bash
+# shellcheck source-path=../../../../..
 set -Eeo pipefail; shopt -s inherit_errexit
+PKGROOT=/usr/local/lib/upkg/.upkg/phxc
+source "$PKGROOT/.upkg/records.sh/records.sh"
 
 main() {
   [[ $# -eq 0 ]] || usage
   local meta_json_new http_code
   if ! meta_json_new=$(curl_img_reg "${VARIANT:?}/meta.json" -w '%{http_code}'); then
-    printf "update-boot: Unable to retrieve image metadata from image-registry\n" >&2
+    info "Unable to retrieve image metadata from image-registry"
     return 1
   fi
   http_code=$(tail -n1 <<<"$meta_json_new")
   if [[ $http_code = 404 ]]; then
-    printf "update-boot: No image has been built for the variant '%s' yet\n" "$VARIANT" >&2
+    info "No image has been built for the variant '%s' yet" "$VARIANT"
     return 0
   fi
   if [[ $http_code != 200 ]]; then
-    printf "update-boot: Unable to retrieve image metadata from image-registry (HTTP response code %s)\n" "$http_code" >&2
+    info "Unable to retrieve image metadata from image-registry (HTTP response code %s)" "$http_code"
     return 1
   fi
   meta_json_new=$(head -n-1 <<<"$meta_json_new")
@@ -23,21 +26,22 @@ main() {
   try_rootimg_sha256=$(cat /boot/phxc/try.sha256 2>/dev/null || true)
   new_rootimg_sha256=$(jq -re '.sha256sums["root.img"]' <<<"$meta_json_new")
   if [[ $current_rootimg_sha256 = "$new_rootimg_sha256" ]]; then
-    printf "update-boot: boot partition is up-to-date (image is currently running)\n" >&2
+    info "boot partition is up-to-date (image is currently running)"
     return 0
   fi
   if [[ $try_rootimg_sha256 = "$new_rootimg_sha256" ]]; then
     if [[ -e /run/initramfs/try-reboot ]]; then
-      printf "update-boot: boot partition is up-to-date (newer image will be tried)\n" >&2
+      info "boot partition is up-to-date (newer image will be tried)"
+      try_reboot
     else
-      printf "update-boot: boot partition is up-to-date (newer image failed to boot)\n" >&2
+      info "boot partition is up-to-date (newer image failed to boot)"
     fi
     return 0
   fi
-  printf "update-boot: boot partition is outdated, updating now\n" >&2
+  info "boot partition is outdated, updating now"
   rm -f /boot/phxc/try.sha256 /boot/phxc/root.try.img /boot/EFI/Linux/uki.try.efi /boot/tryboot.img /run/initramfs/try-reboot
   # shellcheck disable=SC2064
-  trap "rm -f /run/initramfs/try-reboot /boot/phxc/try.sha256 /boot/phxc/root.try.img /boot/EFI/Linux/uki.try.efi /boot/tryboot.img /run/initramfs/try-reboot" EXIT
+  trap "rm -f /run/initramfs/try-reboot /boot/phxc/try.sha256 /boot/phxc/root.try.img /boot/EFI/Linux/uki.try.efi /boot/tryboot.img" EXIT
   printf "%s" "$new_rootimg_sha256" >/boot/phxc/try.sha256
   curl_img_reg "$VARIANT/root.img" -o"/boot/phxc/root.${new_rootimg_sha256}.img" -f
   if [[ $VARIANT = rpi* ]]; then
@@ -45,9 +49,42 @@ main() {
   else
     curl_img_reg "$VARIANT/uki.efi" -o/boot/EFI/Linux/uki.try.efi -f
   fi
-  printf "update-boot: boot partition has been updated\n" >&2
+  info "boot partition has been updated"
   trap '' EXIT
-  systemctl start --no-block try-reboot
+  try_reboot
+}
+
+try_reboot() {
+  touch /run/initramfs/try-reboot
+  # Kubernetes leases would be the best to use but the admission controller for
+  # nodes seems to block all except one lease (nodename in kube-node-leases)
+  # Instead we use the unschedulable state as a mutex. Though that introduces
+  # a bit of a race condition. To work around that we simply check a second time
+  # after cordoning the node
+  if [[ $(other_unschedulable_nodes | wc -l) -gt 0 ]]; then
+    info "Delaying restart, there are nodes that are unschedulable:\n%s" "$(other_unschedulable_nodes)"
+    return 0
+  fi
+  kubectl cordon "$HOSTNAME"
+  if [[ $(other_unschedulable_nodes | wc -l) -gt 0 ]]; then
+    kubectl uncordon "$HOSTNAME"
+    info "Delaying restart, there are nodes that are unschedulable:\n%s" "$(other_unschedulable_nodes)"
+    return 0
+  fi
+  kubectl drain --ignore-daemonsets --delete-emptydir-data --timeout 120s "$HOSTNAME" || \
+    kubectl drain --ignore-daemonsets --delete-emptydir-data --disable-eviction  "$HOSTNAME"
+  info "Node drained, rebooting in 5 seconds"
+  if [[ $VARIANT = rpi* ]]; then
+    systemd-run --on-active=5 --timer-property=AccuracySec=0 /usr/sbin/reboot "0 tryboot"
+  else
+    bootctl set-oneshot uki.try.efi
+    systemd-run --on-active=5 --timer-property=AccuracySec=0 /usr/bin/systemctl reboot
+  fi
+}
+
+other_unschedulable_nodes() {
+  kubectl get node -ojson | jq -re --arg hostname "$HOSTNAME" \
+    '.items[] | select(.spec.unschedulable and .metadata.labels["kubernetes.io/hostname"] != $hostname) | .metadata.labels["kubernetes.io/hostname"]'
 }
 
 curl_img_reg() {

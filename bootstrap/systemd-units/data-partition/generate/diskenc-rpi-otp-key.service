@@ -2,7 +2,7 @@
 Description=Generate the disk encryption key using the RPi OTP memory
 DefaultDependencies=no
 Requires=boot.mount configs-available.target
-After=boot.mount copy-diskenc-offline-key.service configs-available.target
+After=boot.mount copy-diskenc-bootfile-key.service configs-available.target
 Before=systemd-cryptsetup@data.service
 ConditionPathExists=!/run/initramfs/disk-encryption.key
 
@@ -12,13 +12,16 @@ WantedBy=systemd-cryptsetup@data.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
+ExecCondition=bash -ec 'cryptsetup isLuks /dev/disk/by-partuuid/${DATA_UUID}; \
+  cryptsetup luksDump --dump-json-metadata /dev/disk/by-partuuid/${DATA_UUID} | jq -re ".keyslots[\"2\"] != null"'
 ExecCondition=bash -ec 'rpi-otp-private-key -c \
-  -o $(get-config /boot/phxc/rpi-otp.yaml offset); \
-  -l $(get-config /boot/phxc/rpi-otp.yaml length)'
-ExecStart=bash -ec ':;\
-  o=$(get-config /boot/phxc/rpi-otp.yaml offset); \
-  l=$(get-config /boot/phxc/rpi-otp.yaml length); \
-  s=(get-config /boot/phxc/rpi-otp.yaml key-derivation-suffix ${DEFAULT_RPI_OTP_KEY_DERIVATION_SUFFIX}) \
+  -o $(get-config /boot/phxc/rpi-otp.json offset); \
+  -l $(get-config /boot/phxc/rpi-otp.json length)'
+ExecStart=bash -eo pipefail
+StandardInputText=\
+  o=$(get-config /boot/phxc/rpi-otp.json offset); \
+  l=$(get-config /boot/phxc/rpi-otp.json length); \
+  s=$(get-config /boot/phxc/rpi-otp.json key-derivation-suffix); \
   openssl kdf \
     -kdfopt info:"disk-encryption-key-$s" -keylen 32 \
     -kdfopt digest:SHA3-512 -kdfopt hexkey:"$(rpi-otp-private-key -o $o -l $l)" \

@@ -1,7 +1,7 @@
 [Unit]
 Description=Configure systemd-resolved to be able to resolve the cluster domain
 Requires=workload-ready@coredns.service
-After=systemd-networkd.service workload-ready@coredns.service configs-available.target sys-subsystem-net-devices-cilium_host.device
+After=systemd-networkd.service workload-ready@coredns.service sys-subsystem-net-devices-cilium_host.device
 
 [Install]
 WantedBy=multi-user.target
@@ -10,7 +10,7 @@ WantedBy=multi-user.target
 Type=oneshot
 ExecStart=bash -e
 StandardInputText=kubedns_ip=$(kubectl -n kube-system get svc kube-dns -ojsonpath='{.spec.clusterIPs[*]}'); \
-  cluster_domain=$(get-config /etc/phxc/cluster.yaml domain); \
+  cluster_domain=$(get-config /etc/phxc/cluster.json domain); \
   printf "[Resolve]\\nDNS=%%s\\nDomains=~%%s ~cluster.local\\n" "$kubedns_ip" "$cluster_domain" \
   >/etc/systemd/resolved.conf.d/cluster-domain.conf
 ExecStartPost=systemctl reload systemd-resolved

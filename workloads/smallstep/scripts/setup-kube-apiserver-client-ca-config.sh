@@ -24,8 +24,7 @@ main() {
   while IFS= read -r -d , ssh_key || [[ -n $ssh_key ]]; do
     admin_jwk=$(step crypto key format --jwk <<<"$ssh_key")
     admin_jwk=$(jq --arg kid "$(step crypto jwk thumbprint <<<"$admin_jwk")" '.kid=$kid' <<<"$admin_jwk")
-    # shellcheck disable=SC2016
-    config=$(yq --argjson key "$admin_jwk" '.authority.provisioners += [{
+    config=$(jq --argjson key "$admin_jwk" '.authority.provisioners += [{
       "type": "JWK",
       "name": $key.kid,
       "key": $key,

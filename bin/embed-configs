@@ -39,11 +39,11 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'IMAGE=${var_IM'\
   config_tmp=$(mktemp -d --suffix '-phxc-embed-configs')
   trap_append "rm -rf \"$config_tmp\"" EXIT
   # shellcheck disable=SC2154
-  cp "$CLUSTER" "$config_tmp/cluster.yaml"
-  [[ -z $NODE ]] || cp "$NODE" "$config_tmp/node.yaml"
-  [[ -z $RPI_OTP ]] || cp "$RPI_OTP" "$config_tmp/rpi-otp.yaml"
+  cp "$CLUSTER" "$config_tmp/cluster.json"
+  [[ -z $NODE ]] || cp "$NODE" "$config_tmp/node.json"
+  [[ -z $RPI_OTP ]] || cp "$RPI_OTP" "$config_tmp/rpi-otp.json"
   local admin_ssh_key config_path
-  admin_ssh_key=$(yq -r '.admin["ssh-keys"][0]' "$config_tmp/cluster.yaml")
+  admin_ssh_key=$(jq -r '.admin["ssh-keys"][0]' "$config_tmp/cluster.json")
   for config_path in "$config_tmp"/*; do
     ssh-keygen -Y sign -f <(printf "%s" "$admin_ssh_key") -n file "$config_path"
   done

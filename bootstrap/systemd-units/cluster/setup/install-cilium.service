@@ -1,19 +1,18 @@
 [Unit]
 Description=Install Cilium in K3S
 Documentation=https://docs.cilium.io/en/stable/installation/k3s/
-Requires=k3s@server.service workload@ready-checks.target
-Wants=install-control-plane-packages.service
-After=k3s@server.service workload@ready-checks.target install-control-plane-packages.service configs-available.target
+Requires=k3s@server.service workload@node-role.target install-control-plane-packages.service
+After=k3s@server.service workload@node-role.target install-control-plane-packages.service
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
 Environment=KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-ExecCondition=bash -ec '[ $(get-config -q /boot/phxc/node.yaml k3s.mode) = server ]'
+ExecCondition=bash -ec '[ $(get-config -q /boot/phxc/node.json k3s.mode) = server ]'
 ExecCondition=bash -ec '! kubectl get -n kube-system deployment cilium-operator -o name'
 ExecStart=bash -eo pipefail
-StandardInputText=cidr_pod_ipv4=$(get-config /etc/phxc/cluster.yaml cidrs.pod.ipv4); \
-  cidr_pod_ipv6=$(get-config /etc/phxc/cluster.yaml cidrs.pod.ipv6); \
+StandardInputText=cidr_pod_ipv4=$(get-config /etc/phxc/cluster.json cidrs.pod.ipv4); \
+  cidr_pod_ipv6=$(get-config /etc/phxc/cluster.json cidrs.pod.ipv6); \
   /var/lib/phxc/.upkg/.bin/cilium install --version=1.15.5 \
     --set ipam.mode=cluster-pool \
     --set ipam.operator.clusterPoolIPv4PodCIDRList=$cidr_pod_ipv4 \
@@ -35,5 +34,5 @@ StandardInputText=cidr_pod_ipv4=$(get-config /etc/phxc/cluster.yaml cidrs.pod.ip
     --set kubeConfigPath=/etc/rancher/k3s/k3s.yaml; \
     kubectl patch -n kube-system cm cilium-config --patch "$( \
       printf "\ndata:\n  ipv4-service-range: \"%%s\"\n  ipv6-service-range: \"%%s\"\n" \
-        "$(get-config /etc/phxc/cluster.yaml cidrs.svc.ipv4)" \
-        "$(get-config /etc/phxc/cluster.yaml cidrs.svc.ipv6)")"
+        "$(get-config /etc/phxc/cluster.json cidrs.svc.ipv4)" \
+        "$(get-config /etc/phxc/cluster.json cidrs.svc.ipv6)")"

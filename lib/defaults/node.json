@@ -1,0 +1,6 @@
+{
+  "disk-encryption": "auto",
+  "k3s": {
+    "mode": "server"
+  }
+}

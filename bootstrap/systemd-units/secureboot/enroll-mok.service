@@ -9,5 +9,5 @@ WantedBy=multi-user.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecCondition=bash -ec '[[ $(get-config /boot/phxc/node.yaml disk-encryption) =~ ^tpm|auto$ ]] || return 1'
+ExecCondition=bash -ec '[[ $(get-config /boot/phxc/node.json disk-encryption) =~ ^tpm|auto$ ]] || return 1'
 ExecStart=mokutil --import /usr/local/lib/phxc/secureboot.der --password
