@@ -1,8 +1,7 @@
 [Unit]
 Description=Configuration files are available for querying with get-config
 DefaultDependencies=no
-Wants=setup-admin-credentials.service copy-cluster-config.service
 Before=basic.target
 
 [Install]
-WantedBy=basic.target
+RequiredBy=basic.target
