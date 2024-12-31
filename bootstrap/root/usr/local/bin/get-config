@@ -53,7 +53,7 @@ for varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
       if jq -r 'paths | join(".")' <<<"$contents" | grep -q "^$KEY$"; then
         debug "Getting value of '%s' in '%s'" "$KEY" "$FILEPATH"
         key=$(escape_key "$KEY")
-        jq -r ".$KEY" <<<"$contents"
+        jq -r ".$key" <<<"$contents"
       elif $use_default && default=$(get_default "$basename" "$key"); then
         verbose "Key '%s' is not set in '%s', using default ('%s')" "$KEY" "$FILEPATH" "$default"
         printf "%s\n" "$default"
@@ -82,7 +82,7 @@ get_default() {
   defaults_path=$PKGROOT/lib/defaults/$basename
   if jq -r 'paths | join(".")' "$defaults_path" | grep -q "^$KEY$"; then
     key=$(escape_key "$KEY")
-    jq -r ".$KEY" "$defaults_path"
+    jq -r ".$key" "$defaults_path"
   else
     return 1
   fi
