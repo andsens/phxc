@@ -88,6 +88,23 @@ spec:
         app.kubernetes.io/name: backup-server
         app.kubernetes.io/component: backup-server
     spec:
+      initContainers:
+      - name: copy-certs
+        image: busybox:1.37.0
+        command: [/bin/sh, -ec]
+        args: ['cp /certs/* /var/www/certs; chown 101:101 /var/www/certs/*']
+        volumeMounts:
+        - name: certs
+          mountPath: /var/www/certs
+        - name: phxc-root-cert
+          mountPath: /certs/phxc-root.crt
+        - name: kube-apiserver-server-ca-cert
+          mountPath: /certs/kube-apiserver-server-ca-cert.crt
+        - name: kube-apiserver-client-ca-cert
+          mountPath: /certs/kube-apiserver-client-ca-cert.crt
+        - name: secureboot
+          mountPath: /certs/secureboot.crt
+          subPath: tls.crt
       containers:
       - name: backup-server
         image: nginx:1.27.3
@@ -104,16 +121,8 @@ spec:
           mountPath: /etc/nginx/tls
         - name: nginx-cache
           mountPath: /var/cache/nginx
-
-        - name: phxc-root-cert
-          mountPath: /var/www/certs/phxc-root.crt
-        - name: kube-apiserver-server-ca-cert
-          mountPath: /var/www/certs/kube-apiserver-server-ca-cert.crt
-        - name: kube-apiserver-client-ca-cert
-          mountPath: /var/www/certs/kube-apiserver-client-ca-cert.crt
-        - name: secureboot
-          mountPath: /var/www/certs/secureboot.crt
-          subPath: tls.crt
+        - name: certs
+          mountPath: /var/www/certs
       volumes:
       - name: config
         configMap:
@@ -121,6 +130,8 @@ spec:
       - name: backup-server-tls
         secret:
           secretName: backup-server-tls
+      - name: certs
+        emptyDir: {}
       - name: nginx-cache
         emptyDir: {}
 
