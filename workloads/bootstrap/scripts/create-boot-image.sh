@@ -83,8 +83,8 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
   # Hash the root image so we can verify it during boot
   sha256sums[root.img]=$(sha256sum /workspace/root.img | cut -d ' ' -f1)
 
-  ! $DEBUG || artifacts[/workspace/root.img]=root.img
-  boot_files[/workspace/root.img]=/phxc/root.${sha256sums[root.img]}.img
+  ! $DEBUG || artifacts[root.img]=/workspace/root.img
+  boot_files["/phxc/root.${sha256sums[root.img]}.img"]=/workspace/root.img
   local kernel_cmdline=""
   ! $DEBUG || kernel_cmdline+=" rd.shell"
   # ! $DEBUG || kernel_cmdline+=" rd.break"
@@ -108,7 +108,7 @@ EOF
     cd /workspace/initramfs
     find . -print0 | cpio -o --null --format=newc 2>/dev/null | zstd -15 >/workspace/root/boot/initrd.img
   )
-  ! $DEBUG || artifacts[/workspace/root/boot/initrd.img]=initrd.img
+  ! $DEBUG || artifacts[initrd.img]=/workspace/root/boot/initrd.img
 
   ############################
   ### RaspberryPI boot.img ###
@@ -118,22 +118,21 @@ EOF
 
     info "Building RaspberryPI boot.img"
 
-    unset 'artifacts[/workspace/root/boot/initrd.img]'
     case $VARIANT in
       rpi5)
         mv /workspace/root/boot/vmlinuz /workspace/root/boot/firmware/kernel_2712.img
         mv /workspace/root/boot/initrd.img /workspace/root/boot/firmware/initramfs_2712
-        ! $DEBUG || artifacts[/workspace/root/boot/firmware/initramfs_2712]=initrd.img
+        ! $DEBUG || artifacts[initrd.img]=/workspace/root/boot/firmware/initramfs_2712
         ;;
       rpi4)
         mv /workspace/root/boot/vmlinuz /workspace/root/boot/firmware/kernel8.img
         mv /workspace/root/boot/initrd.img /workspace/root/boot/firmware/initramfs8
-        ! $DEBUG || artifacts[/workspace/root/boot/firmware/initramfs8]=initrd.img
+        ! $DEBUG || artifacts[initrd.img]=/workspace/root/boot/firmware/initramfs8
         ;;
       rpi3)
         mv /workspace/root/boot/vmlinuz /workspace/root/boot/firmware/kernel7.img
         mv /workspace/root/boot/initrd.img /workspace/root/boot/firmware/initramfs7
-        ! $DEBUG || artifacts[/workspace/root/boot/firmware/initramfs7]=initrd.img
+        ! $DEBUG || artifacts[initrd.img]=/workspace/root/boot/firmware/initramfs7
         ;;
       *) printf "Unknown rpi* variant: %s\n" "$VARIANT" >&2; return 1 ;;
     esac
@@ -141,10 +140,10 @@ EOF
     # The last "console=" wins with respect to initramfs stdout/stderr output
     printf "console=ttyS0,115200 console=tty0 %s" "$kernel_cmdline" > /workspace/cmdline.txt
 
-    boot_files["/assets/config-${VARIANT}.txt"]=config.txt
+    boot_files[config.txt]=/assets/config-${VARIANT}.txt
 
     # Adjust config.txt for being embedded in boot.img
-    boot_files["/assets/config-${VARIANT}.txt"]=config.txt
+    boot_files[config.txt]=/assets/config-${VARIANT}.txt
 
     local file_size fs_table_size_b firmware_size_b=0
     fs_table_size_b=$(( 1024 * 1024 )) # Total guess, but should be enough
@@ -176,8 +175,8 @@ rm-rf /firmware
 EOF
 
     sha256sums[boot.img]=$(sha256sum /workspace/boot.img | cut -d ' ' -f1)
-    artifacts[/workspace/boot.img]=boot.img
-    boot_files[/workspace/boot.img]=/boot.img
+    artifacts[boot.img]=/workspace/boot.img
+    boot_files[/boot.img]=/workspace/boot.img
   fi
 
   ############################
@@ -189,58 +188,70 @@ EOF
 
     info "Creating unified kernel image"
 
+    local efi_arch
+    case "$VARIANT" in
+      amd64) efi_arch=x64 ;;
+      arm64) efi_arch=aa64 ;;
+      *) fatal "Unknown variant: %s" "$VARIANT" ;;
+    esac
+
+    # Setup shim
+    artifacts[shim.efi]=/usr/lib/shim/shim${efi_arch}.efi.signed
+    boot_files[/EFI/BOOT/BOOT${efi_arch^^}.efi]=/usr/lib/shim/shim${efi_arch}.efi.signed
+    artifacts[mm.efi]=/usr/lib/shim/mm${efi_arch}.efi.signed
+    boot_files[/EFI/BOOT/mm${efi_arch}.efi]=/usr/lib/shim/mm${efi_arch}.efi.signed
+
+    # Create (& optionally sign) unified kernel
     printf "%s" "$kernel_cmdline" > /workspace/root/boot/cmdline.txt
 
     local kernver
     kernver=$(echo /workspace/root/lib/modules/*)
     kernver=${kernver#'/workspace/root/lib/modules/'}
 
-    local ukify_signing_opts=()
-    if [[ -e /workspace/secureboot/tls.key ]]; then
-      ukify_signing_opts=(
-        --signtool=sbsign
-        --secureboot-private-key=/workspace/secureboot/tls.key
-        --secureboot-certificate=/workspace/secureboot/tls.crt
-      )
-    fi
-
-
-    /lib/systemd/ukify build "${ukify_signing_opts[@]}" \
+    /lib/systemd/ukify build \
       --uname="$kernver" \
       --linux=/workspace/root/boot/vmlinuz \
       --initrd=/workspace/root/boot/initrd.img \
       --cmdline="$kernel_cmdline" \
       --output=/workspace/root/boot/uki.efi
 
-    ! $DEBUG || artifacts[/workspace/root/boot/uki.efi]=uki.efi
-
-    local uki_size_b
-    uki_size_b=$(stat -c %s /workspace/root/boot/uki.efi)
-    (( uki_size_b <= 1024 * 1024 * 64 )) || \
-      warning "uki.efi size exceeds 64MiB (%dMiB). Transferring the image via TFTP will result in its truncation" "$((uki_size_b / 1024 / 1024))"
-
+    # Sign systemd-boot & UKI if secureboot cert is present
     if [[ -e /workspace/secureboot/tls.key ]]; then
+      local sb_cert_bundle sb_cert sb_intermediate
+      sb_cert_bundle=$(cat /workspace/secureboot/tls.crt)
+      sb_cert=${sb_cert_bundle%'-----BEGIN CERTIFICATE-----'*}
+      sb_intermediate=${sb_cert_bundle#*'-----END CERTIFICATE-----'}
+      sbsign \
+        --key /workspace/secureboot/tls.key --cert <(printf "%s\n" "$sb_cert") \
+        --addcert <(printf "%s\n" "$sb_intermediate") \
+        --output /workspace/root/boot/systemd-boot.efi.signed \
+        "/usr/lib/systemd/boot/efi/systemd-boot${efi_arch}.efi"
+      artifacts[systemd-boot.efi]=/workspace/root/boot/systemd-boot.efi.signed
+      boot_files["/EFI/BOOT/grub${efi_arch}.efi"]=/workspace/root/boot/systemd-boot.efi.signed
+
+      sbsign \
+        --key /workspace/secureboot/tls.key --cert <(printf "%s\n" "$sb_cert") \
+        --addcert <(printf "%s\n" "$sb_intermediate") \
+        /workspace/root/boot/uki.efi
+      artifacts[uki.efi]=/workspace/root/boot/uki.efi.signed
+      boot_files[/EFI/Linux/uki.efi]=/workspace/root/boot/uki.efi.signed
+      sha256sums[uki.efi]=$(sha256sum /workspace/root/boot/uki.efi.signed | cut -d ' ' -f1)
+
       # Extract authentihashes used for PE signatures so we can use them for remote attestation
-      authentihashes[uki.efi]=$(/signify/bin/python3 /scripts/get-pe-digest.py --json /workspace/root/boot/uki.efi)
+      authentihashes[uki.efi]=$(/signify/bin/python3 /scripts/get-pe-digest.py --json /workspace/root/boot/uki.efi.signed)
       # See https://lists.freedesktop.org/archives/systemd-devel/2022-December/048694.html
       # as to why we also measure the embedded kernel
-      objcopy -O binary --only-section=.linux /workspace/root/boot/uki.efi /workspace/uki-vmlinuz
+      objcopy -O binary --only-section=.linux /workspace/root/boot/uki.efi.signed /workspace/uki-vmlinuz
       authentihashes[vmlinuz]=$(/signify/bin/python3 /scripts/get-pe-digest.py --json /workspace/uki-vmlinuz)
+    else
+      artifacts[systemd-boot.efi]=/usr/lib/systemd/boot/efi/systemd-boot${efi_arch}.efi
+      boot_files["/EFI/BOOT/grub${efi_arch}.efi"]=/usr/lib/systemd/boot/efi/systemd-boot${efi_arch}.efi
+      artifacts[uki.efi]=/workspace/root/boot/uki.efi
+      boot_files[/EFI/Linux/uki.efi]=/workspace/root/boot/uki.efi
+      sha256sums[uki.efi]=$(sha256sum /workspace/root/boot/uki.efi | cut -d ' ' -f1)
     fi
 
-    sha256sums[uki.efi]=$(sha256sum /workspace/root/boot/uki.efi | cut -d ' ' -f1)
-
-    # Create boot loader entry
-    local efi_arch
-    case "$ARCH" in
-      amd64) efi_arch=x64 ;;
-      arm64) efi_arch=aa64 ;;
-      *) fatal "Unknown architecture: %s" "$ARCH" ;;
-    esac
-
-    boot_files["/usr/lib/shim/shim${efi_arch}.efi.signed"]=/EFI/BOOT/BOOT${efi_arch^^}.efi
-    boot_files["/usr/lib/systemd/boot/efi/systemd-boot${efi_arch}.efi"]=/EFI/BOOT/grub${efi_arch}.efi
-    boot_files[/workspace/root/boot/uki.efi]=/EFI/Linux/uki.efi
+    # Create the systemd-boot loader entry
     # shellcheck disable=SC2016
     SHA256=${sha256sums[root.img]} \
     envsubst '$SHA256' <<'EOF' >/workspace/root/boot/loader.conf
@@ -249,7 +260,7 @@ timeout menu-hidden
 console-mode auto
 editor false
 EOF
-    boot_files[/workspace/root/boot/loader.conf]=/loader/loader.conf
+    boot_files[/loader/loader.conf]=/workspace/root/boot/loader.conf
   fi
 
   #######################
@@ -277,7 +288,7 @@ EOF
   done
   printf "%s\n" "$meta" >/workspace/meta.json
 
-  artifacts[/workspace/meta.json]=meta.json
+  artifacts[meta.json]=/workspace/meta.json
 
   ##################
   ### Disk image ###
@@ -286,8 +297,8 @@ EOF
   info "Building disk image from artifacts"
 
   local src dest tar_mode=-c
-  for src in "${!boot_files[@]}"; do
-    dest=${boot_files[$src]}
+  for dest in "${!boot_files[@]}"; do
+    src=${boot_files[$dest]}
     tar ${tar_mode}f /workspace/boot-files.tar \
       --transform="s#${src#/}#${dest#/}#" \
       "$src"
@@ -330,7 +341,7 @@ mount /dev/sda1 /
 
 tar-in /workspace/boot-files.tar /
 EOF
-  artifacts[/workspace/disk.img]=disk.img
+  artifacts[disk.img]=/workspace/disk.img
 
   #################
   ### Artifacts ###
@@ -339,10 +350,10 @@ EOF
   info "Archiving artifacts"
 
   local src dest
-  for src in "${!artifacts[@]}"; do
-    dest="/workspace/artifacts/${artifacts[$src]}"
-    cp "$src" "$dest"
-    [[ -z $__chown ]] || chown "$__chown:$__chown" "$dest"
+  for dest in "${!artifacts[@]}"; do
+    src=${artifacts[$dest]}
+    cp "$src" "/workspace/artifacts/$dest"
+    [[ -z $__chown ]] || chown "$__chown:$__chown" "/workspace/artifacts/$dest"
   done
   $DEBUG || rm "/workspace/artifacts/node.tar"
 
@@ -355,9 +366,9 @@ EOF
 
     info "Uploading artifacts to the image-registry"
 
-    local artifact upload_files=''
-    for artifact in "${artifacts[@]}"; do
-      upload_files="$upload_files,/workspace/artifacts/$artifact"
+    local upload_files=''
+    for dest in "${!artifacts[@]}"; do
+      upload_files="$upload_files,/workspace/artifacts/$dest"
     done
     curl_img_reg -DELETE "$__upload/$VARIANT.tmp/" || info "404 => No previous %s.tmp/ to delete" "$VARIANT"
     curl_img_reg --upload-file "{${upload_files#,}}" "$__upload/$VARIANT.tmp/"
@@ -368,7 +379,7 @@ EOF
 }
 
 curl_img_reg() {
-  curl --cacert /workspace/root_ca.crt \
+  curl --cacert /workspace/secureboot/ca.crt \
     -fL --no-progress-meter --connect-timeout 5 \
     --retry 10 --retry-delay 60 \
     "$@"

@@ -22,6 +22,7 @@ spec:
         image: gcr.io/kaniko-project/executor:latest
         args:
         - --dockerfile=context/Dockerfile
+        - --build-arg=DEBUG=$(DEBUG)
         - --build-arg=VARIANT=$(VARIANT)
         - --custom-platform=linux/amd64
         - --destination=cluster.local/non-existent
@@ -38,11 +39,11 @@ spec:
         - name: bundle
           mountPath: /workspace/phxc.tar.gz
           subPath: phxc.tar.gz
-        - name: secureboot
-          mountPath: /workspace/secureboot
         - name: cluster-config
           mountPath: /workspace/cluster.json
           readOnly: true
+        - name: secureboot
+          mountPath: /workspace/secureboot
       containers:
       - name: create-boot-image
         image: ghcr.io/andsens/phxc-create-boot-image
@@ -59,9 +60,6 @@ spec:
           mountPath: /workspace
         - name: secureboot
           mountPath: /workspace/secureboot
-        - name: smallstep-root-cert
-          mountPath: /workspace/root_ca.crt
-          readOnly: true
       volumes:
       - name: context
         configMap:
@@ -73,10 +71,6 @@ spec:
       - name: assets
         configMap:
           name: assets
-      - name: smallstep-root-cert
-        hostPath:
-          path: /usr/local/share/ca-certificates/phxc-root.crt
-          type: File
       - name: cluster-config
         hostPath:
           path: /etc/phxc/cluster.json

@@ -22,13 +22,12 @@
           }
         },
         "pwhash": {
-          "description": "sudo password for the admin (ssh password authentication is disabled)",
-          "type": "string"
+          "description": "sudo password for the admin and mokutil, must be a sha512 hash (`mkpasswd -m sha512crypt`)",
+          "type": "string",
+          "pattern": "^\\$6\\$"
         }
       },
-      "required": [
-        "ssh-keys"
-      ],
+      "required": ["ssh-keys"],
       "additionalProperties": false
     },
     "cidrs": {
@@ -95,15 +94,11 @@
           "additionalProperties": false
         }
       },
-      "required": [
-        "router"
-      ],
+      "required": ["router"],
       "additionalProperties": false
     }
   },
-  "required": [
-    "admin"
-  ],
+  "required": ["admin"],
   "additionalProperties": false,
   "definitions": {
     "ipv4": {

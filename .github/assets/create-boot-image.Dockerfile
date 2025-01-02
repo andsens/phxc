@@ -2,7 +2,6 @@ FROM debian:trixie
 SHELL ["/usr/bin/bash", "-Eeo", "pipefail", "-c"]
 
 ARG TARGETARCH
-ENV ARCH=${TARGETARCH}
 
 RUN <<EOR
 apt-get -y update

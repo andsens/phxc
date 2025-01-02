@@ -1,3 +1,4 @@
+---
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
@@ -8,15 +9,15 @@ metadata:
 spec:
   commonName: Phoenix Cluster Secure Boot
   issuerRef:
-    group: cert-manager.io
-    kind: ClusterIssuer
-    name: selfsigned
+    group: certmanager.step.sm
+    kind: StepClusterIssuer
+    name: step-issuer
   secretName: secureboot
   privateKey:
     # Key *must* be RSA. When sbsign signs the UKI it always specifies that the key is RSA regardless of the facts.
     algorithm: RSA
     size: 2048
-  duration: 175200h
+  duration: 24h
   usages:
   - digital signature
   - code signing

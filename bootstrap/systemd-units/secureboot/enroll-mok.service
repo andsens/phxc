@@ -1,7 +1,8 @@
 [Unit]
 Description=Enroll the Phoenix Cluster secureboot cert
+Requires=trust-smallstep-root.service
+After=trust-smallstep-root.service
 ConditionSecurity=tpm2
-ConditionPathExists=/usr/local/lib/phxc/secureboot.der
 
 [Install]
 WantedBy=multi-user.target
@@ -10,4 +11,5 @@ WantedBy=multi-user.target
 Type=oneshot
 RemainAfterExit=yes
 ExecCondition=bash -ec '[[ $(get-config /boot/phxc/node.json disk-encryption) =~ ^tpm|auto$ ]] || return 1'
-ExecStart=mokutil --import /usr/local/lib/phxc/secureboot.der --password
+ExecStart=bash -e
+StandardInputText=mokutil --import /usr/local/share/phxc/phxc-root.der --hash-file <(get-config /etc/phxc/cluster.json admin.pwhash)

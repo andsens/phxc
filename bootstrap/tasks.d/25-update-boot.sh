@@ -8,6 +8,5 @@ case $VARIANT in
 esac
 
 update_boot() {
-  chmod 0755 /usr/local/bin/update-boot \
-             /usr/local/bin/switch-boot
+  chmod 0755 /usr/local/bin/update-boot
 }

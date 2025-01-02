@@ -1,6 +1,6 @@
 [Unit]
 Description=Write the Phoenix Cluster secureboot cert to the RPi OTP
-ConditionPathExists=/usr/local/lib/phxc/secureboot.der
+ConditionPathExists=/usr/local/share/phxc/secureboot.der
 
 [Install]
 WantedBy=multi-user.target

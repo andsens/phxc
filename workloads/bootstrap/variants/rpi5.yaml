@@ -22,6 +22,7 @@ spec:
         image: gcr.io/kaniko-project/executor:latest
         args:
         - --dockerfile=context/Dockerfile
+        - --build-arg=DEBUG=$(DEBUG)
         - --build-arg=VARIANT=$(VARIANT)
         - --custom-platform=linux/arm64
         - --destination=cluster.local/non-existent
@@ -31,11 +32,18 @@ spec:
         - name: VARIANT
           value: rpi5
         volumeMounts:
+        - name: workspace
+          mountPath: /workspace
         - name: context
           mountPath: /workspace/context
         - name: bundle
           mountPath: /workspace/phxc.tar.gz
           subPath: phxc.tar.gz
+        - name: cluster-config
+          mountPath: /workspace/cluster.json
+          readOnly: true
+        - name: secureboot
+          mountPath: /workspace/secureboot
       containers:
       - name: create-boot-image
         image: ghcr.io/andsens/phxc-create-boot-image
@@ -53,10 +61,7 @@ spec:
         - name: workspace
           mountPath: /workspace
         - name: secureboot
-          mountPath: /secureboot
-        - name: smallstep-root-cert
-          mountPath: /workspace/root_ca.crt
-          readOnly: true
+          mountPath: /workspace/secureboot
       volumes:
       - name: context
         configMap:
@@ -68,9 +73,9 @@ spec:
       - name: assets
         configMap:
           name: assets
-      - name: smallstep-root-cert
+      - name: cluster-config
         hostPath:
-          path: /usr/local/share/ca-certificates/phxc-root.crt
+          path: /etc/phxc/cluster.json
           type: File
       - name: secureboot
         secret:

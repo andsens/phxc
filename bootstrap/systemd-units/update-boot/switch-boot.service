@@ -11,4 +11,4 @@ WantedBy=sysinit.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=switch-boot
+ExecStart=update-boot switch
