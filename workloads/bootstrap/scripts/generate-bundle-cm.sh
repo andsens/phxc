@@ -10,7 +10,7 @@ main() {
   bundle=$(mktemp --suffix .tar.gz)
   # shellcheck disable=SC2064
   trap "rm \"$bundle\"" EXIT
-  "$PKGROOT/bootstrap/scripts/bundle" "$bundle"
+  "$PKGROOT/bootstrap/scripts/bundle.sh" "$bundle"
   kubectl create --dry-run=client -o json configmap bundle --from-file "phxc.tar.gz=$bundle" | \
     jq '{"kind": "ResourceList", "items": [.]}'
 }

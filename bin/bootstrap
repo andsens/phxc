@@ -61,7 +61,7 @@ local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
   local bundle
   bundle=$(mktemp --suffix '-phxc-bundle.tar.gz')
   trap_append "rm \"$bundle\"" EXIT
-  "$PKGROOT/bootstrap/scripts/bundle" "$bundle"
+  "$PKGROOT/bootstrap/scripts/bundle.sh" "$bundle"
 
   local bootstrap_docker_opts=()
   [[ -z $__embed_cluster_config ]] || bootstrap_docker_opts+=(-v "$__embed_cluster_config:/workspace/cluster.json:rw")
