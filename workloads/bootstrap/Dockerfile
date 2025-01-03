@@ -3,7 +3,7 @@ SHELL ["/usr/bin/bash", "-Eeo", "pipefail", "-c"]
 ARG VARIANT
 ARG DEBUG=false
 
-RUN printf 'Acquire::http { Proxy "http://apt-cacher-ng.phxc.svc.cluster.local:3142"; }\n' >/etc/apt/apt.conf.d/20-apt-cacher-ng.conf; \
+RUN printf 'Acquire::http { Proxy "http://apt-cacher-ng.phxc.svc.cluster.local:3142"; }\n' >/etc/apt/apt.conf.d/20apt-cacher-ng.conf; \
   apt-get -y update; apt-get -y install --no-install-recommends \
   jq wget ca-certificates \
   ; temp=$(mktemp); \

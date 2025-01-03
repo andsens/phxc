@@ -83,6 +83,7 @@ main() {
   apt-get autoremove -y
   apt-get autoclean
   rm -rf /var/lib/apt/lists/*
+  rm /etc/apt/apt.conf.d/20apt-cacher-ng.conf
 }
 
 main "$@"
