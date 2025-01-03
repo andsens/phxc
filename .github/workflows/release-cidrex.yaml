@@ -1,0 +1,35 @@
+name: Build & release the cidrex binary
+
+on:
+  push:
+    tags: [ 'cidrex-*' ]
+    paths:
+    - .github/workflows/release-cidrex.yaml
+
+env:
+  CIDREX_VERSION: '98e29176'
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+    - name: Build cidrex
+      run: |
+        wget -q \
+          https://raw.githubusercontent.com/d3mondev/cidrex/${{ env.CIDREX_VERSION }}/main.go \
+          https://raw.githubusercontent.com/d3mondev/cidrex/${{ env.CIDREX_VERSION }}/go.sum \
+          https://raw.githubusercontent.com/d3mondev/cidrex/${{ env.CIDREX_VERSION }}/go.mod
+        mkdir amd64 arm64
+        GOOS=linux GOARCH=amd64 go build -o amd64/cidrex
+        GOOS=linux GOARCH=arm64 go build -o arm64/cidrex
+        tar -czf cidrex-${{ env.CIDREX_VERSION }}_linux_amd64.tar.gz -C amd64 cidrex
+        tar -czf cidrex-${{ env.CIDREX_VERSION }}_linux_arm64.tar.gz -C arm64 cidrex
+    - uses: ncipollo/release-action@v1
+      with:
+        body: Compiled binaries of cidrex from https://github.com/d3mondev/cidrex
+        draft: false
+        prerelease: false
+        artifacts: cidrex-${{ env.CIDREX_VERSION }}_linux_amd64.tar.gz,cidrex-${{ env.CIDREX_VERSION }}_linux_arm64.tar.gz
+        artifactErrorsFailBuild: true
