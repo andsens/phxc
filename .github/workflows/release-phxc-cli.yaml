@@ -1,0 +1,26 @@
+name: Release Phoenix Cluster CLI
+
+on:
+  push:
+    tags: ['phxc-cli-v*']
+
+jobs:
+  release:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    name: Create GitHub release
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - id: version
+      uses: orbit-online/program-version@v3
+      with:
+        prefix: phxc-cli-v
+    - uses: orbit-online/upkg-release@v2
+      with:
+        name: phxc-cli
+        paths: bin lib
+        working-directory: cli
+        version: ${{ steps.version.outputs.version }}
+        release-name: phxc-cli-${{ steps.version.outputs.version }}

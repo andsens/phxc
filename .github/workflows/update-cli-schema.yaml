@@ -1,14 +1,14 @@
-name: Upload the cluster.json schema to gist.github.com
+name: Upload the cli.json schema to gist.github.com
 
 on:
   push:
     branches: [ 'main' ]
     paths:
-    - .github/workflows/update-cluster-schema.yaml
-    - lib/schemas/cluster.json
+    - .github/workflows/update-cli-schema.yaml
+    - cli/lib/schemas/cli.json
 
 jobs:
-  update-cluster-config-schema:
+  update-cli-config-schema:
     name: Update the gist
     runs-on: ubuntu-latest
     steps:
@@ -20,5 +20,5 @@ jobs:
       with:
         token: ${{ secrets.GIST_TOKEN }}
         gist_id: ${{ vars.CONFIG_SCHEMAS_GIST_ID }}
-        file_path: repo/lib/schemas/cluster.json
+        file_path: repo/cli/lib/schemas/cli.json
         file_type: application/schema+json

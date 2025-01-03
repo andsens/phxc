@@ -1,0 +1,237 @@
+#!/usr/bin/env bash
+# shellcheck source-path=..
+set -eo pipefail; shopt -s inherit_errexit
+PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
+source "$PKGROOT/.upkg/records.sh/records.sh"
+
+CONFIG_DIR=$HOME/.config/phxc
+CONFIG_FILE=$CONFIG_DIR/config.json
+PHXC_ROOT_CRT=$CONFIG_DIR/phxc-root.crt
+KUBE_API_CLIENT_CA_CRT=$CONFIG_DIR/kube-api-client-ca.crt
+CLI_SCHEMA_URL=https://gist.githubusercontent.com/andsens/ba30e37c3648461cc772439a4c6ed9fb/raw/10ba00741fd66b55f102992fdf54e3f196c1c14b/cli.json
+
+main() {
+  DOC="phxc - Phoenix Cluster management tool
+Usage:
+  phxc setup KUBEAPI_HOSTNAME [SSH_KEYNAME]
+  phxc embed-configs IMAGE CLUSTER [NODE [RPIOTP]]
+  phxc get-kube-cert [USERNAME]
+
+Commands:
+  setup         - Setup the Phoenix Cluster root trust and configure kubectl
+  embed-configs - Embed configuration in the FAT32 partition of a disk image
+  get-kube-cert - Issue or refresh a client cert for use with kubectl
+"
+# docopt parser below, refresh this parser with `docopt.sh phxc`
+# shellcheck disable=2016,2086,2317,1090,1091,2034
+docopt() { local v='2.0.2'; source \
+"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:407};usage=${DOC:39:133}
+digest=4bece;options=();node_0(){ value KUBEAPI_HOSTNAME a;};node_1(){ value \
+SSH_KEYNAME a;};node_2(){ value IMAGE a;};node_3(){ value CLUSTER a;};node_4(){
+value NODE a;};node_5(){ value RPIOTP a;};node_6(){ value USERNAME a;};node_7(){
+switch setup a:setup;};node_8(){ switch embed_configs a:embed-configs;}
+node_9(){ switch get_kube_cert a:get-kube-cert;};node_10(){ sequence 7 0 11;}
+node_11(){ optional 1;};node_12(){ sequence 8 2 3 13;};node_13(){ optional 4 5;}
+node_14(){ sequence 9 15;};node_15(){ optional 6;};node_16(){ choice 10 12 14;}
+cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2;printf "%s\n" \
+"${DOC:39:133}" >&2;exit 1;}';local varnames=(KUBEAPI_HOSTNAME SSH_KEYNAME \
+IMAGE CLUSTER NODE RPIOTP USERNAME setup embed_configs get_kube_cert) varname
+for varname in "${varnames[@]}"; do unset "var_$varname";done;parse 16 "$@"
+local p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset \
+"$p$varname";done;eval $p'KUBEAPI_HOSTNAME=${var_KUBEAPI_HOSTNAME:-};'$p'SSH_K'\
+'EYNAME=${var_SSH_KEYNAME:-};'$p'IMAGE=${var_IMAGE:-};'$p'CLUSTER=${var_CLUSTE'\
+'R:-};'$p'NODE=${var_NODE:-};'$p'RPIOTP=${var_RPIOTP:-};'$p'USERNAME=${var_USE'\
+'RNAME:-};'$p'setup=${var_setup:-false};'$p'embed_configs=${var_embed_configs:'\
+'-false};'$p'get_kube_cert=${var_get_kube_cert:-false};';local docopt_i=1;[[ \
+$BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for \
+varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
+# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' phxc`
+  eval "$(docopt "$@")"
+  # shellcheck disable=SC2153,SC2154
+  if $setup; then
+    [[ ! $KUBEAPI_HOSTNAME =~ ^(https?://)?([^:]+) ]] || KUBEAPI_HOSTNAME=${BASH_REMATCH[2]}
+    setup "$KUBEAPI_HOSTNAME" "$SSH_KEYNAME"
+  elif $get_kube_cert; then
+    get_kube_client_cert "$USERNAME"
+  elif $embed_configs; then
+    embed_configs "$IMAGE" "$CLUSTER" "$NODE" "$RPIOTP"
+  fi
+}
+
+setup() {
+  local kube_api_hostname=$1 ssh_keyname=$2
+  local backup_server_url=https://$kube_api_hostname:8050
+  local yesno phxc_root_crt phxc_root_crt_fp
+  trap 'error "Failed to configure, run with LOGLEVEL=verbose to see more detailed errors"' ERR
+  mkdir -p "$CONFIG_DIR"
+  # TOFU for phxc root CA
+  phxc_root_crt=$(curl -k --no-progress-meter "$backup_server_url/certs/phxc-root.crt")
+  phxc_root_crt_fp=$(step certificate fingerprint <(printf "%s\n" "$phxc_root_crt"))
+  if [[ -e "$PHXC_ROOT_CRT" ]]; then
+    info "Checking existing Phoenix Cluster root certificate"
+    local remote_phxc_root_crt_fp
+    remote_phxc_root_crt_fp=$(step certificate fingerprint "$PHXC_ROOT_CRT")
+    if [[ $phxc_root_crt_fp != "$remote_phxc_root_crt_fp" ]]; then
+      printf "Saved fingerprint:  %s\n" "$phxc_root_crt_fp" >&2
+      printf "Remote fingerprint: %s\n" "$remote_phxc_root_crt_fp" >&2
+      error "The saved Phoenix Cluster root certificate fingerprint does not match the one from the server!"
+      [[ $(read -rp 'Are you sure you want to continue? [y/N]' yesno; echo "$yesno") =~ ^[Yy](es)?$ ]] || { trap '' ERR; fatal "User aborted operation"; }
+    fi
+  else
+    warning "No trust has been established with this Phoenix Cluster yet.\nThe root certificate fingerprint is %s" "$phxc_root_crt_fp"
+    [[ $(read -rp 'Do you want to establish that trust now? [y/N]' yesno; echo "$yesno") =~ ^[Yy](es)?$ ]] || { trap '' ERR; fatal "User aborted operation"; }
+  fi
+  printf "%s\n" "$phxc_root_crt" >"$PHXC_ROOT_CRT"
+  # shellcheck disable=SC2016
+  [[ -e "$CONFIG_FILE" ]] || printf '{
+  "$schema": "%s"
+}' "$CLI_SCHEMA_URL" >"$CONFIG_FILE"
+
+  info "Configuring %s" "$CONFIG_FILE"
+  set_config backup-server-addr "$backup_server_url"
+  set_config kube-api-client-ca-addr "https://$kube_api_hostname:9001"
+  set_config ssh-keyname "${ssh_keyname:-"$USER@$HOST"}"
+
+  info "Download Kubernetes API Client CA certificate"
+  curl_backup_server certs/kube-apiserver-client-ca-cert.crt >"$KUBE_API_CLIENT_CA_CRT"
+
+  create_kube_config "https://$kube_api_hostname:6443" "system:admin"
+}
+
+create_kube_config() {
+  local kube_api_addr=$1 username=$2 kube_cfg_path=$HOME/.kube/phxc.yaml kube_context=phxc kube_cluster=phxc kube_api_server_ca_cert kube_api_addr
+  info "Setting up %s" "$kube_cfg_path"
+  kube_api_addr=$(get_config kube-api-addr)
+  kube_api_server_ca_cert=$(curl_backup_server certs/kube-apiserver-server-ca-cert.crt 2> >(LOGPROGRAM=step pipe_verbose))
+  kubectl config --kubeconfig "$kube_cfg_path" set-cluster "$kube_cluster" \
+    --server="$kube_api_addr" \
+    --embed-certs \
+    --certificate-authority=<(printf "%s" "$kube_api_server_ca_cert")
+  kubectl config --kubeconfig "$kube_cfg_path" set-credentials "$username@$kube_cluster" \
+    --exec-api-version="client.authentication.k8s.io/v1beta1" \
+    --exec-command="$(realpath "${BASH_SOURCE[0]}")" \
+    --exec-arg="get-cert" \
+    --exec-arg="$username"
+  kubectl config --kubeconfig "$kube_cfg_path" set-context $kube_context \
+    --cluster "$kube_cluster" --user "$username@$kube_cluster"
+  rm -f "$CONFIG_DIR/$username.crt" "$CONFIG_DIR/$username.key"
+}
+
+get_kube_client_cert() {
+  local username=$1 cert key
+  refresh_cert "$username"
+  cert=$(cat "$CONFIG_DIR/$username.crt")
+  key=$(cat "$CONFIG_DIR/$username.key")
+  printf '{
+  "apiVersion": "client.authentication.k8s.io/v1beta1",
+  "kind": "ExecCredential",
+  "status": {
+    "clientCertificateData": "%s",
+    "clientKeyData": "%s"
+  }
+}
+' "${cert//$'\n'/'\n'}" "${key//$'\n'/'\n'}"
+}
+
+refresh_cert() {
+  local username=$1 ca_url ssh_keyname
+  trap 'error "Failed to get certificate, run with LOGLEVEL=verbose to see more detailed errors"' ERR
+  ca_url=$(get_config kube-api-client-ca-addr)
+  ssh_keyname=$(get_config ssh-keyname)
+  if [[ ! -e $CONFIG_DIR/$username.crt ]] || \
+      step certificate needs-renewal --expires-in 0s "$CONFIG_DIR/$username.crt" 2>&1 | LOGPROGRAM=step pipe_verbose; then
+    local ssh_pem admin_jwk kid header payload signature step_logs
+    ssh_pem=$(step kms key "sshagentkms:$ssh_keyname" 2> >(LOGPROGRAM=step pipe_verbose))
+    admin_jwk=$(step crypto jwk create --force --use sig --from-pem=<(printf "%s\n" "$ssh_pem") \
+      /dev/stdout /dev/null 2> >(LOGPROGRAM=step pipe_verbose))
+    kid=$(jq -r .kid <<<"$admin_jwk")
+    header=$(jq '{
+      "alg": .alg,
+      "kid": .kid,
+      "typ": "JWT"
+    }' <<<"$admin_jwk" | jq -cS . | base64 -w0 | tr -d '=' | tr '/+' '_-')
+    payload=$(jq -n --arg ca_url "$ca_url" --argjson now "$(date +%s)" --arg kid "$kid" \
+                    --arg jti "$(openssl rand -hex 32)" --arg sub "$username" '{
+      "aud": ($ca_url + "/1.0/sign"),
+      "exp": ($now + 30),
+      "iat": $now,
+      "iss": $kid,
+      "jti": $jti,
+      "nbf": ($now - 30),
+      "sans": [$sub],
+      "sub": $sub
+    }' | jq -cS . | base64 -w0 | tr -d '=' | tr '/+' '_-')
+    signature=$(step kms sign --format jws --in <(printf "%s.%s" "$header" "$payload") \
+      --kms "sshagentkms" "sshagentkms:$ssh_keyname")
+    if ! step_logs=$(step ca certificate --ca-url="$ca_url" --root="$KUBE_API_CLIENT_CA_CRT" \
+      --token="$header.$payload.$signature" --force \
+      "$username" "$CONFIG_DIR/$username.crt" "$CONFIG_DIR/$username.key" 2>&1); then
+      fatal "Failed to issue kube-api certificate:\n%s" "$step_logs"
+    fi
+  fi
+}
+
+embed_configs() {
+  local image=$1 cluster=$2 node=$3 rpi_otp=$4 config_tmp
+  config_tmp=$(mktemp -d --suffix '-phxc-embed-configs')
+  # shellcheck disable=SC2064
+  trap "rm -rf \"$config_tmp\"" EXIT
+  # shellcheck disable=SC2154
+  cp "$cluster" "$config_tmp/cluster.json"
+  [[ -z $node ]] || cp "$node" "$config_tmp/node.json"
+  [[ -z $rpi_otp ]] || cp "$rpi_otp" "$config_tmp/rpi-otp.json"
+  local admin_ssh_key config_path
+  admin_ssh_key=$(jq -r '.admin["ssh-keys"][0]' "$config_tmp/cluster.json")
+  for config_path in "$config_tmp"/*; do
+    ssh-keygen -Y sign -f <(printf "%s" "$admin_ssh_key") -n file "$config_path"
+  done
+
+  docker run --rm -ti \
+    -v "$config_tmp:/workspace/embed-configs" \
+    -v "$PKGROOT/bootstrap/scripts:/scripts:ro" \
+    -v "$(realpath "$image"):/workspace/disk.img:rw" \
+    -e "DEBUG=$DEBUG" \
+    --device=/dev/kvm \
+    --group-add "$(stat -c %g /dev/kvm)" \
+    ghcr.io/andsens/phxc-embed-configs:sha-3e0c5ff
+}
+
+curl_backup_server() {
+  local path=$1 backup_server_addr
+  backup_server_addr=$(get_config backup-server-addr)
+  backup_server_addr=${backup_server_addr#'https://'}
+  backup_server_addr=${backup_server_addr%'/*'}
+  shift
+  curl --no-progress-meter --cacert "$PHXC_ROOT_CRT" \
+      --connect-to "backup-server.phxc.svc.cluster.local:8050:$backup_server_addr" \
+      "https://backup-server.phxc.svc.cluster.local:8050/$path" "$@"
+}
+
+get_config() {
+  local key=$1 validation_errors
+  if ! validation_errors=$("$PKGROOT/.upkg/.bin/jsonschema-cli" -i "$CONFIG_FILE" "$PKGROOT/lib/schemas/cli.json" 2>&1); then
+    fatal 'Failed to validate "%s". Errors: %s' "$FILEPATH" "$validation_errors"
+  fi
+  key=$(escape_key "$key")
+  jq -r ".$key" "$CONFIG_FILE"
+}
+
+set_config() {
+  local key=$1 value=$2 config
+  key=$(escape_key "$key")
+  config=$(jq -r --arg val "$value" ".$key=\$val" "$CONFIG_FILE")
+  printf "%s\n" "$config" >"$CONFIG_FILE"
+}
+
+escape_key() {
+  # Converts any path like some-path.to-something.here
+  # into ["some-path"]["to-something"]["here"]
+  # This means dots in keys are not allowed
+  local key=$1
+  key=${key//'.'/'"]["'}
+  key="[\"$key\"]"
+  printf "%s\n" "$key"
+}
+
+main "$@"

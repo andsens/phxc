@@ -1,0 +1,29 @@
+{
+  "$schema": "https://schemas.orbit.dev/upkg/upkg-v0.28.0.schema.json",
+  "name": "phxc",
+  "dependencies": [
+    {
+      "name": "docopt-lib-v2.0.2",
+      "tar": "https://github.com/andsens/docopt.sh/releases/download/v2.0.2/docopt-lib.sh.tar.gz",
+      "sha256": "d6997858e7f2470aa602fdd1e443d89b4e2084245b485e4b7924b0f388ec401e"
+    },
+    {
+      "tar": "https://github.com/orbit-online/records.sh/releases/download/v1.0.2/records.sh.tar.gz",
+      "sha256": "201977ecc5fc9069d8eff12ba6adc9ce1286ba66c9aeee19184e26185cc6ef63"
+    },
+    {
+      "name": "step",
+      "bin": ["jsonschema-cli"],
+      "os/arch": "Linux/x86_64",
+      "tar": "https://github.com/andsens/phoenix-cluster/releases/download/jsonschema-cli-v0.28.0%2B1/jsonschema-cli-0.28.0_linux_amd64.tar.gz",
+      "sha256": "3b93b76ea0e2d3cf9c149e944b7689a2d9b5f92a3d5ddb18fd9ac91fbbbdb446"
+    },
+    {
+      "name": "step",
+      "bin": ["jsonschema-cli"],
+      "os/arch": "Linux/aarch64",
+      "tar": "https://github.com/andsens/phoenix-cluster/releases/download/jsonschema-cli-v0.28.0%2B1/jsonschema-cli-0.28.0_linux_arm64.tar.gz",
+      "sha256": "52d2aa930db85c20192d2933a6c0bcffa232c07a7975dcf95cc1895c31cb4c3f"
+    }
+  ]
+}
