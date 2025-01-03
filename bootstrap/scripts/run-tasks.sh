@@ -54,7 +54,6 @@ main() {
   info "Installing packages: %s" "${all_packages[*]}"
   apt-get upgrade -qq
   apt-get install -y --no-install-recommends "${all_packages[@]}"
-  rm -rf /var/cache/apt/lists/*
 
   local task
   for taskfile in "$PKGROOT/bootstrap/tasks.d/"??-*.sh; do
@@ -83,6 +82,7 @@ main() {
   apt-get purge -y "${packages_purge[@]}"
   apt-get autoremove -y
   apt-get autoclean
+  rm -rf /var/lib/apt/lists/*
 }
 
 main "$@"
