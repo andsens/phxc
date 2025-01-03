@@ -41,6 +41,20 @@
       "os/arch": "Linux/aarch64",
       "file": "https://github.com/kptdev/kpt/releases/download/v1.0.0-beta.54/kpt_linux_arm64",
       "sha256": "ecb754a384f1cf32dfdcea6405e245c7bfc56a7c955826559bfe538a26cfb25f"
+    },
+    {
+      "name": "cidrex",
+      "bin": ["cidrex"],
+      "os/arch": "Linux/x86_64",
+      "tar": "https://github.com/andsens/phxc/releases/download/cidrex-v0.0.1%2B1/cidrex-98e29176_linux_amd64.tar.gz",
+      "sha256": "1d042ab09367b8317d81fbe78e5779c026a84e843cab0a76f5e3689aae9a3644"
+    },
+    {
+      "name": "cidrex",
+      "bin": ["cidrex"],
+      "os/arch": "Linux/aarch64",
+      "tar": "https://github.com/andsens/phxc/releases/download/cidrex-v0.0.1%2B1/cidrex-98e29176_linux_arm64.tar.gz",
+      "sha256": "49adde4a69ecca0ef61cb7e2834525ff3665373ce2ee7b1fc6380f3de25039b1"
     }
   ]
 }
