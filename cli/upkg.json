@@ -1,6 +1,6 @@
 {
   "$schema": "https://schemas.orbit.dev/upkg/upkg-v0.28.0.schema.json",
-  "name": "phxc",
+  "name": "phxc-cli",
   "dependencies": [
     {
       "name": "docopt-lib-v2.0.2",
