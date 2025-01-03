@@ -4,4 +4,4 @@ Requires=k3s-network-ready.target workload@smallstep.target workload@backup-serv
 After=k3s-network-ready.target workload@smallstep.target workload@backup-server.target workload@bootstrap.target
 
 [Install]
-WantedBy=k3s.target
+WantedBy=multi-user.target

@@ -1,6 +1,7 @@
 [Unit]
 Description=Reached when k3s has started
 Wants=k3s@server.service k3s@agent.service
+After=k3s@server.service k3s@agent.service
 
 [Install]
 WantedBy=multi-user.target

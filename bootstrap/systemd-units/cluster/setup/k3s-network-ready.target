@@ -1,4 +1,4 @@
 [Unit]
 Description=The cluster network is fully set up
-Requires=k3s@server.service workload@cilium.target workload@network-policies.target workload@coredns.target
-After=k3s@server.service workload@cilium.target workload@network-policies.target workload@coredns.target
+Requires=workload@cilium.target workload@network-policies.target workload@coredns.target
+After=workload@cilium.target workload@network-policies.target workload@coredns.target
