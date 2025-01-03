@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: phxc
+images:
+- name: ghcr.io/andsens/phxc-apt-cacher-ng
+  newTag: sha-4e07109
+resources:
+- apt-cacher-ng.yaml
+- Kptfile
+- resourcegroup.yaml
+configMapGenerator:
+- files:
+  - config/acng.conf
+  name: apt-cacher-ng
+generatorOptions:
+  disableNameSuffixHash: true

@@ -7,7 +7,6 @@ images:
 - name: ghcr.io/andsens/phxc-create-boot-image
   newTag: sha-22ff2c6
 resources:
-- apt-cacher-ng.yaml
 - network-policy.yaml
 - variants/amd64.yaml
 - variants/arm64.yaml
@@ -26,9 +25,6 @@ configMapGenerator:
   - scripts/create-boot-image.sh
   - scripts/get-pe-digest.py
   name: scripts
-- files:
-  - config/acng.conf
-  name: apt-cacher-ng
 generators:
 - generate-bundle-cm.yaml
 generatorOptions:
