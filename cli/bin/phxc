@@ -189,7 +189,7 @@ embed_configs() {
 
   docker run --rm -ti \
     -v "$config_tmp:/workspace/embed-configs" \
-    -v "$PKGROOT/bootstrap/scripts:/scripts:ro" \
+    -v "$PKGROOT/scripts:/scripts:ro" \
     -v "$(realpath "$image"):/workspace/disk.img:rw" \
     -e "DEBUG=$DEBUG" \
     --device=/dev/kvm \
