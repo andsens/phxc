@@ -74,6 +74,16 @@ spec:
         ports:
         - name: apt-cacher-ng
           containerPort: 3142
+        livenessProbe:
+          httpGet:
+            path: /acng-report.html
+            port: apt-cacher-ng
+            scheme: HTTP
+        readinessProbe:
+          httpGet:
+            path: /acng-report.html
+            port: apt-cacher-ng
+            scheme: HTTP
         volumeMounts:
         - name: config
           mountPath: /etc/apt-cacher-ng/acng.conf
