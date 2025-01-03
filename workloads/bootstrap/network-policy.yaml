@@ -1,3 +1,4 @@
+---
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
@@ -9,6 +10,13 @@ spec:
     matchLabels:
       app.kubernetes.io/name: bootstrap
   egress:
+  - toPorts:
+    - ports:
+      - port: "3142"
+    toEndpoints:
+    - matchLabels:
+        app.kubernetes.io/name: apt-cacher-ng
+        app.kubernetes.io/component: apt-cacher-ng
   - toPorts:
     - ports:
       - port: "8021"

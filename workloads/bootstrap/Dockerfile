@@ -3,7 +3,8 @@ SHELL ["/usr/bin/bash", "-Eeo", "pipefail", "-c"]
 ARG VARIANT
 ARG DEBUG=false
 
-RUN apt-get -y update; apt-get -y install --no-install-recommends \
+RUN printf 'Acquire::http { Proxy "http://apt-cacher-ng.phxc.svc.cluster.local:3142"; }\n' >/etc/apt/apt.conf.d/20-apt-cacher-ng.conf; \
+  apt-get -y update; apt-get -y install --no-install-recommends \
   jq wget ca-certificates \
   ; temp=$(mktemp); \
   wget -qO"$temp" "https://github.com/orbit-online/upkg/releases/download/v0.28.2/upkg-install.tar.gz"; \

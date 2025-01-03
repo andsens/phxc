@@ -1,0 +1,94 @@
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: apt-cacher-ng
+  labels:
+    app.kubernetes.io/name: apt-cacher-ng
+    app.kubernetes.io/component: apt-cacher-ng
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: apt-cacher-ng
+      app.kubernetes.io/component: apt-cacher-ng
+  ingress:
+  - toPorts:
+    - ports:
+      - port: "3142"
+    fromEntities:
+    - cluster
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: apt-cacher-ng
+  labels:
+    app.kubernetes.io/name: apt-cacher-ng
+    app.kubernetes.io/component: apt-cacher-ng
+spec:
+  selector:
+    app.kubernetes.io/name: apt-cacher-ng
+    app.kubernetes.io/component: apt-cacher-ng
+  ports:
+  - name: apt-cacher-ng
+    port: 3142
+    targetPort: apt-cacher-ng
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: apt-cacher-ng
+  labels:
+    app.kubernetes.io/name: apt-cacher-ng
+    app.kubernetes.io/component: apt-cacher-ng
+spec:
+  storageClassName: longhorn
+  accessModes: [ReadWriteOnce]
+  resources: {requests: {storage: 10Gi}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: apt-cacher-ng
+  labels:
+    app.kubernetes.io/name: apt-cacher-ng
+    app.kubernetes.io/component: apt-cacher-ng
+spec:
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: apt-cacher-ng
+      app.kubernetes.io/component: apt-cacher-ng
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: apt-cacher-ng
+        app.kubernetes.io/component: apt-cacher-ng
+        cluster.local/allow-internet-egress: "true"
+    spec:
+      containers:
+      - name: apt-cacher-ng
+        image: ghcr.io/andsens/phxc-apt-cacher-ng
+        securityContext:
+          readOnlyRootFilesystem: true
+        ports:
+        - name: apt-cacher-ng
+          containerPort: 3142
+        volumeMounts:
+        - name: config
+          mountPath: /etc/apt-cacher-ng/acng.conf
+          subPath: acng.conf
+        - name: cache
+          mountPath: /var/cache/apt-cacher-ng
+        - name: run
+          mountPath: /var/run/apt-cacher-ng
+      volumes:
+      - name: config
+        configMap:
+          name: apt-cacher-ng
+      - name: cache
+        persistentVolumeClaim:
+          claimName: apt-cacher-ng
+      - name: run
+        emptyDir: {}
