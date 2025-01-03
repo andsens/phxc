@@ -22,8 +22,8 @@ spec:
         image: gcr.io/kaniko-project/executor:latest
         args:
         - --dockerfile=context/Dockerfile
-        - --build-arg=DEBUG=$(DEBUG)
         - --build-arg=VARIANT=$(VARIANT)
+        - --build-arg=DEBUG=$(DEBUG)
         - --custom-platform=linux/arm64
         - --destination=cluster.local/non-existent
         - --tar-path=/workspace/artifacts/node.tar
@@ -31,6 +31,8 @@ spec:
         env:
         - name: VARIANT
           value: arm64
+        - name: DEBUG
+          value: "false"
         volumeMounts:
         - name: workspace
           mountPath: /workspace
