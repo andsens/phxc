@@ -83,7 +83,7 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
   # Hash the root image so we can verify it during boot
   sha256sums[root.img]=$(sha256sum /workspace/root.img | cut -d ' ' -f1)
 
-  ! $DEBUG || artifacts[root.img]=/workspace/root.img
+  artifacts[root.img]=/workspace/root.img
   boot_files["/phxc/root.${sha256sums[root.img]}.img"]=/workspace/root.img
   local kernel_cmdline=""
   ! $DEBUG || kernel_cmdline+=" rd.shell"

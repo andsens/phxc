@@ -2,6 +2,7 @@ FROM debian:trixie
 SHELL ["/usr/bin/bash", "-Eeo", "pipefail", "-c"]
 
 ARG TARGETARCH
+ENV DEBUG=false
 
 RUN <<EOR
 apt-get -y update
