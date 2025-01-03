@@ -1,19 +1,30 @@
 #!/usr/bin/env bash
 
+# bash parsing workaround: extglob must be enabled when the function is parsed
+shopt -s extglob
 clean() {
   rm /etc/fstab
   # initramfs-tools get installed for some reason
   # even though we select dracut in the same install as we select the kernel image
   apt-get purge initramfs-tools
-  if ! $DEBUG; then
+  if $DEBUG; then
+    # Don't filter out locales and manpages when installing packages
+    rm /etc/dpkg/dpkg.cfg.d/excludes
+  else
     PACKAGES_PURGE+=(
       libc-l10n
+      libicu72
     )
-    find \
-      /usr/share/doc /usr/share/man /usr/share/locale \
-      -mindepth 1 -maxdepth 1 \
-      \( -not -path '/usr/share/man/man[0-9]' \) -a \
-      \( -not -path /usr/share/locale/locale.alias \) \
-      -print0 | xargs -0 rm -rf
+    # Remove existing docs, manpages, locales that came as part of the container
+    shopt -s extglob
+    rm -rf /usr/share/doc/*/!(copyright)
+    rm -rf /usr/share/man/!(man[1-9])
+    rm -rf /usr/share/locale/!(locale.alias)
+    shopt -u extglob
+    for dir in /usr/share/doc/*; do
+      [[ -e $dir/copyright ]] || rm -rf "$dir"
+    done
+    unset dir
   fi
 }
+shopt -u extglob

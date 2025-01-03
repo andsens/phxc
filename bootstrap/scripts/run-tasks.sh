@@ -40,11 +40,6 @@ main() {
     envsubst "${replacements[*]}" <"$src" >"/etc/systemd/system/$unit"
   done < <(find "$unit_files" -type f -print0)
 
-  if $DEBUG; then
-    # Don't filter out locales and manpages when installing packages
-    rm /etc/dpkg/dpkg.cfg.d/excludes
-  fi
-
   PACKAGES=(apt-utils jq)
   PACKAGES_TMP=()
   PACKAGES_PURGE=()
