@@ -68,7 +68,7 @@ local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
 
   if [[ $(docker container inspect -f '{{.State.Running}}' phxc-apt-cacher-ng 2>/dev/null) != "true" ]]; then
     info "Starting apt-cacher-ng"
-    # trap_append "docker stop phxc-apt-cacher-ng" EXIT
+    trap_append "docker stop phxc-apt-cacher-ng" EXIT
     mkdir -p "$PKGROOT/images/apt-cacher-ng"
     local apt_cacher_ng_tag
     apt_cacher_ng_tag=$(yq -r '.images[] | select(.name == "ghcr.io/andsens/phxc-apt-cacher-ng") | .newTag' \
