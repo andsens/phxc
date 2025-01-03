@@ -72,7 +72,7 @@ local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
       "$PKGROOT/workloads/bootstrap/kustomization.yaml")
     docker run --rm --detach \
       --name phxc-apt-cacher-ng --hostname phxc-apt-cacher-ng \
-      -v "$PKGROOT/workloads/bootstrap/config/acng.conf:/etc/apt-cacher-ng/acng.conf:ro" \
+      -v "$PKGROOT/workloads/apt-cacher-ng/config/acng.conf:/etc/apt-cacher-ng/acng.conf:ro" \
       -v "$PKGROOT/images/apt-cacher-ng:/var/cache/apt-cacher-ng:rw" \
       "ghcr.io/andsens/phxc-apt-cacher-ng:$apt_cacher_ng_tag"
   fi
