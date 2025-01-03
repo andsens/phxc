@@ -52,8 +52,15 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
 
   mkdir -p /workspace/root
 
+  local filepath filename
   for layer in $(jq -r '.[0].Layers[]' <(tar -xOf "/workspace/artifacts/node.tar" manifest.json)); do
     tar -xOf "/workspace/artifacts/node.tar" "$layer" | tar -xz -C /workspace/root
+    # See https://github.com/opencontainers/image-spec/blob/5325ec48851022d6ded604199a3566254e72842a/layer.md#whiteouts
+    while IFS= read -r -d $'\0' filepath; do
+      filename=$(basename "$filepath")
+      # shellcheck disable=SC2115
+      rm -rf "$filepath" "$(dirname "$filepath")/${filename#'.wh.'}"
+    done < <(find /workspace/root -name '.wh.*' -print0)
   done
   # During bootstrapping with kaniko these files can't be removed/overwritten,
   # instead we do it when creating the image
