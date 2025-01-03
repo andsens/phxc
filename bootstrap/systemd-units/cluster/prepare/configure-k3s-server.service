@@ -19,7 +19,7 @@ StandardInputText=jq -n \
   '{ \
     "cluster-cidr": [$cluster_cidrs_pod_ipv4, $cluster_cidrs_pod_ipv6], \
     "service-cidr": [$cluster_cidrs_svc_ipv4, $cluster_cidrs_svc_ipv6], \
-    "kube-controller-manager-arg": ["node-cidr-mask-size-ipv4=24", "node-cidr-mask-size-ipv6=112"], \
+    "kube-controller-manager-arg": ["node-cidr-mask-size-ipv4=24", "node-cidr-mask-size-ipv6=120"], \
     "tls-san": ["api." + $cluster_domain] \
   }' \
   >/etc/rancher/k3s/config.yaml.d/cluster.yaml
