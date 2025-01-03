@@ -6,10 +6,7 @@ export DOCKER_CLI_HINTS=false
 
 main() {
   source "$PKGROOT/.upkg/records.sh/records.sh"
-  source "$PKGROOT/.upkg/bgpid/bgpid.sh"
   source "$PKGROOT/.upkg/trap.sh/trap.sh"
-  source "$PKGROOT/.upkg/path-tools/path-tools.sh"
-  PATH=$(path_prepend "$PKGROOT/.upkg/.bin")
 
   DOC="bootstrap - Bootstrap images
 Usage:

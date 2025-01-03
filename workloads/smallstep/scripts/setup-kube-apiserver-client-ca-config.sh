@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
+# shellcheck source-path=../../..
 set -Eeo pipefail; shopt -s inherit_errexit
-# shellcheck disable=SC1091
-source /usr/local/lib/upkg/.upkg/records.sh/records.sh
+PKGROOT=/usr/local/lib/upkg/.upkg
+source "$PKGROOT/.upkg/records.sh/records.sh"
 
 export STEPPATH=/home/step
 KUBE_CLIENT_CA_KEY_PATH=$STEPPATH/kube-api-secrets/kube_apiserver_client_ca_key

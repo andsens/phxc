@@ -6,10 +6,6 @@ export DOCKER_CLI_HINTS=false
 
 main() {
   source "$PKGROOT/.upkg/records.sh/records.sh"
-  source "$PKGROOT/.upkg/bgpid/bgpid.sh"
-  source "$PKGROOT/.upkg/trap.sh/trap.sh"
-  source "$PKGROOT/.upkg/path-tools/path-tools.sh"
-  PATH=$(path_prepend "$PKGROOT/.upkg/.bin")
 
   DOC="embed-configs - Embed configuration in the FAT32 partition of a disk image
 Usage:
@@ -37,7 +33,8 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'IMAGE=${var_IM'\
   # shellcheck disable=SC2154
   local config_tmp
   config_tmp=$(mktemp -d --suffix '-phxc-embed-configs')
-  trap_append "rm -rf \"$config_tmp\"" EXIT
+  # shellcheck disable=SC2064
+  trap "rm -rf \"$config_tmp\"" EXIT
   # shellcheck disable=SC2154
   cp "$CLUSTER" "$config_tmp/cluster.json"
   [[ -z $NODE ]] || cp "$NODE" "$config_tmp/node.json"
