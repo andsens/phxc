@@ -1,5 +1,5 @@
 [Unit]
-Description=Applies the %i manifest
+Description=Sets up the %i workload
 Requires=install-control-plane-packages.service
 After=install-control-plane-packages.service
 

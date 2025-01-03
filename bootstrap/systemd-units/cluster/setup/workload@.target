@@ -1,5 +1,5 @@
 [Unit]
-Description=Applies the %i manifest and waits for it to be ready
+Description=Sets up the %i workload (if running k3s@server) and waits for it to be ready
 Requires=workload-ready@%i.service
 Wants=setup-workload@%i.service
 After=setup-workload@%i.service workload-ready@%i.service
