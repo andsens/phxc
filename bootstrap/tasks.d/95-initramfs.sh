@@ -27,7 +27,13 @@ EOF
   *) printf "Unknown variant: %s\n" "$VARIANT" >&2; return 1 ;;
 esac
 
+# Disable initramfs updates until we are ready
+export INITRD=No
+
 initramfs() {
+  # Re-enable initramfs updates
+  unset INITRD
+
   # Enable serial console
   systemctl enable serial-getty@ttyS0
 
@@ -46,7 +52,6 @@ initramfs() {
   kernver=${kernver#'/lib/modules/'}
   dracut --force --kver "$kernver"
   # Move files to fixed location and remove symlinks
-  mv "$(readlink /vmlinuz)" /boot/vmlinuz
-  mv "$(readlink /initrd.img)" /boot/initrd.img
-  rm -f /vmlinuz* /initrd.img*
+  mv "/boot/vmlinuz-$kernver" /boot/vmlinuz
+  mv "/boot/initrd.img-$kernver" /boot/initrd.img
 }
