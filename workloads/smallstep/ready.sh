@@ -8,5 +8,6 @@ is_ready() {
   deployment_ready smallstep step-issuer
   endpoint_ready smallstep kube-apiserver-client-ca-host
   endpoint_ready smallstep phxc-ca
+  curl -sfk https://phxc-ca.smallstep.svc.cluster.local:9000/health &>/dev/null
 }
 check_ready "$@"
