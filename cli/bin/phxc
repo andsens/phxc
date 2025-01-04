@@ -52,8 +52,14 @@ varname;for varname in "${varnames[@]}"; do unset "var_$varname";done;parse 15 \
 "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' phxc`
   eval "$(docopt "$@")"
+
+  export KUBECONFIG
+  [ -n "$KUBECONFIG" ] || export KUBECONFIG="$HOME/.kube/config.yaml"
+  grep -q "$HOME/.kube/phxc.yaml" <<<"$KUBECONFIG" || KUBECONFIG=$KUBECONFIG:$HOME/.kube/phxc.yaml
+
   [[ ! $KUBEAPI_HOSTNAME =~ ^(https?://)?([^:]+) ]] || KUBEAPI_HOSTNAME=${BASH_REMATCH[2]}
   [[ $__ssh_keyname != "\$USER@\$HOST" ]] || __ssh_keyname=$(id -un)@$(hostname)
+
   # shellcheck disable=SC2153,SC2154
   if $setup; then
     setup "$KUBEAPI_HOSTNAME" "$__ssh_keyname" "$__username"
@@ -65,12 +71,12 @@ varname;for varname in "${varnames[@]}"; do unset "var_$varname";done;parse 15 \
 }
 
 setup() {
-  local kube_api_hostname=$1 ssh_keyname=$2 username=$3
+  local kube_api_addr=https://$1:6443 ssh_keyname=$2 username=$3
   local yesno kube_api_server_ca_crt_fp kube_api_server_ca_crt_fp
   trap 'error "Failed to configure, run with LOGLEVEL=verbose to see more detailed errors"' ERR
   mkdir -p "$CONFIG_DIR"
   # TOFU for Kubernetes API Server CA
-  kube_api_server_ca_crt=$(step certificate inspect --insecure --format pem "https://$kube_api_hostname:6443")
+  kube_api_server_ca_crt=$(step certificate inspect --insecure --format pem "$kube_api_addr")
   kube_api_server_ca_crt_fp=$(step certificate fingerprint <(printf "%s\n" "$kube_api_server_ca_crt"))
   if [[ -e "$KUBE_API_SERVER_CA_CRT" ]]; then
     info "Checking existing Kubernetes API server CA certificate"
@@ -91,12 +97,14 @@ setup() {
   info "Downloading Kubernetes API Client CA certificate"
   curl -sk --no-progress-meter https://k8s-hyperv-1.local:9001/roots.pem >"$KUBE_API_CLIENT_CA_CRT"
 
-  create_kube_config "https://$kube_api_hostname:6443" "$ssh_keyname" "$username"
+  create_kube_config "$kube_api_addr" "$ssh_keyname" "$username"
+
+  trust_ssh_host_key
 }
 
 create_kube_config() {
   local kube_api_addr=$1 ssh_keyname=$2 username=$3 kube_cfg_path=$HOME/.kube/phxc.yaml kube_context=phxc kube_cluster=phxc kube_api_addr
-  info "Setting up %s" "$kube_cfg_path"
+  info "Setting up %s" "${kube_cfg_path//"$HOME"/"~"}"
   kubectl config --kubeconfig "$kube_cfg_path" set-cluster "$kube_cluster" \
     --server="$kube_api_addr" \
     --embed-certs \
@@ -108,14 +116,22 @@ create_kube_config() {
     --exec-arg="-k$ssh_keyname" \
     --exec-arg="-u$username" \
     --exec-arg="$kube_api_addr"
-  kubectl config --kubeconfig "$kube_cfg_path" set-context $kube_context \
+  kubectl config --kubeconfig "$HOME/.kube/config.yaml" set-context $kube_context \
     --cluster "$kube_cluster" --user "$username@$kube_cluster"
   rm -f "$CONFIG_DIR/$username.crt" "$CONFIG_DIR/$username.key"
 }
 
+trust_ssh_host_key() {
+  local trusted_certs=$HOME/.ssh/phxc_trusted_cert ssh_host_key
+  info "Writing SSH host key trust to %s" "${trusted_certs//"$HOME"/"~"}"
+  ssh_host_key=$(kubectl --context phxc -n smallstep get secret phxc-intermediate -ojsonpath='{.data.tls\.crt}' | \
+    base64 -d | openssl x509 -noout -pubkey | ssh-keygen -f /dev/stdin -i -m PKCS8)
+  printf "@cert-authority * %s\n" "$ssh_host_key" >"$trusted_certs"
+}
+
 get_kube_client_cert() {
-  local kube_api_addr=$1 ssh_keyname=$2 username=$3 cert key
-  refresh_cert "$kube_api_addr" "$ssh_keyname" "$username"
+  local kube_api_hostname=$1 ssh_keyname=$2 username=$3 cert key
+  refresh_cert "$kube_api_hostname" "$ssh_keyname" "$username"
   cert=$(cat "$CONFIG_DIR/$username.crt")
   key=$(cat "$CONFIG_DIR/$username.key")
   printf '{
@@ -130,9 +146,9 @@ get_kube_client_cert() {
 }
 
 refresh_cert() {
-  local kube_api_addr=$1 ssh_keyname=$2 username=$3 ca_url
+  local kube_api_hostname=$1 ssh_keyname=$2 username=$3 ca_url
   trap 'error "Failed to get certificate, run with LOGLEVEL=verbose to see more detailed errors"' ERR
-  ca_url=https://${kube_api_addr}:9001
+  ca_url=https://${kube_api_hostname}:9001
   if [[ ! -e $CONFIG_DIR/$username.crt ]] || \
       step certificate needs-renewal --expires-in 0s "$CONFIG_DIR/$username.crt" 2>&1 | LOGPROGRAM=step pipe_verbose; then
     local ssh_pem admin_jwk kid header payload signature step_logs

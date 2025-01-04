@@ -19,3 +19,4 @@ StandardInputText=printf "" >/etc/ssh/sshd_config.d/20-host-key-certs.conf; \
       "%H" "$pubkey"; \
     printf "HostCertificate %%s-cert.pub\n" "${pubkey%%'.pub'}" >>/etc/ssh/sshd_config.d/20-host-key-certs.conf; \
   done
+ExecStartPost=-systemctl restart ssh

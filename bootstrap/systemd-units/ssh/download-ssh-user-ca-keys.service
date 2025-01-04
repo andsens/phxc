@@ -12,3 +12,4 @@ Environment=HOME=/root
 ExecStart=bash -eo pipefail
 StandardInputText=/var/lib/phxc/.upkg/.bin/step ssh config --host --roots >/etc/ssh/user_ca_keys; \
   printf "TrustedUserCAKeys /etc/ssh/user_ca_keys\n" >/etc/ssh/sshd_config.d/30-user-ca-keys.conf
+ExecStartPost=-systemctl restart ssh

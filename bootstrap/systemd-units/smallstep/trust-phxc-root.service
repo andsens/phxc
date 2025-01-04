@@ -8,6 +8,6 @@ Type=oneshot
 RemainAfterExit=yes
 ExecStart=bash -e
 StandardInputText=[[ ! -e /usr/local/share/ca-certificates/phxc-root.crt ]] || exit 0; \
-  curl -k --no-progress-meter --retry 1000 -o/usr/local/share/ca-certificates/phxc-root.crt https://step-ca.smallstep.svc.cluster.local:9000/roots.pem; \
+  curl -k --no-progress-meter --retry 1000 --retry-connrefused -o/usr/local/share/ca-certificates/phxc-root.crt https://phxc-ca.smallstep.svc.cluster.local:9000/roots.pem; \
   openssl x509 -in /usr/local/share/ca-certificates/phxc-root.crt -outform der -out /usr/local/share/phxc/phxc-root.der; \
   update-ca-certificates
