@@ -171,7 +171,7 @@ curl_img_reg() {
   shift
   curl --cacert /usr/local/share/ca-certificates/phxc-root.crt \
     -L --no-progress-meter --connect-timeout 5 \
-    --retry 10 --retry-delay 60 \
+    --retry 10 --retry-delay 60 --retry-connrefused \
     "https://image-registry.phxc.svc.cluster.local:8020/$path" "$@"
 }
 
