@@ -51,7 +51,7 @@ done;if declare -p var_WORKLOAD >/dev/null 2>&1; then eval $p'WORKLOAD=("${var'\
     # shellcheck disable=2154
     if $apply; then
       info "Applying %s" "$workload_name"
-      kpt live apply - "${kptargs[@]}" <<<"$workload_data"
+      kpt live apply --request-timeout 5m - "${kptargs[@]}" <<<"$workload_data"
     elif $delete; then
       info "Deleting %s" "$workload_name"
       kpt live destroy - "${kptargs[@]}" <<<"$workload_data"
