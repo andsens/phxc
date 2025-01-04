@@ -1,7 +1,7 @@
 [Unit]
 Description=The Phoenix Cluster is started and configured
-Requires=k3s-network-ready.target workload@smallstep.target workload@backup-server.target workload@bootstrap.target
-After=k3s-network-ready.target workload@smallstep.target workload@backup-server.target workload@bootstrap.target
+Requires=k3s-network-ready.target workload@smallstep.target workload@bootstrap.target
+After=k3s-network-ready.target workload@smallstep.target workload@bootstrap.target
 
 [Install]
 WantedBy=multi-user.target
