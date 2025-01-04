@@ -53,7 +53,7 @@ varname;for varname in "${varnames[@]}"; do unset "var_$varname";done;parse 15 \
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' phxc`
   eval "$(docopt "$@")"
   [[ ! $KUBEAPI_HOSTNAME =~ ^(https?://)?([^:]+) ]] || KUBEAPI_HOSTNAME=${BASH_REMATCH[2]}
-  [[ $__ssh_keyname != "\$USER@\$HOST" ]] || __ssh_keyname=$USER@$HOST
+  [[ $__ssh_keyname != "\$USER@\$HOST" ]] || __ssh_keyname=$(id -un)@$(hostname)
   # shellcheck disable=SC2153,SC2154
   if $setup; then
     setup "$KUBEAPI_HOSTNAME" "$__ssh_keyname" "$__username"
