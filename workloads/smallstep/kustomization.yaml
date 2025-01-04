@@ -12,6 +12,7 @@ resources:
 - phxc-ca.yaml
 - kube-apiserver-client-ca.yaml
 - issuer.yaml
+- node-role.yaml
 - Kptfile
 - resourcegroup.yaml
 configMapGenerator:

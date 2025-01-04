@@ -1,0 +1,58 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: phxc:sign-ssh-host-keys
+  labels:
+    app.kubernetes.io/name: node
+    app.kubernetes.io/component: node
+rules:
+- apiGroups: [""]
+  resources: [secrets]
+  resourceNames: [ssh-host-provisioner-password]
+  verbs: [get]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: phxc:node:sign-ssh-host-keys
+  labels:
+    app.kubernetes.io/name: node
+    app.kubernetes.io/component: node
+subjects:
+- kind: Group
+  name: system:nodes
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: phxc:sign-ssh-host-keys
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: phxc:phxc-root
+  labels:
+    app.kubernetes.io/name: node
+    app.kubernetes.io/component: node
+rules:
+- apiGroups: [""]
+  resources: [configmaps]
+  resourceNames: [phxc-root]
+  verbs: [get]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: phxc:node:phxc-root
+  labels:
+    app.kubernetes.io/name: node
+    app.kubernetes.io/component: node
+subjects:
+- kind: Group
+  name: system:nodes
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: phxc:phxc-root
+  apiGroup: rbac.authorization.k8s.io

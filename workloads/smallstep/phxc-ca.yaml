@@ -64,8 +64,12 @@ rules:
   resources: [services]
   verbs: [get]
 - apiGroups: [""]
-  resources: [secrets]
+  resources: [secrets, configmaps]
   verbs: [create]
+- apiGroups: [""]
+  resources: [configmaps]
+  resourceNames: [phxc-root]
+  verbs: [get, patch]
 - apiGroups: [""]
   resources: [secrets]
   resourceNames:
@@ -121,35 +125,6 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: phxc-ca
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: phxc:sign-ssh-host-keys
-  labels:
-    app.kubernetes.io/name: node
-    app.kubernetes.io/component: node
-rules:
-- apiGroups: [""]
-  resources: [secrets]
-  resourceNames: [ssh-host-provisioner-password]
-  verbs: [get]
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: phxc:node:sign-ssh-host-keys
-  labels:
-    app.kubernetes.io/name: node
-    app.kubernetes.io/component: node
-subjects:
-- kind: Group
-  name: system:nodes
-  apiGroup: rbac.authorization.k8s.io
-roleRef:
-  kind: Role
-  name: phxc:sign-ssh-host-keys
-  apiGroup: rbac.authorization.k8s.io
 ---
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
@@ -226,8 +201,8 @@ spec:
           mountPath: /home/step/config-ro
         - name: config-rw
           mountPath: /home/step/config
-        - name: provisioner-secrets
-          mountPath: /home/step/provisioner-secrets
+        - name: setup-secrets
+          mountPath: /home/step/setup-secrets
       containers:
       - name: step-ca
         image: cr.step.sm/smallstep/step-ca:0.27.2
@@ -262,8 +237,6 @@ spec:
           subPath: tls.key
         - name: config-rw
           mountPath: /home/step/config
-        - name: provisioner-secrets
-          mountPath: /home/step/provisioner-secrets
         - name: database
           mountPath: /home/step/db
       volumes:
@@ -274,7 +247,7 @@ spec:
       - name: config
         configMap:
           name: ca-config
-      - name: provisioner-secrets
+      - name: setup-secrets
         emptyDir:
           medium: Memory
       - name: root

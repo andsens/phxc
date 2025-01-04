@@ -6,10 +6,11 @@ source "$PKGROOT/.upkg/records.sh/records.sh"
 
 export STEPPATH=/home/step
 ROOT_CRT_PATH=/home/step/certs/root_ca.crt
-STEP_ISSUER_DIR=$STEPPATH/provisioner-secrets/step-issuer
-SSH_HOST_DIR=$STEPPATH/provisioner-secrets/ssh-host
+STEP_ISSUER_DIR=$STEPPATH/setup-secrets/step-issuer
+SSH_HOST_DIR=$STEPPATH/setup-secrets/ssh-host
 
 main() {
+  create_root_cert_configmap
   create_step_issuer_provisioner
   create_ssh_host_provisioner
   local step_issuer_jwk step_issuer_enc_key ssh_host_jwk ssh_host_enc_key
@@ -28,6 +29,19 @@ main() {
     (.authority.provisioners[] | select(.name=="ssh-host") | .key) |= $ssh_host_jwk |
     (.authority.provisioners[] | select(.name=="ssh-host") | .encryptedKey) |= $ssh_host_enc_key
     ' "$STEPPATH/config-ro/ca.json" >"$STEPPATH/config/ca.json"
+}
+
+create_root_cert_configmap() {
+  info "Creating phxc-root configmap"
+  if ! kubectl get -n smallstep configmap phxc-root -ojsonpath='{.data.phxc\-root\.crt}' >"$STEPPATH/setup-secrets/phxc-root.crt" || \
+     ! diff -q "$STEPPATH/setup-secrets/phxc-root.crt" "$ROOT_CRT_PATH"; then
+    cp "$ROOT_CRT_PATH" "$STEPPATH/setup-secrets/phxc-root.crt"
+    info "phxc-root configmap does not exist or is incorrect, (re-)creating now"
+    kubectl create --dry-run=client -n smallstep configmap phxc-root --from-file="$STEPPATH/setup-secrets/phxc-root.crt" -oyaml | \
+      kubectl apply -f -
+  else
+    info "phxc-root configmap exists and is correct"
+  fi
 }
 
 create_step_issuer_provisioner() {
