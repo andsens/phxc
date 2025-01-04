@@ -1,0 +1,14 @@
+[Unit]
+Description=/opt/cni
+Requires=create-data-dir@cilium.service
+After=create-data-dir@cilium.service
+Before=pre-k3s.target
+
+[Install]
+RequiredBy=k3s@server.service k3s@agent.service
+
+[Mount]
+What=/var/lib/phxc/cilium
+Where=/opt/cni
+Type=none
+Options=bind

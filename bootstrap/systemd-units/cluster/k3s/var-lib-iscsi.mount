@@ -1,0 +1,14 @@
+[Unit]
+Description=/var/lib/iscsi
+Requires=create-data-dir@iscsi.service
+After=create-data-dir@iscsi.service
+Before=pre-k3s.target
+
+[Install]
+RequiredBy=k3s@server.service k3s@agent.service
+
+[Mount]
+What=/var/lib/phxc/iscsi
+Where=/var/lib/iscsi
+Type=none
+Options=bind

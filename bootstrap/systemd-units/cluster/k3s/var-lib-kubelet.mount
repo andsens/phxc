@@ -1,0 +1,14 @@
+[Unit]
+Description=/var/lib/kubelet
+Requires=create-data-dir@kubelet.service
+After=create-data-dir@kubelet.service
+Before=pre-k3s.target
+
+[Install]
+RequiredBy=k3s@server.service k3s@agent.service
+
+[Mount]
+What=/var/lib/phxc/kubelet
+Where=/var/lib/kubelet
+Type=none
+Options=bind
