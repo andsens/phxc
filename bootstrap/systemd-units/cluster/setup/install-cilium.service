@@ -7,7 +7,7 @@ After=k3s@server.service workload@node-role.target install-control-plane-package
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-Environment=KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+Environment=HOME=/root KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 ExecCondition=bash -ec '[ $(get-config -q /boot/phxc/node.json k3s.mode) = server ]'
 ExecCondition=bash -ec '! kubectl get -n kube-system deployment cilium-operator -o name'
 ExecStart=bash -eo pipefail

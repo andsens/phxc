@@ -6,4 +6,5 @@ After=install-node-packages.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
+Environment=HOME=/root
 ExecStart=/usr/local/lib/upkg/.upkg/phxc/workloads/%i/ready.sh --wait
