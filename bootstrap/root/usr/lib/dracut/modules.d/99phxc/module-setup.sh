@@ -24,12 +24,12 @@ installkernel() {
 install() {
   inst_binary sha256sum
   inst_binary jq
+  inst_binary grep
   if $DEBUG; then
     inst_binary cat
     inst_binary nano
     inst_binary less
     inst_binary lsblk
-    inst_binary grep
   fi
   inst /etc/systemd/system.conf.d/disk-uuids.conf
   inst /etc/systemd/system.conf.d/variant.conf
