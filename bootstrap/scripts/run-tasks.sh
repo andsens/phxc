@@ -28,6 +28,7 @@ main() {
   while IFS= read -r -d $'\0' src; do
     dest=${src#"$files"}
     mkdir -p "$(dirname "$dest")"
+    [[ $(basename "$src") != .gitkeep ]] || continue
     if [[ -L "$src" ]]; then
       cp -PT "$src" "$dest"
     else

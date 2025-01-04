@@ -9,6 +9,5 @@ PACKAGES+=(
 )
 
 networking() {
-  mkdir -p /etc/systemd/resolved.conf.d
   systemctl enable systemd-networkd
 }

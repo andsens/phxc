@@ -14,5 +14,4 @@ data_partition() {
        /etc/systemd/system/init-rpi-otp.service \
        /etc/systemd/system/enroll-diskenc-rpi-otp-key.service
   fi
-  mkdir /var/lib/phxc
 }
