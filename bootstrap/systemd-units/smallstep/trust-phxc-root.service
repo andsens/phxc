@@ -1,5 +1,5 @@
 [Unit]
-Description=Download and trust the smallstep root certificate
+Description=Download and trust the phxc root certificate
 Requires=workload-ready@smallstep.service configure-resolved.service
 After=workload-ready@smallstep.service configure-resolved.service
 

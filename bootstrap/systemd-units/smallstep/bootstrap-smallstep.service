@@ -1,7 +1,7 @@
 [Unit]
-Description=Bootstrap the smallstep CA for the root user
-Requires=trust-smallstep-root.service install-smallstep.service
-After=trust-smallstep-root.service install-smallstep.service
+Description=Bootstrap phxc root trust for step-cli
+Requires=trust-phxc-root.service install-smallstep.service
+After=trust-phxc-root.service install-smallstep.service
 AssertPathExists=/usr/local/share/ca-certificates/phxc-root.crt
 
 [Service]
