@@ -104,7 +104,7 @@ create_kube_config() {
   kubectl config --kubeconfig "$kube_cfg_path" set-credentials "$username@$kube_cluster" \
     --exec-api-version="client.authentication.k8s.io/v1beta1" \
     --exec-command="$(realpath "${BASH_SOURCE[0]}")" \
-    --exec-arg="get-cert" \
+    --exec-arg="get-kube-cert" \
     --exec-arg="-k$ssh_keyname" \
     --exec-arg="-u$username" \
     --exec-arg="$kube_api_addr"
