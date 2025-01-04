@@ -2,7 +2,7 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: step-ca-root
+  name: phxc-root
   labels:
     app.kubernetes.io/name: smallstep
     app.kubernetes.io/component: step-ca
@@ -13,24 +13,24 @@ spec:
     kind: ClusterIssuer
     name: selfsigned
   isCA: true
-  secretName: step-ca-root
+  secretName: phxc-root
   duration: 175200h
 ---
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
-  name: step-ca-root
+  name: phxc-root
   labels:
     app.kubernetes.io/name: smallstep
     app.kubernetes.io/component: step-ca
 spec:
   ca:
-    secretName: step-ca-root
+    secretName: phxc-root
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: step-ca-intermediate
+  name: phxc-intermediate
   labels:
     app.kubernetes.io/name: smallstep
     app.kubernetes.io/component: step-ca
@@ -39,8 +39,8 @@ spec:
   issuerRef:
     group: cert-manager.io
     kind: Issuer
-    name: step-ca-root
-  secretName: step-ca-intermediate
+    name: phxc-root
+  secretName: phxc-intermediate
   duration: 175200h
   isCA: true
 ---
@@ -274,10 +274,10 @@ spec:
           medium: Memory
       - name: root
         secret:
-          secretName: step-ca-root
+          secretName: phxc-root
       - name: intermediate
         secret:
-          secretName: step-ca-intermediate
+          secretName: phxc-intermediate
       - name: config-rw
         emptyDir: {}
   volumeClaimTemplates:

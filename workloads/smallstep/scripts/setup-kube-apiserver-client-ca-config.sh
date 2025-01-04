@@ -31,7 +31,6 @@ main() {
       "key": $key,
       "options": { "x509": { "templateFile": "/home/step/templates/admin.tpl" } },
     }]' <<<"$config")
-
   done <<<"${CLUSTER_ADMIN_SSH_KEYS:?}"
 
   printf "%s\n" "$config" >"$STEPPATH/config/ca.json"
