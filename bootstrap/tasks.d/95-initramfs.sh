@@ -40,8 +40,6 @@ initramfs() {
   chmod 0755 /usr/lib/dracut/modules.d/99phxc/parse-squashfs-root.sh \
              /usr/lib/dracut/modules.d/99phxc/module-setup.sh
 
-  mkdir -p /mnt/overlay/image /mnt/overlay/upper
-
   if [[ $VARIANT = rpi5 ]]; then
     # Remove Raspberry Pi 4 boot code
     rm boot/firmware/bootcode.bin boot/firmware/fixup*.dat boot/firmware/start*.elf

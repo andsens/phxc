@@ -47,6 +47,13 @@ install() {
     configure-hostname.service \
     restore-machine-id.service \
     sysroot.mount
+
+  if $DEBUG; then
+    mkdir -p /mnt/overlay-upper
+    inst "$moddir/system/sysroot-mnt-overlay\\x2dupper.mount" "$systemdsystemconfdir/sysroot-mnt-overlay\\x2dupper.mount"
+    $SYSTEMCTL -q --root "$initdir" enable sysroot-mnt-overlay\\x2dupper.mount
+  fi
+
   # shellcheck disable=SC2154
   rm "${initdir}${systemdutildir}"/system-generators/systemd-gpt-auto-generator
   ln -sf ../run/machine-id "$initdir/etc/machine-id"
@@ -54,6 +61,6 @@ install() {
   # Skip root checking
   inst_hook cmdline 00 "$moddir/parse-squashfs-root.sh"
   mkdir "$initdir/boot"
-  mkdir -p /overlay/image /overlay/rw
+  mkdir -p "$initdir/overlay/image" "$initdir/overlay/rw"
   return 0
 }
