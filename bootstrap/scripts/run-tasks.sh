@@ -28,7 +28,11 @@ main() {
   while IFS= read -r -d $'\0' src; do
     dest=${src#"$files"}
     mkdir -p "$(dirname "$dest")"
-    envsubst "${replacements[*]}" <"$src" >"$dest"
+    if [[ -L "$src" ]]; then
+      cp -PT "$src" "$dest"
+    else
+      envsubst "${replacements[*]}" <"$src" >"$dest"
+    fi
   done < <(find "$files" -type f -print0)
 
   local unit enable_units unit_files=$PKGROOT/bootstrap/systemd-units
