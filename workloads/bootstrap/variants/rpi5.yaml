@@ -1,12 +1,13 @@
 apiVersion: batch/v1
-kind: Job
+kind: CronJob
 metadata:
   name: build-rpi5
   labels:
     app.kubernetes.io/name: bootstrap
     app.kubernetes.io/component: rpi5
 spec:
-  template:
+  schedule: 0 3 * * 2
+  jobTemplate:
     metadata:
       labels:
         app.kubernetes.io/name: bootstrap
@@ -14,79 +15,81 @@ spec:
         cluster.local/allow-apiserver-egress: "true"
         cluster.local/allow-internet-egress: "true"
     spec:
-      restartPolicy: Never
-      nodeSelector:
-        kubernetes.io/arch: arm64
-      initContainers:
-      - name: kaniko
-        image: gcr.io/kaniko-project/executor:latest
-        args:
-        - --dockerfile=context/Dockerfile
-        - --build-arg=VARIANT=$(VARIANT)
-        - --build-arg=DEBUG=$(DEBUG)
-        - --custom-platform=linux/arm64
-        - --destination=cluster.local/non-existent
-        - --tar-path=/workspace/artifacts/node.tar
-        - --no-push
-        env:
-        - name: VARIANT
-          value: rpi5
-        - name: DEBUG
-          value: "false"
-        volumeMounts:
-        - name: workspace
-          mountPath: /workspace
-        - name: context
-          mountPath: /workspace/context
-        - name: bundle
-          mountPath: /workspace/phxc.tar.gz
-          subPath: phxc.tar.gz
-        - name: cluster-config
-          mountPath: /workspace/cluster.json
-          readOnly: true
-        - name: secureboot
-          mountPath: /workspace/secureboot
-      containers:
-      - name: create-boot-image
-        image: ghcr.io/andsens/phxc-create-boot-image
-        args: [--upload, 'https://image-registry.phxc.svc.cluster.local:8021']
-        env:
-        - name: VARIANT
-          value: rpi5
-        volumeMounts:
-        - name: scripts
-          mountPath: /scripts
-        - name: assets
-          mountPath: /assets
-        - name: rpi-config
-          mountPath: /rpi-config
-        - name: workspace
-          mountPath: /workspace
-        - name: secureboot
-          mountPath: /workspace/secureboot
-      volumes:
-      - name: context
-        configMap:
-          name: node
-      - name: scripts
-        configMap:
-          name: scripts
-          defaultMode: 0755
-      - name: assets
-        configMap:
-          name: assets
-      - name: cluster-config
-        hostPath:
-          path: /etc/phxc/cluster.json
-          type: File
-      - name: secureboot
-        secret:
-          secretName: secureboot
-      - name: rpi-config
-        configMap:
-          name: rpi-config
-      - name: bundle
-        configMap:
-          name: bundle
-      - name: workspace
-        emptyDir: {}
+      template:
+        spec:
+          restartPolicy: Never
+          nodeSelector:
+            kubernetes.io/arch: arm64
+          initContainers:
+          - name: kaniko
+            image: gcr.io/kaniko-project/executor:latest
+            args:
+            - --dockerfile=context/Dockerfile
+            - --build-arg=VARIANT=$(VARIANT)
+            - --build-arg=DEBUG=$(DEBUG)
+            - --custom-platform=linux/arm64
+            - --destination=cluster.local/non-existent
+            - --tar-path=/workspace/artifacts/node.tar
+            - --no-push
+            env:
+            - name: VARIANT
+              value: rpi5
+            - name: DEBUG
+              value: "false"
+            volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+            - name: context
+              mountPath: /workspace/context
+            - name: bundle
+              mountPath: /workspace/phxc.tar.gz
+              subPath: phxc.tar.gz
+            - name: cluster-config
+              mountPath: /workspace/cluster.json
+              readOnly: true
+            - name: secureboot
+              mountPath: /workspace/secureboot
+          containers:
+          - name: create-boot-image
+            image: ghcr.io/andsens/phxc-create-boot-image
+            args: [--upload, 'https://image-registry.phxc.svc.cluster.local:8021']
+            env:
+            - name: VARIANT
+              value: rpi5
+            volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+            - name: assets
+              mountPath: /assets
+            - name: rpi-config
+              mountPath: /rpi-config
+            - name: workspace
+              mountPath: /workspace
+            - name: secureboot
+              mountPath: /workspace/secureboot
+          volumes:
+          - name: context
+            configMap:
+              name: node
+          - name: scripts
+            configMap:
+              name: scripts
+              defaultMode: 0755
+          - name: assets
+            configMap:
+              name: assets
+          - name: cluster-config
+            hostPath:
+              path: /etc/phxc/cluster.json
+              type: File
+          - name: secureboot
+            secret:
+              secretName: secureboot
+          - name: rpi-config
+            configMap:
+              name: rpi-config
+          - name: bundle
+            configMap:
+              name: bundle
+          - name: workspace
+            emptyDir: {}

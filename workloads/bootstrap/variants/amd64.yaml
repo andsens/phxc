@@ -1,87 +1,90 @@
 apiVersion: batch/v1
-kind: Job
+kind: CronJob
 metadata:
   name: build-amd64
   labels:
     app.kubernetes.io/name: bootstrap
     app.kubernetes.io/component: amd64
 spec:
-  template:
-    metadata:
-      labels:
-        app.kubernetes.io/name: bootstrap
-        app.kubernetes.io/component: amd64
-        cluster.local/allow-apiserver-egress: "true"
-        cluster.local/allow-internet-egress: "true"
+  schedule: 0 3 * * 2
+  jobTemplate:
     spec:
-      restartPolicy: Never
-      nodeSelector:
-        kubernetes.io/arch: amd64
-      initContainers:
-      - name: kaniko
-        image: gcr.io/kaniko-project/executor:latest
-        args:
-        - --dockerfile=context/Dockerfile
-        - --build-arg=VARIANT=$(VARIANT)
-        - --build-arg=DEBUG=$(DEBUG)
-        - --custom-platform=linux/amd64
-        - --destination=cluster.local/non-existent
-        - --tar-path=/workspace/artifacts/node.tar
-        - --no-push
-        env:
-        - name: VARIANT
-          value: amd64
-        - name: DEBUG
-          value: "false"
-        volumeMounts:
-        - name: workspace
-          mountPath: /workspace
-        - name: context
-          mountPath: /workspace/context
-        - name: bundle
-          mountPath: /workspace/phxc.tar.gz
-          subPath: phxc.tar.gz
-        - name: cluster-config
-          mountPath: /workspace/cluster.json
-          readOnly: true
-        - name: secureboot
-          mountPath: /workspace/secureboot
-      containers:
-      - name: create-boot-image
-        image: ghcr.io/andsens/phxc-create-boot-image
-        args: [--upload, 'https://image-registry.phxc.svc.cluster.local:8021']
-        env:
-        - name: VARIANT
-          value: amd64
-        volumeMounts:
-        - name: scripts
-          mountPath: /scripts
-        - name: assets
-          mountPath: /assets
-        - name: workspace
-          mountPath: /workspace
-        - name: secureboot
-          mountPath: /workspace/secureboot
-      volumes:
-      - name: context
-        configMap:
-          name: node
-      - name: scripts
-        configMap:
-          name: scripts
-          defaultMode: 0755
-      - name: assets
-        configMap:
-          name: assets
-      - name: cluster-config
-        hostPath:
-          path: /etc/phxc/cluster.json
-          type: File
-      - name: secureboot
-        secret:
-          secretName: secureboot
-      - name: bundle
-        configMap:
-          name: bundle
-      - name: workspace
-        emptyDir: {}
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: bootstrap
+            app.kubernetes.io/component: amd64
+            cluster.local/allow-apiserver-egress: "true"
+            cluster.local/allow-internet-egress: "true"
+        spec:
+          restartPolicy: Never
+          nodeSelector:
+            kubernetes.io/arch: amd64
+          initContainers:
+          - name: kaniko
+            image: gcr.io/kaniko-project/executor:latest
+            args:
+            - --dockerfile=context/Dockerfile
+            - --build-arg=VARIANT=$(VARIANT)
+            - --build-arg=DEBUG=$(DEBUG)
+            - --custom-platform=linux/amd64
+            - --destination=cluster.local/non-existent
+            - --tar-path=/workspace/artifacts/node.tar
+            - --no-push
+            env:
+            - name: VARIANT
+              value: amd64
+            - name: DEBUG
+              value: "false"
+            volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+            - name: context
+              mountPath: /workspace/context
+            - name: bundle
+              mountPath: /workspace/phxc.tar.gz
+              subPath: phxc.tar.gz
+            - name: cluster-config
+              mountPath: /workspace/cluster.json
+              readOnly: true
+            - name: secureboot
+              mountPath: /workspace/secureboot
+          containers:
+          - name: create-boot-image
+            image: ghcr.io/andsens/phxc-create-boot-image
+            args: [--upload, 'https://image-registry.phxc.svc.cluster.local:8021']
+            env:
+            - name: VARIANT
+              value: amd64
+            volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+            - name: assets
+              mountPath: /assets
+            - name: workspace
+              mountPath: /workspace
+            - name: secureboot
+              mountPath: /workspace/secureboot
+          volumes:
+          - name: context
+            configMap:
+              name: node
+          - name: scripts
+            configMap:
+              name: scripts
+              defaultMode: 0755
+          - name: assets
+            configMap:
+              name: assets
+          - name: cluster-config
+            hostPath:
+              path: /etc/phxc/cluster.json
+              type: File
+          - name: secureboot
+            secret:
+              secretName: secureboot
+          - name: bundle
+            configMap:
+              name: bundle
+          - name: workspace
+            emptyDir: {}
