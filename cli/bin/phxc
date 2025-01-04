@@ -71,12 +71,12 @@ varname;for varname in "${varnames[@]}"; do unset "var_$varname";done;parse 15 \
 }
 
 setup() {
-  local kube_api_addr=https://$1:6443 ssh_keyname=$2 username=$3
+  local kube_api_hostname=$1 ssh_keyname=$2 username=$3
   local yesno kube_api_server_ca_crt_fp kube_api_server_ca_crt_fp
   trap 'error "Failed to configure, run with LOGLEVEL=verbose to see more detailed errors"' ERR
   mkdir -p "$CONFIG_DIR"
   # TOFU for Kubernetes API Server CA
-  kube_api_server_ca_crt=$(step certificate inspect --insecure --format pem "$kube_api_addr")
+  kube_api_server_ca_crt=$(step certificate inspect --insecure --format pem "https://$kube_api_hostname:6443")
   kube_api_server_ca_crt_fp=$(step certificate fingerprint <(printf "%s\n" "$kube_api_server_ca_crt"))
   if [[ -e "$KUBE_API_SERVER_CA_CRT" ]]; then
     info "Checking existing Kubernetes API server CA certificate"
@@ -97,16 +97,16 @@ setup() {
   info "Downloading Kubernetes API Client CA certificate"
   curl -sk --no-progress-meter https://k8s-hyperv-1.local:9001/roots.pem >"$KUBE_API_CLIENT_CA_CRT"
 
-  create_kube_config "$kube_api_addr" "$ssh_keyname" "$username"
+  create_kube_config "$kube_api_hostname" "$ssh_keyname" "$username"
 
   trust_ssh_host_key
 }
 
 create_kube_config() {
-  local kube_api_addr=$1 ssh_keyname=$2 username=$3 kube_cfg_path=$HOME/.kube/phxc.yaml kube_context=phxc kube_cluster=phxc kube_api_addr
+  local kube_api_hostname=$1 ssh_keyname=$2 username=$3 kube_cfg_path=$HOME/.kube/phxc.yaml kube_context=phxc kube_cluster=phxc
   info "Setting up %s" "${kube_cfg_path//"$HOME"/"~"}"
   kubectl config --kubeconfig "$kube_cfg_path" set-cluster "$kube_cluster" \
-    --server="$kube_api_addr" \
+    --server="https://$kube_api_hostname:6443" \
     --embed-certs \
     --certificate-authority="$KUBE_API_SERVER_CA_CRT"
   kubectl config --kubeconfig "$kube_cfg_path" set-credentials "$username@$kube_cluster" \
@@ -115,7 +115,7 @@ create_kube_config() {
     --exec-arg="get-kube-cert" \
     --exec-arg="-k$ssh_keyname" \
     --exec-arg="-u$username" \
-    --exec-arg="$kube_api_addr"
+    --exec-arg="$kube_api_hostname"
   kubectl config --kubeconfig "$HOME/.kube/config.yaml" set-context $kube_context \
     --cluster "$kube_cluster" --user "$username@$kube_cluster"
   rm -f "$CONFIG_DIR/$username.crt" "$CONFIG_DIR/$username.key"
