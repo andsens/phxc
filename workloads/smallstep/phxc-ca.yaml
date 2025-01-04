@@ -5,7 +5,7 @@ metadata:
   name: phxc-root
   labels:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: step-ca
+    app.kubernetes.io/component: phxc-ca
 spec:
   commonName: Phoenix Cluster Root CA
   issuerRef:
@@ -22,7 +22,7 @@ metadata:
   name: phxc-root
   labels:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: step-ca
+    app.kubernetes.io/component: phxc-ca
 spec:
   ca:
     secretName: phxc-root
@@ -33,7 +33,7 @@ metadata:
   name: phxc-intermediate
   labels:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: step-ca
+    app.kubernetes.io/component: phxc-ca
 spec:
   commonName: Phoenix Cluster Intermediate CA
   issuerRef:
@@ -47,18 +47,18 @@ spec:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: step-ca
+  name: phxc-ca
   labels:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: step-ca
+    app.kubernetes.io/component: phxc-ca
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: step-ca
+  name: phxc-ca
   labels:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: step-ca
+    app.kubernetes.io/component: phxc-ca
 rules:
 - apiGroups: [""]
   resources: [services]
@@ -79,25 +79,25 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: step-ca
+  name: phxc-ca
   labels:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: step-ca
+    app.kubernetes.io/component: phxc-ca
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: step-ca
+  name: phxc-ca
 subjects:
 - kind: ServiceAccount
-  name: step-ca
+  name: phxc-ca
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: step-ca
+  name: phxc-ca
   labels:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: step-ca
+    app.kubernetes.io/component: phxc-ca
 rules:
 - apiGroups: [certmanager.step.sm]
   resources: [stepclusterissuers]
@@ -110,17 +110,17 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: step-ca
+  name: phxc-ca
   labels:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: step-ca
+    app.kubernetes.io/component: phxc-ca
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: step-ca
+  name: phxc-ca
 subjects:
 - kind: ServiceAccount
-  name: step-ca
+  name: phxc-ca
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -154,15 +154,15 @@ roleRef:
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: step-ca
+  name: phxc-ca
   labels:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: step-ca
+    app.kubernetes.io/component: phxc-ca
 spec:
   endpointSelector:
     matchLabels:
       app.kubernetes.io/name: smallstep
-      app.kubernetes.io/component: step-ca
+      app.kubernetes.io/component: phxc-ca
   ingress:
   - toPorts:
     - ports:
@@ -173,36 +173,15 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: step-ca-external
+  name: phxc-ca
   labels:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: step-ca
-  annotations:
-    coredns.io/hostname: pki.DOMAIN.
-spec:
-  type: LoadBalancer
-  ipFamilies: [IPv4, IPv6]
-  ipFamilyPolicy: RequireDualStack
-  selector:
-    app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: step-ca
-  ports:
-  - name: api
-    port: 9000
-    targetPort: api
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: step-ca
-  labels:
-    app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: step-ca
+    app.kubernetes.io/component: phxc-ca
 spec:
   type: ClusterIP
   selector:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: step-ca
+    app.kubernetes.io/component: phxc-ca
   ports:
   - name: api
     port: 9000
@@ -211,35 +190,32 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: step-ca
+  name: phxc-ca
   labels:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: step-ca
+    app.kubernetes.io/component: phxc-ca
 spec:
-  serviceName: step-ca
+  serviceName: phxc-ca
   selector:
     matchLabels:
       app.kubernetes.io/name: smallstep
-      app.kubernetes.io/component: step-ca
+      app.kubernetes.io/component: phxc-ca
   template:
     metadata:
       labels:
         app.kubernetes.io/name: smallstep
-        app.kubernetes.io/component: step-ca
+        app.kubernetes.io/component: phxc-ca
         cluster.local/allow-apiserver-egress: "true"
     spec:
-      serviceAccountName: step-ca
+      serviceAccountName: phxc-ca
       securityContext:
         fsGroup: 1000
       initContainers:
-      - name: setup-step-ca-config
+      - name: setup-phxc-ca-config
         image: ghcr.io/andsens/phxc-utils
-        command: [/home/step/scripts/setup-step-ca-config.sh]
+        command: [/home/step/scripts/setup-phxc-ca-config.sh]
         securityContext:
           readOnlyRootFilesystem: true
-        env:
-        - name: CLUSTER_DOMAIN
-          value: cluster.domain
         volumeMounts:
         - name: root
           mountPath: /home/step/certs/root_ca.crt
@@ -314,7 +290,7 @@ spec:
       name: database
       labels:
         app.kubernetes.io/name: smallstep
-        app.kubernetes.io/component: step-ca
+        app.kubernetes.io/component: phxc-ca
     spec:
       storageClassName: longhorn
       accessModes: [ReadWriteOnce]

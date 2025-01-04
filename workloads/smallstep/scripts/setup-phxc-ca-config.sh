@@ -12,23 +12,17 @@ SSH_HOST_DIR=$STEPPATH/provisioner-secrets/ssh-host
 main() {
   create_step_issuer_provisioner
   create_ssh_host_provisioner
-  local lb_ipv4 lb_ipv6 step_issuer_jwk step_issuer_enc_key ssh_host_jwk ssh_host_enc_key
-  lb_ipv4=$(kubectl -n smallstep get svc step-ca-external -o=jsonpath='{.status.loadBalancer.ingress[0].ip}')
-  lb_ipv6=$(kubectl -n smallstep get svc step-ca-external -o=jsonpath='{.status.loadBalancer.ingress[1].ip}')
+  local step_issuer_jwk step_issuer_enc_key ssh_host_jwk ssh_host_enc_key
   step_issuer_jwk=$(cat "$STEP_ISSUER_DIR/pub.json")
   step_issuer_enc_key=$(jq -rcS '. | join(".")' "$STEP_ISSUER_DIR/priv.json")
   ssh_host_jwk=$(cat "$SSH_HOST_DIR/pub.json")
   ssh_host_enc_key=$(jq -rcS '. | join(".")' "$SSH_HOST_DIR/priv.json")
   info "Creating CA config"
   jq \
-    --arg ipv4 "$lb_ipv4" \
-    --arg ipv6 "$lb_ipv6" \
-    --arg domain "pki.$CLUSTER_DOMAIN" \
     --argjson step_issuer_jwk "$step_issuer_jwk" \
     --arg step_issuer_enc_key "$step_issuer_enc_key" \
     --argjson ssh_host_jwk "$ssh_host_jwk" \
     --arg ssh_host_enc_key "$ssh_host_enc_key" '
-    .dnsNames+=[$ipv4, $ipv6, $domain] |
     (.authority.provisioners[] | select(.name=="step-issuer") | .key) |= $step_issuer_jwk |
     (.authority.provisioners[] | select(.name=="step-issuer") | .encryptedKey) |= $step_issuer_enc_key |
     (.authority.provisioners[] | select(.name=="ssh-host") | .key) |= $ssh_host_jwk |
@@ -75,7 +69,7 @@ metadata:
   name: step-issuer
   namespace: %s
 spec:
-  url: https://step-ca.smallstep.svc.cluster.local:9000
+  url: https://phxc-ca.smallstep.svc.cluster.local:9000
   caBundle: %s
   provisioner:
     name: step-issuer

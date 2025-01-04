@@ -10,7 +10,7 @@ RemainAfterExit=yes
 ExecStart=bash -e
 StandardInputText=jq -n --arg fp "$(step certificate fingerprint /usr/local/share/ca-certificates/phxc-root.crt)" \
   '{ \
-    "ca-url": "https://step-ca.smallstep.svc.cluster.local:9000", \
+    "ca-url": "https://phxc-ca.smallstep.svc.cluster.local:9000", \
     "fingerprint": $fp, \
     "root": "/usr/local/share/ca-certificates/phxc-root.crt", \
     "redirect-url": "" \

@@ -1,6 +1,6 @@
 {
   "address": ":9000",
-  "dnsNames": ["step-ca.smallstep.svc.cluster.local", "127.0.0.1"],
+  "dnsNames": ["phxc-ca.smallstep.svc.cluster.local", "127.0.0.1"],
   "logger": {
     "format": "text"
   },

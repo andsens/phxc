@@ -148,7 +148,7 @@ spec:
         - name: config-rw
           mountPath: /home/step/config
       containers:
-      - name: step-certificates
+      - name: step-ca
         image: cr.step.sm/smallstep/step-ca:0.27.2
         command: [/usr/local/bin/step-ca]
         args: [/home/step/config/ca.json]
