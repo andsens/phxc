@@ -12,6 +12,7 @@ main() {
   DOC="phxc - Phoenix Cluster management tool
 Usage:
   phxc setup [-k KN -u UN] KUBEAPI_HOSTNAME
+  phxc secrets-backup
   phxc embed-configs IMAGE CLUSTER [NODE [RPIOTP]]
   phxc get-kube-cert [-k KN -u UN] KUBEAPI_HOSTNAME
 
@@ -28,28 +29,29 @@ Commands:
 # shellcheck disable=2016,2086,2317,1090,1091,2034
 docopt() { local v='2.0.2'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
-%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:596};usage=${DOC:39:153}
-digest=fb628;options=('-k --ssh-keyname 1' '-u --username 1');node_0(){ value \
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:618};usage=${DOC:39:175}
+digest=1d05e;options=('-k --ssh-keyname 1' '-u --username 1');node_0(){ value \
 __ssh_keyname 0;};node_1(){ value __username 1;};node_2(){ value \
 KUBEAPI_HOSTNAME a;};node_3(){ value IMAGE a;};node_4(){ value CLUSTER a;}
 node_5(){ value NODE a;};node_6(){ value RPIOTP a;};node_7(){ switch setup \
-a:setup;};node_8(){ switch embed_configs a:embed-configs;};node_9(){ switch \
-get_kube_cert a:get-kube-cert;};node_10(){ sequence 7 11 2;};node_11(){
-optional 0 1;};node_12(){ sequence 8 3 4 13;};node_13(){ optional 5 6;}
-node_14(){ sequence 9 11 2;};node_15(){ choice 10 12 14;};cat <<<' \
-docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2;printf "%s\n" \
-"${DOC:39:153}" >&2;exit 1;}';local varnames=(__ssh_keyname __username \
-KUBEAPI_HOSTNAME IMAGE CLUSTER NODE RPIOTP setup embed_configs get_kube_cert) \
-varname;for varname in "${varnames[@]}"; do unset "var_$varname";done;parse 15 \
-"$@";local p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset \
-"$p$varname";done;eval $p'__ssh_keyname=${var___ssh_keyname:-'\
-"'"'$USER@$HOST'"'"'};'$p'__username=${var___username:-system:admin};'$p'KUBEA'\
-'PI_HOSTNAME=${var_KUBEAPI_HOSTNAME:-};'$p'IMAGE=${var_IMAGE:-};'$p'CLUSTER=${'\
-'var_CLUSTER:-};'$p'NODE=${var_NODE:-};'$p'RPIOTP=${var_RPIOTP:-};'$p'setup=${'\
-'var_setup:-false};'$p'embed_configs=${var_embed_configs:-false};'$p'get_kube_'\
-'cert=${var_get_kube_cert:-false};';local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 \
-]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for varname in \
-"${varnames[@]}"; do declare -p "$p$varname";done;done;}
+a:setup;};node_8(){ switch secrets_backup a:secrets-backup;};node_9(){ switch \
+embed_configs a:embed-configs;};node_10(){ switch get_kube_cert a:get-kube-cert
+};node_11(){ sequence 7 12 2;};node_12(){ optional 0 1;};node_13(){ sequence 9 \
+3 4 14;};node_14(){ optional 5 6;};node_15(){ sequence 10 12 2;};node_16(){
+choice 11 8 13 15;};cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" \
+>&2;printf "%s\n" "${DOC:39:175}" >&2;exit 1;}';local varnames=(__ssh_keyname \
+__username KUBEAPI_HOSTNAME IMAGE CLUSTER NODE RPIOTP setup secrets_backup \
+embed_configs get_kube_cert) varname;for varname in "${varnames[@]}"; do unset \
+"var_$varname";done;parse 16 "$@";local p=${DOCOPT_PREFIX:-''};for varname in \
+"${varnames[@]}"; do unset "$p$varname";done;eval $p'__ssh_keyname=${var___ssh'\
+'_keyname:-'"'"'$USER@$HOST'"'"'};'$p'__username=${var___username:-system:admi'\
+'n};'$p'KUBEAPI_HOSTNAME=${var_KUBEAPI_HOSTNAME:-};'$p'IMAGE=${var_IMAGE:-};'\
+$p'CLUSTER=${var_CLUSTER:-};'$p'NODE=${var_NODE:-};'$p'RPIOTP=${var_RPIOTP:-};'\
+$p'setup=${var_setup:-false};'$p'secrets_backup=${var_secrets_backup:-false};'\
+$p'embed_configs=${var_embed_configs:-false};'$p'get_kube_cert=${var_get_kube_'\
+'cert:-false};';local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
+((;docopt_i>0;docopt_i--)); do for varname in "${varnames[@]}"; do declare -p \
+"$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' phxc`
   eval "$(docopt "$@")"
 
@@ -67,6 +69,8 @@ varname;for varname in "${varnames[@]}"; do unset "var_$varname";done;parse 15 \
     get_kube_client_cert "$KUBEAPI_HOSTNAME" "$__ssh_keyname" "$__username"
   elif $embed_configs; then
     embed_configs "$IMAGE" "$CLUSTER" "$NODE" "$RPIOTP"
+  elif $secrets_backup; then
+    secrets_backup
   fi
 }
 
@@ -205,6 +209,19 @@ embed_configs() {
     --device=/dev/kvm \
     --group-add "$(stat -c %g /dev/kvm)" \
     ghcr.io/andsens/phxc-embed-configs:sha-3e0c5ff
+}
+
+secrets_backup() {
+  printf -- "# Phoenix Cluster secrets backup, restore with \`kubectl apply -f backup.yaml\` then restart all nodes and run \`phxc setup\` again\n"
+  printf -- "---\n"
+  kubectl --context phxc -n smallstep get secret phxc-root -ojson | \
+    jq 'del(.metadata.annotations) | del(.metadata.labels) | del(.metadata.resourceVersion) | del(.metadata.uid)'
+  printf -- "---\n"
+  kubectl --context phxc -n smallstep get secret phxc-intermediate -ojson | \
+    jq 'del(.metadata.annotations) | del(.metadata.labels) | del(.metadata.resourceVersion) | del(.metadata.uid)'
+  printf -- "---\n"
+  kubectl --context phxc -n phxc get secret secureboot -ojson | \
+    jq 'del(.metadata.annotations) | del(.metadata.labels) | del(.metadata.resourceVersion) | del(.metadata.uid)'
 }
 
 main "$@"
