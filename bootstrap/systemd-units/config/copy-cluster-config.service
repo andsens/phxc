@@ -11,5 +11,5 @@ RequiredBy=configs-available.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=bash -e
+ExecStart=bash -eo pipefail
 StandardInputText=[[ -e /etc/phxc/cluster.json ]] || get-config /boot/phxc/cluster.json >/etc/phxc/cluster.json

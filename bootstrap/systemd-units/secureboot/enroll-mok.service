@@ -11,5 +11,5 @@ WantedBy=multi-user.target
 Type=oneshot
 RemainAfterExit=yes
 ExecCondition=bash -ec '[[ $(get-config /boot/phxc/node.json disk-encryption) =~ ^tpm|auto$ ]] || return 1'
-ExecStart=bash -e
+ExecStart=bash -eo pipefail
 StandardInputText=mokutil --import /usr/local/share/phxc/phxc-root.der --hash-file <(get-config /etc/phxc/cluster.json admin.pwhash)

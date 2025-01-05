@@ -9,7 +9,7 @@ WantedBy=multi-user.target
 [Service]
 Type=oneshot
 ExecCondition=bash -ec '[[ $(get-config /boot/phxc/node.json k3s.hostname) =~ ^[^.]+(\\.local)?$ ]] || exit 1'
-ExecStart=bash -e
+ExecStart=bash -eo pipefail
 StandardInputText=hostname=$(get-config -q /boot/phxc/node.json k3s.hostname); \
                   if [[ ${hostname%%%%'.'*} = %l ]]; then printf "error: server hostname matches current hostname\\n" >&2; exit 1; fi; \
                   ip=$(getent hosts "$hostname" | cut -f1 -d' '); \

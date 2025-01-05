@@ -10,6 +10,6 @@ ExecCondition=bash -ec '[ $(get-config -q /boot/phxc/node.json k3s.mode) = serve
 Environment=HOME=/root KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 Restart=on-failure
 RestartSec=30
-ExecStart=bash -e
+ExecStart=bash -eo pipefail
 StandardInputText=kustomize build --enable-alpha-plugins --enable-exec "/usr/local/lib/upkg/.upkg/phxc/workloads/%i" | \
   kpt live apply --request-timeout 5m -

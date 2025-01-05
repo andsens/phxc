@@ -12,7 +12,7 @@ WantedBy=sysinit.target
 Type=oneshot
 RemainAfterExit=yes
 ExecCondition=get-config /boot/phxc/node.json fixed-ips
-ExecStart=bash -e
+ExecStart=bash -eo pipefail
 StandardInputText=for macaddr in $(get-config /boot/phxc/node.json | jq -r '(.["fixed-ips"] // {}) | keys[]'); do \
     get-config /boot/phxc/node.json | jq -r --arg macaddr "$macaddr" '\
       ([.["fixed-ips"][$macaddr][] | "Address=\\(.)"] | join("\\n")) as $addrs | \

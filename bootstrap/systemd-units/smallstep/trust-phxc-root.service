@@ -7,6 +7,6 @@ After=workload-ready@smallstep.service configure-resolved.service
 Type=oneshot
 RemainAfterExit=yes
 Environment=HOME=/root
-ExecStart=bash -e
+ExecStart=bash -eo pipefail
 StandardInputText=kubectl -n smallstep get configmap phxc-root -ojsonpath='{.data.phxc-root\\.crt}' >/usr/local/share/ca-certificates/phxc-root.crt; \
   openssl x509 -in /usr/local/share/ca-certificates/phxc-root.crt -outform der -out /usr/local/share/phxc/phxc-root.der

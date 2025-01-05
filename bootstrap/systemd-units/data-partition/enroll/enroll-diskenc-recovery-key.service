@@ -13,7 +13,7 @@ WantedBy=diskenc-keys-enrolled.target
 Type=oneshot
 RemainAfterExit=yes
 UMask=0077
-ExecStart=bash -e
+ExecStart=bash -eo pipefail
 StandardInputText=systemd-cryptenroll \
   --unlock-key-file /run/initramfs/disk-encryption.key \
   --recovery-key --wipe-slot=1 \

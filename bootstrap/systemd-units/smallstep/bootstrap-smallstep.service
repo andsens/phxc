@@ -7,7 +7,7 @@ AssertPathExists=/usr/local/share/ca-certificates/phxc-root.crt
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=bash -e
+ExecStart=bash -eo pipefail
 StandardInputText=jq -n --arg fp "$(step certificate fingerprint /usr/local/share/ca-certificates/phxc-root.crt)" \
   '{ \
     "ca-url": "https://phxc-ca.smallstep.svc.cluster.local:9000", \
