@@ -293,7 +293,7 @@ restore_secrets() {
   info "Trusting new restored certificate on all nodes and resigning SSH host keys"
   local hostname
   for hostname in $(kubectl --context phxc get nodes -ojsonpath='{.items[*].metadata.labels.kubernetes\.io/hostname}'); do
-    LC_ALL=C ssh -oStrictHostKeyChecking=accept-new "admin@$hostname" -- sudo systemctl restart --no-block workload-ready@smallstep workload-ready@image-registry trust-phxc-root sign-ssh-host-keys
+    LC_ALL=C ssh -oStrictHostKeyChecking=accept-new "admin@$hostname" -- sudo systemctl restart --no-block trust-phxc-root sign-ssh-host-keys
   done
 }
 
