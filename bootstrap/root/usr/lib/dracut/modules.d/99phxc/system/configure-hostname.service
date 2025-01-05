@@ -16,4 +16,4 @@ ExecStart=sh -e
 StandardInputText=hostname=$(jq -r .hostname /boot/phxc/node.json); \
                   printf "%%s\\n" "$hostname" >/sysroot/etc/hostname; \
                   hostsFile=$(grep -vF 127.0.1.1 /sysroot/etc/hosts); \
-                  printf "127.0.1.1       %%s %%s\\n%%s\\n" "$hostname" "${hostname%%'.'*}" "$hostsFile" >/sysroot/etc/hosts
+                  printf "127.0.1.1       %%s %%s\\n%%s\\n" "$hostname" "${hostname%%%%'.'*}" "$hostsFile" >/sysroot/etc/hosts
