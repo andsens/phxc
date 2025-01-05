@@ -114,7 +114,8 @@ setup() {
   local yesno remote_kube_api_server_ca_fp kube_api_server_ca_fp
   trap 'error "Failed to configure, run with LOGLEVEL=verbose to see more detailed errors"' ERR
   mkdir -p "$CONFIG_DIR"
-  remote_kube_api_server_ca=$(LC_ALL=C ssh -oStrictHostKeyChecking=off -oUserKnownHostsFile=/dev/null "admin@$kube_api_hostname" -- sudo cat /var/lib/rancher/k3s/agent/server-ca.crt)
+  remote_kube_api_server_ca=$(LC_ALL=C ssh -oStrictHostKeyChecking=off -oUserKnownHostsFile=/dev/null "admin@$kube_api_hostname" -- \
+    sudo cat /var/lib/rancher/k3s/agent/server-ca.crt)
   # TOFU for Kubernetes API Server CA
   remote_kube_api_server_ca_fp=$(step certificate fingerprint /dev/stdin <<<"$remote_kube_api_server_ca")
   if [[ -e "$KUBE_API_SERVER_CA_CRT" ]]; then
@@ -134,7 +135,7 @@ setup() {
   printf "%s\n" "$remote_kube_api_server_ca" >"$KUBE_API_SERVER_CA_CRT"
 
   info "Downloading Kubernetes API Client CA certificate"
-  curl -sk --no-progress-meter https://k8s-hyperv-1.local:9001/roots.pem >"$KUBE_API_CLIENT_CA_CRT"
+  curl -k --no-progress-meter "https://$kube_api_hostname:9001/roots.pem" >"$KUBE_API_CLIENT_CA_CRT" 2> >(LOGPROGRAM=curl pipe_verbose)
 
   create_kube_config "$kube_api_hostname" "$ssh_keyname" "$username"
 
