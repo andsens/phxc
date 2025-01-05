@@ -143,7 +143,9 @@ spec:
     - ports:
       - port: "9000"
     fromEntities:
-    - all
+    - host
+    - remote-node
+    - cluster
 ---
 apiVersion: v1
 kind: Service
