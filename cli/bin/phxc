@@ -109,27 +109,27 @@ docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
 
 setup() {
   local kube_api_hostname=$1 ssh_keyname=$2 username=$3
-  local yesno kube_api_server_ca_crt_fp kube_api_server_ca_crt_fp
+  local yesno remote_kube_api_server_ca_fp kube_api_server_ca_fp
   trap 'error "Failed to configure, run with LOGLEVEL=verbose to see more detailed errors"' ERR
   mkdir -p "$CONFIG_DIR"
+  remote_kube_api_server_ca=$(LC_ALL=C ssh -oStrictHostKeyChecking=off -oUserKnownHostsFile=/dev/null "admin@$kube_api_hostname" -- sudo cat /var/lib/rancher/k3s/agent/server-ca.crt)
   # TOFU for Kubernetes API Server CA
-  kube_api_server_ca_crt=$(step certificate inspect --insecure --format pem "https://$kube_api_hostname:6443")
-  kube_api_server_ca_crt_fp=$(step certificate fingerprint <(printf "%s\n" "$kube_api_server_ca_crt"))
+  remote_kube_api_server_ca_fp=$(step certificate fingerprint /dev/stdin <<<"$remote_kube_api_server_ca")
   if [[ -e "$KUBE_API_SERVER_CA_CRT" ]]; then
     info "Checking existing Kubernetes API server CA certificate"
-    local remote_kube_api_server_ca_crt_fp
-    remote_kube_api_server_ca_crt_fp=$(step certificate fingerprint "$KUBE_API_SERVER_CA_CRT")
-    if [[ $kube_api_server_ca_crt_fp != "$remote_kube_api_server_ca_crt_fp" ]]; then
-      printf "Saved fingerprint:  %s\n" "$kube_api_server_ca_crt_fp" >&2
-      printf "Remote fingerprint: %s\n" "$remote_kube_api_server_ca_crt_fp" >&2
+    local kube_api_server_ca_fp
+    kube_api_server_ca_fp=$(step certificate fingerprint "$KUBE_API_SERVER_CA_CRT")
+    if [[ $remote_kube_api_server_ca_fp != "$kube_api_server_ca_fp" ]]; then
+      printf "Saved fingerprint:  %s\n" "$remote_kube_api_server_ca_fp" >&2
+      printf "Remote fingerprint: %s\n" "$kube_api_server_ca_fp" >&2
       error "The saved Kubernetes API server CA certificate fingerprint does not match the one from the server!"
       [[ $(read -rp 'Are you sure you want to continue? [y/N]' yesno; echo "$yesno") =~ ^[Yy](es)?$ ]] || { trap '' ERR; fatal "User aborted operation"; }
     fi
   else
-    warning "No trust has been established with this Kubernetes cluster yet.\nThe root certificate fingerprint is %s" "$kube_api_server_ca_crt_fp"
+    warning "No trust has been established with this Kubernetes cluster yet.\nThe root certificate fingerprint is %s" "$remote_kube_api_server_ca_fp"
     [[ $(read -rp 'Do you want to establish that trust now? [y/N]' yesno; echo "$yesno") =~ ^[Yy](es)?$ ]] || { trap '' ERR; fatal "User aborted operation"; }
   fi
-  printf "%s\n" "$kube_api_server_ca_crt" >"$KUBE_API_SERVER_CA_CRT"
+  printf "%s\n" "$remote_kube_api_server_ca" >"$KUBE_API_SERVER_CA_CRT"
 
   info "Downloading Kubernetes API Client CA certificate"
   curl -sk --no-progress-meter https://k8s-hyperv-1.local:9001/roots.pem >"$KUBE_API_CLIENT_CA_CRT"
