@@ -1,0 +1,8 @@
+[Unit]
+Description=Keep the IP of the k3s server hostname up-to-date
+
+[Install]
+WantedBy=timers.target
+
+[Timer]
+OnCalendar=*-*-* *:*:00

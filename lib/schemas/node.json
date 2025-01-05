@@ -28,10 +28,10 @@
                 "server"
               ]
             },
-            "url": {
-              "description": "The URL of a control-plane node for k3s to connect to.",
+            "hostname": {
+              "description": "The hostname of a control-plane node for k3s to connect to.",
               "type": "string",
-              "format": "uri"
+              "format": "hostname"
             },
             "token": {
               "description": "The k3s joining token generated with `k3s token create`. May not be a server token.",
@@ -41,7 +41,7 @@
           },
           "required": [
             "mode",
-            "url",
+            "hostname",
             "token"
           ],
           "additionalProperties": false

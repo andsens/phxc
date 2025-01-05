@@ -14,6 +14,6 @@ ExecCondition=bash -ec 'get-config -q /boot/phxc/node.json k3s.token >/dev/null'
 UMask=0077
 ExecStart=bash -eo pipefail
 StandardInputText=jq -n \
-  --arg k3s_url "$(get-config /boot/phxc/node.json k3s.url)" \
-  --arg k3s_token  "$(get-config /boot/phxc/node.json k3s.token)" \
+  --arg k3s_url "https://$(get-config /boot/phxc/node.json k3s.hostname):6443" \
+  --arg k3s_token "$(get-config /boot/phxc/node.json k3s.token)" \
   '{"server": $k3s_url, "token": $k3s_token}' >/etc/rancher/k3s/config.yaml.d/node.yaml
