@@ -127,8 +127,10 @@ try_reboot() {
     info "Delaying restart, there are nodes that are unschedulable:\n%s" "$(other_unschedulable_nodes)"
     return 0
   fi
-  kubectl drain --ignore-daemonsets --delete-emptydir-data --timeout 120s "$HOSTNAME" || \
+  if ! kubectl drain --ignore-daemonsets --delete-emptydir-data --timeout 120s "$HOSTNAME"; then
+    warning "Draining with eviction failed after 2 minutes, now draining without eviction"
     kubectl drain --ignore-daemonsets --delete-emptydir-data --disable-eviction  "$HOSTNAME"
+  fi
   info "Node drained, rebooting in 5 seconds"
   if [[ $VARIANT = rpi* ]]; then
     systemd-run --on-active=5 --timer-property=AccuracySec=0 /usr/sbin/reboot "0 tryboot"
