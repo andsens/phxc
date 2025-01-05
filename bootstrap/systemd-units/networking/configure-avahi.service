@@ -1,0 +1,16 @@
+[Unit]
+Description=Configure avahi-daemon to only join non-k8s network interfaces
+DefaultDependencies=no
+After=systemd-networkd.service
+Before=avahi-daemon.service
+
+[Install]
+WantedBy=sysinit.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=bash -eo pipefail
+StandardInputText=non_k8s_nics=$(ip -json link | jq -r '[.[] | .ifname | select((. == "lo" or startswith("lxc") or startswith("cilium")) | not)] | join(",")'); \
+  printf "[server]\\nuse-ipv4=yes\\nuse-ipv6=yes\\nratelimit-interval-usec=1000000\\nratelimit-burst=1000\\nallow-interfaces=%%s\\n[wide-area]\\nenable-wide-area=yes\\n[publish]\\npublish-hinfo=no\\npublish-workstation=no\\n" \
+  "$non_k8s_nics" >/etc/avahi/avahi-daemon.conf
