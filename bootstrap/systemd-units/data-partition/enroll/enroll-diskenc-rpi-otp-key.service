@@ -2,11 +2,11 @@
 Description=Enrolls a disk encryption key derived from the RPi OTP memory
 Requires=boot.mount data-partition.target
 After=boot.mount data-partition.target init-rpi-otp.service
-Before=diskenc-keys-enrolled.target
+Before=secure-diskenc-key-enrolled.target
 ConditionPathExists=/run/initramfs/disk-encryption.key
 
 [Install]
-WantedBy=diskenc-keys-enrolled.target
+WantedBy=secure-diskenc-key-enrolled.target
 
 [Service]
 Type=oneshot

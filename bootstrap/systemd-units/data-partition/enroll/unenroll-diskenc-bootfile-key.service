@@ -1,8 +1,7 @@
 [Unit]
-Description=Enrolls a TPM-bound disk encryption key
-Requires=boot.mount diskenc-keys-enrolled.target
-After=boot.mount diskenc-keys-enrolled.target
-ConditionPathExists=/boot/phxc/node.json
+Description=Unenrolls the bootfile disk encryption key
+Requires=boot.mount secure-diskenc-key-enrolled.target upload-diskenc-recovery-key.service
+After=boot.mount secure-diskenc-key-enrolled.target upload-diskenc-recovery-key.service
 ConditionPathExists=/boot/phxc/disk-encryption.key
 
 [Install]
@@ -11,9 +10,7 @@ WantedBy=multi-user.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecCondition=bash -ec 'cryptsetup luksDump --dump-json-metadata /dev/disk/by-partuuid/${DATA_UUID} | jq -re ".keyslots[\"2\"] != null"'
 ExecStart=cryptsetup luksRemoveKey \
-  --key-file /var/lib/phxc/disk-encryption-recovery.key \
   /dev/disk/by-partuuid/${DATA_UUID} \
   /boot/phxc/disk-encryption.key
 ExecStartPost=rm /boot/phxc/disk-encryption.key
