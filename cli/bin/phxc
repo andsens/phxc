@@ -12,7 +12,7 @@ main() {
   DOC="phxc - Phoenix Cluster management tool
 Usage:
   phxc setup [-k KN -u UN] KUBEAPI_HOSTNAME
-  phxc bootstrap [--wait] VARIANT
+  phxc bootstrap [--wait|--update] VARIANT
   phxc update-nodes (all | NODE...)
   phxc backup-secrets [FILE]
   phxc restore-secrets [FILE]
@@ -22,7 +22,8 @@ Usage:
 Options:
   -u --username=UN     K8S username to authenticate as [default: system:admin]
   -k --ssh-keyname=KN  SSH key to use for authentication [default: \$USER@\$HOST]
-  -w --wait            Wait for completion
+  --wait               Wait for completion
+  --update             Update all nodes when completed
 
 Commands:
   setup           - Setup the Phoenix Cluster root trust and configure kubectl
@@ -37,41 +38,42 @@ Commands:
 # shellcheck disable=2016,2086,2317,1090,1091,2034,2154
 docopt() { local v='2.0.2'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
-%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:1043};usage=${DOC:39:282}
-digest=1fdaf;options=('-k --ssh-keyname 1' '-u --username 1' '-w --wait 0')
-node_0(){ value __ssh_keyname 0;};node_1(){ value __username 1;};node_2(){
-switch __wait 2;};node_3(){ value KUBEAPI_HOSTNAME a;};node_4(){ value VARIANT a
-};node_5(){ value NODE a true;};node_6(){ value FILE a;};node_7(){ value IMAGE a
-};node_8(){ value CLUSTER a;};node_9(){ value RPIOTP a;};node_10(){ switch \
-setup a:setup;};node_11(){ switch bootstrap a:bootstrap;};node_12(){ switch \
-update_nodes a:update-nodes;};node_13(){ switch all a:all;};node_14(){ switch \
-backup_secrets a:backup-secrets;};node_15(){ switch restore_secrets \
-a:restore-secrets;};node_16(){ switch embed_configs a:embed-configs;};node_17(){
-switch get_kube_cert a:get-kube-cert;};node_18(){ sequence 10 19 3;};node_19(){
-optional 0 1;};node_20(){ sequence 11 21 4;};node_21(){ optional 2;};node_22(){
-sequence 12 23;};node_23(){ choice 13 24;};node_24(){ repeatable 5;};node_25(){
-sequence 14 26;};node_26(){ optional 6;};node_27(){ sequence 15 26;};node_28(){
-sequence 16 7 8 29;};node_29(){ optional 5 9;};node_30(){ sequence 17 19 3;}
-node_31(){ choice 18 20 22 25 27 28 30;};cat <<<' docopt_exit() { [[ -n $1 ]] \
-&& printf "%s\n" "$1" >&2;printf "%s\n" "${DOC:39:282}" >&2;exit 1;}';local \
-varnames=(__ssh_keyname __username __wait KUBEAPI_HOSTNAME VARIANT NODE FILE \
-IMAGE CLUSTER RPIOTP setup bootstrap update_nodes all backup_secrets \
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:1107};usage=${DOC:39:291}
+digest=f5648;options=('-k --ssh-keyname 1' '-u --username 1' ' --wait 0' ' --u'\
+'pdate 0');node_0(){ value __ssh_keyname 0;};node_1(){ value __username 1;}
+node_2(){ switch __wait 2;};node_3(){ switch __update 3;};node_4(){ value \
+KUBEAPI_HOSTNAME a;};node_5(){ value VARIANT a;};node_6(){ value NODE a true;}
+node_7(){ value FILE a;};node_8(){ value IMAGE a;};node_9(){ value CLUSTER a;}
+node_10(){ value RPIOTP a;};node_11(){ switch setup a:setup;};node_12(){
+switch bootstrap a:bootstrap;};node_13(){ switch update_nodes a:update-nodes;}
+node_14(){ switch all a:all;};node_15(){ switch backup_secrets a:backup-secrets
+};node_16(){ switch restore_secrets a:restore-secrets;};node_17(){ switch \
+embed_configs a:embed-configs;};node_18(){ switch get_kube_cert a:get-kube-cert
+};node_19(){ sequence 11 20 4;};node_20(){ optional 0 1;};node_21(){ sequence \
+12 22 5;};node_22(){ optional 23;};node_23(){ choice 2 3;};node_24(){ sequence \
+13 25;};node_25(){ choice 14 26;};node_26(){ repeatable 6;};node_27(){
+sequence 15 28;};node_28(){ optional 7;};node_29(){ sequence 16 28;};node_30(){
+sequence 17 8 9 31;};node_31(){ optional 6 10;};node_32(){ sequence 18 20 4;}
+node_33(){ choice 19 21 24 27 29 30 32;};cat <<<' docopt_exit() { [[ -n $1 ]] \
+&& printf "%s\n" "$1" >&2;printf "%s\n" "${DOC:39:291}" >&2;exit 1;}';local \
+varnames=(__ssh_keyname __username __wait __update KUBEAPI_HOSTNAME VARIANT \
+NODE FILE IMAGE CLUSTER RPIOTP setup bootstrap update_nodes all backup_secrets \
 restore_secrets embed_configs get_kube_cert) varname;for varname in \
-"${varnames[@]}"; do unset "var_$varname";done;parse 31 "$@";local \
+"${varnames[@]}"; do unset "var_$varname";done;parse 33 "$@";local \
 p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset "$p$varname"
 done;if declare -p var_NODE >/dev/null 2>&1; then eval $p'NODE=("${var_NODE[@]'\
 '}")';else eval $p'NODE=()';fi;eval $p'__ssh_keyname=${var___ssh_keyname:-'\
 "'"'$USER@$HOST'"'"'};'$p'__username=${var___username:-system:admin};'$p'__wai'\
-'t=${var___wait:-false};'$p'KUBEAPI_HOSTNAME=${var_KUBEAPI_HOSTNAME:-};'$p'VAR'\
-'IANT=${var_VARIANT:-};'$p'FILE=${var_FILE:-};'$p'IMAGE=${var_IMAGE:-};'$p'CLU'\
-'STER=${var_CLUSTER:-};'$p'RPIOTP=${var_RPIOTP:-};'$p'setup=${var_setup:-false'\
-'};'$p'bootstrap=${var_bootstrap:-false};'$p'update_nodes=${var_update_nodes:-'\
-'false};'$p'all=${var_all:-false};'$p'backup_secrets=${var_backup_secrets:-fal'\
-'se};'$p'restore_secrets=${var_restore_secrets:-false};'$p'embed_configs=${var'\
-'_embed_configs:-false};'$p'get_kube_cert=${var_get_kube_cert:-false};';local \
-docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
-((;docopt_i>0;docopt_i--)); do for varname in "${varnames[@]}"; do declare -p \
-"$p$varname";done;done;}
+'t=${var___wait:-false};'$p'__update=${var___update:-false};'$p'KUBEAPI_HOSTNA'\
+'ME=${var_KUBEAPI_HOSTNAME:-};'$p'VARIANT=${var_VARIANT:-};'$p'FILE=${var_FILE'\
+':-};'$p'IMAGE=${var_IMAGE:-};'$p'CLUSTER=${var_CLUSTER:-};'$p'RPIOTP=${var_RP'\
+'IOTP:-};'$p'setup=${var_setup:-false};'$p'bootstrap=${var_bootstrap:-false};'\
+$p'update_nodes=${var_update_nodes:-false};'$p'all=${var_all:-false};'$p'backu'\
+'p_secrets=${var_backup_secrets:-false};'$p'restore_secrets=${var_restore_secr'\
+'ets:-false};'$p'embed_configs=${var_embed_configs:-false};'$p'get_kube_cert=$'\
+'{var_get_kube_cert:-false};';local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && \
+docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for varname in "${varnames[@]}"; \
+do declare -p "$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' phxc`
   eval "$(docopt "$@")"
 
@@ -94,7 +96,7 @@ docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
   elif $restore_secrets; then
     restore_secrets "$FILE"
   elif $bootstrap; then
-    bootstrap "$VARIANT" "$__wait"
+    bootstrap "$VARIANT" "$__wait" "$__update"
   elif $update_nodes; then
     nodes=()
     if $all; then
@@ -302,38 +304,48 @@ clean_cert_secret() {
 }
 
 bootstrap() {
-  local variant=$1 wait=$2 job_name
+  local variant=$1 wait=$2 update=$3 job_name
   job_name="build-$variant-$(date --utc +%Y%m%d%H%M%S)"
   info "Creating job %s" "$job_name"
   kubectl --context phxc -n phxc create job --from="cronjob/build-$variant" "$job_name"
-  if $wait; then
+  if $wait || $update; then
     info "Waiting for %s to complete" "$job_name"
     kubectl --context phxc -n phxc wait --timeout=-1s --for=condition=Complete job "$job_name"
+    info "Bootstrap job for %s completed" "$variant"
+  fi
+  # shellcheck disable=SC2046
+  if $update; then
+    info "Updating all nodes"
+    update_nodes $(kubectl --context phxc get nodes -ojsonpath='{.items[*].metadata.name}')
   fi
 }
 
 update_nodes() {
-  local nodes=("$@") node hostname logpid start_time
-  if ! kubectl get node -ojson | jq -e '.items[] | select(.spec.unschedulable) | length > 0' 2>&1 | LOGPROGRAM=step pipe_verbose; then
+  local nodes=("$@") node hostname skipped_nodes=() unschedulable
+  if ! kubectl get node -ojson | jq -e '[.items[] | select(.spec.unschedulable)] | length == 0' >/dev/null; then
     fatal "Unable to update any nodes. Some nodes are currently unschedulable"
   fi
   for node in "${nodes[@]}"; do
     hostname=$(kubectl --context phxc get node "$node" -ojsonpath='{.metadata.labels.kubernetes\.io/hostname}')
     info "Updating %s" "$node"
-    start_time=$(date "+%Y-%m-%d %H:%M:%S %z")
     LC_ALL=C ssh "admin@$hostname" -- sudo systemctl start --no-block update-boot
-    LC_ALL=C ssh "admin@$hostname" -- journalctl -fu update-boot --since="\"$start_time\" --output=cat" & logpid=$!
     # shellcheck disable=SC2064
-    trap "kill $logpid" EXIT
-    LC_ALL=C ssh "admin@$node" -- bash -c '"while [[ $(systemctl show -p SubState --value update-boot) != dead ]]; do sleep 1; done"'
-    kill $logpid
-    trap "" EXIT
+    LC_ALL=C ssh "admin@$node" -- bash -ec '"start_time=\$(date \"+%Y-%m-%d %H:%M:%S %z\")
+      journalctl -fu update-boot --since=\"\$start_time\" --output=cat & trap \"kill \$!\" EXIT
+      sudo systemctl start update-boot
+      sleep 2"' # Wait until the last few log entries are flushed
+    if [[ $(kubectl get node "$node" -ojsonpath='{.spec.unschedulable}' 2>/dev/null) != 'true' ]]; then
+      skipped_nodes+=("$node")
+      continue
+    fi
     # Node may be single master
-    until kubectl --context phxc -n phxc wait --timeout=-1s --for=condition=Ready node "$node"; do
-      info "Wait command failed, retrying in 10s (this may happen if the node that is updating is part of the control-plane)"
+    until unschedulable=$(kubectl get node "$node" -ojsonpath='{.spec.unschedulable}' 2>/dev/null) && [[ $unschedulable != 'true' ]]; do
       sleep 10
     done
   done
+  if [[ ${#skipped_nodes[@]} -gt 0 ]]; then
+    warning "Some nodes were not updated, see the logs above for details. The skipped nodes were:\n%s" "${skipped_nodes[*]}"
+  fi
 }
 
 main "$@"
