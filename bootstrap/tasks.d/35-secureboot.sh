@@ -3,6 +3,8 @@
 if [[ $VARIANT != rpi* ]]; then
   PACKAGES+=(
     mokutil # For enrolling the secureboot cert
+    libtss2-rc0
+    libtss2-esys-3.0.2-0t64
   )
 fi
 
