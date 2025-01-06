@@ -252,6 +252,14 @@ backup_secrets() {
   local dest=$1 backup
   backup=$(
     printf -- "# Phoenix Cluster secrets backup, restore with \`phxc restore secrets backup.yaml\`\n"
+    printf -- "# Disk encryption recovery keys:\n"
+    for secret in $(kubectl --context phxc -n phxc get secret -oname); do
+      if [[ $secret = secret/diskenc-recovery-* ]]; then
+        printf -- "# %s: %s\n" \
+          "${secret#'secret/diskenc-recovery-'}" \
+          "$(kubectl --context phxc -n phxc get "$secret" -ojsonpath='{.data.disk-encryption-recovery\.key}' | base64 -d)"
+      fi
+    done
     printf -- "---\n"
     kubectl --context phxc -n smallstep get secret phxc-root -ojson | clean_cert_secret
     printf -- "---\n"
