@@ -78,7 +78,7 @@ spec:
               name: assets
           - name: cluster-config
             hostPath:
-              path: /etc/phxc/cluster.json
+              path: /boot/phxc/cluster.json
               type: File
           - name: secureboot
             secret:

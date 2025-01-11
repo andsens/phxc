@@ -1,16 +1,15 @@
 [Unit]
 # See https://github.com/k3s-io/k3s/issues/2085
 Description=Pin the IP of the K3S server hostname in /etc/hosts if it is an mDNS hostname
-ConditionPathExists=/boot/phxc/node.json
 
 [Install]
 WantedBy=multi-user.target
 
 [Service]
 Type=oneshot
-ExecCondition=bash -ec '[[ $(get-config /boot/phxc/node.json k3s.hostname) =~ ^[^.]+(\\.local)?$ ]] || exit 1'
+ExecCondition=bash -ec '[[ $(get-config node k3s.hostname) =~ ^[^.]+(\\.local)?$ ]] || exit 1'
 ExecStart=bash -eo pipefail
-StandardInputText=hostname=$(get-config -q /boot/phxc/node.json k3s.hostname); \
+StandardInputText=hostname=$(get-config -q node k3s.hostname); \
                   if [[ ${hostname%%%%'.'*} = %l ]]; then printf "error: server hostname matches current hostname\\n" >&2; exit 1; fi; \
                   ip=$(getent hosts "$hostname" | cut -f1 -d' '); \
                   hostsFile=$(grep -vF "$hostname" /etc/hosts); \

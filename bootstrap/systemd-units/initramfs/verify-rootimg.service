@@ -1,0 +1,11 @@
+[Unit]
+Description=Verify the shasum of the root image
+DefaultDependencies=no
+Requires=boot.mount
+After=boot.mount
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=sh -c 'echo "${ROOT_SHA256}  /boot/phxc/root.${ROOT_SHA256}.img" | sha256sum -c -'
+ExecStartPost=sh -c 'echo "${ROOT_SHA256}" >/run/initramfs/root.img.sha256'

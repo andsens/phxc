@@ -21,8 +21,8 @@ EOR
 RUN <<EOR
 apt-get -y update
 apt-get -y install --no-install-recommends \
-  squashfs-tools guestfish ipxe-qemu dosfstools linux-image-${TARGETARCH} python3-venv binutils curl \
-  systemd-ukify systemd-boot-efi shim-signed python3-pefile sbsigntool gettext
+  guestfish ipxe-qemu dosfstools linux-image-${TARGETARCH} python3-venv binutils curl \
+  systemd-ukify shim-signed python3-pefile sbsigntool gettext
 python3 -m venv /signify
 /signify/bin/pip3 install \
   signify==0.6.1 pyasn1==0.6.0 docopt==0.6.2 \

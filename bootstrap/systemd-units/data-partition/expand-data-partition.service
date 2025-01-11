@@ -6,4 +6,7 @@ Before=systemd-cryptsetup@data.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=parted -sfa optimal -- /dev/sda resizepart 2 100%
+ExecStart=bash -eo pipefail
+StandardInputText=until diskpath=$(lsblk -JO | jq -re '.blockdevices[] | select(.ptuuid=="${DISK_UUID}") | .path'); do sleep .1; done; \
+                  parted -sfa optimal -- "$diskpath" resizepart 2 100%
+# cryptsetup resize

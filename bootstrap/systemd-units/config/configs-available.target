@@ -1,7 +1,0 @@
-[Unit]
-Description=Configuration files are available for querying with get-config
-DefaultDependencies=no
-Before=basic.target
-
-[Install]
-RequiredBy=basic.target

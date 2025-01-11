@@ -10,7 +10,7 @@ WantedBy=multi-user.target
 Type=oneshot
 ExecStart=bash -eo pipefail
 StandardInputText=kubedns_ip=$(kubectl -n kube-system get svc kube-dns -ojsonpath='{.spec.clusterIPs[*]}'); \
-  cluster_domain=$(get-config /etc/phxc/cluster.json domain); \
+  cluster_domain=$(get-config cluster domain); \
   printf "[Resolve]\\nDNS=%%s\\nDomains=~%%s ~cluster.local\\n" "$kubedns_ip" "$cluster_domain" \
   >/etc/systemd/resolved.conf.d/cluster-domain.conf
 ExecStartPost=systemctl reload systemd-resolved

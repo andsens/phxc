@@ -1,0 +1,16 @@
+[Unit]
+Description=Use the TPM to decrypt the data partition
+DefaultDependencies=no
+Requires=sysroot.mount
+After=sysroot.mount
+ConditionSecurity=uefi-secureboot
+ConditionKernelCommandLine=!phxc.static-diskenc
+
+[Install]
+WantedBy=initrd.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=bash -eo pipefail
+StandardInputText=ln -s crypttab.tpm2 /sysroot/etc/crypttab

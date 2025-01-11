@@ -7,7 +7,7 @@ main() {
   source "$PKGROOT/.upkg/records.sh/records.sh"
   DOC="get-config - Retrieve phxc config values
 Usage:
-  get-config [-qD] FILEPATH [KEY]
+  get-config [-qD] CFGNAME KEY
 
 Options:
   -q --quiet       No error message if file or setting is missing
@@ -17,62 +17,46 @@ Options:
 # shellcheck disable=2016,2086,2317,1090,1091,2034
 docopt() { local v='2.0.2'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
-%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:228};usage=${DOC:41:40}
-digest=b229b;options=('-q --quiet 0' '-D --no-default 0');node_0(){ switch \
-__quiet 0;};node_1(){ switch __no_default 1;};node_2(){ value FILEPATH a;}
-node_3(){ value KEY a;};node_4(){ optional 0 1;};node_5(){ optional 3;}
-node_6(){ sequence 4 2 5;};cat <<<' docopt_exit() { [[ -n $1 ]] && printf \
-"%s\n" "$1" >&2;printf "%s\n" "${DOC:41:40}" >&2;exit 1;}';local \
-varnames=(__quiet __no_default FILEPATH KEY) varname;for varname in \
-"${varnames[@]}"; do unset "var_$varname";done;parse 6 "$@";local \
-p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset "$p$varname"
-done;eval $p'__quiet=${var___quiet:-false};'$p'__no_default=${var___no_default'\
-':-false};'$p'FILEPATH=${var_FILEPATH:-};'$p'KEY=${var_KEY:-};';local docopt_i=1
-[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do
-for varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:225};usage=${DOC:41:37}
+digest=7cbfc;options=('-q --quiet 0' '-D --no-default 0');node_0(){ switch \
+__quiet 0;};node_1(){ switch __no_default 1;};node_2(){ value CFGNAME a;}
+node_3(){ value KEY a;};node_4(){ optional 0 1;};node_5(){ sequence 4 2 3;}
+cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2;printf "%s\n" \
+"${DOC:41:37}" >&2;exit 1;}';local varnames=(__quiet __no_default CFGNAME KEY) \
+varname;for varname in "${varnames[@]}"; do unset "var_$varname";done;parse 5 \
+"$@";local p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset \
+"$p$varname";done;eval $p'__quiet=${var___quiet:-false};'$p'__no_default=${var'\
+'___no_default:-false};'$p'CFGNAME=${var_CFGNAME:-};'$p'KEY=${var_KEY:-};'
+local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
+((;docopt_i>0;docopt_i--)); do for varname in "${varnames[@]}"; do declare -p \
+"$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' get-config`
   eval "$(docopt "$@")"
-  local basename real_filepath contents schema use_default=false default
+  local use_default=false default
   # shellcheck disable=SC2154
   $__no_default || use_default=true
-  basename=$(basename "$FILEPATH")
-  schema=$PKGROOT/lib/schemas/$basename
-  [[ -e $schema ]] || \
-    fatal 'Unrecognized file basename "%s". Must be one of:\n%s' "$basename" "$(cd "$PKGROOT/lib/schemas"; echo * | xargs -n1 basename)"
-  if [[ -e $FILEPATH ]]; then
-    real_filepath=$(realpath "$FILEPATH")
-    contents=$(cat "$real_filepath")
-    if [[ $real_filepath = /boot/* ]] && ! ssh-keygen -q -Y verify -f <(sed 's/^/admin /g' </home/admin/.ssh/authorized_keys) -I admin -n file -s "$real_filepath.sig" <<<"$contents"; then
-      fatal "Failed to verify signature of %s using /home/admin/.ssh/authorized_keys" "$real_filepath"
-    fi
-    local validation_errors
-    if ! validation_errors=$(jsonschema-cli -i <(printf "%s\n" "$contents") "$schema" 2>&1); then
-      fatal 'Failed to validate "%s". Errors: %s' "$FILEPATH" "$validation_errors"
-    fi
-    if [[ -n $KEY ]]; then
-      if jq -r 'paths | join(".")' <<<"$contents" | grep -q "^$KEY$"; then
-        debug "Getting value of '%s' in '%s'" "$KEY" "$FILEPATH"
-        key=$(escape_key "$KEY")
-        jq -r ".$key" <<<"$contents"
-      elif $use_default && default=$(get_default "$basename" "$key"); then
-        verbose "Key '%s' is not set in '%s', using default ('%s')" "$KEY" "$FILEPATH" "$default"
-        printf "%s\n" "$default"
-      else
-        # shellcheck disable=SC2154
-        if $__quiet; then
-          verbose "'%s' is not set in '%s'" "$KEY" "$FILEPATH"
-        else
-          fatal "'%s' is not set in '%s'" "$KEY" "$FILEPATH"
-        fi
-        return 1
-      fi
+  local configpath=/boot/phxc/$CFGNAME.json
+  if [[ -e $configpath ]]; then
+    if jq -r 'paths | join(".")' "$configpath" | grep -q "^$KEY$"; then
+      debug "Getting value of '%s' in '%s'" "$KEY" "$configpath"
+      key=$(escape_key "$KEY")
+      jq -r ".$key" "$configpath"
+    elif $use_default && default=$(get_default "$CFGNAME.json" "$key"); then
+      verbose "Key '%s' is not set in '%s', using default ('%s')" "$KEY" "$configpath" "$default"
+      printf "%s\n" "$default"
     else
-      printf "%s\n" "$contents"
+      # shellcheck disable=SC2154
+      if $__quiet; then
+        verbose "'%s' is not set in '%s'" "$KEY" "$configpath"
+      else
+        fatal "'%s' is not set in '%s'" "$KEY" "$configpath"
+      fi
+      return 1
     fi
-  elif $use_default && default=$(get_default "$basename" "$key"); then
+  elif $use_default && default=$(get_default "$CFGNAME.json" "$KEY"); then
     printf "%s\n" "$default"
   else
-    $__quiet || fatal "%s does not exist" "$FILEPATH"
+    $__quiet || fatal "%s does not exist" "$configpath"
      return 1
   fi
 }

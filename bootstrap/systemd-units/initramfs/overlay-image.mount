@@ -1,10 +1,10 @@
 [Unit]
 Description=Mount the root squashfs image
-Requires=copy-rootimg.service
-After=copy-rootimg.service
+Requires=verify-rootimg.service
+After=verify-rootimg.service
 
 [Mount]
-What=/run/initramfs/root.${ROOT_SHA256}.img
+What=/boot/phxc/root.${ROOT_SHA256}.img
 Where=/overlay/image
 Options=ro,noatime,loop
 Type=squashfs

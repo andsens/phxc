@@ -1,0 +1,14 @@
+[Unit]
+Description=Use the static password for decrypting the data partition
+DefaultDependencies=no
+Requires=sysroot.mount
+After=sysroot.mount
+ConditionKernelCommandLine=phxc.static-diskenc
+
+[Install]
+WantedBy=initrd.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=ln -s crypttab.static /sysroot/etc/crypttab

@@ -17,8 +17,9 @@ main() {
   apt-get update -qq
 
   # Install base deps
-  # gettext -> envsubst
-  apt-get install -y --no-install-recommends gettext
+  # gettext -> envsubst, equivs -> build dummy pkgs
+  apt-get install -y --no-install-recommends gettext equivs
+  PACKAGES_PURGE=(gettext equivs)
 
   info "Copying files"
   # shellcheck disable=SC2016
@@ -30,7 +31,7 @@ main() {
     mkdir -p "$(dirname "$dest")"
     [[ $(basename "$src") != .gitkeep ]] || continue
     if [[ -L "$src" ]]; then
-      cp -PT "$src" "$dest"
+      cp -PT --preserve=all "$src" "$dest"
     else
       envsubst "${replacements[*]}" <"$src" >"$dest"
     fi
@@ -38,6 +39,7 @@ main() {
 
   local unit enable_units unit_files=$PKGROOT/bootstrap/systemd-units
   while IFS= read -r -d $'\0' src; do
+    [[ $src != $unit_files/initramfs/* ]] || continue
     unit=$(basename "$src")
     if grep -q '^\[Install\]$' "$src" && [[ $unit != *@* ]]; then
       enable_units+=("$unit")
@@ -47,7 +49,6 @@ main() {
 
   PACKAGES=(apt-utils jq)
   PACKAGES_TMP=()
-  PACKAGES_PURGE=()
   local taskfile
   for taskfile in "$PKGROOT/bootstrap/tasks.d/"??-*.sh; do
     # shellcheck disable=SC1090
@@ -56,8 +57,9 @@ main() {
 
   local all_packages=()
   readarray -t -d $'\n' all_packages < <(printf "%s\n" "${PACKAGES[@]}" "${PACKAGES_TMP[@]}" | sort -u)
-  info "Installing packages: %s" "${all_packages[*]}"
+  info "Upgrading all packages"
   apt-get upgrade -qq
+  info "Installing packages: %s" "${all_packages[*]}"
   apt-get install -y --no-install-recommends "${all_packages[@]}"
 
   local task
@@ -81,8 +83,8 @@ main() {
   # `comm -13`: Only remove temp packages that don't also appear in PACKAGES_TMP
   local packages_purge=()
   readarray -t -d $'\n' packages_purge < <(\
-    comm -13 <(printf "%s\n" "${PACKAGES[@]}" | sort -u) <(printf "%s\n" "${PACKAGES_TMP[@]}" | sort -u)
-    printf "%s\n" "${PACKAGES_PURGE[@]}"
+    [[ ${#PACKAGES_TMP[@]} -eq 0 ]] || comm -13 <(printf "%s\n" "${PACKAGES[@]}" | sort -u) <(printf "%s\n" "${PACKAGES_TMP[@]}" | sort -u)
+    [[ ${#PACKAGES_PURGE[@]} -eq 0 ]] || printf "%s\n" "${PACKAGES_PURGE[@]}"
   )
   apt-get purge -y "${packages_purge[@]}"
   apt-get autoremove -y

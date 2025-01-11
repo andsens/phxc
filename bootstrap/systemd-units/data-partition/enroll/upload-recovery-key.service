@@ -3,14 +3,14 @@ Description=Uploads the disk encryption recovery key to the cluster
 Requires=install-node-packages.service workload@phxc.target
 Wants=enroll-diskenc-recovery-key.service
 After=enroll-diskenc-recovery-key.service install-node-packages.service workload@phxc.target
-AssertPathExists=/var/lib/phxc/disk-encryption-recovery.key
+AssertPathExists=/var/lib/phxc/disk-encryption.recovery.key
 
 [Install]
-RequiredBy=multi-user.target
+WantedBy=multi-user.target
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=bash -eo pipefail
 StandardInputText=/var/lib/phxc/.upkg/.bin/kubectl -n phxc get secret -oname | grep -q "secret/diskenc-recovery-%H" || \
-  /var/lib/phxc/.upkg/.bin/kubectl -n phxc create secret generic --from-file=/var/lib/phxc/disk-encryption-recovery.key "diskenc-recovery-%H"
+  /var/lib/phxc/.upkg/.bin/kubectl -n phxc create secret generic --from-file=/var/lib/phxc/disk-encryption.recovery.key "diskenc-recovery-%H"

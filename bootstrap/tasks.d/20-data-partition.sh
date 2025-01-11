@@ -7,11 +7,12 @@ PACKAGES+=(
 
 data_partition() {
   if [[ $VARIANT = rpi* ]]; then
-    rm /etc/systemd/system/tpm2-crypttab.service \
-       /etc/systemd/system/enroll-diskenc-tpm2-key.service
+    rm /etc/systemd/system/enroll-tpm2-key.service \
+       /etc/crypttab.tpm2
   else
-    rm /etc/systemd/system/diskenc-rpi-otp-key.service \
-       /etc/systemd/system/init-rpi-otp.service \
-       /etc/systemd/system/enroll-diskenc-rpi-otp-key.service
+    rm /etc/systemd/system/init-rpi-otp.service \
+       /etc/systemd/system/enroll-rpi-otp-key.service \
+       /etc/crypttab.rpi-otp
   fi
+  chmod 0600 /etc/phxc/disk-encryption.static.key
 }

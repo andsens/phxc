@@ -1,6 +1,0 @@
-[Unit]
-Description=The data partition is available for mounting
-Before=var-lib-phxc.mount
-
-[Install]
-WantedBy=var-lib-phxc.mount

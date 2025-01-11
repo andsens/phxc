@@ -7,11 +7,7 @@
       "type": "string"
     },
     "offset": {
-      "description": "OTP offset in words (4 bits). Default 0",
-      "type": "integer"
-    },
-    "length": {
-      "description": "OTP length in words (4 bits). Default: 8",
+      "description": "OTP offset in words (4 bytes). Default 0",
       "type": "integer"
     },
     "key-derivation-suffix": {

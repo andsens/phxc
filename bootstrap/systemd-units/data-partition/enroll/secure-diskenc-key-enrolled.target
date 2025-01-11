@@ -1,5 +1,0 @@
-[Unit]
-Description=All disk-encryption keys have been enrolled
-
-[Install]
-WantedBy=multi-user.target

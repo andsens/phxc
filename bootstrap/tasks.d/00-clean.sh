@@ -4,9 +4,6 @@
 shopt -s extglob
 clean() {
   rm /etc/fstab
-  # initramfs-tools get installed for some reason
-  # even though we select dracut in the same install as we select the kernel image
-  apt-get purge initramfs-tools
   if $DEBUG; then
     # Don't filter out locales and manpages when installing packages
     rm /etc/dpkg/dpkg.cfg.d/excludes

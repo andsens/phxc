@@ -4,12 +4,9 @@ PACKAGES+=(
   systemd systemd-sysv # systemd bootup
   dosfstools # Used for mounting ESP
   systemd-resolved # DNS resolution setup
-  dracut # Leave installed to avoid reinstalling initramfs-tools
+  zstd # initramfs compression
 )
-
-PACKAGES_TMP+=(
-  dracut-network binutils zstd # initramfs
-)
+PACKAGES_TMP+=(dracut)
 
 case $VARIANT in
   amd64) PACKAGES+=(linux-image-amd64) ;;
@@ -27,29 +24,32 @@ EOF
   *) printf "Unknown variant: %s\n" "$VARIANT" >&2; return 1 ;;
 esac
 
+# Installing the kernel & dracut at the same time somehow also installs initramfs-tools
+# Install a dummy package prior to that to prevent it
+mkdir /workspace/initramfs-tools
+(cd /workspace/initramfs-tools && equivs-build /usr/local/lib/upkg/.upkg/phxc/bootstrap/assets/initramfs-tools)
+dpkg -i /workspace/initramfs-tools/initramfs-tools_0.145_all.deb
+
 # Disable initramfs updates until we are ready
 export INITRD=No
 
-initramfs() {
-  # Re-enable initramfs updates
-  unset INITRD
-
+boot() {
+  chmod +x /usr/local/bin/update-boot
   # Enable serial console
   systemctl enable serial-getty@ttyS0
-
-  chmod 0755 /usr/lib/dracut/modules.d/99phxc/parse-squashfs-root.sh \
-             /usr/lib/dracut/modules.d/99phxc/module-setup.sh
 
   if [[ $VARIANT = rpi5 ]]; then
     # Remove Raspberry Pi 4 boot code
     rm boot/firmware/bootcode.bin boot/firmware/fixup*.dat boot/firmware/start*.elf
   fi
 
+  # Re-enable initramfs updates
+  unset INITRD
   local kernver
   kernver=$(echo /lib/modules/*)
   kernver=${kernver#'/lib/modules/'}
   dracut --force --kver "$kernver"
-  # Move files to fixed location and remove symlinks
-  mv "/boot/vmlinuz-$kernver" /boot/vmlinuz
-  mv "/boot/initrd.img-$kernver" /boot/initrd.img
+  mv "/boot/initrd.img-$kernver" /boot/initramfs.img
+  mv "$(realpath /vmlinuz)" /boot/vmlinuz
+  rm /vmlinuz /vmlinuz.old
 }

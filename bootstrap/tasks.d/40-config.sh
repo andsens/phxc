@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 config() {
-  chmod 0755 /usr/local/bin/get-config
-  [[ ! -e /workspace/cluster.json ]] || cp /workspace/cluster.json /etc/phxc/cluster.json
+  chmod +x /usr/local/bin/get-config
   upkg add -g /usr/local/lib/upkg/.upkg/phxc/lib/common-context/jsonschema-cli.upkg.json
 }

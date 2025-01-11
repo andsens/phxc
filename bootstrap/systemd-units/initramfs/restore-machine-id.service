@@ -7,7 +7,7 @@ Before=systemd-journald.service
 ConditionPathExists=/boot/phxc/machine-id
 
 [Install]
-WantedBy=sysinit.target
+WantedBy=initrd.target
 
 [Service]
 Type=oneshot

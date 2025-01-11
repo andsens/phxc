@@ -1,0 +1,24 @@
+[Unit]
+Description=Enrolls a disk encryption key derived from the RPi OTP memory
+Requires=boot.mount
+After=boot.mount init-rpi-otp.service
+Before=secure-diskenc-key-enrolled.target
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecCondition=bash -ec '[[ $(get-config node disk-encryption) =~ ^rpi-otp|auto$ ]] || return 1'
+ExecCondition=bash -ec 'rpi-otp-private-key -c -o $(get-config rpi-otp offset)'
+ExecStart=bash -eo pipefail
+StandardInputText=\
+  o=$(get-config rpi-otp offset); \
+  s=$(get-config rpi-otp key-derivation-suffix); \
+  openssl kdf \
+    -kdfopt info:"disk-encryption-key-$s" -keylen 32 \
+    -kdfopt digest:SHA3-512 -kdfopt hexkey:"$(rpi-otp-private-key -o $o | xxd -p -c0)" \
+    -out /run/initramfs/disk-encryption.rpi-otp.key -binary HKDF; \
+  cryptsetup luksAddKey --key-file /etc/phxc/disk-encryption.static.key --new-key-slot 2 \
+    /dev/disk/by-partuuid/${DATA_UUID} /run/initramfs/disk-encryption.rpi-otp.key'

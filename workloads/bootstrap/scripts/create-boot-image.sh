@@ -92,9 +92,6 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
 
   artifacts[root.img]=/workspace/root.img
   boot_files["/phxc/root.${sha256sums[root.img]}.img"]=/workspace/root.img
-  local kernel_cmdline=""
-  ! $DEBUG || kernel_cmdline+=" rd.shell"
-  # ! $DEBUG || kernel_cmdline+=" rd.break"
 
   ##################################################
   ### Inject root.img SHA-256 sum into initramfs ###
@@ -105,7 +102,7 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
   mkdir /workspace/initramfs
   (
     cd /workspace/initramfs
-    zstd -cd /workspace/root/boot/initrd.img | cpio -id
+    zstd -cd /workspace/root/boot/initramfs.img | cpio -id
   )
   cat <<EOF >/workspace/initramfs/etc/systemd/system.conf.d/rootimg.conf
 [Manager]
@@ -113,9 +110,13 @@ DefaultEnvironment=ROOT_SHA256=${sha256sums[root.img]}
 EOF
   (
     cd /workspace/initramfs
-    find . -print0 | cpio -o --null --format=newc 2>/dev/null | zstd -15 >/workspace/root/boot/initrd.img
+    find . -print0 | cpio -o --null --format=newc 2>/dev/null | zstd -15 >/workspace/root/boot/initramfs.img
   )
-  ! $DEBUG || artifacts[initrd.img]=/workspace/root/boot/initrd.img
+  ! $DEBUG || artifacts[initramfs.img]=/workspace/root/boot/initramfs.img
+
+  local kernel_cmdline=""
+  ! $DEBUG || kernel_cmdline+="rd.shell"
+  # ! $DEBUG || kernel_cmdline+=" rd.break"
 
   ############################
   ### RaspberryPI boot.img ###
@@ -128,18 +129,18 @@ EOF
     case $VARIANT in
       rpi5)
         mv /workspace/root/boot/vmlinuz /workspace/root/boot/firmware/kernel_2712.img
-        mv /workspace/root/boot/initrd.img /workspace/root/boot/firmware/initramfs_2712
-        ! $DEBUG || artifacts[initrd.img]=/workspace/root/boot/firmware/initramfs_2712
+        mv /workspace/root/boot/initramfs.img /workspace/root/boot/firmware/initramfs_2712
+        ! $DEBUG || artifacts[initramfs.img]=/workspace/root/boot/firmware/initramfs_2712
         ;;
       rpi4)
         mv /workspace/root/boot/vmlinuz /workspace/root/boot/firmware/kernel8.img
-        mv /workspace/root/boot/initrd.img /workspace/root/boot/firmware/initramfs8
-        ! $DEBUG || artifacts[initrd.img]=/workspace/root/boot/firmware/initramfs8
+        mv /workspace/root/boot/initramfs.img /workspace/root/boot/firmware/initramfs8
+        ! $DEBUG || artifacts[initramfs.img]=/workspace/root/boot/firmware/initramfs8
         ;;
       rpi3)
         mv /workspace/root/boot/vmlinuz /workspace/root/boot/firmware/kernel7.img
-        mv /workspace/root/boot/initrd.img /workspace/root/boot/firmware/initramfs7
-        ! $DEBUG || artifacts[initrd.img]=/workspace/root/boot/firmware/initramfs7
+        mv /workspace/root/boot/initramfs.img /workspace/root/boot/firmware/initramfs7
+        ! $DEBUG || artifacts[initramfs.img]=/workspace/root/boot/firmware/initramfs7
         ;;
       *) printf "Unknown rpi* variant: %s\n" "$VARIANT" >&2; return 1 ;;
     esac
@@ -192,6 +193,7 @@ EOF
 
   # Raspberry PI does not implement UEFI, so skip building a UKI
   if [[ $VARIANT != rpi* ]]; then
+    # Create (& optionally sign) unified kernel
 
     info "Creating unified kernel image"
 
@@ -202,25 +204,32 @@ EOF
       *) fatal "Unknown variant: %s" "$VARIANT" ;;
     esac
 
-    # Setup shim
-    artifacts[shim.efi]=/usr/lib/shim/shim${efi_arch}.efi.signed
-    boot_files[/EFI/BOOT/BOOT${efi_arch^^}.efi]=/usr/lib/shim/shim${efi_arch}.efi.signed
-    artifacts[mm.efi]=/usr/lib/shim/mm${efi_arch}.efi.signed
-    boot_files[/EFI/BOOT/mm${efi_arch}.efi]=/usr/lib/shim/mm${efi_arch}.efi.signed
-
-    # Create (& optionally sign) unified kernel
-    printf "%s" "$kernel_cmdline" > /workspace/root/boot/cmdline.txt
-
     local kernver
     kernver=$(echo /workspace/root/lib/modules/*)
     kernver=${kernver#'/workspace/root/lib/modules/'}
 
+    printf "%s" "$kernel_cmdline phxc.static-diskenc" > /workspace/root/boot/cmdline.static-diskenc.txt
     /lib/systemd/ukify build \
       --uname="$kernver" \
       --linux=/workspace/root/boot/vmlinuz \
-      --initrd=/workspace/root/boot/initrd.img \
-      --cmdline="$kernel_cmdline" \
+      --initrd=/workspace/root/boot/initramfs.img \
+      --cmdline=@/workspace/root/boot/cmdline.static-diskenc.txt \
+      --output=/workspace/root/boot/uki.static-diskenc.efi
+
+    artifacts[uki.static-diskenc.efi]=/workspace/root/boot/uki.static-diskenc.efi
+    boot_files[/EFI/BOOT/BOOT${efi_arch^^}.efi]=/workspace/root/boot/uki.static-diskenc.efi
+    sha256sums[uki.static-diskenc.efi]=$(sha256sum /workspace/root/boot/uki.static-diskenc.efi | cut -d ' ' -f1)
+
+    printf "%s" "$kernel_cmdline" > /workspace/root/boot/cmdline.txt
+    /lib/systemd/ukify build \
+      --uname="$kernver" \
+      --linux=/workspace/root/boot/vmlinuz \
+      --initrd=/workspace/root/boot/initramfs.img \
+      --cmdline=@/workspace/root/boot/cmdline.txt \
       --output=/workspace/root/boot/uki.efi
+
+    artifacts[uki.efi]=/workspace/root/boot/uki.efi
+    sha256sums[uki.efi]=$(sha256sum /workspace/root/boot/uki.efi | cut -d ' ' -f1)
 
     # Sign systemd-boot & UKI if secureboot cert is present
     if [[ -e /workspace/secureboot/tls.key ]]; then
@@ -228,20 +237,12 @@ EOF
       sb_cert_bundle=$(cat /workspace/secureboot/tls.crt)
       sb_cert=${sb_cert_bundle%'-----BEGIN CERTIFICATE-----'*}
       sb_intermediate=${sb_cert_bundle#*'-----END CERTIFICATE-----'}
-      sbsign \
-        --key /workspace/secureboot/tls.key --cert <(printf "%s\n" "$sb_cert") \
-        --addcert <(printf "%s\n" "$sb_intermediate") \
-        --output /workspace/root/boot/systemd-boot.efi.signed \
-        "/usr/lib/systemd/boot/efi/systemd-boot${efi_arch}.efi"
-      artifacts[systemd-boot.efi]=/workspace/root/boot/systemd-boot.efi.signed
-      boot_files["/EFI/BOOT/grub${efi_arch}.efi"]=/workspace/root/boot/systemd-boot.efi.signed
 
       sbsign \
         --key /workspace/secureboot/tls.key --cert <(printf "%s\n" "$sb_cert") \
         --addcert <(printf "%s\n" "$sb_intermediate") \
         /workspace/root/boot/uki.efi
       artifacts[uki.efi]=/workspace/root/boot/uki.efi.signed
-      boot_files[/EFI/Linux/uki.efi]=/workspace/root/boot/uki.efi.signed
       sha256sums[uki.efi]=$(sha256sum /workspace/root/boot/uki.efi.signed | cut -d ' ' -f1)
 
       # Extract authentihashes used for PE signatures so we can use them for remote attestation
@@ -250,24 +251,17 @@ EOF
       # as to why we also measure the embedded kernel
       objcopy -O binary --only-section=.linux /workspace/root/boot/uki.efi.signed /workspace/uki-vmlinuz
       authentihashes[vmlinuz]=$(/signify/bin/python3 /scripts/get-pe-digest.py --json /workspace/uki-vmlinuz)
-    else
-      artifacts[systemd-boot.efi]=/usr/lib/systemd/boot/efi/systemd-boot${efi_arch}.efi
-      boot_files["/EFI/BOOT/grub${efi_arch}.efi"]=/usr/lib/systemd/boot/efi/systemd-boot${efi_arch}.efi
-      artifacts[uki.efi]=/workspace/root/boot/uki.efi
-      boot_files[/EFI/Linux/uki.efi]=/workspace/root/boot/uki.efi
-      sha256sums[uki.efi]=$(sha256sum /workspace/root/boot/uki.efi | cut -d ' ' -f1)
-    fi
 
-    # Create the systemd-boot loader entry
-    # shellcheck disable=SC2016
-    SHA256=${sha256sums[root.img]} \
-    envsubst '$SHA256' <<'EOF' >/workspace/root/boot/loader.conf
-default uki.efi
-timeout menu-hidden
-console-mode auto
-editor false
-EOF
-    boot_files[/loader/loader.conf]=/workspace/root/boot/loader.conf
+      # Calculate PCR11 for TPM2 backed disk encryption
+      chroot /workspace/root /lib/systemd/systemd-measure calculate \
+        --linux=/boot/vmlinuz \
+        --initrd=/boot/initramfs.img \
+        --cmdline=/boot/cmdline.txt \
+        --osrel=/usr/lib/os-release \
+        --json=pretty \
+        >/boot/pcr11.json
+      artifacts[pcr11.json]=/workspace/root/boot/pcr11.json
+    fi
   fi
 
   #######################

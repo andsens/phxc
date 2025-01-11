@@ -11,38 +11,44 @@ case "${VARIANT:?}" in
 esac
 
 main() {
-  source "$PKGROOT/.upkg/records.sh/records.sh"
   DOC="update-boot - Update the boot partition with a new image
 Usage:
-  update-boot update
+  update-boot update [-R]
   update-boot switch
+
+Options:
+  -R --no-reboot  Do not reboot after updating
 "
 # docopt parser below, refresh this parser with `docopt.sh update-boot`
 # shellcheck disable=2016,2086,2317,1090,1091,2034
 docopt() { local v='2.0.2'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
-%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:105};usage=${DOC:57:48}
-digest=57a52;options=();node_0(){ switch update a:update;};node_1(){ switch \
-switch a:switch;};node_2(){ choice 0 1;};cat <<<' docopt_exit() { [[ -n $1 ]] \
-&& printf "%s\n" "$1" >&2;printf "%s\n" "${DOC:57:48}" >&2;exit 1;}';local \
-varnames=(update switch) varname;for varname in "${varnames[@]}"; do unset \
-"var_$varname";done;parse 2 "$@";local p=${DOCOPT_PREFIX:-''};for varname in \
-"${varnames[@]}"; do unset "$p$varname";done;eval $p'update=${var_update:-fals'\
-'e};'$p'switch=${var_switch:-false};';local docopt_i=1;[[ $BASH_VERSION =~ \
-^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for varname in \
-"${varnames[@]}"; do declare -p "$p$varname";done;done;}
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:167};usage=${DOC:57:53}
+digest=c02fd;options=('-R --no-reboot 0');node_0(){ switch __no_reboot 0;}
+node_1(){ switch update a:update;};node_2(){ switch switch a:switch;};node_3(){
+sequence 1 4;};node_4(){ optional 0;};node_5(){ choice 3 2;};cat <<<' \
+docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2;printf "%s\n" \
+"${DOC:57:53}" >&2;exit 1;}';local varnames=(__no_reboot update switch) varname
+for varname in "${varnames[@]}"; do unset "var_$varname";done;parse 5 "$@"
+local p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset \
+"$p$varname";done;eval $p'__no_reboot=${var___no_reboot:-false};'$p'update=${v'\
+'ar_update:-false};'$p'switch=${var_switch:-false};';local docopt_i=1;[[ \
+$BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for \
+varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' update-boot`
   eval "$(docopt "$@")"
   # shellcheck disable=SC2154
   if $update; then
-    update
+    local reboot=false
+    $__no_reboot || reboot=true
+    update $reboot
   elif $switch; then
     switch
   fi
 }
 
 update() {
-  local meta_json_new http_code
+  local reboot=$1 meta_json_new http_code
   if ! meta_json_new=$(curl_img_reg "$VARIANT/meta.json" -w '%{http_code}'); then
     info "Unable to retrieve image metadata from image-registry"
     return 1
@@ -58,7 +64,7 @@ update() {
   fi
   meta_json_new=$(head -n-1 <<<"$meta_json_new")
   local current_rootimg_sha256 try_rootimg_sha256 new_rootimg_sha256
-  current_rootimg_sha256=$(compgen -G /run/initramfs/root.*.img | cut -d. -f2)
+  current_rootimg_sha256=$(cat /run/initramfs/root.img.sha256)
   try_rootimg_sha256=$(cat /boot/phxc/try.sha256 2>/dev/null || true)
   new_rootimg_sha256=$(jq -re '.sha256sums["root.img"]' <<<"$meta_json_new")
   if [[ $current_rootimg_sha256 = "$new_rootimg_sha256" ]]; then
@@ -68,7 +74,7 @@ update() {
   if [[ $try_rootimg_sha256 = "$new_rootimg_sha256" ]]; then
     if [[ -e /run/initramfs/try-reboot ]]; then
       info "boot partition is up-to-date (newer image will be tried)"
-      try_reboot
+      ! $reboot || try_reboot
     else
       info "boot partition is up-to-date (newer image failed to boot)"
     fi
@@ -95,7 +101,7 @@ update() {
   fi
   info "boot partition has been updated"
   trap '' EXIT
-  try_reboot
+  ! $reboot || try_reboot
 }
 
 clean_update_boot_files() {
@@ -142,7 +148,7 @@ try_reboot() {
 
 switch() {
   local current_rootimg_sha256 try_rootimg_sha256
-  current_rootimg_sha256=$(compgen -G /run/initramfs/root.*.img | cut -d. -f2)
+  current_rootimg_sha256=$(cat /run/initramfs/root.img.sha256)
   try_rootimg_sha256=$(cat /boot/phxc/try.sha256 2>/dev/null || true)
   if [[ $current_rootimg_sha256 = "$try_rootimg_sha256" ]]; then
     info "Successfully booted new image"

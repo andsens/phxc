@@ -21,40 +21,35 @@ installkernel() {
 }
 
 # Install the required file(s) and directories for the module in the initramfs.
+# shellcheck disable=SC2154
 install() {
-  inst_binary sha256sum
-  inst_binary jq
-  inst_binary grep
+  local pkgroot=/usr/local/lib/upkg/.upkg/phxc
+  inst_multiple sha256sum jq
   if $DEBUG; then
-    inst_binary cat
-    inst_binary nano
-    inst_binary less
-    inst_binary lsblk
+    inst_multiple cat nano less lsblk
   fi
   inst /etc/systemd/system.conf.d/disk-uuids.conf
   inst /etc/systemd/system.conf.d/variant.conf
 
-  # shellcheck disable=SC2154
-  inst "$moddir/system/copy-rootimg.service" "$systemdsystemconfdir/copy-rootimg.service"
-  inst "$moddir/system/overlay-image.mount" "$systemdsystemconfdir/overlay-image.mount"
-  inst "$moddir/system/overlay-rw.mount" "$systemdsystemconfdir/overlay-rw.mount"
-  inst "$moddir/system/create-overlay-dirs.service" "$systemdsystemconfdir/create-overlay-dirs.service"
-  inst "$moddir/system/configure-hostname.service" "$systemdsystemconfdir/configure-hostname.service"
-  inst "$moddir/system/sysroot.mount" "$systemdsystemconfdir/sysroot.mount"
-  inst "$moddir/system/restore-machine-id.service" "$systemdsystemconfdir/restore-machine-id.service"
-  # shellcheck disable=SC2154
-  $SYSTEMCTL -q --root "$initdir" enable \
-    configure-hostname.service \
-    restore-machine-id.service \
-    sysroot.mount
+  local src unit enable_units
+  for src in "$pkgroot/bootstrap/systemd-units/initramfs"/*; do
+    unit=$(basename "$src")
+    if [[ ! $DEBUG && $unit == sysroot-mnt-overlay\\x2dupper.mount ]]; then
+      continue
+    fi
+    if [[ $VARIANT = rpi* ]]; then
+      [[ $unit != crypttab-tpm2.service ]] || continue
+    else
+      [[ $unit != crypttab-rpi-otp.service ]] || continue
+    fi
+    inst "$src" "$systemdsystemconfdir/$unit"
+    ! grep -q '^\[Install\]$' "$src" || enable_units+=("$unit")
+  done
 
-  if $DEBUG; then
-    mkdir -p /mnt/overlay-upper
-    inst "$moddir/system/sysroot-mnt-overlay\\x2dupper.mount" "$systemdsystemconfdir/sysroot-mnt-overlay\\x2dupper.mount"
-    $SYSTEMCTL -q --root "$initdir" enable sysroot-mnt-overlay\\x2dupper.mount
-  fi
+  $SYSTEMCTL -q --root "$initdir" enable "${enable_units[@]}"
 
-  # shellcheck disable=SC2154
+  ! $DEBUG || mkdir -p /mnt/overlay-upper
+
   rm "${initdir}${systemdutildir}"/system-generators/systemd-gpt-auto-generator
   ln -sf ../run/machine-id "$initdir/etc/machine-id"
 

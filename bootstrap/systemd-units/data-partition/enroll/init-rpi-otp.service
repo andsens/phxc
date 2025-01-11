@@ -2,7 +2,6 @@
 Description=Populate the RPi OTP memory with random data
 Requires=boot.mount
 After=boot.mount
-ConditionPathExists=/boot/phxc/node.json
 
 [Install]
 WantedBy=multi-user.target
@@ -10,11 +9,11 @@ WantedBy=multi-user.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecCondition=bash -ec '[[ $(get-config /boot/phxc/node.json disk-encryption) == rpi-otp ]] || return 1'
+ExecCondition=bash -ec '[[ $(get-config node disk-encryption) == rpi-otp ]] || return 1'
 ExecCondition=bash -ec '! rpi-otp-private-key -c \
-  -o $(get-config /boot/phxc/rpi-otp.json offset) \
-  -l $(get-config /boot/phxc/rpi-otp.json length)'
+  -o $(get-config rpi-otp offset) \
+  -l $(get-config rpi-otp length)'
 ExecStart=bash -ec ':;\
-  o=$(get-config /boot/phxc/rpi-otp.json offset); \
-  l=$(get-config /boot/phxc/rpi-otp.json length); \
+  o=$(get-config rpi-otp offset); \
+  l=$(get-config rpi-otp length); \
   echo rpi-otp-private-key -w -o $o -l $l "$(openssl rand -hex $((l*2)))"'
