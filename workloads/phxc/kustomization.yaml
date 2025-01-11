@@ -3,7 +3,3 @@ kind: Kustomization
 namespace: phxc
 resources:
 - namespace.yaml
-- Kptfile
-- resourcegroup.yaml
-generatorOptions:
-  disableNameSuffixHash: true

@@ -1,7 +1,0 @@
-apiVersion: kpt.dev/v1alpha1
-kind: ResourceGroup
-metadata:
-  name: longhorn
-  namespace: longhorn-system
-  labels:
-    cli-utils.sigs.k8s.io/inventory-id: 9d551b9a1a3d0356ad14b936f9734892c4eef572-1717654962961157894

@@ -12,4 +12,4 @@ Restart=on-failure
 RestartSec=30
 ExecStart=bash -eo pipefail
 StandardInputText=kustomize build --enable-alpha-plugins --enable-exec "/usr/local/lib/upkg/.upkg/phxc/workloads/%i" | \
-  kpt live apply --request-timeout 5m -
+  kubectl apply --timeout=5m -f -

@@ -8,7 +8,7 @@ main() {
 
   DOC="workload - Manage workloads
 Usage:
-  workload apply WORKLOAD... [-- kptargs...]
+  workload apply WORKLOAD...
   workload build WORKLOAD...
   workload delete WORKLOAD...
 
@@ -19,23 +19,21 @@ Note:
 # shellcheck disable=2016,2086,2317,1090,1091,2034,2154
 docopt() { local v='2.0.2'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
-%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:207};usage=${DOC:28:110}
-digest=723cb;options=();node_0(){ value WORKLOAD a true;};node_1(){ switch \
-apply a:apply;};node_2(){ switch kptargs a:kptargs true;};node_3(){ switch \
-build a:build;};node_4(){ switch delete a:delete;};node_5(){ switch __ a:--;}
-node_6(){ sequence 1 7 8;};node_7(){ repeatable 0;};node_8(){ optional 5 9;}
-node_9(){ repeatable 2;};node_10(){ sequence 3 7;};node_11(){ sequence 4 7;}
-node_12(){ choice 6 10 11;};cat <<<' docopt_exit() { [[ -n $1 ]] && printf \
-"%s\n" "$1" >&2;printf "%s\n" "${DOC:28:110}" >&2;exit 1;}';local \
-varnames=(WORKLOAD apply kptargs build delete __) varname;for varname in \
-"${varnames[@]}"; do unset "var_$varname";done;parse 12 "$@";local \
-p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset "$p$varname"
-done;if declare -p var_WORKLOAD >/dev/null 2>&1; then eval $p'WORKLOAD=("${var'\
-'_WORKLOAD[@]}")';else eval $p'WORKLOAD=()';fi;eval $p'apply=${var_apply:-fals'\
-'e};'$p'kptargs=${var_kptargs:-0};'$p'build=${var_build:-false};'$p'delete=${v'\
-'ar_delete:-false};'$p'__=${var___:-false};';local docopt_i=1;[[ $BASH_VERSION \
-=~ ^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for varname in \
-"${varnames[@]}"; do declare -p "$p$varname";done;done;}
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:191};usage=${DOC:28:94}
+digest=ca911;options=();node_0(){ value WORKLOAD a true;};node_1(){ switch \
+apply a:apply;};node_2(){ switch build a:build;};node_3(){ switch delete \
+a:delete;};node_4(){ sequence 1 5;};node_5(){ repeatable 0;};node_6(){
+sequence 2 5;};node_7(){ sequence 3 5;};node_8(){ choice 4 6 7;};cat <<<' \
+docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2;printf "%s\n" \
+"${DOC:28:94}" >&2;exit 1;}';local varnames=(WORKLOAD apply build delete) \
+varname;for varname in "${varnames[@]}"; do unset "var_$varname";done;parse 8 \
+"$@";local p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset \
+"$p$varname";done;if declare -p var_WORKLOAD >/dev/null 2>&1; then eval $p'WOR'\
+'KLOAD=("${var_WORKLOAD[@]}")';else eval $p'WORKLOAD=()';fi;eval $p'apply=${va'\
+'r_apply:-false};'$p'build=${var_build:-false};'$p'delete=${var_delete:-false}'\
+';';local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
+((;docopt_i>0;docopt_i--)); do for varname in "${varnames[@]}"; do declare -p \
+"$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' workload`
   eval "$(docopt "$@")"
 
@@ -51,10 +49,10 @@ done;if declare -p var_WORKLOAD >/dev/null 2>&1; then eval $p'WORKLOAD=("${var'\
     # shellcheck disable=2154
     if $apply; then
       info "Applying %s" "$workload_name"
-      kpt live apply --request-timeout 5m - "${kptargs[@]}" <<<"$workload_data"
+      kubectl apply --timeout=5m -f - <<<"$workload_data"
     elif $delete; then
       info "Deleting %s" "$workload_name"
-      kpt live destroy - "${kptargs[@]}" <<<"$workload_data"
+      kubectl delete --timeout=5m -f - <<<"$workload_data"
     elif $build; then
       info "Building %s" "$workload_name"
       [[ $workload_data = $'---\n'* ]] || workload_data=$'---\n'$workload_data

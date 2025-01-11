@@ -1,7 +1,0 @@
-apiVersion: kpt.dev/v1alpha1
-kind: ResourceGroup
-metadata:
-  name: cilium
-  namespace: kube-system
-  labels:
-    cli-utils.sigs.k8s.io/inventory-id: 3006fd7ceeed5b65f1136e611d3e421f8d62c2bb-1712081339581059318

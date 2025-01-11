@@ -10,8 +10,6 @@ resources:
 - https://raw.githubusercontent.com/longhorn/longhorn/v1.7.2/examples/network-policy/webhook-network-policy.yaml
 - snapshot.yaml
 - network-policies.yaml
-- Kptfile
-- resourcegroup.yaml
 patches:
 - path: longhorn.yaml
 generatorOptions:

@@ -1,6 +1,0 @@
-apiVersion: kpt.dev/v1alpha1
-kind: ResourceGroup
-metadata:
-  name: apt-cacher-ng
-  labels:
-    cli-utils.sigs.k8s.io/inventory-id: 018bbb857f75ec1765a6557712c4976cbf8d6353-1735913720260807044

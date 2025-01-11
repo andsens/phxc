@@ -13,8 +13,6 @@ resources:
 - kube-server-ca.yaml
 - kube-server-issuer.yaml
 - node-role.yaml
-- Kptfile
-- resourcegroup.yaml
 configMapGenerator:
 - files:
   - scripts/setup-kube-client-ca-config.sh

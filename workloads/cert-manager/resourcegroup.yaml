@@ -1,7 +1,0 @@
-apiVersion: kpt.dev/v1alpha1
-kind: ResourceGroup
-metadata:
-  name: cert-manager
-  namespace: cert-manager
-  labels:
-    cli-utils.sigs.k8s.io/inventory-id: 9ed8f34a57510dc2cd1e28af4e958555da50d398-1708880924806493832

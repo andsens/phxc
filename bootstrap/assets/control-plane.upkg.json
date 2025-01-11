@@ -31,18 +31,6 @@
       "sha256": "175af88af8a7d8d7d6b1f26659060950f0764d00b9979b4e11b61b8b212b7c22"
     },
     {
-      "name": "kpt",
-      "os/arch": "Linux/x86_64",
-      "file": "https://github.com/kptdev/kpt/releases/download/v1.0.0-beta.54/kpt_linux_amd64",
-      "sha256": "3fc249f71a8e7ff44fae4a909947c6cc9502726588a097757e1ac51a43e083d3"
-    },
-    {
-      "name": "kpt",
-      "os/arch": "Linux/aarch64",
-      "file": "https://github.com/kptdev/kpt/releases/download/v1.0.0-beta.54/kpt_linux_arm64",
-      "sha256": "ecb754a384f1cf32dfdcea6405e245c7bfc56a7c955826559bfe538a26cfb25f"
-    },
-    {
       "name": "cidrex",
       "bin": ["cidrex"],
       "os/arch": "Linux/x86_64",

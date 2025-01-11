@@ -3,5 +3,3 @@ kind: Kustomization
 resources:
 - letsencrypt.yaml
 - selfsigned.yaml
-- Kptfile
-- resourcegroup.yaml

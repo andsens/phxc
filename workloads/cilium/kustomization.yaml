@@ -5,8 +5,6 @@ resources:
 - pool.yaml
 - bgpp.yaml
 - ready-checks.yaml
-- Kptfile
-- resourcegroup.yaml
 replacements:
 - source: {fieldPath: data.cidrs.lb.ipv4, kind: ConfigMap, name: cluster-settings}
   targets:

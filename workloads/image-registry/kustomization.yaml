@@ -3,11 +3,7 @@ kind: Kustomization
 namespace: phxc
 resources:
 - image-registry.yaml
-- Kptfile
-- resourcegroup.yaml
 configMapGenerator:
 - files:
   - config/nginx.conf
   name: image-registry-config
-generatorOptions:
-  disableNameSuffixHash: true

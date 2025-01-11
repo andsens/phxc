@@ -9,8 +9,6 @@ images:
 resources:
 - ../../lib/cluster-settings
 - coredns.yaml
-- Kptfile
-- resourcegroup.yaml
 generators:
 - generate-kube-dns-ip.yaml
 patches:

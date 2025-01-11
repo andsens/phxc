@@ -12,8 +12,6 @@ resources:
 - variants/arm64.yaml
 - variants/rpi5.yaml
 - node-role.yaml
-- Kptfile
-- resourcegroup.yaml
 configMapGenerator:
 - files:
   - Dockerfile

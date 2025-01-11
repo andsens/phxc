@@ -1,6 +1,0 @@
-apiVersion: kpt.dev/v1alpha1
-kind: ResourceGroup
-metadata:
-  name: node-role
-  labels:
-    cli-utils.sigs.k8s.io/inventory-id: 9aadd25142a17c35e0527c77a86f9a66e0c6b948-1735474187151176806

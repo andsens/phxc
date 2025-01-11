@@ -6,5 +6,3 @@ resources:
 - dns.yaml
 - internet-egress.yaml
 - kube-system.yaml
-- Kptfile
-- resourcegroup.yaml

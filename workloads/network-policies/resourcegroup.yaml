@@ -1,7 +1,0 @@
-apiVersion: kpt.dev/v1alpha1
-kind: ResourceGroup
-metadata:
-  name: network-policies
-  namespace: kube-system
-  labels:
-    cli-utils.sigs.k8s.io/inventory-id: 73415c6cc109dae09e7a90748b9f21455fa7defe-1710662925291755079
