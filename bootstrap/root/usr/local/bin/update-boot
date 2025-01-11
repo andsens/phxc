@@ -177,7 +177,7 @@ other_unschedulable_nodes() {
 curl_img_reg() {
   local path=$1
   shift
-  curl --cacert /usr/local/share/ca-certificates/phxc-root.crt \
+  curl --cacert /var/lib/rancher/k3s/server/tls/server-ca.crt \
     -L --no-progress-meter --connect-timeout 5 \
     --retry 10 --retry-delay 60 --retry-all-errors \
     "https://image-registry.phxc.svc.cluster.local:8020/$path" "$@"

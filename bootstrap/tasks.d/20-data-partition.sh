@@ -5,6 +5,12 @@ PACKAGES+=(
   parted cryptsetup-bin # disk tooling
 )
 
+if [[ $VARIANT != rpi* ]]; then
+  PACKAGES+=(
+    libtss2-rc0 libtss2-esys-3.0.2-0t64 # For TPM based disk encryption
+  )
+fi
+
 data_partition() {
   if [[ $VARIANT = rpi* ]]; then
     rm /etc/systemd/system/enroll-tpm2-key.service \

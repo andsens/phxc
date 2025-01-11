@@ -1,164 +1,130 @@
 ---
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: phxc-root
-  labels:
-    app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: phxc-ca
-spec:
-  commonName: Phoenix Cluster Root CA
-  issuerRef:
-    group: cert-manager.io
-    kind: ClusterIssuer
-    name: selfsigned
-  isCA: true
-  secretName: phxc-root
-  duration: 175200h
----
-apiVersion: cert-manager.io/v1
-kind: Issuer
-metadata:
-  name: phxc-root
-  labels:
-    app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: phxc-ca
-spec:
-  ca:
-    secretName: phxc-root
----
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: phxc-intermediate
-  labels:
-    app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: phxc-ca
-spec:
-  commonName: Phoenix Cluster Intermediate CA
-  issuerRef:
-    group: cert-manager.io
-    kind: Issuer
-    name: phxc-root
-  secretName: phxc-intermediate
-  duration: 175200h
-  isCA: true
----
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: phxc-ca
+  name: kube-server-ca
   labels:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: phxc-ca
+    app.kubernetes.io/component: kube-server-ca
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: phxc-ca
+  name: kube-server-ca
   labels:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: phxc-ca
+    app.kubernetes.io/component: kube-server-ca
 rules:
 - apiGroups: [""]
   resources: [services]
   verbs: [get]
 - apiGroups: [""]
-  resources: [secrets, configmaps]
+  resources: [secrets]
   verbs: [create]
-- apiGroups: [""]
-  resources: [configmaps]
-  resourceNames: [phxc-root]
-  verbs: [get, patch]
 - apiGroups: [""]
   resources: [secrets]
   resourceNames:
-  - step-issuer-provisioner
-  - step-issuer-provisioner-password
+  - kube-server-issuer-provisioner
+  - kube-server-issuer-provisioner-password
   - ssh-host-provisioner
   - ssh-host-provisioner-password
-  - kube-apiserver-client-ca
   verbs: [get, delete]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: phxc-ca
+  name: kube-server-ca
   labels:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: phxc-ca
+    app.kubernetes.io/component: kube-server-ca
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: phxc-ca
+  name: kube-server-ca
 subjects:
 - kind: ServiceAccount
-  name: phxc-ca
+  name: kube-server-ca
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: phxc-ca
+  name: kube-server-ca
   labels:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: phxc-ca
+    app.kubernetes.io/component: kube-server-ca
 rules:
 - apiGroups: [certmanager.step.sm]
   resources: [stepclusterissuers]
   verbs: [create]
 - apiGroups: [certmanager.step.sm]
   resources: [stepclusterissuers]
-  resourceNames: [step-issuer]
+  resourceNames: [kube-server-issuer]
   verbs: [get, patch]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: phxc-ca
+  name: kube-server-ca
   labels:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: phxc-ca
+    app.kubernetes.io/component: kube-server-ca
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: phxc-ca
+  name: kube-server-ca
 subjects:
 - kind: ServiceAccount
-  name: phxc-ca
+  name: kube-server-ca
 ---
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: phxc-ca
+  name: kube-server-ca
   labels:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: phxc-ca
+    app.kubernetes.io/component: kube-server-ca
 spec:
   endpointSelector:
     matchLabels:
       app.kubernetes.io/name: smallstep
-      app.kubernetes.io/component: phxc-ca
+      app.kubernetes.io/component: kube-server-ca
   ingress:
   - toPorts:
     - ports:
       - port: "9000"
     fromEntities:
-    - host
-    - remote-node
-    - cluster
+    - all
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: phxc-ca
+  name: kube-server-ca-host
   labels:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: phxc-ca
+    app.kubernetes.io/component: kube-server-ca
+spec:
+  type: NodePort
+  selector:
+    app.kubernetes.io/name: smallstep
+    app.kubernetes.io/component: kube-server-ca
+  ports:
+  - name: api
+    port: 9000
+    nodePort: 9000
+    targetPort: api
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kube-server-ca
+  labels:
+    app.kubernetes.io/name: smallstep
+    app.kubernetes.io/component: kube-server-ca
 spec:
   type: ClusterIP
   selector:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: phxc-ca
+    app.kubernetes.io/component: kube-server-ca
   ports:
   - name: api
     port: 9000
@@ -167,40 +133,47 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: phxc-ca
+  name: kube-server-ca
   labels:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: phxc-ca
+    app.kubernetes.io/component: kube-server-ca
 spec:
-  serviceName: phxc-ca
+  serviceName: kube-server-ca
   selector:
     matchLabels:
       app.kubernetes.io/name: smallstep
-      app.kubernetes.io/component: phxc-ca
+      app.kubernetes.io/component: kube-server-ca
   template:
     metadata:
       labels:
         app.kubernetes.io/name: smallstep
-        app.kubernetes.io/component: phxc-ca
+        app.kubernetes.io/component: kube-server-ca
         cluster.local/allow-apiserver-egress: "true"
     spec:
-      serviceAccountName: phxc-ca
+      nodeSelector:
+        node-role.kubernetes.io/control-plane: "true"
+      serviceAccountName: kube-server-ca
       securityContext:
         fsGroup: 1000
       initContainers:
-      - name: setup-phxc-ca-config
+      - name: setup-kube-server-ca-config
         image: ghcr.io/andsens/phxc-utils
-        command: [/home/step/scripts/setup-phxc-ca-config.sh]
+        command: [/home/step/scripts/setup-kube-server-ca-config.sh]
         securityContext:
           readOnlyRootFilesystem: true
         volumeMounts:
-        - name: root
-          mountPath: /home/step/certs/root_ca.crt
-          subPath: tls.crt
         - name: scripts
           mountPath: /home/step/scripts
         - name: config
           mountPath: /home/step/config-ro
+        - name: kube-server-ca-cert
+          mountPath: /home/step/kube-api-secrets/kube_apiserver_server_ca.crt
+          readOnly: true
+        - name: kube-server-ca-key
+          mountPath: /home/step/kube-api-secrets/kube_apiserver_server_ca_key
+          readOnly: true
+        - name: secrets
+          mountPath: /home/step/secrets
         - name: config-rw
           mountPath: /home/step/config
         - name: setup-secrets
@@ -228,15 +201,9 @@ spec:
             scheme: HTTPS
           initialDelaySeconds: 5
         volumeMounts:
-        - name: root
-          mountPath: /home/step/certs/root_ca.crt
-          subPath: tls.crt
-        - name: intermediate
-          mountPath: /home/step/certs/intermediate_ca.crt
-          subPath: tls.crt
-        - name: intermediate
-          mountPath: /home/step/secrets/intermediate_ca_key
-          subPath: tls.key
+        - name: secrets
+          mountPath: /home/step/secrets
+          readOnly: true
         - name: config-rw
           mountPath: /home/step/config
         - name: database
@@ -248,16 +215,21 @@ spec:
           defaultMode: 0755
       - name: config
         configMap:
-          name: ca-config
+          name: ca-configs
+      - name: secrets
+        emptyDir:
+          medium: Memory
       - name: setup-secrets
         emptyDir:
           medium: Memory
-      - name: root
-        secret:
-          secretName: phxc-root
-      - name: intermediate
-        secret:
-          secretName: phxc-intermediate
+      - name: kube-server-ca-cert
+        hostPath:
+          path: /var/lib/rancher/k3s/server/tls/server-ca.crt
+          type: File
+      - name: kube-server-ca-key
+        hostPath:
+          path: /var/lib/rancher/k3s/server/tls/server-ca.key
+          type: File
       - name: config-rw
         emptyDir: {}
   volumeClaimTemplates:
@@ -265,7 +237,7 @@ spec:
       name: database
       labels:
         app.kubernetes.io/name: smallstep
-        app.kubernetes.io/component: phxc-ca
+        app.kubernetes.io/component: kube-server-ca
     spec:
       storageClassName: longhorn
       accessModes: [ReadWriteOnce]

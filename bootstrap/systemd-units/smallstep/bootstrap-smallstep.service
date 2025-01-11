@@ -1,18 +1,17 @@
 [Unit]
 Description=Bootstrap phxc root trust for step-cli
-Requires=trust-phxc-root.service install-smallstep.service
-After=trust-phxc-root.service install-smallstep.service
-AssertPathExists=/usr/local/share/ca-certificates/phxc-root.crt
+Requires=install-smallstep.service
+After=install-smallstep.service
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=bash -eo pipefail
-StandardInputText=jq -n --arg fp "$(step certificate fingerprint /usr/local/share/ca-certificates/phxc-root.crt)" \
+StandardInputText=jq -n --arg fp "$(step certificate fingerprint /var/lib/rancher/k3s/server/tls/server-ca.crt)" \
   '{ \
-    "ca-url": "https://phxc-ca.smallstep.svc.cluster.local:9000", \
+    "ca-url": "https://kube-server-ca.smallstep.svc.cluster.local:9000", \
     "fingerprint": $fp, \
-    "root": "/usr/local/share/ca-certificates/phxc-root.crt", \
+    "root": "/var/lib/rancher/k3s/server/tls/server-ca.crt", \
     "redirect-url": "" \
   }' \
   >/root/.step/config/defaults.json

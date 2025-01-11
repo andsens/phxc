@@ -1,6 +1,6 @@
 {
   "address": ":9000",
-  "dnsNames": ["phxc-ca.smallstep.svc.cluster.local", "127.0.0.1"],
+  "dnsNames": ["kube-server-ca.smallstep.svc.cluster.local", "127.0.0.1"],
   "logger": {
     "format": "text"
   },
@@ -8,18 +8,27 @@
     "type": "badgerv2",
     "dataSource": "/home/step/db"
   },
-  "root": "/home/step/certs/root_ca.crt",
-  "crt": "/home/step/certs/intermediate_ca.crt",
-  "key": "/home/step/secrets/intermediate_ca_key",
+  "root": "/home/step/secrets/kube_apiserver_server_ca.crt",
+  "crt": "/home/step/secrets/kube_apiserver_server_ca.crt",
+  "key": "/home/step/secrets/kube_apiserver_server_ca_key",
   "ssh": {
-    "hostKey": "/home/step/secrets/intermediate_ca_key",
-    "userKey": "/home/step/secrets/intermediate_ca_key"
+    "hostKey": "/home/step/secrets/kube_apiserver_server_ca_key"
   },
   "authority": {
+    "claims": {
+      "minTLSCertDuration": "36h",
+      "maxTLSCertDuration": "36h",
+      "defaultTLSCertDuration": "36h",
+      "disableRenewal": true,
+      "minHostSSHCertDuration": "36h",
+      "maxHostSSHCertDuration": "36h",
+      "defaultHostSSHCertDuration": "36h",
+      "enableSSHCA": false
+    },
     "provisioners": [
       {
         "type": "JWK",
-        "name": "step-issuer",
+        "name": "kube-server-issuer",
         "claims": {
           "enableSSHCA": false,
           "disableRenewal": false
@@ -37,9 +46,6 @@
         "type": "JWK",
         "name": "ssh-host",
         "claims": {
-          "minHostSSHCertDuration": "72h",
-          "maxHostSSHCertDuration": "72h",
-          "defaultHostSSHCertDuration": "72h",
           "enableSSHCA": true,
           "disableRenewal": false,
           "allowRenewalAfterExpiry": true

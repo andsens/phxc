@@ -47,8 +47,6 @@ spec:
             - name: cluster-config
               mountPath: /workspace/cluster.json
               readOnly: true
-            - name: secureboot
-              mountPath: /workspace/secureboot
           containers:
           - name: create-boot-image
             image: ghcr.io/andsens/phxc-create-boot-image
@@ -83,6 +81,7 @@ spec:
           - name: secureboot
             secret:
               secretName: secureboot
+              optional: true
           - name: bundle
             configMap:
               name: bundle

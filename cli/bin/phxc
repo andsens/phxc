@@ -14,8 +14,7 @@ Usage:
   phxc setup [-k KN -u UN] KUBEAPI_HOSTNAME
   phxc bootstrap [--wait|--update] VARIANT
   phxc update-nodes (all | NODE...)
-  phxc backup-secrets [FILE]
-  phxc restore-secrets [FILE]
+  phxc recovery-keys
   phxc embed-configs IMAGE CLUSTER [NODE [RPIOTP]]
   phxc get-kube-cert [-k KN -u UN] KUBEAPI_HOSTNAME
 
@@ -29,8 +28,7 @@ Commands:
   setup           - Setup the Phoenix Cluster root trust and configure kubectl
   bootstrap       - Manually start a bootstrap job for VARIANT
   update-node     - Update the node with the latest bootstrapped image
-  backup-secrets  - Backup the phxc-ca and secureboot certs & keys
-  restore-secrets - Restore the phxc-ca and secureboot certs & keys
+  recovery-keys   - Show the disk-encryption recovery keys
   embed-configs   - Embed configuration in the FAT32 partition of a disk image
   get-kube-cert   - Issue or refresh a client cert for use with kubectl
 "
@@ -38,42 +36,39 @@ Commands:
 # shellcheck disable=2016,2086,2317,1090,1091,2034,2154
 docopt() { local v='2.0.2'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
-%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:1107};usage=${DOC:39:291}
-digest=f5648;options=('-k --ssh-keyname 1' '-u --username 1' ' --wait 0' ' --u'\
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:993};usage=${DOC:39:253}
+digest=ef3ae;options=('-k --ssh-keyname 1' '-u --username 1' ' --wait 0' ' --u'\
 'pdate 0');node_0(){ value __ssh_keyname 0;};node_1(){ value __username 1;}
 node_2(){ switch __wait 2;};node_3(){ switch __update 3;};node_4(){ value \
 KUBEAPI_HOSTNAME a;};node_5(){ value VARIANT a;};node_6(){ value NODE a true;}
-node_7(){ value FILE a;};node_8(){ value IMAGE a;};node_9(){ value CLUSTER a;}
-node_10(){ value RPIOTP a;};node_11(){ switch setup a:setup;};node_12(){
-switch bootstrap a:bootstrap;};node_13(){ switch update_nodes a:update-nodes;}
-node_14(){ switch all a:all;};node_15(){ switch backup_secrets a:backup-secrets
-};node_16(){ switch restore_secrets a:restore-secrets;};node_17(){ switch \
-embed_configs a:embed-configs;};node_18(){ switch get_kube_cert a:get-kube-cert
-};node_19(){ sequence 11 20 4;};node_20(){ optional 0 1;};node_21(){ sequence \
-12 22 5;};node_22(){ optional 23;};node_23(){ choice 2 3;};node_24(){ sequence \
-13 25;};node_25(){ choice 14 26;};node_26(){ repeatable 6;};node_27(){
-sequence 15 28;};node_28(){ optional 7;};node_29(){ sequence 16 28;};node_30(){
-sequence 17 8 9 31;};node_31(){ optional 6 10;};node_32(){ sequence 18 20 4;}
-node_33(){ choice 19 21 24 27 29 30 32;};cat <<<' docopt_exit() { [[ -n $1 ]] \
-&& printf "%s\n" "$1" >&2;printf "%s\n" "${DOC:39:291}" >&2;exit 1;}';local \
+node_7(){ value IMAGE a;};node_8(){ value CLUSTER a;};node_9(){ value RPIOTP a;}
+node_10(){ switch setup a:setup;};node_11(){ switch bootstrap a:bootstrap;}
+node_12(){ switch update_nodes a:update-nodes;};node_13(){ switch all a:all;}
+node_14(){ switch recovery_keys a:recovery-keys;};node_15(){ switch \
+embed_configs a:embed-configs;};node_16(){ switch get_kube_cert a:get-kube-cert
+};node_17(){ sequence 10 18 4;};node_18(){ optional 0 1;};node_19(){ sequence \
+11 20 5;};node_20(){ optional 21;};node_21(){ choice 2 3;};node_22(){ sequence \
+12 23;};node_23(){ choice 13 24;};node_24(){ repeatable 6;};node_25(){
+sequence 15 7 8 26;};node_26(){ optional 6 9;};node_27(){ sequence 16 18 4;}
+node_28(){ choice 17 19 22 14 25 27;};cat <<<' docopt_exit() { [[ -n $1 ]] && \
+printf "%s\n" "$1" >&2;printf "%s\n" "${DOC:39:253}" >&2;exit 1;}';local \
 varnames=(__ssh_keyname __username __wait __update KUBEAPI_HOSTNAME VARIANT \
-NODE FILE IMAGE CLUSTER RPIOTP setup bootstrap update_nodes all backup_secrets \
-restore_secrets embed_configs get_kube_cert) varname;for varname in \
-"${varnames[@]}"; do unset "var_$varname";done;parse 33 "$@";local \
-p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset "$p$varname"
-done;if declare -p var_NODE >/dev/null 2>&1; then eval $p'NODE=("${var_NODE[@]'\
-'}")';else eval $p'NODE=()';fi;eval $p'__ssh_keyname=${var___ssh_keyname:-'\
-"'"'$USER@$HOST'"'"'};'$p'__username=${var___username:-system:admin};'$p'__wai'\
-'t=${var___wait:-false};'$p'__update=${var___update:-false};'$p'KUBEAPI_HOSTNA'\
-'ME=${var_KUBEAPI_HOSTNAME:-};'$p'VARIANT=${var_VARIANT:-};'$p'FILE=${var_FILE'\
-':-};'$p'IMAGE=${var_IMAGE:-};'$p'CLUSTER=${var_CLUSTER:-};'$p'RPIOTP=${var_RP'\
-'IOTP:-};'$p'setup=${var_setup:-false};'$p'bootstrap=${var_bootstrap:-false};'\
-$p'update_nodes=${var_update_nodes:-false};'$p'all=${var_all:-false};'$p'backu'\
-'p_secrets=${var_backup_secrets:-false};'$p'restore_secrets=${var_restore_secr'\
-'ets:-false};'$p'embed_configs=${var_embed_configs:-false};'$p'get_kube_cert=$'\
-'{var_get_kube_cert:-false};';local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && \
-docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for varname in "${varnames[@]}"; \
-do declare -p "$p$varname";done;done;}
+NODE IMAGE CLUSTER RPIOTP setup bootstrap update_nodes all recovery_keys \
+embed_configs get_kube_cert) varname;for varname in "${varnames[@]}"; do unset \
+"var_$varname";done;parse 28 "$@";local p=${DOCOPT_PREFIX:-''};for varname in \
+"${varnames[@]}"; do unset "$p$varname";done;if declare -p var_NODE >/dev/null \
+2>&1; then eval $p'NODE=("${var_NODE[@]}")';else eval $p'NODE=()';fi;eval $p'_'\
+'_ssh_keyname=${var___ssh_keyname:-'"'"'$USER@$HOST'"'"'};'$p'__username=${var'\
+'___username:-system:admin};'$p'__wait=${var___wait:-false};'$p'__update=${var'\
+'___update:-false};'$p'KUBEAPI_HOSTNAME=${var_KUBEAPI_HOSTNAME:-};'$p'VARIANT='\
+'${var_VARIANT:-};'$p'IMAGE=${var_IMAGE:-};'$p'CLUSTER=${var_CLUSTER:-};'$p'RP'\
+'IOTP=${var_RPIOTP:-};'$p'setup=${var_setup:-false};'$p'bootstrap=${var_bootst'\
+'rap:-false};'$p'update_nodes=${var_update_nodes:-false};'$p'all=${var_all:-fa'\
+'lse};'$p'recovery_keys=${var_recovery_keys:-false};'$p'embed_configs=${var_em'\
+'bed_configs:-false};'$p'get_kube_cert=${var_get_kube_cert:-false};';local \
+docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
+((;docopt_i>0;docopt_i--)); do for varname in "${varnames[@]}"; do declare -p \
+"$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' phxc`
   eval "$(docopt "$@")"
 
@@ -91,10 +86,8 @@ do declare -p "$p$varname";done;done;}
     get_kube_client_cert "$KUBEAPI_HOSTNAME" "$__ssh_keyname" "$__username"
   elif $embed_configs; then
     embed_configs "$IMAGE" "$CLUSTER" "$NODE" "$RPIOTP"
-  elif $backup_secrets; then
-    backup_secrets "$FILE"
-  elif $restore_secrets; then
-    restore_secrets "$FILE"
+  elif $recovery_keys; then
+    recovery_keys
   elif $bootstrap; then
     bootstrap "$VARIANT" "$__wait" "$__update"
   elif $update_nodes; then
@@ -114,8 +107,7 @@ setup() {
   local yesno remote_kube_api_server_ca_fp kube_api_server_ca_fp
   trap 'error "Failed to configure, run with LOGLEVEL=verbose to see more detailed errors"' ERR
   mkdir -p "$CONFIG_DIR"
-  remote_kube_api_server_ca=$(LC_ALL=C ssh -oStrictHostKeyChecking=off -oUserKnownHostsFile=/dev/null "admin@$kube_api_hostname" -- \
-    sudo cat /var/lib/rancher/k3s/agent/server-ca.crt)
+  remote_kube_api_server_ca=$(curl -k --no-progress-meter "https://$kube_api_hostname:9000/roots.pem")
   # TOFU for Kubernetes API Server CA
   remote_kube_api_server_ca_fp=$(step certificate fingerprint /dev/stdin <<<"$remote_kube_api_server_ca")
   if [[ -e "$KUBE_API_SERVER_CA_CRT" ]]; then
@@ -164,8 +156,7 @@ create_kube_config() {
 trust_ssh_host_key() {
   local trusted_certs=$HOME/.ssh/phxc_trusted_cert ssh_host_key
   info "Writing SSH host key trust to %s" "${trusted_certs//"$HOME"/"~"}"
-  ssh_host_key=$(kubectl --context phxc -n smallstep get secret phxc-intermediate -ojsonpath='{.data.tls\.crt}' | \
-    base64 -d | openssl x509 -noout -pubkey | ssh-keygen -f /dev/stdin -i -m PKCS8)
+  ssh_host_key=$(openssl x509 -noout -pubkey -in "$KUBE_API_SERVER_CA_CRT" | ssh-keygen -f /dev/stdin -i -m PKCS8)
   printf "@cert-authority * %s\n" "$ssh_host_key" >"$trusted_certs"
 }
 
@@ -248,68 +239,14 @@ embed_configs() {
     ghcr.io/andsens/phxc-embed-configs:sha-3e0c5ff
 }
 
-backup_secrets() {
-  local dest=$1 backup
-  backup=$(
-    printf -- "# Phoenix Cluster secrets backup, restore with \`phxc restore secrets backup.yaml\`\n"
-    printf -- "# Disk encryption recovery keys:\n"
-    for secret in $(kubectl --context phxc -n phxc get secret -oname); do
-      if [[ $secret = secret/diskenc-recovery-* ]]; then
-        printf -- "# %s: %s\n" \
-          "${secret#'secret/diskenc-recovery-'}" \
-          "$(kubectl --context phxc -n phxc get "$secret" -ojsonpath='{.data.disk-encryption-recovery\.key}' | base64 -d)"
-      fi
-    done
-    printf -- "---\n"
-    kubectl --context phxc -n smallstep get secret phxc-root -ojson | clean_cert_secret
-    printf -- "---\n"
-    kubectl --context phxc -n smallstep get secret phxc-intermediate -ojson | clean_cert_secret
-    printf -- "---\n"
-    kubectl --context phxc -n phxc get secret secureboot -ojson | clean_cert_secret
-  )
-  if [[ -n $dest ]]; then
-    (umask 0077; printf "%s\n" "$backup" >"$dest")
-  else
-    printf "%s\n" "$backup"
-  fi
-}
-
-restore_secrets() {
-  local src=$1 backup
-  if [[ -n $src ]]; then
-    backup=$(cat "$src")
-  else
-    backup=$(cat)
-  fi
-  info "Restoring keys & certs"
-  kubectl --context phxc apply -f <(printf "%s\n" "$backup")
-  info "Restarting cluster services"
-  kubectl --context phxc -n smallstep rollout restart statefulset phxc-ca
-  kubectl --context phxc -n smallstep wait --timeout=-1s --for=condition=Ready=false pod phxc-ca-0
-  kubectl --context phxc -n smallstep wait --timeout=-1s --for=condition=Ready pod phxc-ca-0
-  kubectl --context phxc -n smallstep rollout restart deployment step-issuer
-  info "Renewing all certificates that were issued by step-issuer"
-  local ns cert secret
-  while read -r -d $'\n' ns cert secret; do
-    info "Renewing %s/%s" "$ns" "$cert"
-    kubectl --context phxc -n "$ns" get secret "$secret" -ojson | \
-      clean_cert_secret | \
-      jq '.data["tls.crt"] |= "" | .data["ca.crt"] |= ""' | \
-      kubectl apply -f -
-    kubectl --context phxc -n "$ns" wait --timeout=-1s --for=condition=Ready certificate "$cert"
-  done < <(kubectl get --all-namespaces certificate -ojson | \
-    jq -r '.items[] | select(.spec.issuerRef == {"group": "certmanager.step.sm", "kind": "StepClusterIssuer", "name": "step-issuer"}) |
-      .metadata.namespace + " " + .metadata.name + " " + .spec.secretName')
-  kubectl --context phxc -n phxc rollout restart deployment image-registry
-  info "Trusting new restored certificate on all nodes and resigning SSH host keys"
-  local hostname
-  for hostname in $(kubectl --context phxc get nodes -ojsonpath='{.items[*].metadata.labels.kubernetes\.io/hostname}'); do
-    LC_ALL=C ssh -oStrictHostKeyChecking=accept-new "admin@$hostname" -- sudo systemctl restart --no-block trust-phxc-root sign-ssh-host-keys
+recovery_keys() {
+  printf -- "# Phoenix Cluster disk encryption recovery keys\n"
+  for secret in $(kubectl --context phxc -n phxc get secret -oname); do
+    [[ $secret != secret/diskenc-recovery-* ]] || \
+      printf -- "%s: %s\n" \
+        "${secret#'secret/diskenc-recovery-'}" \
+        "$(kubectl --context phxc -n phxc get "$secret" -ojsonpath='{.data.disk-encryption-recovery\.key}' | base64 -d)"
   done
-}
-
-clean_cert_secret() {
-  jq 'del(.metadata.annotations) | del(.metadata.labels) | del(.metadata.resourceVersion) | del(.metadata.uid)'
 }
 
 bootstrap() {

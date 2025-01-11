@@ -3,7 +3,6 @@ Description=Use the TPM to decrypt the data partition
 DefaultDependencies=no
 Requires=sysroot.mount
 After=sysroot.mount
-ConditionSecurity=uefi-secureboot
 ConditionKernelCommandLine=!phxc.static-diskenc
 
 [Install]

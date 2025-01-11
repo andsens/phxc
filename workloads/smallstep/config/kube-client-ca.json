@@ -11,16 +11,18 @@
   "root": "/home/step/secrets/kube_apiserver_client_ca.crt",
   "crt": "/home/step/secrets/kube_apiserver_client_ca.crt",
   "key": "/home/step/secrets/kube_apiserver_client_ca_key",
+  "ssh": {
+    "userKey": "/home/step/secrets/kube_apiserver_client_ca_key"
+  },
   "authority": {
     "claims": {
       "minTLSCertDuration": "30m",
       "maxTLSCertDuration": "30m",
       "defaultTLSCertDuration": "30m",
       "disableRenewal": true,
-      "minHostSSHCertDuration": "36h",
-      "maxHostSSHCertDuration": "36h",
       "minUserSSHCertDuration": "30m",
       "maxUserSSHCertDuration": "30m",
+      "defaultUserSSHCertDuration": "30m",
       "enableSSHCA": false
     },
     "provisioners": []

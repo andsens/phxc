@@ -1,7 +1,7 @@
 [Unit]
 Description=Update the boot partition with the latest image
-Requires=boot.mount workload-ready@bootstrap.service trust-phxc-root.service
-After=boot.mount workload-ready@bootstrap.service uncordon.service switch-boot.service trust-phxc-root.service
+Requires=boot.mount workload-ready@bootstrap.service
+After=boot.mount workload-ready@bootstrap.service uncordon.service switch-boot.service
 
 [Install]
 WantedBy=multi-user.target

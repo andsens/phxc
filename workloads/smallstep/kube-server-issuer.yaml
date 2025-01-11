@@ -2,15 +2,15 @@
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: step-issuer
+  name: kube-server-issuer
   labels:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: issuer
+    app.kubernetes.io/component: kube-server-issuer
 spec:
   endpointSelector:
     matchLabels:
       app.kubernetes.io/name: smallstep
-      app.kubernetes.io/component: issuer
+      app.kubernetes.io/component: kube-server-issuer
   ingress:
   - toPorts:
     - ports:
@@ -24,16 +24,16 @@ spec:
     toEndpoints:
     - matchLabels:
         app.kubernetes.io/name: smallstep
-        app.kubernetes.io/component: phxc-ca
+        app.kubernetes.io/component: kube-server-ca
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: step-issuer-approver-rolebinding
+  name: kube-server-issuer-approver-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: step-issuer-approver-role
+  name: kube-server-issuer-approver-role
 subjects:
 - kind: ServiceAccount
   name: cert-manager
@@ -42,10 +42,10 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: step-issuer-approver-role
+  name: kube-server-issuer-approver-role
   labels:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: issuer
+    app.kubernetes.io/component: kube-server-issuer
 rules:
 - apiGroups: [cert-manager.io]
   resourceNames: [stepissuers.certmanager.step.sm/*, stepclusterissuers.certmanager.step.sm/*]
@@ -55,33 +55,33 @@ rules:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: step-issuer
+  name: kube-server-issuer
   labels:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: issuer
+    app.kubernetes.io/component: kube-server-issuer
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: step-issuer-leader-election-rolebinding
+  name: kube-server-issuer-leader-election-rolebinding
   labels:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: issuer
+    app.kubernetes.io/component: kube-server-issuer
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: step-issuer-leader-election-role
+  name: kube-server-issuer-leader-election-role
 subjects:
 - kind: ServiceAccount
-  name: step-issuer
+  name: kube-server-issuer
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: step-issuer-leader-election-role
+  name: kube-server-issuer-leader-election-role
   labels:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: issuer
+    app.kubernetes.io/component: kube-server-issuer
 rules:
 - apiGroups: [""]
   resources: [configmaps]
@@ -99,42 +99,42 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: step-issuer-manager-rolebinding
+  name: kube-server-issuer-manager-rolebinding
   labels:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: issuer
+    app.kubernetes.io/component: kube-server-issuer
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: step-issuer-manager-role
+  name: kube-server-issuer-manager-role
 subjects:
 - kind: ServiceAccount
-  name: step-issuer
+  name: kube-server-issuer
   namespace: smallstep
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: step-issuer-proxy-rolebinding
+  name: kube-server-issuer-proxy-rolebinding
   labels:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: issuer
+    app.kubernetes.io/component: kube-server-issuer
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: step-issuer-proxy-role
+  name: kube-server-issuer-proxy-role
 subjects:
 - kind: ServiceAccount
-  name: step-issuer
+  name: kube-server-issuer
   namespace: smallstep
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: step-issuer-manager-role
+  name: kube-server-issuer-manager-role
   labels:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: issuer
+    app.kubernetes.io/component: kube-server-issuer
 rules:
 - apiGroups: [""]
   resources: [events]
@@ -171,10 +171,10 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: step-issuer-proxy-role
+  name: kube-server-issuer-proxy-role
   labels:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: issuer
+    app.kubernetes.io/component: kube-server-issuer
 rules:
 - apiGroups: [authentication.k8s.io]
   resources: [tokenreviews]
@@ -186,14 +186,14 @@ rules:
 apiVersion: v1
 kind: Service
 metadata:
-  name: step-issuer
+  name: kube-server-issuer
   labels:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: issuer
+    app.kubernetes.io/component: kube-server-issuer
 spec:
   selector:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: issuer
+    app.kubernetes.io/component: kube-server-issuer
   ports:
   - name: api
     port: 443
@@ -205,11 +205,11 @@ metadata:
   name: smallstep-webhook-serving-cert
   labels:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: issuer
+    app.kubernetes.io/component: kube-server-issuer
 spec:
-  commonName: step-issuer.smallstep.svc
+  commonName: kube-server-issuer.smallstep.svc
   dnsNames:
-  - step-issuer.smallstep.svc.cluster.local
+  - kube-server-issuer.smallstep.svc.cluster.local
   issuerRef:
     group: cert-manager.io
     kind: ClusterIssuer
@@ -219,23 +219,23 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: step-issuer
+  name: kube-server-issuer
   labels:
     app.kubernetes.io/name: smallstep
-    app.kubernetes.io/component: issuer
+    app.kubernetes.io/component: kube-server-issuer
 spec:
   selector:
     matchLabels:
       app.kubernetes.io/name: smallstep
-      app.kubernetes.io/component: issuer
+      app.kubernetes.io/component: kube-server-issuer
   template:
     metadata:
       labels:
         app.kubernetes.io/name: smallstep
-        app.kubernetes.io/component: issuer
+        app.kubernetes.io/component: kube-server-issuer
         cluster.local/allow-apiserver-egress: "true"
     spec:
-      serviceAccountName: step-issuer
+      serviceAccountName: kube-server-issuer
       containers:
       - name: step-issuer
         image: cr.step.sm/smallstep/step-issuer:0.9.1

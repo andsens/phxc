@@ -231,7 +231,7 @@ EOF
     artifacts[uki.efi]=/workspace/root/boot/uki.efi
     sha256sums[uki.efi]=$(sha256sum /workspace/root/boot/uki.efi | cut -d ' ' -f1)
 
-    # Sign systemd-boot & UKI if secureboot cert is present
+    # Sign UKI if secureboot cert is present
     if [[ -e /workspace/secureboot/tls.key ]]; then
       local sb_cert_bundle sb_cert sb_intermediate
       sb_cert_bundle=$(cat /workspace/secureboot/tls.crt)
@@ -244,25 +244,25 @@ EOF
         /workspace/root/boot/uki.efi
       artifacts[uki.efi]=/workspace/root/boot/uki.efi.signed
       sha256sums[uki.efi]=$(sha256sum /workspace/root/boot/uki.efi.signed | cut -d ' ' -f1)
-
-      # Extract authentihashes used for PE signatures so we can use them for remote attestation
-      authentihashes[uki.efi]=$(/signify/bin/python3 /scripts/get-pe-digest.py --json /workspace/root/boot/uki.efi.signed)
-      # See https://lists.freedesktop.org/archives/systemd-devel/2022-December/048694.html
-      # as to why we also measure the embedded kernel
-      objcopy -O binary --only-section=.linux /workspace/root/boot/uki.efi.signed /workspace/uki-vmlinuz
-      authentihashes[vmlinuz]=$(/signify/bin/python3 /scripts/get-pe-digest.py --json /workspace/uki-vmlinuz)
-
-      # Calculate PCR11 for TPM2 backed disk encryption
-      chroot /workspace/root /lib/systemd/systemd-measure calculate \
-        --linux=/boot/vmlinuz \
-        --initrd=/boot/initramfs.img \
-        --cmdline=/boot/cmdline.txt \
-        --osrel=/usr/lib/os-release \
-        --json=pretty \
-        >/boot/pcr11.json
-      artifacts[pcr11.json]=/workspace/root/boot/pcr11.json
     fi
   fi
+
+  # Extract authentihashes used for PE signatures so we can use them for remote attestation
+  authentihashes[uki.efi]=$(/signify/bin/python3 /scripts/get-pe-digest.py --json "${artifacts[uki.efi]}")
+  # See https://lists.freedesktop.org/archives/systemd-devel/2022-December/048694.html
+  # as to why we also measure the embedded kernel
+  objcopy -O binary --only-section=.linux "${artifacts[uki.efi]}" /workspace/uki-vmlinuz
+  authentihashes[vmlinuz]=$(/signify/bin/python3 /scripts/get-pe-digest.py --json /workspace/uki-vmlinuz)
+
+  # Calculate PCR11 for TPM2 backed disk encryption
+  chroot /workspace/root /lib/systemd/systemd-measure calculate \
+    --linux=/boot/vmlinuz \
+    --initrd=/boot/initramfs.img \
+    --cmdline=/boot/cmdline.txt \
+    --osrel=/usr/lib/os-release \
+    --json=pretty \
+    >/workspace/root/boot/pcr11.json
+  artifacts[pcr11.json]=/workspace/root/boot/pcr11.json
 
   #######################
   ### Create metadata ###
@@ -380,7 +380,7 @@ EOF
 }
 
 curl_img_reg() {
-  curl --cacert /workspace/secureboot/ca.crt \
+  curl --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
     -fL --no-progress-meter --connect-timeout 5 \
     --retry 10 --retry-delay 60 \
     "$@"
