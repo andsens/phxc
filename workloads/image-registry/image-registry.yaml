@@ -61,18 +61,6 @@ spec:
     name: kube-server-issuer
   secretName: image-registry-tls
 ---
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: images
-  labels:
-    app.kubernetes.io/name: image-registry
-    app.kubernetes.io/component: images
-spec:
-  storageClassName: longhorn
-  accessModes: [ReadWriteOnce]
-  resources: {requests: {storage: 10Gi}}
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -93,6 +81,8 @@ spec:
         app.kubernetes.io/name: image-registry
         app.kubernetes.io/component: image-registry
     spec:
+      nodeSelector:
+        node-role.kubernetes.io/control-plane: "true"
       initContainers:
       - name: chown-images
         image: busybox:1.37.0
@@ -125,8 +115,9 @@ spec:
         configMap:
           name: image-registry-config
       - name: images
-        persistentVolumeClaim:
-          claimName: images
+        hostPath:
+          path: /var/lib/phxc/images
+          type: DirectoryOrCreate
       - name: image-registry-tls
         secret:
           secretName: image-registry-tls

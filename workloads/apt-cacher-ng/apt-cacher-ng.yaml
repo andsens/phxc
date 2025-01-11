@@ -33,18 +33,6 @@ spec:
     port: 3142
     targetPort: apt-cacher-ng
 ---
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: apt-cacher-ng
-  labels:
-    app.kubernetes.io/name: apt-cacher-ng
-    app.kubernetes.io/component: apt-cacher-ng
-spec:
-  storageClassName: longhorn
-  accessModes: [ReadWriteOnce]
-  resources: {requests: {storage: 10Gi}}
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -97,7 +85,8 @@ spec:
         configMap:
           name: apt-cacher-ng
       - name: cache
-        persistentVolumeClaim:
-          claimName: apt-cacher-ng
+        hostPath:
+          path: /var/lib/phxc/apt-cacher-ng
+          type: DirectoryOrCreate
       - name: run
         emptyDir: {}

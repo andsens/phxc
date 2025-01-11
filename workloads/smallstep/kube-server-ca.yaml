@@ -232,13 +232,5 @@ spec:
           type: File
       - name: config-rw
         emptyDir: {}
-  volumeClaimTemplates:
-  - metadata:
-      name: database
-      labels:
-        app.kubernetes.io/name: smallstep
-        app.kubernetes.io/component: kube-server-ca
-    spec:
-      storageClassName: longhorn
-      accessModes: [ReadWriteOnce]
-      resources: {requests: {storage: 1Mi}}
+      - name: database
+        emptyDir: {}
