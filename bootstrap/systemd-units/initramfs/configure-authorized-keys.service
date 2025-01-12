@@ -3,6 +3,7 @@ Description=Copy admin.ssh-keys from /boot/phxc/cluster.json to /home/admin/.ssh
 DefaultDependencies=no
 Requires=boot.mount sysroot.mount
 After=boot.mount sysroot.mount
+Before=initrd.target
 ConditionPathExists=!/sysroot/home/admin/.ssh/authorized_keys
 ConditionPathExists=/boot/phxc/cluster.json
 

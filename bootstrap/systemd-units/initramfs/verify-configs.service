@@ -3,6 +3,7 @@ Description=Verifies and validates all config files on the boot partition
 DefaultDependencies=no
 Wants=configure-authorized-keys.service
 After=configure-authorized-keys.service
+Before=initrd.target
 
 [Install]
 RequiredBy=initrd.target

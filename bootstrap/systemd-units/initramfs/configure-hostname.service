@@ -3,6 +3,7 @@ Description=Set the hostname using the node-config
 DefaultDependencies=no
 Requires=verify-configs.service
 After=verify-configs.service
+Before=initrd.target
 ConditionPathExists=/boot/phxc/node.json
 
 [Install]
