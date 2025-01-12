@@ -7,6 +7,8 @@ source "$PKGROOT/.upkg/records.sh/records.sh"
 CONFIG_DIR=$HOME/.config/phxc
 KUBE_API_SERVER_CA_CRT=$CONFIG_DIR/kube-api-server-ca.crt
 KUBE_API_CLIENT_CA_CRT=$CONFIG_DIR/kube-api-client-ca.crt
+SECUREBOOT_KEY=$CONFIG_DIR/secureboot.key
+SECUREBOOT_CRT=$CONFIG_DIR/secureboot.crt
 
 main() {
   DOC="phxc - Phoenix Cluster management tool
@@ -130,8 +132,8 @@ setup() {
   curl -k --no-progress-meter "https://$kube_api_hostname:9001/roots.pem" >"$KUBE_API_CLIENT_CA_CRT" 2> >(LOGPROGRAM=curl pipe_verbose)
 
   create_kube_config "$kube_api_hostname" "$ssh_keyname" "$username"
-
   trust_ssh_host_key
+  create_secureboot_key
 }
 
 create_kube_config() {
@@ -158,6 +160,29 @@ trust_ssh_host_key() {
   info "Writing SSH host key trust to %s" "${trusted_certs//"$HOME"/"~"}"
   ssh_host_key=$(openssl x509 -noout -pubkey -in "$KUBE_API_SERVER_CA_CRT" | ssh-keygen -f /dev/stdin -i -m PKCS8)
   printf "@cert-authority * %s\n" "$ssh_host_key" >"$trusted_certs"
+}
+
+create_secureboot_key() {
+  info "Creating secureboot key & certificate"
+  if [[ -e $SECUREBOOT_KEY ]]; then
+    info "Secureboot key already exists at %s, not overwriting" "$SECUREBOOT_KEY"
+  else
+    openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out "$SECUREBOOT_KEY"
+  fi
+  if [[ -e $SECUREBOOT_CRT ]]; then
+    info "Secureboot certificate already exists at %s, not overwriting" "$SECUREBOOT_CRT"
+  else
+    openssl req -key "$SECUREBOOT_KEY" -x509 -nodes -out "$SECUREBOOT_CRT" -sha256 -days $((20*365)) \
+      -subj "/CN=Phoenix Cluster Secureboot"
+  fi
+  info "Uploading secureboot key & certificate to cluster"
+  local sb_files
+  sb_files=$(mktemp -d --suffix -phxc-sb)
+  # shellcheck disable=SC2064
+  trap "rm -rf \"$sb_files\"" EXIT
+  ln -s "$SECUREBOOT_KEY" "$sb_files/tls.key"
+  ln -s "$SECUREBOOT_CRT" "$sb_files/tls.crt"
+  kubectl --context phxc -n phxc create secret tls secureboot --key="$SECUREBOOT_KEY" --cert="$SECUREBOOT_CRT"
 }
 
 get_kube_client_cert() {

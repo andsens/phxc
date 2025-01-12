@@ -15,6 +15,7 @@ Usage:
 Options:
   --debug  Enable debug build (installs debug tools, no artifact cleanup, etc.)
   --embed-cluster-config PATH  Embed cluster.json in root image
+  --no-sb  Do not sign the UKI with secureboot certificate if present
 
 Supported variants:
   amd64 - x86_64 image
@@ -25,17 +26,18 @@ Supported variants:
 # shellcheck disable=2016,2086,2317,1090,1091,2034
 docopt() { local v='2.0.2'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
-%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:354};usage=${DOC:29:36}
-digest=d4cf3;options=(' --debug 0' ' --embed-cluster-config 1');node_0(){
-switch __debug 0;};node_1(){ value __embed_cluster_config 1;};node_2(){ value \
-VARIANT a;};node_3(){ optional 0 1;};node_4(){ sequence 3 2;};cat <<<' \
-docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2;printf "%s\n" \
-"${DOC:29:36}" >&2;exit 1;}';local varnames=(__debug __embed_cluster_config \
-VARIANT) varname;for varname in "${varnames[@]}"; do unset "var_$varname";done
-parse 4 "$@";local p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do
-unset "$p$varname";done;eval $p'__debug=${var___debug:-false};'$p'__embed_clus'\
-'ter_config=${var___embed_cluster_config:-};'$p'VARIANT=${var_VARIANT:-};'
-local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:424};usage=${DOC:29:36}
+digest=de663;options=(' --debug 0' ' --embed-cluster-config 1' ' --no-sb 0')
+node_0(){ switch __debug 0;};node_1(){ value __embed_cluster_config 1;}
+node_2(){ switch __no_sb 2;};node_3(){ value VARIANT a;};node_4(){ optional 0 \
+1 2;};node_5(){ sequence 4 3;};cat <<<' docopt_exit() { [[ -n $1 ]] && printf \
+"%s\n" "$1" >&2;printf "%s\n" "${DOC:29:36}" >&2;exit 1;}';local \
+varnames=(__debug __embed_cluster_config __no_sb VARIANT) varname;for varname \
+in "${varnames[@]}"; do unset "var_$varname";done;parse 5 "$@";local \
+p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset "$p$varname"
+done;eval $p'__debug=${var___debug:-false};'$p'__embed_cluster_config=${var___'\
+'embed_cluster_config:-};'$p'__no_sb=${var___no_sb:-false};'$p'VARIANT=${var_V'\
+'ARIANT:-};';local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
 ((;docopt_i>0;docopt_i--)); do for varname in "${varnames[@]}"; do declare -p \
 "$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' bootstrap`
@@ -95,14 +97,21 @@ local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
     --tar-path "/workspace/artifacts/node.tar" \
     --no-push
 
-  local create_boot_image_tag
+  local create_boot_image_tag create_boot_docker_opts=()
   create_boot_image_tag=$(yq -r '.images[] | select(.name == "ghcr.io/andsens/phxc-create-boot-image") | .newTag' \
     "$PKGROOT/workloads/bootstrap/kustomization.yaml")
+  # shellcheck disable=SC2154
+  if ! $__no_sb && [[ -e $HOME/.config/phxc/secureboot.key ]]; then
+    create_boot_docker_opts+=(-v "$HOME/.config/phxc/secureboot.key:/workspace/secureboot/tls.key")
+  fi
+  if ! $__no_sb && [[ -e $HOME/.config/phxc/secureboot.crt ]]; then
+    create_boot_docker_opts+=(-v "$HOME/.config/phxc/secureboot.crt:/workspace/secureboot/tls.crt")
+  fi
 
   docker run --rm -ti \
     --platform "$DOCKER_PLATFORM" \
     -v "$PKGROOT/workloads/bootstrap/scripts:/scripts:ro" \
-    -v "$artifacts:/workspace/artifacts:rw" \
+    -v "$artifacts:/workspace/artifacts:rw" "${create_boot_docker_opts[@]}" \
     -e "VARIANT=$VARIANT" \
     -e "DEBUG=$DEBUG" \
     --device=/dev/kvm \

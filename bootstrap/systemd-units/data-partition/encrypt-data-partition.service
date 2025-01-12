@@ -4,6 +4,7 @@ DefaultDependencies=no
 Requires=expand-data-partition.service
 After=expand-data-partition.service
 Before=systemd-cryptsetup@data.service
+ConditionKernelCommandLine=phxc.static-diskenc
 
 [Install]
 RequiredBy=sysinit.target

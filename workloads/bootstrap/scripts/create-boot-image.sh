@@ -208,61 +208,46 @@ EOF
     kernver=$(echo /workspace/root/lib/modules/*)
     kernver=${kernver#'/workspace/root/lib/modules/'}
 
-    printf "%s" "$kernel_cmdline phxc.static-diskenc" > /workspace/root/boot/cmdline.static-diskenc.txt
+    local uki_static_path=/workspace/root/boot/uki.static-diskenc.efi
     /lib/systemd/ukify build \
       --uname="$kernver" \
       --linux=/workspace/root/boot/vmlinuz \
       --initrd=/workspace/root/boot/initramfs.img \
-      --cmdline=@/workspace/root/boot/cmdline.static-diskenc.txt \
-      --output=/workspace/root/boot/uki.static-diskenc.efi
+      --cmdline="$(printf "%s" "$kernel_cmdline phxc.static-diskenc")" \
+      --output=$uki_static_path
+    boot_files[/EFI/BOOT/BOOT${efi_arch^^}.efi]=$uki_static_path
+    artifacts[uki.static-diskenc.efi]=$uki_static_path
+    sha256sums[uki.static-diskenc.efi]=$(sha256sum $uki_static_path | cut -d ' ' -f1)
 
-    artifacts[uki.static-diskenc.efi]=/workspace/root/boot/uki.static-diskenc.efi
-    boot_files[/EFI/BOOT/BOOT${efi_arch^^}.efi]=/workspace/root/boot/uki.static-diskenc.efi
-    sha256sums[uki.static-diskenc.efi]=$(sha256sum /workspace/root/boot/uki.static-diskenc.efi | cut -d ' ' -f1)
+    local secureboot_key=/workspace/secureboot/tls.key secureboot_crt=/workspace/secureboot/tls.crt
 
-    printf "%s" "$kernel_cmdline" > /workspace/root/boot/cmdline.txt
-    /lib/systemd/ukify build \
-      --uname="$kernver" \
-      --linux=/workspace/root/boot/vmlinuz \
-      --initrd=/workspace/root/boot/initramfs.img \
-      --cmdline=@/workspace/root/boot/cmdline.txt \
-      --output=/workspace/root/boot/uki.efi
+    # Sign UKI if secureboot key & cert are present
+    if [[ -e $secureboot_key && -e $secureboot_crt ]]; then
+      local uki_signed_path=/workspace/root/boot/uki.signed.efi
+      printf "%s" "$kernel_cmdline" > /workspace/root/boot/cmdline.txt
+      /lib/systemd/ukify build \
+        --uname="$kernver" \
+        --linux=/workspace/root/boot/vmlinuz \
+        --initrd=/workspace/root/boot/initramfs.img \
+        --cmdline="$(printf "%s" "$kernel_cmdline")" \
+        --secureboot-private-key=$secureboot_key \
+        --secureboot-certificate=$secureboot_crt \
+        --output=$uki_signed_path
 
-    artifacts[uki.efi]=/workspace/root/boot/uki.efi
-    sha256sums[uki.efi]=$(sha256sum /workspace/root/boot/uki.efi | cut -d ' ' -f1)
+      openssl x509 -in $secureboot_crt -outform der -out /workspace/secureboot.der
+      boot_files[/phxc/secureboot.der]=/workspace/secureboot.der
 
-    # Sign UKI if secureboot cert is present
-    if [[ -e /workspace/secureboot/tls.key ]]; then
-      local sb_cert_bundle sb_cert sb_intermediate
-      sb_cert_bundle=$(cat /workspace/secureboot/tls.crt)
-      sb_cert=${sb_cert_bundle%'-----BEGIN CERTIFICATE-----'*}
-      sb_intermediate=${sb_cert_bundle#*'-----END CERTIFICATE-----'}
+      artifacts[uki.signed.efi]=$uki_signed_path
+      sha256sums[uki.signed.efi]=$(sha256sum $uki_signed_path | cut -d ' ' -f1)
+      boot_files[/EFI/BOOT/BOOT${efi_arch^^}.efi]=$uki_signed_path
 
-      sbsign \
-        --key /workspace/secureboot/tls.key --cert <(printf "%s\n" "$sb_cert") \
-        --addcert <(printf "%s\n" "$sb_intermediate") \
-        /workspace/root/boot/uki.efi
-      artifacts[uki.efi]=/workspace/root/boot/uki.efi.signed
-      sha256sums[uki.efi]=$(sha256sum /workspace/root/boot/uki.efi.signed | cut -d ' ' -f1)
+      authentihashes[uki.signed.efi]=$(/signify/bin/python3 /scripts/get-pe-digest.py --json "$uki_signed_path")
+      # See https://lists.freedesktop.org/archives/systemd-devel/2022-December/048694.html
+      # as to why we also measure the embedded kernel
+      objcopy -O binary --only-section=.linux "$uki_signed_path" /workspace/uki-vmlinuz
+      authentihashes[vmlinuz]=$(/signify/bin/python3 /scripts/get-pe-digest.py --json /workspace/uki-vmlinuz)
     fi
   fi
-
-  # Extract authentihashes used for PE signatures so we can use them for remote attestation
-  authentihashes[uki.efi]=$(/signify/bin/python3 /scripts/get-pe-digest.py --json "${artifacts[uki.efi]}")
-  # See https://lists.freedesktop.org/archives/systemd-devel/2022-December/048694.html
-  # as to why we also measure the embedded kernel
-  objcopy -O binary --only-section=.linux "${artifacts[uki.efi]}" /workspace/uki-vmlinuz
-  authentihashes[vmlinuz]=$(/signify/bin/python3 /scripts/get-pe-digest.py --json /workspace/uki-vmlinuz)
-
-  # Calculate PCR11 for TPM2 backed disk encryption
-  chroot /workspace/root /lib/systemd/systemd-measure calculate \
-    --linux=/boot/vmlinuz \
-    --initrd=/boot/initramfs.img \
-    --cmdline=/boot/cmdline.txt \
-    --osrel=/usr/lib/os-release \
-    --json=pretty \
-    >/workspace/root/boot/pcr11.json
-  artifacts[pcr11.json]=/workspace/root/boot/pcr11.json
 
   #######################
   ### Create metadata ###

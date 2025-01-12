@@ -3,7 +3,7 @@ Description=Enrolls a TPM-bound disk encryption key
 Requires=boot.mount
 After=boot.mount
 Before=secure-diskenc-key-enrolled.target
-ConditionSecurity=tpm2
+ConditionSecurity=uefi-secureboot
 
 [Install]
 WantedBy=multi-user.target
@@ -14,6 +14,6 @@ RemainAfterExit=yes
 ExecCondition=bash -ec '[[ $(get-config node disk-encryption) =~ ^tpm|auto$ ]] || return 1'
 ExecStart=systemd-cryptenroll \
   --unlock-key-file /etc/phxc/disk-encryption.static.key \
-  --tpm2-device=auto --tpm2-pcrs=7,14 --wipe-slot=tpm2 \
+  --tpm2-device=auto --tpm2-pcrs=7 --wipe-slot=tpm2 \
   /dev/disk/by-partuuid/${DATA_UUID}
 ExecStart=false
