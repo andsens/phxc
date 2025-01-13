@@ -1,11 +1,13 @@
 [Unit]
 Description=Generate SSH host keys
-Before=ssh.service
+DefaultDependencies=no
+Before=ssh.service dropbear.service
 
 [Install]
-RequiredBy=ssh.service
+RequiredBy=ssh.service dropbear.service
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=/usr/bin/ssh-keygen -A
+ExecStartPost=dropbearconvert openssh dropbear /etc/ssh/ssh_host_ed25519_key /etc/dropbear/dropbear_ed25519_host_key

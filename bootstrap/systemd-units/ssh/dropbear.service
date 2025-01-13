@@ -1,0 +1,14 @@
+[Unit]
+Description=Lightweight SSH server for unlocking data partition during boot
+Documentation=man:dropbear(8)
+DefaultDependencies=no
+Conflicts=ssh.service
+After=network.target
+ConditionKernelCommandLine=!phxc.static-diskenc
+
+[Install]
+WantedBy=systemd-cryptsetup@data.service
+
+[Service]
+ExecStart=/usr/sbin/dropbear -EF -r /etc/dropbear/dropbear_ed25519_host_key -p 22 -W 65536 -c "sudo bash -c 'systemd-tty-ask-password-agent || cryptsetup luksOpen /dev/disk/by-partuuid/${DATA_UUID} data'"
+KillMode=process

@@ -3,6 +3,7 @@
 PACKAGES+=(
   systemd-cryptsetup # encrypted data
   parted cryptsetup-bin # disk tooling
+  dropbear # remote unlocking
 )
 
 if [[ $VARIANT != rpi* ]]; then
@@ -22,4 +23,6 @@ data_partition() {
        /etc/crypttab.rpi-otp
   fi
   chmod 0600 /etc/phxc/disk-encryption.static.key
+  systemctl disable dropbear
+  rm /etc/dropbear/dropbear_*_host_key /etc/dropbear/dropbear_*_host_key.pub
 }
