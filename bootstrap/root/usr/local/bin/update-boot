@@ -3,12 +3,7 @@
 set -Eeo pipefail; shopt -s inherit_errexit
 PKGROOT=/usr/local/lib/upkg/.upkg/phxc
 source "$PKGROOT/.upkg/records.sh/records.sh"
-
-case "${VARIANT:?}" in
-  amd64) EFI_ARCH=x64 ;;
-  arm64) EFI_ARCH=aa64 ;;
-  *) fatal "Unknown variant: %s" "$VARIANT" ;;
-esac
+export BOOT_UUID=c427f0ed-0366-4cb2-9ce2-3c8c51c3e89e
 
 main() {
   DOC="update-boot - Update the boot partition with a new image
@@ -85,19 +80,15 @@ update() {
   # shellcheck disable=SC2064
   trap "clean_update_boot_files" EXIT
   printf "%s" "$new_rootimg_sha256" >/boot/phxc/try.sha256
-  curl_img_reg "$VARIANT/root.img" -o"/boot/phxc/root.${new_rootimg_sha256}.img" -f
+  curl_img_reg "$VARIANT/root.img" -o"/boot/phxc/root.$new_rootimg_sha256.img" -f
+  local img_basename
   if [[ $VARIANT = rpi* ]]; then
-    curl_img_reg "$VARIANT/boot.img" -o/boot/tryboot.img -f
+    img_basename=boot.img
+    curl_img_reg "$VARIANT/$img_basename" -o/boot/tryboot.img -f
   else
-    curl_img_reg "$VARIANT/uki.efi" -o/boot/EFI/Linux/uki.try.efi -f
-    # Always update shim, mokmanager, and systemd-boot in case they have been updated (or systemd-boot has been signed)
-    # Haven't thought of a way to automatically fix them if an update is bungled though
-    curl_img_reg "$VARIANT/shim.efi" -o/boot/phxc/shim.efi.tmp -f
-    curl_img_reg "$VARIANT/mm.efi" -o/boot/phxc/mm.efi.tmp -f
-    curl_img_reg "$VARIANT/systemd-boot.efi" -o/boot/phxc/systemd-boot.efi.tmp -f
-    mv /boot/phxc/shim.efi.tmp /boot/EFI/BOOT/BOOT${EFI_ARCH^^}.efi
-    mv /boot/phxc/mm.efi.tmp /boot/EFI/BOOT/mm${EFI_ARCH^^}.efi
-    mv /boot/phxc/systemd-boot.efi.tmp /boot/EFI/BOOT/grub${EFI_ARCH^^}.efi
+    img_basename=uki.signed.efi
+    [[ -e /dev/tpmrm0 ]] || img_basename=uki.static-diskenc.efi
+    curl_img_reg "$VARIANT/$img_basename" -o/boot/EFI/BOOT/phxc.try.efi -f
   fi
   info "boot partition has been updated"
   trap '' EXIT
@@ -105,18 +96,20 @@ update() {
 }
 
 clean_update_boot_files() {
+  [[ ! -e /boot/phxc/try.sha256 ]] || rm -f "/boot/phxc/root.$(cat /boot/phxc/try.sha256).img"
   rm -f \
     /run/initramfs/try-reboot \
     /boot/phxc/try.sha256 \
-    /boot/phxc/root.try.img \
-    /boot/EFI/Linux/uki.try.efi \
-    /boot/tryboot.img \
-    /boot/phxc/shim.efi.tmp \
-    /boot/phxc/mm.efi.tmp \
-    /boot/phxc/systemd-boot.efi.tmp
+    /boot/EFI/BOOT/phxc.try.efi \
+    /boot/tryboot.img
 }
 
 try_reboot() {
+  if [[ $VARIANT != rpi* ]]; then
+    # Make sure the UEFI boot tryout entry exists
+    (efibootmgr | grep -qF 'File(\EFI\BOOT\phxc.try.efi)') || \
+      efibootmgr -q -c -d /dev/disk/by-partuuid/${BOOT_UUID} -L "Phoenix Cluster boot tryout" -l '\EFI\BOOT\phxc.try.efi'
+  fi
   touch /run/initramfs/try-reboot
   # Kubernetes leases would be the best to use but the admission controller for
   # nodes seems to block all except one lease (nodename in kube-node-leases)
@@ -141,7 +134,11 @@ try_reboot() {
   if [[ $VARIANT = rpi* ]]; then
     systemd-run --on-active=5 --timer-property=AccuracySec=0 /usr/sbin/reboot "0 tryboot"
   else
-    bootctl set-oneshot uki.try.efi
+    local bootnum
+    bootnum=$(efibootmgr | grep -F 'File(\EFI\BOOT\phxc.try.efi)' | cut -f1 -d ' ')
+    bootnum=${bootnum#'Boot'}
+    bootnum=${bootnum%'*'}
+    efibootmgr --bootnext "$bootnum"
     systemd-run --on-active=5 --timer-property=AccuracySec=0 /usr/bin/systemctl reboot
   fi
 }
@@ -155,7 +152,9 @@ switch() {
     if [[ $VARIANT = rpi* ]]; then
       mv /boot/tryboot.img /boot/boot.img
     else
-      mv /boot/EFI/Linux/uki.try.efi /boot/EFI/Linux/uki.efi
+      local efi_arch
+      efi_arch=$(efi_arch)
+      mv /boot/EFI/BOOT/phxc.try.efi "/boot/EFI/BOOT/BOOT${efi_arch}.EFI"
     fi
     local rootimg
     for rootimg in /boot/phxc/root.*.img; do
@@ -172,6 +171,14 @@ switch() {
 other_unschedulable_nodes() {
   kubectl get node -ojson | jq -re --arg hostname "$HOSTNAME" \
     '.items[] | select(.spec.unschedulable and .metadata.labels["kubernetes.io/hostname"] != $hostname) | .metadata.labels["kubernetes.io/hostname"]'
+}
+
+efi_arch() {
+  case "${VARIANT:?}" in
+    amd64) printf "X64\n" ;;
+    arm64) printf "AA64\n" ;;
+    *) fatal "Unknown variant: %s" "$VARIANT" ;;
+  esac
 }
 
 curl_img_reg() {

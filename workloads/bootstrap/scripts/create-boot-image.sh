@@ -199,8 +199,8 @@ EOF
 
     local efi_arch
     case "$VARIANT" in
-      amd64) efi_arch=x64 ;;
-      arm64) efi_arch=aa64 ;;
+      amd64) efi_arch=X64 ;;
+      arm64) efi_arch=AA64 ;;
       *) fatal "Unknown variant: %s" "$VARIANT" ;;
     esac
 
@@ -215,9 +215,10 @@ EOF
       --initrd=/workspace/root/boot/initramfs.img \
       --cmdline="$(printf "%s" "$kernel_cmdline phxc.static-diskenc")" \
       --output=$uki_static_path
-    boot_files[/EFI/BOOT/BOOT${efi_arch^^}.efi]=$uki_static_path
+    boot_files[/EFI/BOOT/BOOT${efi_arch}.EFI]=$uki_static_path
     artifacts[uki.static-diskenc.efi]=$uki_static_path
     sha256sums[uki.static-diskenc.efi]=$(sha256sum $uki_static_path | cut -d ' ' -f1)
+    authentihashes[uki.static-diskenc.efi]=$(/signify/bin/python3 /scripts/get-pe-digest.py --json "$uki_static_path")
 
     local secureboot_key=/workspace/secureboot/tls.key secureboot_crt=/workspace/secureboot/tls.crt
 
@@ -239,8 +240,6 @@ EOF
 
       artifacts[uki.signed.efi]=$uki_signed_path
       sha256sums[uki.signed.efi]=$(sha256sum $uki_signed_path | cut -d ' ' -f1)
-      boot_files[/EFI/BOOT/BOOT${efi_arch^^}.efi]=$uki_signed_path
-
       authentihashes[uki.signed.efi]=$(/signify/bin/python3 /scripts/get-pe-digest.py --json "$uki_signed_path")
       # See https://lists.freedesktop.org/archives/systemd-devel/2022-December/048694.html
       # as to why we also measure the embedded kernel

@@ -18,6 +18,7 @@ data_partition() {
   else
     rm /etc/systemd/system/init-rpi-otp.service \
        /etc/systemd/system/enroll-rpi-otp-key.service \
+       /etc/systemd/system/generate-rpi-otp-key.service \
        /etc/crypttab.rpi-otp
   fi
   chmod 0600 /etc/phxc/disk-encryption.static.key

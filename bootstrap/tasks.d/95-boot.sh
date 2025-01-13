@@ -9,8 +9,14 @@ PACKAGES+=(
 PACKAGES_TMP+=(dracut)
 
 case $VARIANT in
-  amd64) PACKAGES+=(linux-image-amd64) ;;
-  arm64) PACKAGES+=(linux-image-arm64) ;;
+  amd64) PACKAGES+=(
+    linux-image-amd64 # kernel
+    efibootmgr # UEFI boot entries
+  ) ;;
+  arm64) PACKAGES+=(
+    linux-image-arm64 # kernel
+    efibootmgr # UEFI boot entries
+  ) ;;
   rpi*)
   curl -Lso/etc/apt/trusted.gpg.d/raspberrypi.asc http://archive.raspberrypi.com/debian/raspberrypi.gpg.key
   cat <<EOF >/etc/apt/sources.list.d/raspberrypi.sources
@@ -19,7 +25,10 @@ URIs: http://archive.raspberrypi.com/debian
 Suites: bookworm
 Components: main
 EOF
-  PACKAGES+=(linux-image-rpi-2712 raspi-firmware)
+  PACKAGES+=(
+    linux-image-rpi-2712 # kernel optimized for rpi
+    raspi-firmware # rpi firmware drivers
+  )
   ;;
   *) printf "Unknown variant: %s\n" "$VARIANT" >&2; return 1 ;;
 esac
