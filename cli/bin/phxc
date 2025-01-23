@@ -270,7 +270,7 @@ recovery_keys() {
     [[ $secret != secret/diskenc-recovery-* ]] || \
       printf -- "%s: %s\n" \
         "${secret#'secret/diskenc-recovery-'}" \
-        "$(kubectl --context phxc -n phxc get "$secret" -ojsonpath='{.data.disk-encryption-recovery\.key}' | base64 -d)"
+        "$(kubectl --context phxc -n phxc get "$secret" -ojsonpath='{.data.disk-encryption\.recovery\.key}' | base64 -d)"
   done
 }
 
