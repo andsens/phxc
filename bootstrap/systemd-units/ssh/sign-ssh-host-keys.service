@@ -10,7 +10,7 @@ WantedBy=multi-user.target
 Type=oneshot
 Environment=HOME=/root
 ExecStart=bash -eo pipefail
-StandardInputText=printf "" >/etc/ssh/sshd_config.d/20-host-key-certs.conf; \
+StandardInputText=touch /etc/ssh/sshd_config.d/20-host-key-certs.conf; \
   password=$(kubectl -n smallstep get secret ssh-host-provisioner-password -o=jsonpath='{.data.password}' | base64 -d); \
   for pubkey in /etc/ssh/ssh_host_*.pub; do \
     [[ $pubkey != *-cert.pub ]] || continue; \

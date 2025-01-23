@@ -1,8 +1,8 @@
 [Unit]
 Description=Format the encrypted data partition
 DefaultDependencies=no
-Requires=systemd-cryptsetup@data.service blockdev@dev-mapper-data.target
-After=systemd-cryptsetup@data.service blockdev@dev-mapper-data.target
+Requires=systemd-cryptsetup@data.service
+After=systemd-cryptsetup@data.service
 
 [Install]
 WantedBy=sysinit.target

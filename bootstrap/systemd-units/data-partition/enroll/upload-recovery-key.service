@@ -1,8 +1,8 @@
 [Unit]
 Description=Uploads the disk encryption recovery key to the cluster
 Requires=install-node-packages.service workload@phxc.target
-Wants=enroll-diskenc-recovery-key.service
-After=enroll-diskenc-recovery-key.service install-node-packages.service workload@phxc.target
+Wants=enroll-recovery-key.service
+After=enroll-recovery-key.service install-node-packages.service workload@phxc.target
 AssertPathExists=/var/lib/phxc/disk-encryption.recovery.key
 
 [Install]

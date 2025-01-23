@@ -1,10 +1,8 @@
 [Unit]
 Description=Generate the disk encryption key using the RPi OTP memory
 DefaultDependencies=no
-Requires=boot.mount
-After=boot.mount
 Before=systemd-cryptsetup@data.service
-ConditionKernelCommandLine=!phxc.static-diskenc
+ConditionKernelCommandLine=!phxc.diskenc-nopw
 
 [Install]
 WantedBy=systemd-cryptsetup@data.service
@@ -12,13 +10,13 @@ WantedBy=systemd-cryptsetup@data.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecCondition=bash -ec 'rpi-otp-private-key -c -o $(get-config rpi-otp offset)'
-ExecStart=bash -eo pipefail
+ExecCondition=cryptsetup isLuks /dev/disk/by-partuuid/${DATA_UUID}
+Environment=PATH=/sysroot/usr/local/bin:/sysroot/usr/bin
+ExecStart=sh -eo pipefail
 StandardInputText=\
   o=$(get-config rpi-otp offset); \
   s=$(get-config rpi-otp key-derivation-suffix); \
   openssl kdf \
     -kdfopt info:"disk-encryption-key-$s" -keylen 32 \
     -kdfopt digest:SHA3-512 -kdfopt hexkey:"$(rpi-otp-private-key -o $o)" \
-    -out /run/initramfs/disk-encryption.rpi-otp.key -binary HKDF'; \
-  ln -s crypttab.rpi-otp /etc/crypttab
+    -out /run/initramfs/disk-encryption.rpi-otp.key -binary HKDF'

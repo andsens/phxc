@@ -1,0 +1,11 @@
+[Unit]
+Description=SSH server for entering the disk-encryption recovery password
+DefaultDependencies=no
+Before=ssh.service
+
+[Install]
+WantedBy=systemd-cryptsetup@data.service
+
+[Service]
+# Invoke cthulhu through commandline switches
+ExecStart=dropbear -FERmwsgjkc 'sudo systemd-tty-ask-password-agent --query'

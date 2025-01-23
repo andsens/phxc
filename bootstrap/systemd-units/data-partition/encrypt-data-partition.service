@@ -4,7 +4,6 @@ DefaultDependencies=no
 Requires=expand-data-partition.service
 After=expand-data-partition.service
 Before=systemd-cryptsetup@data.service
-ConditionKernelCommandLine=phxc.static-diskenc
 
 [Install]
 RequiredBy=sysinit.target
@@ -13,4 +12,7 @@ RequiredBy=sysinit.target
 Type=oneshot
 RemainAfterExit=yes
 ExecCondition=bash -ec "! cryptsetup isLuks /dev/disk/by-partuuid/${DATA_UUID}"
-ExecStart=cryptsetup luksFormat --batch-mode /dev/disk/by-partuuid/${DATA_UUID} /etc/phxc/disk-encryption.static.key
+ExecStart=bash -eo pipefail
+StandardInputText=nopw=$(mktemp); \
+                  cryptsetup luksFormat --batch-mode --uuid ${LUKS_UUID} /dev/disk/by-partuuid/${DATA_UUID} "$nopw"; \
+                  rm "$nopw"

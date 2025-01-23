@@ -35,7 +35,7 @@ spec:
             - name: VARIANT
               value: amd64
             - name: DEBUG
-              value: "false"
+              value: "true"
             volumeMounts:
             - name: workspace
               mountPath: /workspace

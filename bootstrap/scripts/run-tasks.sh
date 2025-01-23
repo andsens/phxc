@@ -7,6 +7,7 @@ source "$PKGROOT/.upkg/records.sh/records.sh"
 export DISK_UUID=caf66bff-edab-4fb1-8ad9-e570be5415d7
 export BOOT_UUID=c427f0ed-0366-4cb2-9ce2-3c8c51c3e89e
 export DATA_UUID=6f07821d-bb94-4d0f-936e-4060cadf18d8
+export LUKS_UUID=2a785738-5af5-4c13-88ae-e5f2d20e7049
 
 main() {
   mkdir -p /workspace/artifacts
@@ -23,7 +24,7 @@ main() {
 
   info "Copying files"
   # shellcheck disable=SC2016
-  local replacements=('${DISK_UUID}' '${BOOT_UUID}' '${DATA_UUID}' '${VARIANT}')
+  local replacements=('${DISK_UUID}' '${BOOT_UUID}' '${DATA_UUID}' '${LUKS_UUID}' '${VARIANT}')
 
   local src dest files=$PKGROOT/bootstrap/root
   while IFS= read -r -d $'\0' src; do

@@ -1,0 +1,16 @@
+[Unit]
+Description=Unenrolls the bootfile disk encryption key
+Requires=boot.mount upload-recovery-key.service
+After=boot.mount upload-recovery-key.service
+ConditionKernelCommandLine=!phxc.diskenc-nopw
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=-bash -eo pipefail
+StandardInputText=nopw=$(mktemp); \
+                  cryptsetup luksRemoveKey /dev/disk/by-partuuid/${DATA_UUID} "$nopw" ;\
+                  rm "$nopw"

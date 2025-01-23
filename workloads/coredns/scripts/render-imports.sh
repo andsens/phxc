@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -Eeo pipefail; shopt -s inherit_errexit
 
 main() {
   [[ $# -le 1 ]] || usage
@@ -23,6 +24,7 @@ main() {
 
   done
 
+  trap 'kill -TERM $SLEEP_PID' TERM
   local external_ip
   while true; do
     if external_ip=$(curl -sf https://api.ipify.org/); then
@@ -33,7 +35,8 @@ main() {
       printf "Failed retrieving WAN IP\n" >&2
     fi
     [[ $1 = '--watch' ]] || break
-    sleep 60
+    sleep 60 & SLEEP_PID=$1
+    wait || break
   done
 }
 

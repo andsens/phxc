@@ -12,6 +12,8 @@ case $VARIANT in
   amd64) PACKAGES+=(
     linux-image-amd64 # kernel
     efibootmgr # UEFI boot entries
+    tpm2-tools # pulls in TPM2 library deps for systemd-pcrextend
+    binutils # Need objcopy & objdump to generate PCR signatures in update-boot
   ) ;;
   arm64) PACKAGES+=(
     linux-image-arm64 # kernel

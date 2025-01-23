@@ -9,7 +9,6 @@ WantedBy=multi-user.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecCondition=bash -ec '[[ $(get-config node disk-encryption) == rpi-otp ]] || return 1'
 ExecCondition=bash -ec '! rpi-otp-private-key -c \
   -o $(get-config rpi-otp offset) \
   -l $(get-config rpi-otp length)'
@@ -17,3 +16,16 @@ ExecStart=bash -ec ':;\
   o=$(get-config rpi-otp offset); \
   l=$(get-config rpi-otp length); \
   echo rpi-otp-private-key -w -o $o -l $l "$(openssl rand -hex $((l*2)))"'
+
+
+[Unit]
+Description=Write the secureboot cert to the RPi OTP
+ConditionPathExists=/usr/local/share/phxc/secureboot.der
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=true

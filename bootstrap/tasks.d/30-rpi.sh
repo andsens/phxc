@@ -2,5 +2,5 @@
 
 [[ $VARIANT != rpi* ]] || PACKAGES+=(raspi-config rpi-update rpi-eeprom)
 rpi() {
-  [[ $VARIANT = rpi* ]] || rm /etc/systemd/system/enroll-rpi-sb-cert.service
+  [[ $VARIANT = rpi* ]] || rm /usr/local/bin/phxc-rpi
 }

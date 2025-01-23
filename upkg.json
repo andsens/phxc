@@ -9,8 +9,8 @@
       "sha256": "d6997858e7f2470aa602fdd1e443d89b4e2084245b485e4b7924b0f388ec401e"
     },
     {
-      "tar": "https://github.com/orbit-online/trap.sh/releases/download/v1.1.1/trap.sh.tar.gz",
-      "sha256": "bdc50e863a44866a6d92c11570d8e255f95d65747128e6f262985452e7359bb4"
+      "tar": "https://github.com/orbit-online/trap.sh/releases/download/v1.1.2/trap.sh.tar.gz",
+      "sha256": "806fb2fac19388e22948395684be25564c4f6b8bafba62662092c0052cdca8ad"
     },
     {
       "tar": "https://github.com/orbit-online/records.sh/releases/download/v1.0.2/records.sh.tar.gz",

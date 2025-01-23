@@ -21,7 +21,6 @@ configMapGenerator:
   name: assets
 - files:
   - scripts/create-boot-image.sh
-  - scripts/get-pe-digest.py
   name: scripts
 generators:
 - generate-bundle-cm.yaml

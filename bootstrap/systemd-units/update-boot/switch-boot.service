@@ -3,7 +3,7 @@ Description=Depending on whether we are running the new boot image, make it perm
 Requires=boot.mount k3s.target
 After=boot.mount k3s.target
 ConditionPathExists=|/boot/tryboot.img
-ConditionPathExists=|/boot/EFI/Linux/uki.try.efi
+ConditionPathExists=|/boot/EFI/BOOT/BOOT.TRY.EFI
 
 [Install]
 WantedBy=sysinit.target

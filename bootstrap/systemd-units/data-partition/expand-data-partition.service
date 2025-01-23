@@ -1,12 +1,12 @@
 [Unit]
 Description=Expand the data partition
 DefaultDependencies=no
-Before=systemd-cryptsetup@data.service
+Requires=dev-disk-by\x2dpartuuid-6f07821d\x2dbb94\x2d4d0f\x2d936e\x2d4060cadf18d8.device
+After=dev-disk-by\x2dpartuuid-6f07821d\x2dbb94\x2d4d0f\x2d936e\x2d4060cadf18d8.device
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=bash -eo pipefail
-StandardInputText=until diskpath=$(lsblk -JO | jq -re '.blockdevices[] | select(.ptuuid=="${DISK_UUID}") | .path'); do sleep .1; done; \
-                  parted -sfa optimal -- "$diskpath" resizepart 2 100%
-# cryptsetup resize
+StandardInputText=diskpath=$(lsblk -JO | jq -re '.blockdevices[] | select(.ptuuid=="${DISK_UUID}") | .path'); \
+                  parted -sfa optimal -- "$diskpath" resizepart 2 100%%

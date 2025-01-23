@@ -12,8 +12,8 @@ Type=oneshot
 RemainAfterExit=yes
 UMask=0077
 ExecStart=bash -eo pipefail
-StandardInputText=[[ -e /var/lib/phxc/disk-encryption.recovery.key ]] || systemd-cryptenroll \
-  --unlock-key-file /etc/phxc/disk-encryption.static.key \
-  --recovery-key \
-  /dev/disk/by-partuuid/${DATA_UUID} \
-  >/var/lib/phxc/disk-encryption.recovery.key
+StandardInputText=[[ ! -e /var/lib/phxc/disk-encryption.recovery.key ]] || exit 0; \
+                  nopw=$(mktemp); \
+                  key=$(systemd-cryptenroll --unlock-key-file "$nopw" --recovery-key /dev/disk/by-partuuid/${DATA_UUID}); \
+                  printf '%%s' "$key" >/var/lib/phxc/disk-encryption.recovery.key; \
+                  rm "$nopw"

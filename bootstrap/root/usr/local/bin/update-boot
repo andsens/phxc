@@ -3,7 +3,16 @@
 set -Eeo pipefail; shopt -s inherit_errexit
 PKGROOT=/usr/local/lib/upkg/.upkg/phxc
 source "$PKGROOT/.upkg/records.sh/records.sh"
+source "$PKGROOT/.upkg/trap.sh/trap.sh"
 export BOOT_UUID=c427f0ed-0366-4cb2-9ce2-3c8c51c3e89e
+export DATA_UUID=6f07821d-bb94-4d0f-936e-4060cadf18d8
+
+VARIANT=$(systemctl show-environment | grep '^VARIANT=')
+VARIANT=${VARIANT#VARIANT=}
+case "$VARIANT" in
+  amd64) EFI_ARCH="X64" ;;
+  arm64) EFI_ARCH="AA64" ;;
+esac
 
 main() {
   DOC="update-boot - Update the boot partition with a new image
@@ -77,21 +86,35 @@ update() {
   fi
   info "boot partition is outdated, updating now"
   clean_update_boot_files
-  # shellcheck disable=SC2064
-  trap "clean_update_boot_files" EXIT
+  local clean_files_trap
+  trap_append "clean_update_boot_files" EXIT
+  clean_files_trap=$TRAP_POINTER
   printf "%s" "$new_rootimg_sha256" >/boot/phxc/try.sha256
   curl_img_reg "$VARIANT/root.img" -o"/boot/phxc/root.$new_rootimg_sha256.img" -f
-  local img_basename
+
   if [[ $VARIANT = rpi* ]]; then
-    img_basename=boot.img
-    curl_img_reg "$VARIANT/$img_basename" -o/boot/tryboot.img -f
+    if ! rpi-otp-private-key -c -o "$(get-config rpi-otp offset)"; then
+      warning "The RPi OTP is not initialized, using disk-encryption with a static password"
+      curl_img_reg "$VARIANT/boot.nopw-diskenc.efi" -o/boot/tryboot.img -f
+    else
+      if ! cryptsetup luksOpen --test-passphrase \
+        --key-file=/run/initramfs/disk-encryption.rpi-otp.key /dev/disk/by-partuuid/${DATA_UUID}; then
+        systemd-cryptenroll --unlock-key-file /var/lib/phxc/disk-encryption.recovery.key \
+          --new-keyfile /run/initramfs/disk-encryption.rpi-otp.key /dev/disk/by-partuuid/${DATA_UUID}
+      fi
+      curl_img_reg "$VARIANT/boot.otp-diskenc.efi" -o/boot/tryboot.img -f
+    fi
   else
-    img_basename=uki.signed.efi
-    [[ -e /dev/tpmrm0 ]] || img_basename=uki.static-diskenc.efi
-    curl_img_reg "$VARIANT/$img_basename" -o/boot/EFI/BOOT/phxc.try.efi -f
+    if ! compgen -G '/sys/kernel/security/tpm*' &>/dev/null; then
+      warning "No TPM available, using disk-encryption with a static password"
+      curl_img_reg "$VARIANT/uki.nopw-diskenc.efi" -o/boot/EFI/BOOT/BOOT.TRY.EFI -f
+    else
+      curl_img_reg "$VARIANT/uki.tpm2-diskenc.efi" -o/boot/EFI/BOOT/BOOT.TRY.EFI -f
+      cryptenroll_uki /boot/EFI/BOOT/BOOT.TRY.EFI sha256 false
+    fi
   fi
   info "boot partition has been updated"
-  trap '' EXIT
+  trap_remove "$clean_files_trap"
   ! $reboot || try_reboot
 }
 
@@ -100,16 +123,11 @@ clean_update_boot_files() {
   rm -f \
     /run/initramfs/try-reboot \
     /boot/phxc/try.sha256 \
-    /boot/EFI/BOOT/phxc.try.efi \
+    /boot/EFI/BOOT/BOOT.TRY.EFI \
     /boot/tryboot.img
 }
 
 try_reboot() {
-  if [[ $VARIANT != rpi* ]]; then
-    # Make sure the UEFI boot tryout entry exists
-    (efibootmgr | grep -qF 'File(\EFI\BOOT\phxc.try.efi)') || \
-      efibootmgr -q -c -d /dev/disk/by-partuuid/${BOOT_UUID} -L "Phoenix Cluster boot tryout" -l '\EFI\BOOT\phxc.try.efi'
-  fi
   touch /run/initramfs/try-reboot
   # Kubernetes leases would be the best to use but the admission controller for
   # nodes seems to block all except one lease (nodename in kube-node-leases)
@@ -126,6 +144,9 @@ try_reboot() {
     info "Delaying restart, there are nodes that are unschedulable:\n%s" "$(other_unschedulable_nodes)"
     return 0
   fi
+  local uncordon_trap
+  trap_append "kubectl uncordon \"$HOSTNAME\"" EXIT
+  uncordon_trap=$TRAP_POINTER
   if ! kubectl drain --ignore-daemonsets --delete-emptydir-data --timeout 120s "$HOSTNAME"; then
     warning "Draining with eviction failed after 2 minutes, now draining without eviction"
     kubectl drain --ignore-daemonsets --delete-emptydir-data --disable-eviction  "$HOSTNAME"
@@ -134,13 +155,14 @@ try_reboot() {
   if [[ $VARIANT = rpi* ]]; then
     systemd-run --on-active=5 --timer-property=AccuracySec=0 /usr/sbin/reboot "0 tryboot"
   else
-    local bootnum
-    bootnum=$(efibootmgr | grep -F 'File(\EFI\BOOT\phxc.try.efi)' | cut -f1 -d ' ')
-    bootnum=${bootnum#'Boot'}
-    bootnum=${bootnum%'*'}
-    efibootmgr --bootnext "$bootnum"
+    init_efi_bootmenu
+    local try_bootnum
+    try_bootnum=$(get_bootnum BOOT.TRY.EFI)
+    efibootmgr -q --bootnum "$try_bootnum" --active
+    efibootmgr -q --bootnext "$try_bootnum"
     systemd-run --on-active=5 --timer-property=AccuracySec=0 /usr/bin/systemctl reboot
   fi
+  trap_remove "$uncordon_trap"
 }
 
 switch() {
@@ -152,9 +174,7 @@ switch() {
     if [[ $VARIANT = rpi* ]]; then
       mv /boot/tryboot.img /boot/boot.img
     else
-      local efi_arch
-      efi_arch=$(efi_arch)
-      mv /boot/EFI/BOOT/phxc.try.efi "/boot/EFI/BOOT/BOOT${efi_arch}.EFI"
+      mv /boot/EFI/BOOT/BOOT.TRY.EFI "/boot/EFI/BOOT/BOOT${EFI_ARCH:?}.EFI"
     fi
     local rootimg
     for rootimg in /boot/phxc/root.*.img; do
@@ -166,19 +186,39 @@ switch() {
     rm -f /boot/tryboot.img /boot/EFI/Linux/uki.try.efi "/boot/phxc/root.$try_rootimg_sha256.img"
     # Don't remove try.sha256, it prevents update-boot from retrying this specific image
   fi
+  if [[ $VARIANT != rpi* ]]; then
+    local try_bootnum
+    try_bootnum=$(get_bootnum BOOT.TRY.EFI)
+    efibootmgr -q --bootnum "$try_bootnum" --inactive
+    cryptenroll_uki "/boot/EFI/BOOT/BOOT${EFI_ARCH:?}.EFI" sha256 true
+  fi
+}
+
+init_efi_bootmenu() {
+  local default_bootnum try_bootnum
+  if ! default_bootnum=$(get_bootnum "BOOT${EFI_ARCH}.EFI"); then
+    efibootmgr -q -c -d /dev/disk/by-partuuid/${BOOT_UUID} -L "Phoenix Cluster" -l "\\EFI\\BOOT\\BOOT${EFI_ARCH}.EFI"
+    default_bootnum=$(get_bootnum "BOOT${EFI_ARCH}.EFI")
+  fi
+  if ! try_bootnum=$(get_bootnum BOOT.TRY.EFI); then
+    efibootmgr -q -c -d /dev/disk/by-partuuid/${BOOT_UUID} -L "Phoenix Cluster (latest)" -l "\\EFI\\BOOT\\BOOT.TRY.EFI"
+    try_bootnum=$(get_bootnum BOOT.TRY.EFI)
+  fi
+  efibootmgr -q --bootorder "$default_bootnum,$try_bootnum"
+}
+
+get_bootnum() {
+  local basename=$1 bootnum
+  # shellcheck disable=SC1003
+  bootnum=$(efibootmgr | grep "GPT,$BOOT_UUID,.*)/File("'\\EFI\\BOOT\\'"$basename)$" | cut -f1 -d ' ') || return 1
+  bootnum=${bootnum#'Boot'}
+  bootnum=${bootnum%'*'}
+  printf "%s\n" "$bootnum"
 }
 
 other_unschedulable_nodes() {
   kubectl get node -ojson | jq -re --arg hostname "$HOSTNAME" \
     '.items[] | select(.spec.unschedulable and .metadata.labels["kubernetes.io/hostname"] != $hostname) | .metadata.labels["kubernetes.io/hostname"]'
-}
-
-efi_arch() {
-  case "${VARIANT:?}" in
-    amd64) printf "X64\n" ;;
-    arm64) printf "AA64\n" ;;
-    *) fatal "Unknown variant: %s" "$VARIANT" ;;
-  esac
 }
 
 curl_img_reg() {
@@ -189,5 +229,61 @@ curl_img_reg() {
     --retry 10 --retry-delay 60 --retry-all-errors \
     "https://image-registry.phxc.svc.cluster.local:8020/$path" "$@"
 }
+
+cryptenroll_uki() {
+  local uki_path=$1 hash_alg=$2 exclusive=$3 records
+
+  local uki_records
+  uki_records=$(/lib/systemd/systemd-pcrlock lock-uki "$uki_path")
+
+  # See https://github.com/systemd/systemd/issues/36076
+  local kernel_tmp raw_size
+  kernel_tmp=$(mktemp -d)
+  trap_append "rm -rf '$kernel_tmp'" EXIT
+  objcopy -O binary --only-section=.linux "$uki_path" "$kernel_tmp/linux"
+  raw_size=$(stat -c%s "$kernel_tmp/linux") # not the original size of vmlinuz, it's already padded a bit, but we need to pad *mooore*
+  local paddr virtual_size _idx _name _rest
+  read -r _idx _name paddr _rest < <(objdump -P sections "$uki_path" | grep -F .linux)
+  virtual_size=$(printf "%d" "0x$paddr")
+  dd if=/dev/zero bs=1 status=none count=$((virtual_size-raw_size)) conv=notrunc oflag=append of="$kernel_tmp/linux"
+  local kernel_records
+  kernel_records=$(/lib/systemd/systemd-pcrlock lock-pe "$kernel_tmp/linux")
+
+  records='[]'
+  records=$(jq --argjson records "$records" '$records + .records' /usr/lib/pcrlock.d/350-action-efi-application.pcrlock)
+  records=$(jq --argjson records "$records" '$records + .records' /usr/lib/pcrlock.d/500-separator.pcrlock.d/300-0x00000000.pcrlock)
+  records=$(jq --argjson records "$records" '$records + .records' <<<"$uki_records")
+  records=$(jq --argjson records "$records" '$records + .records' <<<"$kernel_records")
+  records=$(jq --argjson records "$records" '$records + .records' /usr/lib/pcrlock.d/750-enter-initrd.pcrlock)
+  records=$(jq --argjson records "$records" '$records + .records' /usr/lib/pcrlock.d/800-leave-initrd.pcrlock)
+
+  local pcr4 pcr11
+  pcr4=$(calc_pcr "$records" 4 "$hash_alg")
+  pcr11=$(calc_pcr "$records" 11 "$hash_alg")
+  local wipe_opt='--wipe-slot=tpm2'
+  $exclusive || wipe_opt=
+  printf "%s\n%s\n" "$pcr4" "$pcr11" >/boot/pcrs.txt
+  systemd-cryptenroll --unlock-key-file /var/lib/phxc/disk-encryption.recovery.key \
+    --tpm2-device=auto $wipe_opt \
+    --tpm2-pcrs="0+2+4:sha256=$pcr4+11:sha256=$pcr11" \
+    /dev/disk/by-partuuid/${DATA_UUID}
+}
+
+calc_pcr() {
+  local records=$1 index=$2 hash_alg=$3 pcr digest
+  shift; shift
+  case $hash_alg in
+    sha1) pcr=$(printf '0%.0s' {1..40}) ;;
+    sha256) pcr=$(printf '0%.0s' {1..64}) ;;
+    sha384) pcr=$(printf '0%.0s' {1..96}) ;;
+    sha512) pcr=$(printf '0%.0s' {1..128}) ;;
+  esac
+  for digest in $(jq -r --argjson pcr "$index" --arg hashAlg "$hash_alg" \
+    '.[] | select(.pcr==$pcr) | .digests[] | select(.hashAlg==$hashAlg) | .digest' <<<"$records"); do
+    pcr=$( (xxd -r -p <<<"${pcr}${digest}") | "${hash_alg}sum" | cut -d' ' -f1)
+  done
+  printf "%s\n" "$pcr"
+}
+
 
 main "$@"

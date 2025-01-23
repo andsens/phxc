@@ -6,6 +6,7 @@ PKGROOT=/usr/local/lib/upkg
 export DISK_UUID=caf66bff-edab-4fb1-8ad9-e570be5415d7
 export BOOT_UUID=c427f0ed-0366-4cb2-9ce2-3c8c51c3e89e
 export DATA_UUID=6f07821d-bb94-4d0f-936e-4060cadf18d8
+export LUKS_UUID=2a785738-5af5-4c13-88ae-e5f2d20e7049
 
 main() {
   DOC="create-boot-image - Make an archived container image bootable
@@ -36,7 +37,6 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
   source "$PKGROOT/.upkg/records.sh/records.sh"
 
   declare -A artifacts
-  declare -A authentihashes
   declare -A sha256sums
   declare -A boot_files
   ! $DEBUG || export LIBGUESTFS_TRACE=1
@@ -114,9 +114,9 @@ EOF
   )
   ! $DEBUG || artifacts[initramfs.img]=/workspace/root/boot/initramfs.img
 
-  local kernel_cmdline=""
-  ! $DEBUG || kernel_cmdline+="rd.shell"
-  # ! $DEBUG || kernel_cmdline+=" rd.break"
+  local kernel_cmdline=()
+  ! $DEBUG || kernel_cmdline+=("rd.shell")
+  # ! $DEBUG || kernel_cmdline+=("rd.break")
 
   ############################
   ### RaspberryPI boot.img ###
@@ -145,8 +145,12 @@ EOF
       *) printf "Unknown rpi* variant: %s\n" "$VARIANT" >&2; return 1 ;;
     esac
 
-    # The last "console=" wins with respect to initramfs stdout/stderr output
-    printf "console=ttyS0,115200 console=tty0 %s" "$kernel_cmdline" > /workspace/cmdline.txt
+    kernel_cmdline=(
+      # The last "console=" wins with respect to initramfs stdout/stderr output
+      "console=ttyS0,115200" console=tty0
+      "${kernel_cmdline[@]}"
+    )
+    printf "%s " "${kernel_cmdline[@]}" > /workspace/cmdline.txt
 
     boot_files[config.txt]=/assets/config-${VARIANT}.txt
 
@@ -208,44 +212,34 @@ EOF
     kernver=$(echo /workspace/root/lib/modules/*)
     kernver=${kernver#'/workspace/root/lib/modules/'}
 
-    local uki_static_path=/workspace/root/boot/uki.static-diskenc.efi
+    local uki_nopw_path=/workspace/root/boot/uki.nopw-diskenc.efi
     /lib/systemd/ukify build \
       --uname="$kernver" \
       --linux=/workspace/root/boot/vmlinuz \
       --initrd=/workspace/root/boot/initramfs.img \
-      --cmdline="$(printf "%s" "$kernel_cmdline phxc.static-diskenc")" \
-      --output=$uki_static_path
-    boot_files[/EFI/BOOT/BOOT${efi_arch}.EFI]=$uki_static_path
-    artifacts[uki.static-diskenc.efi]=$uki_static_path
-    sha256sums[uki.static-diskenc.efi]=$(sha256sum $uki_static_path | cut -d ' ' -f1)
-    authentihashes[uki.static-diskenc.efi]=$(/signify/bin/python3 /scripts/get-pe-digest.py --json "$uki_static_path")
+      --cmdline="$(printf "%s " "${kernel_cmdline[@]}" "phxc.diskenc-nopw")" \
+      --output=$uki_nopw_path
+    boot_files[/EFI/BOOT/BOOT${efi_arch}.EFI]=$uki_nopw_path
+    artifacts[uki.nopw-diskenc.efi]=$uki_nopw_path
+    sha256sums[uki.nopw-diskenc.efi]=$(sha256sum $uki_nopw_path | cut -d ' ' -f1)
 
-    local secureboot_key=/workspace/secureboot/tls.key secureboot_crt=/workspace/secureboot/tls.crt
-
+    local \
+      secureboot_key=/workspace/secureboot/tls.key secureboot_crt=/workspace/secureboot/tls.crt \
+      uki_tpm2_path=/workspace/root/boot/uki.tpm2-diskenc.efi uki_secure_opts=()
     # Sign UKI if secureboot key & cert are present
     if [[ -e $secureboot_key && -e $secureboot_crt ]]; then
-      local uki_signed_path=/workspace/root/boot/uki.signed.efi
-      printf "%s" "$kernel_cmdline" > /workspace/root/boot/cmdline.txt
-      /lib/systemd/ukify build \
-        --uname="$kernver" \
-        --linux=/workspace/root/boot/vmlinuz \
-        --initrd=/workspace/root/boot/initramfs.img \
-        --cmdline="$(printf "%s" "$kernel_cmdline")" \
-        --secureboot-private-key=$secureboot_key \
-        --secureboot-certificate=$secureboot_crt \
-        --output=$uki_signed_path
-
+      uki_secure_opts+=("--secureboot-private-key=$secureboot_key" "--secureboot-certificate=$secureboot_crt")
       openssl x509 -in $secureboot_crt -outform der -out /workspace/secureboot.der
       boot_files[/phxc/secureboot.der]=/workspace/secureboot.der
-
-      artifacts[uki.signed.efi]=$uki_signed_path
-      sha256sums[uki.signed.efi]=$(sha256sum $uki_signed_path | cut -d ' ' -f1)
-      authentihashes[uki.signed.efi]=$(/signify/bin/python3 /scripts/get-pe-digest.py --json "$uki_signed_path")
-      # See https://lists.freedesktop.org/archives/systemd-devel/2022-December/048694.html
-      # as to why we also measure the embedded kernel
-      objcopy -O binary --only-section=.linux "$uki_signed_path" /workspace/uki-vmlinuz
-      authentihashes[vmlinuz]=$(/signify/bin/python3 /scripts/get-pe-digest.py --json /workspace/uki-vmlinuz)
     fi
+    /lib/systemd/ukify build "${uki_secure_opts[@]}" \
+      --uname="$kernver" \
+      --linux=/workspace/root/boot/vmlinuz \
+      --initrd=/workspace/root/boot/initramfs.img \
+      --cmdline="$(printf "%s " "${kernel_cmdline[@]}")" \
+      --output=$uki_tpm2_path
+    artifacts[uki.tpm2-diskenc.efi]=$uki_tpm2_path
+    sha256sums[uki.tpm2-diskenc.efi]=$(sha256sum $uki_tpm2_path | cut -d ' ' -f1)
   fi
 
   #######################
@@ -258,17 +252,11 @@ EOF
   meta=$(jq -n --arg variant "$VARIANT" --arg now "$(date --iso-8601=seconds --utc)" '{
     "variant": $variant,
     "build-date": $now,
-    "sha256sums": {},
-    "authentihashes": {}
+    "sha256sums": {}
   }')
   for key in "${!sha256sums[@]}"; do
     meta=$(jq --arg key "$key" --arg sha256sums "${sha256sums[$key]}" '
       .sha256sums[$key] = $sha256sums' <<<"$meta"
-    )
-  done
-  for key in "${!authentihashes[@]}"; do
-    meta=$(jq --arg key "$key" --argjson authentihashes "${authentihashes[$key]}" \
-      '.authentihashes[$key] = $authentihashes' <<<"$meta"
     )
   done
   printf "%s\n" "$meta" >/workspace/meta.json

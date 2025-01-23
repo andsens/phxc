@@ -48,16 +48,6 @@
         }
       ]
     },
-    "disk-encryption": {
-      "description": "How the data partition should be unlocked. Default: auto",
-      "type": "string",
-      "enum": [
-        "rpi-otp",
-        "tpm",
-        "insecure-bootfile",
-        "auto"
-      ]
-    },
     "hostname": {
       "description": "Hostname of the node",
       "type": "string",

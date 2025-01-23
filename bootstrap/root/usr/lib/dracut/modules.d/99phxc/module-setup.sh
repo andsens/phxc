@@ -11,7 +11,8 @@ check() {
 # Module dependency requirements.
 depends() {
   local modules=(systemd-journald)
-  ! $DEBUG || modules+=(bash)
+  [[ $VARIANT = rpi* ]] || modules+=(tpm2-tss)
+  ! $DEBUG || modules+=(bash debug)
   echo "${modules[*]}"
   return 0
 }
