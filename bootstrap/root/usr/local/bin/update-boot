@@ -72,19 +72,23 @@ update() {
   try_rootimg_sha256=$(cat /boot/phxc/try.sha256 2>/dev/null || true)
   new_rootimg_sha256=$(jq -re '.sha256sums["root.img"]' <<<"$meta_json_new")
   if [[ $current_rootimg_sha256 = "$new_rootimg_sha256" ]]; then
-    info "boot partition is up-to-date (image is currently running)"
+    info "System is up-to-date and image is currently running (%s)" "${current_rootimg_sha256:0:8}"
     return 0
   fi
   if [[ $try_rootimg_sha256 = "$new_rootimg_sha256" ]]; then
     if [[ -e /run/initramfs/try-reboot ]]; then
-      info "boot partition is up-to-date (newer image will be tried)"
-      ! $reboot || try_reboot
+      if $reboot; then
+        info "System is outdated (%s), a newer boot image (%s) will be tried on next boot" "${current_rootimg_sha256:0:8}" "${try_rootimg_sha256:0:8}"
+        try_reboot
+      else
+        info "System is outdated (%s), a newer boot image (%s) has been downloaded and is ready to be tried out" "${current_rootimg_sha256:0:8}" "${try_rootimg_sha256:0:8}"
+      fi
     else
-      info "boot partition is up-to-date (newer image failed to boot)"
+      info "System is outdated (%s) but the newer boot image (%s) failed to boot" "${current_rootimg_sha256:0:8}" "${try_rootimg_sha256:0:8}"
     fi
     return 0
   fi
-  info "boot partition is outdated, updating now"
+  info "System is outdated (%s), updating now (%s)" "${current_rootimg_sha256:0:8}" "${new_rootimg_sha256:0:8}"
   clean_update_boot_files
   local clean_files_trap
   trap_append "clean_update_boot_files" EXIT
@@ -113,9 +117,13 @@ update() {
       cryptenroll_uki /boot/EFI/BOOT/BOOT.TRY.EFI sha256 false
     fi
   fi
-  info "boot partition has been updated"
   trap_remove "$clean_files_trap"
-  ! $reboot || try_reboot
+  if $reboot; then
+    info "The boot image has been updated (%s) and will be tried on next boot" "${new_rootimg_sha256:0:8}"
+    try_reboot
+  else
+    info "The boot image has been updated (%s) but will not be tried on next boot" "${new_rootimg_sha256:0:8}"
+  fi
 }
 
 clean_update_boot_files() {
@@ -170,7 +178,7 @@ switch() {
   current_rootimg_sha256=$(cat /run/initramfs/root.img.sha256)
   try_rootimg_sha256=$(cat /boot/phxc/try.sha256 2>/dev/null || true)
   if [[ $current_rootimg_sha256 = "$try_rootimg_sha256" ]]; then
-    info "Successfully booted new image"
+    info "Successfully booted new image (%s), removing old image (%s)" "${current_rootimg_sha256:0:8}" "${try_rootimg_sha256:0:8}"
     if [[ $VARIANT = rpi* ]]; then
       mv /boot/tryboot.img /boot/boot.img
     else
@@ -182,7 +190,7 @@ switch() {
     done
     rm /boot/phxc/try.sha256
   else
-    error "Failed to boot new image"
+    error "Failed to boot new image (%s), still running previous image (%s)" "${try_rootimg_sha256:0:8}" "${current_rootimg_sha256:0:8}"
     rm -f /boot/tryboot.img /boot/EFI/Linux/uki.try.efi "/boot/phxc/root.$try_rootimg_sha256.img"
     # Don't remove try.sha256, it prevents update-boot from retrying this specific image
   fi
