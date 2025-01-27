@@ -13,6 +13,6 @@ ExecCondition=bash -ec 'get-config -q node k3s.token >/dev/null'
 UMask=0077
 ExecStart=bash -eo pipefail
 StandardInputText=jq -n \
-  --arg k3s_url "https://$(get-config node k3s.hostname):6443" \
+  --arg k3s_url "https://$(get-config node k3s.server):6443" \
   --arg k3s_token "$(get-config node k3s.token)" \
   '{"server": $k3s_url, "token": $k3s_token}' >/etc/rancher/k3s/config.yaml.d/node.yaml

@@ -28,7 +28,7 @@
                 "server"
               ]
             },
-            "hostname": {
+            "server": {
               "description": "The hostname of a control-plane node for k3s to connect to.",
               "type": "string",
               "format": "hostname"
@@ -41,7 +41,7 @@
           },
           "required": [
             "mode",
-            "hostname",
+            "server",
             "token"
           ],
           "additionalProperties": false
