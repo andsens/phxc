@@ -262,7 +262,6 @@ cryptenroll_uki() {
   pcr11=$(calc_pcr "$records" 11 "$hash_alg")
   local wipe_opt='--wipe-slot=tpm2'
   $exclusive || wipe_opt=
-  printf "%s\n%s\n" "$pcr4" "$pcr11" >/boot/pcrs.txt
   systemd-cryptenroll --unlock-key-file /var/lib/phxc/disk-encryption.recovery.key \
     --tpm2-device=auto $wipe_opt \
     --tpm2-pcrs="0+2+4:sha256=$pcr4+11:sha256=$pcr11" \
