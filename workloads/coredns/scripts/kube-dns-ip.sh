@@ -2,6 +2,7 @@
 set -Eeo pipefail; shopt -s inherit_errexit
 
 main() {
+  [[ $# -eq 0 ]] || usage
   # Calculate the kube-dns IPs using the svc CIDR
   local ipv4 ipv6
   ipv4=$(kubectl -n kube-system get cm cilium-config -ojsonpath='{.data.ipv4-service-range}' | (cidrex -4 || true) | head -n11 | tail -n1)
