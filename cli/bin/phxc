@@ -27,19 +27,19 @@ Options:
   --update             Update all nodes when completed
 
 Commands:
-  setup           - Setup the Phoenix Cluster root trust and configure kubectl
-  bootstrap       - Manually start a bootstrap job for VARIANT
-  update-node     - Update the node with the latest bootstrapped image
-  recovery-keys   - Show the disk-encryption recovery keys
-  embed-configs   - Embed configuration in the FAT32 partition of a disk image
-  get-kube-cert   - Issue or refresh a client cert for use with kubectl
+  setup          Setup the Phoenix Cluster root trust and configure kubectl
+  bootstrap      Manually start a bootstrap job for VARIANT
+  update-node    Update the node with the latest bootstrapped image
+  recovery-keys  Show the disk-encryption recovery keys
+  embed-configs  Embed configuration in the FAT32 partition of a disk image
+  get-kube-cert  Issue or refresh a client cert for use with kubectl
 "
 # docopt parser below, refresh this parser with `docopt.sh phxc`
 # shellcheck disable=2016,2086,2317,1090,1091,2034,2154
 docopt() { local v='2.0.2'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
-%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:993};usage=${DOC:39:253}
-digest=ef3ae;options=('-k --ssh-keyname 1' '-u --username 1' ' --wait 0' ' --u'\
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:975};usage=${DOC:39:253}
+digest=a420c;options=('-k --ssh-keyname 1' '-u --username 1' ' --wait 0' ' --u'\
 'pdate 0');node_0(){ value __ssh_keyname 0;};node_1(){ value __username 1;}
 node_2(){ switch __wait 2;};node_3(){ switch __update 3;};node_4(){ value \
 KUBEAPI_HOSTNAME a;};node_5(){ value VARIANT a;};node_6(){ value NODE a true;}
