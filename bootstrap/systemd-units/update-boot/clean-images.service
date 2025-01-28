@@ -1,0 +1,16 @@
+[Unit]
+Description=Remove all root images except the current one
+Requires=boot.mount k3s.target
+After=boot.mount k3s.target
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=bash -eo pipefail
+StandardInputText=current_rootimg_sha256=$(cat /run/initramfs/root.img.sha256); \
+                  for rootimg in /boot/phxc/root.*.img; do \
+                    [[ $rootimg = "/boot/phxc/root.$current_rootimg_sha256.img" ]] || rm "$rootimg"; \
+                  done

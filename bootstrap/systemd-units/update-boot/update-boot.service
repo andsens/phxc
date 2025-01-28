@@ -1,5 +1,5 @@
 [Unit]
-Description=Update the boot partition with the latest image
+Description=Update the boot partition with the latest image and reboot into it
 Requires=boot.mount workload-ready@bootstrap.service
 After=boot.mount workload-ready@bootstrap.service uncordon.service switch-boot.service
 
@@ -8,4 +8,4 @@ WantedBy=multi-user.target
 
 [Service]
 Type=oneshot
-ExecStart=update-boot update
+ExecStart=update-boot -r

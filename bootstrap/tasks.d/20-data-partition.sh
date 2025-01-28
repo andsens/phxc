@@ -14,10 +14,13 @@ fi
 
 data_partition() {
   if [[ $VARIANT = rpi* ]]; then
-    rm /etc/crypttab.tpm2
+    rm /etc/systemd/system/unenroll-tpm2-keys.service \
+       /etc/crypttab.tpm2 \
+      /usr/local/bin/cryptenroll-uki
   else
     rm /etc/systemd/system/diskenc-rpi-otp.service \
        /etc/crypttab.rpi-otp
+    chmod +x /usr/local/bin/cryptenroll-uki
   fi
   # Mask systemd-ask-password-console.path so that only user authenticated via SSH can enter a password
   systemctl mask systemd-ask-password-console.path

@@ -1,14 +1,17 @@
 [Unit]
-Description=Depending on whether we are running the new boot image, make it permanent or delete it
-Requires=boot.mount k3s.target
-After=boot.mount k3s.target
-ConditionPathExists=|/boot/tryboot.img
-ConditionPathExists=|/boot/EFI/BOOT/BOOT.TRY.EFI
+Description=Permanently switch to the new image
+Requires=boot.mount
+After=boot.mount remove-failed-boot.service
+ConditionPathExists=/boot/phxc/pending.sha256
 
 [Install]
-WantedBy=sysinit.target
+WantedBy=multi-user.target
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=update-boot switch
+ExecCondition=diff -q /run/initramfs/root.img.sha256 /boot/phxc/pending.sha256
+ExecStart=bash -eo pipefail
+StandardInputText=if [[ ${VARIANT} = rpi* ]]; then mv /boot/tryboot.img /boot/boot.img; \
+                  else mv /boot/EFI/BOOT/BOOT.TRY.EFI /boot/EFI/BOOT/BOOT${EFI_ARCH}.EFI; fi
+ExecStartPost=rm /boot/phxc/pending.sha256

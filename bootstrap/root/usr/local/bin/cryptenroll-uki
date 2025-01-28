@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+# shellcheck source-path=../../../../..
+set -Eeo pipefail; shopt -s inherit_errexit
+PKGROOT=/usr/local/lib/upkg/.upkg/phxc
+source "$PKGROOT/.upkg/records.sh/records.sh"
+DATA_UUID=$(systemctl show-environment | grep '^DATA_UUID=')
+DATA_UUID=${DATA_UUID#DATA_UUID=}
+
+main() {
+  DOC="cryptenroll-uki - Enroll a LUKS TPM2 key that can be unlocked by a UKI
+Usage:
+  cryptenroll-uki [options] UKIPATH
+
+Options:
+  -h --hashalg ALG  Which PCR bank to use [default: sha256]
+  -e --exclusive    Remove all other TPM2 keys
+"
+# docopt parser below, refresh this parser with `docopt.sh cryptenroll-uki`
+# shellcheck disable=2016,2086,2317,1090,1091,2034
+docopt() { local v='2.0.2'; source \
+"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:230};usage=${DOC:71:42}
+digest=5aae1;options=('-h --hashalg 1' '-e --exclusive 0');node_0(){ value \
+__hashalg 0;};node_1(){ switch __exclusive 1;};node_2(){ value UKIPATH a;}
+node_3(){ optional 0 1;};node_4(){ sequence 3 2;};cat <<<' docopt_exit() { [[ \
+-n $1 ]] && printf "%s\n" "$1" >&2;printf "%s\n" "${DOC:71:42}" >&2;exit 1;}'
+local varnames=(__hashalg __exclusive UKIPATH) varname;for varname in \
+"${varnames[@]}"; do unset "var_$varname";done;parse 4 "$@";local \
+p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset "$p$varname"
+done;eval $p'__hashalg=${var___hashalg:-sha256};'$p'__exclusive=${var___exclus'\
+'ive:-false};'$p'UKIPATH=${var_UKIPATH:-};';local docopt_i=1;[[ $BASH_VERSION \
+=~ ^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for varname in \
+"${varnames[@]}"; do declare -p "$p$varname";done;done;}
+# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' cryptenroll-uki`
+  eval "$(docopt "$@")"
+
+  local uki_records
+  uki_records=$(/lib/systemd/systemd-pcrlock lock-uki "$UKIPATH")
+
+  # See https://github.com/systemd/systemd/issues/36076
+  local kernel_tmp raw_size
+  kernel_tmp=$(mktemp -d)
+  # shellcheck disable=SC2064
+  trap "rm -rf '$kernel_tmp'" EXIT
+  objcopy -O binary --only-section=.linux "$UKIPATH" "$kernel_tmp/linux"
+  raw_size=$(stat -c%s "$kernel_tmp/linux") # not the original size of vmlinuz, it's already padded a bit, but we need to pad *mooore*
+  local paddr virtual_size _idx _name _rest
+  read -r _idx _name paddr _rest < <(objdump -P sections "$UKIPATH" | grep -F .linux)
+  virtual_size=$(printf "%d" "0x$paddr")
+  dd if=/dev/zero bs=1 status=none count=$((virtual_size-raw_size)) conv=notrunc oflag=append of="$kernel_tmp/linux"
+  local kernel_records
+  kernel_records=$(/lib/systemd/systemd-pcrlock lock-pe "$kernel_tmp/linux")
+
+  local records='[]'
+  records=$(jq --argjson records "$records" '$records + .records' /usr/lib/pcrlock.d/350-action-efi-application.pcrlock)
+  records=$(jq --argjson records "$records" '$records + .records' /usr/lib/pcrlock.d/500-separator.pcrlock.d/300-0x00000000.pcrlock)
+  records=$(jq --argjson records "$records" '$records + .records' <<<"$uki_records")
+  records=$(jq --argjson records "$records" '$records + .records' <<<"$kernel_records")
+  records=$(jq --argjson records "$records" '$records + .records' /usr/lib/pcrlock.d/750-enter-initrd.pcrlock)
+  records=$(jq --argjson records "$records" '$records + .records' /usr/lib/pcrlock.d/800-leave-initrd.pcrlock)
+
+  local pcr4 pcr11
+  # shellcheck disable=SC2154
+  pcr4=$(calc_pcr "$records" 4 "$__hashalg")
+  pcr11=$(calc_pcr "$records" 11 "$__hashalg")
+  local wipe_opt='--wipe-slot=tpm2'
+  # shellcheck disable=SC2154
+  $__exclusive || wipe_opt=
+  systemd-cryptenroll --unlock-key-file /var/lib/phxc/disk-encryption.recovery.key \
+    --tpm2-device=auto $wipe_opt \
+    --tpm2-pcrs="0+2+4:$__hashalg=$pcr4+11:$__hashalg=$pcr11" \
+    "/dev/disk/by-partuuid/${DATA_UUID}"
+}
+
+calc_pcr() {
+  local records=$1 index=$2 hash_alg=$3 pcr digest
+  shift; shift
+  case $hash_alg in
+    sha1) pcr=$(printf '0%.0s' {1..40}) ;;
+    sha256) pcr=$(printf '0%.0s' {1..64}) ;;
+    sha384) pcr=$(printf '0%.0s' {1..96}) ;;
+    sha512) pcr=$(printf '0%.0s' {1..128}) ;;
+  esac
+  for digest in $(jq -r --argjson pcr "$index" --arg hashAlg "$hash_alg" \
+    '.[] | select(.pcr==$pcr) | .digests[] | select(.hashAlg==$hashAlg) | .digest' <<<"$records"); do
+    pcr=$( (xxd -r -p <<<"${pcr}${digest}") | "${hash_alg}sum" | cut -d' ' -f1)
+  done
+  printf "%s\n" "$pcr"
+}
+
+main "$@"

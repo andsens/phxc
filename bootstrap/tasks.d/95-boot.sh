@@ -45,7 +45,15 @@ dpkg -i /workspace/initramfs-tools/initramfs-tools_0.145_all.deb
 export INITRD=No
 
 boot() {
-  chmod +x /usr/local/bin/update-boot
+  if [[ $VARIANT = rpi* ]]; then
+    rm /etc/systemd/system.conf.d/efi-arch.conf \
+       /etc/systemd/system/init-efi-bootmenu.service \
+       /usr/local/bin/get-efi-bootnum
+  else
+    chmod +x /usr/local/bin/get-efi-bootnum
+  fi
+  chmod +x /usr/local/bin/cordoned-reboot \
+           /usr/local/bin/update-boot \
   # Enable serial console
   systemctl enable serial-getty@ttyS0
 

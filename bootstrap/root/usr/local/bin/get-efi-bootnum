@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# shellcheck source-path=../../../../..
+set -Eeo pipefail; shopt -s inherit_errexit
+export BOOT_UUID=c427f0ed-0366-4cb2-9ce2-3c8c51c3e89e
+
+main() {
+  [[ $# -eq 1 ]] || usage
+  [[ $1 != '--help' && $1 != '-h' ]] || usage
+  local basename=$1 bootnum
+  # shellcheck disable=SC1003
+  bootnum=$(efibootmgr | grep -m1 "GPT,$BOOT_UUID,.*)/File("'\\EFI\\BOOT\\'"$basename)$" | cut -f1 -d ' ') || return 1
+  bootnum=${bootnum#'Boot'}
+  bootnum=${bootnum%'*'}
+  printf "%s\n" "$bootnum"
+}
+
+usage() {
+  printf "get-efi-bootnum - Get the entry number of an EFI bootmenu entry
+Usage: get-efi-bootnum BASENAME
+" >&2
+  return 1
+}
+
+main "$@"

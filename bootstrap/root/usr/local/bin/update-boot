@@ -3,56 +3,37 @@
 set -Eeo pipefail; shopt -s inherit_errexit
 PKGROOT=/usr/local/lib/upkg/.upkg/phxc
 source "$PKGROOT/.upkg/records.sh/records.sh"
-source "$PKGROOT/.upkg/trap.sh/trap.sh"
-export BOOT_UUID=c427f0ed-0366-4cb2-9ce2-3c8c51c3e89e
-export DATA_UUID=6f07821d-bb94-4d0f-936e-4060cadf18d8
 
 VARIANT=$(systemctl show-environment | grep '^VARIANT=')
 VARIANT=${VARIANT#VARIANT=}
-case "$VARIANT" in
-  amd64) EFI_ARCH="X64" ;;
-  arm64) EFI_ARCH="AA64" ;;
-esac
+DATA_UUID=$(systemctl show-environment | grep '^DATA_UUID=')
+DATA_UUID=${DATA_UUID#DATA_UUID=}
 
 main() {
   DOC="update-boot - Update the boot partition with a new image
 Usage:
-  update-boot update [-R]
-  update-boot switch
+  update-boot [-r]
 
 Options:
-  -R --no-reboot  Do not reboot after updating
+  -r --reboot  Reboot into the new image after updating
 "
 # docopt parser below, refresh this parser with `docopt.sh update-boot`
 # shellcheck disable=2016,2086,2317,1090,1091,2034
 docopt() { local v='2.0.2'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
-%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:167};usage=${DOC:57:53}
-digest=c02fd;options=('-R --no-reboot 0');node_0(){ switch __no_reboot 0;}
-node_1(){ switch update a:update;};node_2(){ switch switch a:switch;};node_3(){
-sequence 1 4;};node_4(){ optional 0;};node_5(){ choice 3 2;};cat <<<' \
-docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2;printf "%s\n" \
-"${DOC:57:53}" >&2;exit 1;}';local varnames=(__no_reboot update switch) varname
-for varname in "${varnames[@]}"; do unset "var_$varname";done;parse 5 "$@"
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:148};usage=${DOC:57:25}
+digest=22398;options=('-r --reboot 0');node_0(){ switch __reboot 0;};node_1(){
+optional 0;};cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2
+printf "%s\n" "${DOC:57:25}" >&2;exit 1;}';local varnames=(__reboot) varname
+for varname in "${varnames[@]}"; do unset "var_$varname";done;parse 1 "$@"
 local p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset \
-"$p$varname";done;eval $p'__no_reboot=${var___no_reboot:-false};'$p'update=${v'\
-'ar_update:-false};'$p'switch=${var_switch:-false};';local docopt_i=1;[[ \
-$BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for \
-varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
+"$p$varname";done;eval $p'__reboot=${var___reboot:-false};';local docopt_i=1
+[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do
+for varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' update-boot`
   eval "$(docopt "$@")"
-  # shellcheck disable=SC2154
-  if $update; then
-    local reboot=false
-    $__no_reboot || reboot=true
-    update $reboot
-  elif $switch; then
-    switch
-  fi
-}
 
-update() {
-  local reboot=$1 meta_json_new http_code
+  local meta_json_new http_code
   if ! meta_json_new=$(curl_img_reg "$VARIANT/meta.json" -w '%{http_code}'); then
     info "Unable to retrieve image metadata from image-registry"
     return 1
@@ -67,33 +48,34 @@ update() {
     return 1
   fi
   meta_json_new=$(head -n-1 <<<"$meta_json_new")
-  local current_rootimg_sha256 try_rootimg_sha256 new_rootimg_sha256
+  local current_rootimg_sha256 pending_rootimg_sha256 failed_rootimg_sha256 new_rootimg_sha256
   current_rootimg_sha256=$(cat /run/initramfs/root.img.sha256)
-  try_rootimg_sha256=$(cat /boot/phxc/try.sha256 2>/dev/null || true)
+  pending_rootimg_sha256=$(cat /boot/phxc/pending.sha256 2>/dev/null || true)
+  failed_rootimg_sha256=$(cat /boot/phxc/failed.sha256 2>/dev/null || true)
   new_rootimg_sha256=$(jq -re '.sha256sums["root.img"]' <<<"$meta_json_new")
-  if [[ $current_rootimg_sha256 = "$new_rootimg_sha256" ]]; then
+  if [[ $new_rootimg_sha256 = "$current_rootimg_sha256" ]]; then
     info "System is up-to-date and image is currently running (%s)" "${current_rootimg_sha256:0:8}"
     return 0
-  fi
-  if [[ $try_rootimg_sha256 = "$new_rootimg_sha256" ]]; then
-    if [[ -e /run/initramfs/try-reboot ]]; then
-      if $reboot; then
-        info "System is outdated (%s), a newer boot image (%s) will be tried on next boot" "${current_rootimg_sha256:0:8}" "${try_rootimg_sha256:0:8}"
-        try_reboot
-      else
-        info "System is outdated (%s), a newer boot image (%s) has been downloaded and is ready to be tried out" "${current_rootimg_sha256:0:8}" "${try_rootimg_sha256:0:8}"
-      fi
+  elif [[ $new_rootimg_sha256 = "$pending_rootimg_sha256" ]]; then
+    # shellcheck disable=SC2154
+    if $__reboot; then
+      info "System is outdated (%s), a newer boot image (%s) will be tried on next boot" "${current_rootimg_sha256:0:8}" "${pending_rootimg_sha256:0:8}"
+      cordoned-reboot -t
     else
-      info "System is outdated (%s) but the newer boot image (%s) failed to boot" "${current_rootimg_sha256:0:8}" "${try_rootimg_sha256:0:8}"
+      info "System is outdated (%s), a newer boot image (%s) has been downloaded and is ready to be tried out" "${current_rootimg_sha256:0:8}" "${pending_rootimg_sha256:0:8}"
     fi
+    return 0
+  elif [[ $new_rootimg_sha256 = "$failed_rootimg_sha256" ]]; then
+    info "System is outdated (%s) but the newer boot image (%s) failed to boot" "${current_rootimg_sha256:0:8}" "${pending_rootimg_sha256:0:8}"
     return 0
   fi
   info "System is outdated (%s), updating now (%s)" "${current_rootimg_sha256:0:8}" "${new_rootimg_sha256:0:8}"
-  clean_update_boot_files
-  local clean_files_trap
-  trap_append "clean_update_boot_files" EXIT
-  clean_files_trap=$TRAP_POINTER
-  printf "%s" "$new_rootimg_sha256" >/boot/phxc/try.sha256
+  clean_update_boot_files() {
+    [[ ! -e /boot/phxc/pending.sha256 ]] || rm -f "/boot/phxc/root.$(cat /boot/phxc/pending.sha256).img"
+    rm -f /boot/tryboot.img /boot/EFI/Linux/uki.try.efi /boot/phxc/pending.sha256
+  }
+  trap "clean_update_boot_files" EXIT
+  printf "%s\n" "$new_rootimg_sha256" >/boot/phxc/pending.sha256
   curl_img_reg "$VARIANT/root.img" -o"/boot/phxc/root.$new_rootimg_sha256.img" -f
 
   if [[ $VARIANT = rpi* ]]; then
@@ -102,9 +84,9 @@ update() {
       curl_img_reg "$VARIANT/boot.nopw-diskenc.efi" -o/boot/tryboot.img -f
     else
       if ! cryptsetup luksOpen --test-passphrase \
-        --key-file=/run/initramfs/disk-encryption.rpi-otp.key /dev/disk/by-partuuid/${DATA_UUID}; then
+        --key-file=/run/initramfs/disk-encryption.rpi-otp.key "/dev/disk/by-partuuid/${DATA_UUID}"; then
         systemd-cryptenroll --unlock-key-file /var/lib/phxc/disk-encryption.recovery.key \
-          --new-keyfile /run/initramfs/disk-encryption.rpi-otp.key /dev/disk/by-partuuid/${DATA_UUID}
+          --new-keyfile /run/initramfs/disk-encryption.rpi-otp.key "/dev/disk/by-partuuid/${DATA_UUID}"
       fi
       curl_img_reg "$VARIANT/boot.otp-diskenc.efi" -o/boot/tryboot.img -f
     fi
@@ -114,119 +96,16 @@ update() {
       curl_img_reg "$VARIANT/uki.nopw-diskenc.efi" -o/boot/EFI/BOOT/BOOT.TRY.EFI -f
     else
       curl_img_reg "$VARIANT/uki.tpm2-diskenc.efi" -o/boot/EFI/BOOT/BOOT.TRY.EFI -f
-      cryptenroll_uki /boot/EFI/BOOT/BOOT.TRY.EFI sha256 false
+      cryptenroll-uki /boot/EFI/BOOT/BOOT.TRY.EFI
     fi
   fi
-  trap_remove "$clean_files_trap"
-  if $reboot; then
+  trap "" EXIT
+  if $__reboot; then
     info "The boot image has been updated (%s) and will be tried on next boot" "${new_rootimg_sha256:0:8}"
-    try_reboot
+    cordoned-reboot -t
   else
     info "The boot image has been updated (%s) but will not be tried on next boot" "${new_rootimg_sha256:0:8}"
   fi
-}
-
-clean_update_boot_files() {
-  [[ ! -e /boot/phxc/try.sha256 ]] || rm -f "/boot/phxc/root.$(cat /boot/phxc/try.sha256).img"
-  rm -f \
-    /run/initramfs/try-reboot \
-    /boot/phxc/try.sha256 \
-    /boot/EFI/BOOT/BOOT.TRY.EFI \
-    /boot/tryboot.img
-}
-
-try_reboot() {
-  touch /run/initramfs/try-reboot
-  # Kubernetes leases would be the best to use but the admission controller for
-  # nodes seems to block all except one lease (nodename in kube-node-leases)
-  # Instead we use the unschedulable state as a mutex. Though that introduces
-  # a bit of a race condition. To work around that we simply check a second time
-  # after cordoning the node
-  if [[ $(other_unschedulable_nodes | wc -l) -gt 0 ]]; then
-    info "Delaying restart, there are nodes that are unschedulable:\n%s" "$(other_unschedulable_nodes)"
-    return 0
-  fi
-  kubectl cordon "$HOSTNAME"
-  if [[ $(other_unschedulable_nodes | wc -l) -gt 0 ]]; then
-    kubectl uncordon "$HOSTNAME"
-    info "Delaying restart, there are nodes that are unschedulable:\n%s" "$(other_unschedulable_nodes)"
-    return 0
-  fi
-  local uncordon_trap
-  trap_append "kubectl uncordon \"$HOSTNAME\"" EXIT
-  uncordon_trap=$TRAP_POINTER
-  if ! kubectl drain --ignore-daemonsets --delete-emptydir-data --timeout 120s "$HOSTNAME"; then
-    warning "Draining with eviction failed after 2 minutes, now draining without eviction"
-    kubectl drain --ignore-daemonsets --delete-emptydir-data --disable-eviction  "$HOSTNAME"
-  fi
-  info "Node drained, rebooting in 5 seconds"
-  if [[ $VARIANT = rpi* ]]; then
-    systemd-run --on-active=5 --timer-property=AccuracySec=0 /usr/sbin/reboot "0 tryboot"
-  else
-    init_efi_bootmenu
-    local try_bootnum
-    try_bootnum=$(get_bootnum BOOT.TRY.EFI)
-    efibootmgr -q --bootnum "$try_bootnum" --active
-    efibootmgr -q --bootnext "$try_bootnum"
-    systemd-run --on-active=5 --timer-property=AccuracySec=0 /usr/bin/systemctl reboot
-  fi
-  trap_remove "$uncordon_trap"
-}
-
-switch() {
-  local current_rootimg_sha256 try_rootimg_sha256
-  current_rootimg_sha256=$(cat /run/initramfs/root.img.sha256)
-  try_rootimg_sha256=$(cat /boot/phxc/try.sha256 2>/dev/null || true)
-  if [[ $current_rootimg_sha256 = "$try_rootimg_sha256" ]]; then
-    info "Successfully booted new image (%s), removing old image (%s)" "${current_rootimg_sha256:0:8}" "${try_rootimg_sha256:0:8}"
-    if [[ $VARIANT = rpi* ]]; then
-      mv /boot/tryboot.img /boot/boot.img
-    else
-      mv /boot/EFI/BOOT/BOOT.TRY.EFI "/boot/EFI/BOOT/BOOT${EFI_ARCH:?}.EFI"
-    fi
-    local rootimg
-    for rootimg in /boot/phxc/root.*.img; do
-      [[ $rootimg = /boot/phxc/root.$try_rootimg_sha256.img ]] || rm "$rootimg"
-    done
-    rm /boot/phxc/try.sha256
-  else
-    error "Failed to boot new image (%s), still running previous image (%s)" "${try_rootimg_sha256:0:8}" "${current_rootimg_sha256:0:8}"
-    rm -f /boot/tryboot.img /boot/EFI/Linux/uki.try.efi "/boot/phxc/root.$try_rootimg_sha256.img"
-    # Don't remove try.sha256, it prevents update-boot from retrying this specific image
-  fi
-  if [[ $VARIANT != rpi* ]]; then
-    local try_bootnum
-    try_bootnum=$(get_bootnum BOOT.TRY.EFI)
-    efibootmgr -q --bootnum "$try_bootnum" --inactive
-    cryptenroll_uki "/boot/EFI/BOOT/BOOT${EFI_ARCH:?}.EFI" sha256 true
-  fi
-}
-
-init_efi_bootmenu() {
-  local default_bootnum try_bootnum
-  if ! default_bootnum=$(get_bootnum "BOOT${EFI_ARCH}.EFI"); then
-    efibootmgr -q -c -d /dev/disk/by-partuuid/${BOOT_UUID} -L "Phoenix Cluster" -l "\\EFI\\BOOT\\BOOT${EFI_ARCH}.EFI"
-    default_bootnum=$(get_bootnum "BOOT${EFI_ARCH}.EFI")
-  fi
-  if ! try_bootnum=$(get_bootnum BOOT.TRY.EFI); then
-    efibootmgr -q -c -d /dev/disk/by-partuuid/${BOOT_UUID} -L "Phoenix Cluster (latest)" -l "\\EFI\\BOOT\\BOOT.TRY.EFI"
-    try_bootnum=$(get_bootnum BOOT.TRY.EFI)
-  fi
-  efibootmgr -q --bootorder "$default_bootnum,$try_bootnum"
-}
-
-get_bootnum() {
-  local basename=$1 bootnum
-  # shellcheck disable=SC1003
-  bootnum=$(efibootmgr | grep "GPT,$BOOT_UUID,.*)/File("'\\EFI\\BOOT\\'"$basename)$" | cut -f1 -d ' ') || return 1
-  bootnum=${bootnum#'Boot'}
-  bootnum=${bootnum%'*'}
-  printf "%s\n" "$bootnum"
-}
-
-other_unschedulable_nodes() {
-  kubectl get node -ojson | jq -re --arg hostname "$HOSTNAME" \
-    '.items[] | select(.spec.unschedulable and .metadata.labels["kubernetes.io/hostname"] != $hostname) | .metadata.labels["kubernetes.io/hostname"]'
 }
 
 curl_img_reg() {
@@ -236,60 +115,6 @@ curl_img_reg() {
     -L --no-progress-meter --connect-timeout 5 \
     --retry 10 --retry-delay 60 --retry-all-errors \
     "https://image-registry.phxc.svc.cluster.local:8020/$path" "$@"
-}
-
-cryptenroll_uki() {
-  local uki_path=$1 hash_alg=$2 exclusive=$3 records
-
-  local uki_records
-  uki_records=$(/lib/systemd/systemd-pcrlock lock-uki "$uki_path")
-
-  # See https://github.com/systemd/systemd/issues/36076
-  local kernel_tmp raw_size
-  kernel_tmp=$(mktemp -d)
-  trap_append "rm -rf '$kernel_tmp'" EXIT
-  objcopy -O binary --only-section=.linux "$uki_path" "$kernel_tmp/linux"
-  raw_size=$(stat -c%s "$kernel_tmp/linux") # not the original size of vmlinuz, it's already padded a bit, but we need to pad *mooore*
-  local paddr virtual_size _idx _name _rest
-  read -r _idx _name paddr _rest < <(objdump -P sections "$uki_path" | grep -F .linux)
-  virtual_size=$(printf "%d" "0x$paddr")
-  dd if=/dev/zero bs=1 status=none count=$((virtual_size-raw_size)) conv=notrunc oflag=append of="$kernel_tmp/linux"
-  local kernel_records
-  kernel_records=$(/lib/systemd/systemd-pcrlock lock-pe "$kernel_tmp/linux")
-
-  records='[]'
-  records=$(jq --argjson records "$records" '$records + .records' /usr/lib/pcrlock.d/350-action-efi-application.pcrlock)
-  records=$(jq --argjson records "$records" '$records + .records' /usr/lib/pcrlock.d/500-separator.pcrlock.d/300-0x00000000.pcrlock)
-  records=$(jq --argjson records "$records" '$records + .records' <<<"$uki_records")
-  records=$(jq --argjson records "$records" '$records + .records' <<<"$kernel_records")
-  records=$(jq --argjson records "$records" '$records + .records' /usr/lib/pcrlock.d/750-enter-initrd.pcrlock)
-  records=$(jq --argjson records "$records" '$records + .records' /usr/lib/pcrlock.d/800-leave-initrd.pcrlock)
-
-  local pcr4 pcr11
-  pcr4=$(calc_pcr "$records" 4 "$hash_alg")
-  pcr11=$(calc_pcr "$records" 11 "$hash_alg")
-  local wipe_opt='--wipe-slot=tpm2'
-  $exclusive || wipe_opt=
-  systemd-cryptenroll --unlock-key-file /var/lib/phxc/disk-encryption.recovery.key \
-    --tpm2-device=auto $wipe_opt \
-    --tpm2-pcrs="0+2+4:sha256=$pcr4+11:sha256=$pcr11" \
-    /dev/disk/by-partuuid/${DATA_UUID}
-}
-
-calc_pcr() {
-  local records=$1 index=$2 hash_alg=$3 pcr digest
-  shift; shift
-  case $hash_alg in
-    sha1) pcr=$(printf '0%.0s' {1..40}) ;;
-    sha256) pcr=$(printf '0%.0s' {1..64}) ;;
-    sha384) pcr=$(printf '0%.0s' {1..96}) ;;
-    sha512) pcr=$(printf '0%.0s' {1..128}) ;;
-  esac
-  for digest in $(jq -r --argjson pcr "$index" --arg hashAlg "$hash_alg" \
-    '.[] | select(.pcr==$pcr) | .digests[] | select(.hashAlg==$hashAlg) | .digest' <<<"$records"); do
-    pcr=$( (xxd -r -p <<<"${pcr}${digest}") | "${hash_alg}sum" | cut -d' ' -f1)
-  done
-  printf "%s\n" "$pcr"
 }
 
 

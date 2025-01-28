@@ -1,0 +1,15 @@
+[Unit]
+Description=Remove the failed UKI or boot.img
+Requires=boot.mount k3s.target
+After=boot.mount k3s.target
+ConditionPathExists=/boot/phxc/pending.sha256
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecCondition=bash -c '! diff -q /run/initramfs/root.img.sha256 /boot/phxc/pending.sha256'
+ExecStart=mv /boot/phxc/pending.sha256 /boot/phxc/failed.sha256
+ExecStart=rm -f /boot/EFI/Linux/uki.try.efi /boot/tryboot.img

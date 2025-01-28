@@ -1,0 +1,13 @@
+[Unit]
+Description=Unenroll all TPM2 disk encryption keys other than the one for the currently booted image
+Requires=switch-boot.service
+After=switch-boot.service
+ConditionKernelCommandLine=!phxc.diskenc-nopw
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=cryptenroll-uki --exclusive /boot/EFI/BOOT/BOOT${EFI_ARCH}.EFI
