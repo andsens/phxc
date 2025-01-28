@@ -312,7 +312,7 @@ update_nodes() {
       skipped_nodes+=("$node")
       continue
     fi
-    # Node may be single master
+    # Node may be single master, so don't fail when kubectl fails
     until unschedulable=$(kubectl get node "$node" -ojsonpath='{.spec.unschedulable}' 2>/dev/null) && [[ $unschedulable != 'true' ]]; do
       sleep 10
     done
