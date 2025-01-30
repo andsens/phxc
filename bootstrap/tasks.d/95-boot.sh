@@ -5,8 +5,8 @@ PACKAGES+=(
   dosfstools # Used for mounting ESP
   systemd-resolved # DNS resolution setup
   zstd # initramfs compression
+  dracut # initramfs, replaced with tiny-initramfs when done
 )
-PACKAGES_TMP+=(dracut)
 
 case $VARIANT in
   amd64) PACKAGES+=(
@@ -40,12 +40,6 @@ FILES_ENVSUBST+=(
   /etc/fstab.tmp
 )
 
-# Installing the kernel & dracut at the same time somehow also installs initramfs-tools
-# Install a dummy package prior to that to prevent it
-mkdir /workspace/initramfs-tools
-(cd /workspace/initramfs-tools && equivs-build /usr/local/lib/upkg/.upkg/phxc/bootstrap/assets/initramfs-tools)
-dpkg -i /workspace/initramfs-tools/initramfs-tools_0.145_all.deb
-
 # Disable initramfs updates until we are ready
 export INITRD=No
 
@@ -73,4 +67,5 @@ boot() {
   rm /vmlinuz /vmlinuz.old
 
   rm /etc/fstab.dracut
+  apt-get install -y tiny-initramfs
 }

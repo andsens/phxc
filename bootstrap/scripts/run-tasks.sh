@@ -8,10 +8,9 @@ export DISK_UUID=caf66bff-edab-4fb1-8ad9-e570be5415d7
 export BOOT_UUID=c427f0ed-0366-4cb2-9ce2-3c8c51c3e89e
 export DATA_UUID=6f07821d-bb94-4d0f-936e-4060cadf18d8
 export LUKS_UUID=2a785738-5af5-4c13-88ae-e5f2d20e7049
-export EFI_ARCH
 case "$VARIANT" in
-  amd64) EFI_ARCH="X64" ;;
-  arm64) EFI_ARCH="AA64" ;;
+  amd64) export EFI_ARCH="X64" ;;
+  arm64) export EFI_ARCH="AA64" ;;
 esac
 
 main() {
@@ -20,12 +19,8 @@ main() {
 
   # Enable non-free components
   sed -i 's/Components: main/Components: main contrib non-free non-free-firmware/' /etc/apt/sources.list.d/debian.sources
-  apt-get update -qq
 
-  # Install base deps
-  # gettext -> envsubst, equivs -> build dummy pkgs
-  apt-get install -y --no-install-recommends gettext equivs
-  PACKAGES_PURGE=(gettext equivs)
+  PACKAGES_PURGE=(gettext)
   FILES_ENVSUBST=()
 
   info "Copying files"
@@ -98,8 +93,6 @@ main() {
   apt-get purge -y "${packages_purge[@]}"
   apt-get autoremove -y
   apt-get autoclean
-  rm -rf /var/lib/apt/lists/*
-  rm /etc/apt/apt.conf.d/20apt-cacher-ng.conf
 }
 
 main "$@"

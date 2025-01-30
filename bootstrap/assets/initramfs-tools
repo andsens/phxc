@@ -1,7 +1,0 @@
-Priority: optional
-Standards-Version: 3.9.2
-
-Package: initramfs-tools
-Section: utils
-Version: 0.145
-Description: Dummy package for initramfs-tools
