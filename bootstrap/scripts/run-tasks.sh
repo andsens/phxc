@@ -26,23 +26,18 @@ main() {
   # gettext -> envsubst, equivs -> build dummy pkgs
   apt-get install -y --no-install-recommends gettext equivs
   PACKAGES_PURGE=(gettext equivs)
+  FILES_ENVSUBST=()
 
   info "Copying files"
-  # shellcheck disable=SC2016
-  local replacements=('${DISK_UUID}' '${BOOT_UUID}' '${DATA_UUID}' '${LUKS_UUID}' '${VARIANT}' '${EFI_ARCH}')
-
   local src dest files=$PKGROOT/bootstrap/root
   while IFS= read -r -d $'\0' src; do
     dest=${src#"$files"}
     mkdir -p "$(dirname "$dest")"
     [[ $(basename "$src") != .gitkeep ]] || continue
-    if [[ -L "$src" ]]; then
-      cp -PT --preserve=all "$src" "$dest"
-    else
-      envsubst "${replacements[*]}" <"$src" >"$dest"
-    fi
+    cp -PT --preserve=all "$src" "$dest"
   done < <(find "$files" -type f -print0)
 
+  info "Copying systemd units"
   local unit enable_units unit_files=$PKGROOT/bootstrap/systemd-units
   while IFS= read -r -d $'\0' src; do
     [[ $src != $unit_files/initramfs/* ]] || continue
@@ -50,7 +45,7 @@ main() {
     if grep -q '^\[Install\]$' "$src" && [[ $unit != *@* ]]; then
       enable_units+=("$unit")
     fi
-    envsubst "${replacements[*]}" <"$src" >"/etc/systemd/system/$unit"
+    cp -PT --preserve=all "$src" "/etc/systemd/system/$unit"
   done < <(find "$unit_files" -type f -print0)
 
   PACKAGES=(apt-utils jq)
@@ -59,6 +54,14 @@ main() {
   for taskfile in "$PKGROOT/bootstrap/tasks.d/"??-*.sh; do
     # shellcheck disable=SC1090
     source "$taskfile"
+  done
+
+  info "Replacing variables in files"
+  # shellcheck disable=SC2016
+  local file replacements=('${DISK_UUID}' '${BOOT_UUID}' '${DATA_UUID}' '${LUKS_UUID}' '${VARIANT}' '${EFI_ARCH}')
+  for file in "${FILES_ENVSUBST[@]}"; do
+    cp "$file" /workspace/envsubst.tmp
+    envsubst "${replacements[*]}" </workspace/envsubst.tmp >"$file"
   done
 
   local all_packages=()

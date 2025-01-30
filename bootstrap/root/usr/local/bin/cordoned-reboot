@@ -4,6 +4,9 @@ set -Eeo pipefail; shopt -s inherit_errexit
 PKGROOT=/usr/local/lib/upkg/.upkg/phxc
 source "$PKGROOT/.upkg/records.sh/records.sh"
 
+VARIANT=$(systemctl show-environment | grep '^VARIANT=')
+VARIANT=${VARIANT#VARIANT=}
+
 main() {
   DOC="cordoned-reboot - Exclusively cordon & drain the node, then reboot
 Usage:

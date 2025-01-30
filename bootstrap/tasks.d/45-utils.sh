@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 
+FILES_ENVSUBST+=(
+  /etc/systemd/system.conf.d/disk-uuids.conf
+  /etc/systemd/system.conf.d/efi-arch.conf
+  /etc/systemd/system.conf.d/variant.conf
+)
+
 utils() {
+  upkg add -g /usr/local/lib/upkg/.upkg/phxc/lib/common-context/jsonschema-cli.upkg.json
   if [[ $VARIANT != rpi* ]]; then
     upkg add -g \
       'https://github.com/andsens/cryptenroll-uki/releases/download/v0.0.3/cryptenroll-uki.tar.gz' \

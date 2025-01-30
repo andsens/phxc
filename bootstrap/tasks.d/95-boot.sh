@@ -35,6 +35,11 @@ EOF
   *) printf "Unknown variant: %s\n" "$VARIANT" >&2; return 1 ;;
 esac
 
+FILES_ENVSUBST+=(
+  /etc/fstab.dracut
+  /etc/fstab.tmp
+)
+
 # Installing the kernel & dracut at the same time somehow also installs initramfs-tools
 # Install a dummy package prior to that to prevent it
 mkdir /workspace/initramfs-tools
@@ -49,8 +54,6 @@ boot() {
     rm /etc/systemd/system.conf.d/efi-arch.conf \
        /etc/systemd/system/init-efi-bootmenu.service
   fi
-  chmod +x /usr/local/bin/cordoned-reboot \
-           /usr/local/bin/update-boot \
   # Enable serial console
   systemctl enable serial-getty@ttyS0
 
@@ -68,4 +71,6 @@ boot() {
   mv "/boot/initrd.img-$kernver" /boot/initramfs.img
   mv "$(realpath /vmlinuz)" /boot/vmlinuz
   rm /vmlinuz /vmlinuz.old
+
+  rm /etc/fstab.dracut
 }

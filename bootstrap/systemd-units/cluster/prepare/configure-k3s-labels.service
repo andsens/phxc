@@ -13,7 +13,7 @@ ExecStart=bash -eo pipefail
 StandardInputText=jq -n \
     --argjson labels "$(get-config -q node | jq .labels || true)" \
     --arg sha256 "$(compgen -G /run/initramfs/root.*.img | cut -d. -f2)" \
-    --arg variant "${VARIANT}" \
+    --arg variant ${VARIANT} \
     '{"node-label": (.labels + ["cluster.local/rootimg-sha256=" + $sha256[0:8], "cluster.local/rootimg-variant=" + $variant])}' \
     >/etc/rancher/k3s/config.yaml.d/node-label.yaml
 StandardError=journal
