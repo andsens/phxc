@@ -47,10 +47,7 @@ export INITRD=No
 boot() {
   if [[ $VARIANT = rpi* ]]; then
     rm /etc/systemd/system.conf.d/efi-arch.conf \
-       /etc/systemd/system/init-efi-bootmenu.service \
-       /usr/local/bin/get-efi-bootnum
-  else
-    chmod +x /usr/local/bin/get-efi-bootnum
+       /etc/systemd/system/init-efi-bootmenu.service
   fi
   chmod +x /usr/local/bin/cordoned-reboot \
            /usr/local/bin/update-boot \

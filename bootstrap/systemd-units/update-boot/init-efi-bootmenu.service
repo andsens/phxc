@@ -1,18 +1,14 @@
 [Unit]
 Description=Populate the EFI boot menu with Phoenix Cluster entries
-DefaultDependencies=no
+Requires=boot.mount
+After=boot.mount
 
 [Install]
-WantedBy=sysinit.target
+WantedBy=multi-user.target
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=bash -eo pipefail
-StandardInputText=get-efi-bootnum "BOOT${EFI_ARCH}.EFI" >/dev/null || \
-                    efibootmgr -q -c -d /dev/disk/by-partuuid/${BOOT_UUID} -L "Phoenix Cluster" -l "\\EFI\\BOOT\\BOOT${EFI_ARCH}.EFI"; \
-                  if ! try_bootnum=$(get-efi-bootnum BOOT.TRY.EFI); then \
-                    efibootmgr -q -c -d /dev/disk/by-partuuid/${BOOT_UUID} -L "Phoenix Cluster (new image)" -l "\\EFI\\BOOT\\BOOT.TRY.EFI"; \
-                    try_bootnum=$(get-efi-bootnum BOOT.TRY.EFI); \
-                  fi; \
-                  efibootmgr -q --bootnum "$try_bootnum" --inactive 2>/dev/null || true
+ExecStart=efi-bootentry add /boot/EFI/BOOT/BOOT${EFI_ARCH}.EFI "Phoenix Cluster"
+ExecStart=efi-bootentry add /boot/EFI/BOOT/BOOT.TRY.EFI "Phoenix Cluster (new image)"
+ExecStart=efi-bootentry deactivate /boot/EFI/BOOT/BOOT.TRY.EFI

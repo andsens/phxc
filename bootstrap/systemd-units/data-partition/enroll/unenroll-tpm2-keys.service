@@ -10,4 +10,6 @@ WantedBy=multi-user.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=cryptenroll-uki --exclusive /boot/EFI/BOOT/BOOT${EFI_ARCH}.EFI
+ExecStart=cryptenroll-uki --exclusive --device "/dev/disk/by-partuuid/${DATA_UUID}" \
+            --record /usr/lib/pcrlock.d/800-leave-initrd.pcrlock \
+            /var/lib/phxc/disk-encryption.recovery.key /boot/EFI/BOOT/BOOT${EFI_ARCH}.EFI

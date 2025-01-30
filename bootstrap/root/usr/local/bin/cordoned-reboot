@@ -58,9 +58,8 @@ done;eval $p'__try=${var___try:-false};';local docopt_i=1;[[ $BASH_VERSION =~ \
     fi
   else
     if $__try; then
-      local try_bootnum
-      try_bootnum=$(get-efi-bootnum BOOT.TRY.EFI)
-      efibootmgr -q --bootnum "$try_bootnum" --active --bootnext "$try_bootnum"
+      # efi-bootentry activate /boot/EFI/BOOT/BOOT.TRY.EFI
+      efi-bootentry bootnext /boot/EFI/BOOT/BOOT.TRY.EFI
     fi
     systemd-run --on-active=5 --timer-property=AccuracySec=0 /usr/bin/systemctl reboot
   fi

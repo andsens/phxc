@@ -96,7 +96,9 @@ for varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
       curl_img_reg "$VARIANT/uki.nopw-diskenc.efi" -o/boot/EFI/BOOT/BOOT.TRY.EFI -f
     else
       curl_img_reg "$VARIANT/uki.tpm2-diskenc.efi" -o/boot/EFI/BOOT/BOOT.TRY.EFI -f
-      cryptenroll-uki /boot/EFI/BOOT/BOOT.TRY.EFI
+      cryptenroll-uki --device "/dev/disk/by-partuuid/${DATA_UUID}" \
+        --record /usr/lib/pcrlock.d/800-leave-initrd.pcrlock \
+        /var/lib/phxc/disk-encryption.recovery.key /boot/EFI/BOOT/BOOT.TRY.EFI
     fi
   fi
   trap "" EXIT
