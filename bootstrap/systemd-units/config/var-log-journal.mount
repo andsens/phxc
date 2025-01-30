@@ -1,0 +1,15 @@
+[Unit]
+Description=/var/log/journal
+DefaultDependencies=no
+Requires=var-lib-phxc.mount
+After=var-lib-phxc.mount
+Before=systemd-journal-flush.service
+
+[Install]
+RequiredBy=systemd-journal-flush.service
+
+[Mount]
+What=/var/lib/phxc/journal
+Where=/var/log/journal
+Type=none
+Options=bind
