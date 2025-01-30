@@ -6,7 +6,7 @@ After=expand-data-partition.service
 Before=systemd-cryptsetup@data.service
 
 [Install]
-RequiredBy=sysinit.target
+WantedBy=sysinit.target
 
 [Service]
 Type=oneshot
