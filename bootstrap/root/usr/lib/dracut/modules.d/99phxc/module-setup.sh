@@ -51,6 +51,7 @@ install() {
 
   ! $DEBUG || mkdir -p /mnt/overlay-upper
 
+  # See https://github.com/dracut-ng/dracut-ng/pull/1063
   rm "${initdir}${systemdutildir}"/system-generators/systemd-gpt-auto-generator
   ln -sf ../run/machine-id "$initdir/etc/machine-id"
 
