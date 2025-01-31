@@ -24,13 +24,13 @@ main() {
   FILES_ENVSUBST=()
 
   info "Copying files"
-  local src dest files=$PKGROOT/bootstrap/root
+  local src dest
   while IFS= read -r -d $'\0' src; do
-    dest=${src#"$files"}
+    dest=${src#"$PKGROOT/bootstrap/root"}
     mkdir -p "$(dirname "$dest")"
     [[ $(basename "$src") != .gitkeep ]] || continue
     cp -PT --preserve=all "$src" "$dest"
-  done < <(find "$files" \( -type f -o -type l \) -print0)
+  done < <(find "$PKGROOT/bootstrap/root" \( -type f -o -type l \) -print0)
 
   info "Copying systemd units"
   local unit enable_units unit_files=$PKGROOT/bootstrap/systemd-units
