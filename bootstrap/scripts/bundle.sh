@@ -11,7 +11,7 @@ main() {
   if [[ -e $PKGROOT/.git ]]; then
     local filepath
     while read -r -d $'\0' filepath; do
-      [[ ! -e $PKGROOT/$filepath ]] || bundle_files+=("$filepath")
+      [[ ! -e $PKGROOT/$filepath && ! -L $PKGROOT/$filepath ]] || bundle_files+=("$filepath")
     done < <(cd "$PKGROOT"; git -C "$PKGROOT" ls-files -zco --exclude-standard bin bootstrap lib workloads)
   else
     bundle_files+=(bin bootstrap lib workloads)

@@ -30,7 +30,7 @@ main() {
     mkdir -p "$(dirname "$dest")"
     [[ $(basename "$src") != .gitkeep ]] || continue
     cp -PT --preserve=all "$src" "$dest"
-  done < <(find "$files" -type f -print0)
+  done < <(find "$files" \( -type f -o -type l \) -print0)
 
   info "Copying systemd units"
   local unit enable_units unit_files=$PKGROOT/bootstrap/systemd-units
