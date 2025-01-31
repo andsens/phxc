@@ -22,9 +22,8 @@
           }
         },
         "pwhash": {
-          "description": "sudo password for the admin and mokutil, must be a sha512 hash (`mkpasswd -m sha512crypt`)",
-          "type": "string",
-          "pattern": "^\\$6\\$"
+          "description": "hashed password for the admin user (and root in debug mode). Generate with `mkpasswd`.",
+          "type": "string"
         }
       },
       "required": ["ssh-keys"],
