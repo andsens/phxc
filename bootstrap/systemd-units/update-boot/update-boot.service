@@ -1,7 +1,7 @@
 [Unit]
 Description=Update the boot partition with the latest image and reboot into it
-Requires=boot.mount workload-ready@bootstrap.service init-efi-bootmenu.service
-After=boot.mount workload-ready@bootstrap.service init-efi-bootmenu.service uncordon.service switch-boot.service
+Requires=boot.mount workload-ready@image-registry.service workload-ready@bootstrap.service init-efi-bootmenu.service
+After=boot.mount workload-ready@image-registry.service workload-ready@bootstrap.service init-efi-bootmenu.service uncordon.service switch-boot.service
 
 [Install]
 WantedBy=multi-user.target
