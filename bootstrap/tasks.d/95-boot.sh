@@ -67,5 +67,5 @@ boot() {
   rm /vmlinuz /vmlinuz.old
 
   rm /etc/fstab.dracut
-  apt-get install -y tiny-initramfs
+  apt-get install -qq tiny-initramfs
 }

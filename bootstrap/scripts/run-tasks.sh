@@ -64,7 +64,7 @@ main() {
   info "Upgrading all packages"
   apt-get upgrade -qq
   info "Installing packages: %s" "${all_packages[*]}"
-  apt-get install -y --no-install-recommends "${all_packages[@]}"
+  apt-get install -qq --no-install-recommends "${all_packages[@]}"
 
   local task
   for taskfile in "$PKGROOT/bootstrap/tasks.d/"??-*.sh; do
@@ -90,9 +90,9 @@ main() {
     [[ ${#PACKAGES_TMP[@]} -eq 0 ]] || comm -13 <(printf "%s\n" "${PACKAGES[@]}" | sort -u) <(printf "%s\n" "${PACKAGES_TMP[@]}" | sort -u)
     [[ ${#PACKAGES_PURGE[@]} -eq 0 ]] || printf "%s\n" "${PACKAGES_PURGE[@]}"
   )
-  apt-get purge -y "${packages_purge[@]}"
-  apt-get autoremove -y
-  apt-get autoclean
+  apt-get purge -qq "${packages_purge[@]}"
+  apt-get autoremove -qq
+  apt-get autoclean -qq
 }
 
 main "$@"
