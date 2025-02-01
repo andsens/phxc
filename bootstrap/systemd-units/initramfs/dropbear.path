@@ -1,0 +1,16 @@
+[Unit]
+Description=Start dropbear on password requests
+DefaultDependencies=no
+
+Before=paths.target cryptsetup.target
+Conflicts=emergency.service
+Before=emergency.service
+Conflicts=shutdown.target
+Before=shutdown.target
+
+[Install]
+WantedBy=sysinit.target
+
+[Path]
+DirectoryNotEmpty=/run/systemd/ask-password
+MakeDirectory=yes

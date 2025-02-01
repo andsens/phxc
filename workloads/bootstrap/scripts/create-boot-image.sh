@@ -39,8 +39,6 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
   declare -A artifacts
   declare -A sha256sums
   declare -A boot_files
-  ! $DEBUG || export LIBGUESTFS_TRACE=1
-  # LIBGUESTFS_DEBUG=1
 
   #################################
   ### Extract container archive ###
@@ -68,6 +66,10 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
   ln -sf ../run/systemd/resolve/stub-resolv.conf /workspace/root/etc/resolv.conf
   mv /workspace/root/etc/hosts.tmp /workspace/root/etc/hosts
   mv /workspace/root/etc/fstab.tmp /workspace/root/etc/fstab
+
+  local kernver
+  kernver=$(echo /workspace/root/lib/modules/*)
+  kernver=${kernver#'/workspace/root/lib/modules/'}
 
   #######################
   ### Create root.img ###
@@ -102,12 +104,16 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
   mkdir /workspace/initramfs
   (
     cd /workspace/initramfs
-    zstd -cd /workspace/root/boot/initramfs.img | cpio -id
+    cpio -id </workspace/root/boot/initramfs.img
   )
-  cat <<EOF >/workspace/initramfs/etc/systemd/system.conf.d/rootimg.conf
-[Manager]
-DefaultEnvironment=ROOT_SHA256=${sha256sums[root.img]}
-EOF
+  cp /workspace/initramfs/etc/fstab /workspace/envsubst.tmp
+  # shellcheck disable=SC2016
+  ROOT_SHA256=${sha256sums[root.img]} envsubst '${ROOT_SHA256}' </workspace/envsubst.tmp >/workspace/initramfs/etc/fstab
+
+  local share_phxc=/workspace/initramfs/usr/share/phxc
+  mkdir "$share_phxc"
+  printf '%s  /boot/phxc/root.%s.img' "${sha256sums[root.img]}" "${sha256sums[root.img]}" >"$share_phxc/root.img.sha256.checksum"
+  printf '%s' "${sha256sums[root.img]}" >"$share_phxc/root.img.sha256"
   (
     cd /workspace/initramfs
     find . -print0 | cpio -o --null --format=newc 2>/dev/null | zstd -15 >/workspace/root/boot/initramfs.img
@@ -208,20 +214,21 @@ EOF
       *) fatal "Unknown variant: %s" "$VARIANT" ;;
     esac
 
-    local kernver
-    kernver=$(echo /workspace/root/lib/modules/*)
-    kernver=${kernver#'/workspace/root/lib/modules/'}
+    # Instead of installing systemd-boot-efi in the rather static create-boot-image image
+    # Use the efi stub from the regularly update actual image we are creating
+    mkdir -p /usr/lib/systemd/boot
+    ln -s /workspace/root/usr/lib/systemd/boot/efi /usr/lib/systemd/boot/efi
 
-    local uki_nopw_path=/workspace/root/boot/uki.nopw-diskenc.efi
+    local uki_empty_pw_path=/workspace/root/boot/uki.diskenc-empty-pw.efi
     /lib/systemd/ukify build \
       --uname="$kernver" \
       --linux=/workspace/root/boot/vmlinuz \
       --initrd=/workspace/root/boot/initramfs.img \
-      --cmdline="$(printf "%s " "${kernel_cmdline[@]}" "phxc.diskenc-nopw")" \
-      --output=$uki_nopw_path
-    boot_files[/EFI/BOOT/BOOT${efi_arch}.EFI]=$uki_nopw_path
-    artifacts[uki.nopw-diskenc.efi]=$uki_nopw_path
-    sha256sums[uki.nopw-diskenc.efi]=$(sha256sum $uki_nopw_path | cut -d ' ' -f1)
+      --cmdline="$(printf "%s " "${kernel_cmdline[@]}" "phxc.diskenc-allow-empty-pw")" \
+      --output=$uki_empty_pw_path
+    boot_files[/EFI/BOOT/BOOT${efi_arch}.EFI]=$uki_empty_pw_path
+    artifacts[uki.diskenc-empty-pw.efi]=$uki_empty_pw_path
+    sha256sums[uki.diskenc-empty-pw.efi]=$(sha256sum $uki_empty_pw_path | cut -d ' ' -f1)
 
     local \
       secureboot_key=/workspace/secureboot/tls.key secureboot_crt=/workspace/secureboot/tls.crt \
@@ -281,37 +288,40 @@ EOF
     sector_size_b=512 \
     gpt_size_b \
     partition_offset_b=$((1024 * 1024)) \
-    boot_partition_size_b=$(( 1024 * 1024 * 1024 )) \
-    data_partition_size_b=$(( 1024 * 1024 * 16 )) \
+    boot_partition_size_b=$(( $(stat -c%s /workspace/boot-files.tar) + ( 1024 * 1024 * 5) )) \
     boot_sector_start boot_sector_end \
-    data_sector_start data_sector_end \
     disk_size_kib
   gpt_size_b=$((33 * sector_size_b))
   boot_sector_start=$(( partition_offset_b / sector_size_b ))
   boot_sector_end=$(( boot_sector_start + ( boot_partition_size_b / sector_size_b ) - 1 ))
-  data_sector_start=$(( boot_sector_end + 1 ))
-  data_sector_end=$(( data_sector_start + ( data_partition_size_b / sector_size_b ) - 1 ))
   disk_size_kib=$((
     (
       partition_offset_b +
       boot_partition_size_b +
-      data_partition_size_b +
       gpt_size_b +
       1023
     ) / 1024
   ))
+
+  ! $DEBUG || export LIBGUESTFS_TRACE=1 # LIBGUESTFS_DEBUG=1
+
+  mkdir /usr/lib/modules # supermin bug workaround: https://lists.libguestfs.org/archives/list/guestfs@lists.libguestfs.org/thread/XVZXSSFUA5AISDPJKOI35CQB6LFUBXMU/
+  # Use the kernel already installed in the image to launch supermin
+  export \
+    SUPERMIN_KERNEL=/workspace/root/boot/vmlinuz \
+    SUPERMIN_KERNEL_VERSION=$kernver \
+    SUPERMIN_MODULES=/workspace/root/usr/lib/modules/$kernver
+
   guestfish -xN /workspace/disk.img=disk:${disk_size_kib}K -- <<EOF
 part-init /dev/sda gpt
 part-add /dev/sda primary $boot_sector_start $boot_sector_end
 part-set-bootable /dev/sda 1 true
 part-set-disk-guid /dev/sda $DISK_UUID
 part-set-gpt-guid /dev/sda 1 $BOOT_UUID
-part-add /dev/sda primary $data_sector_start $data_sector_end
-part-set-gpt-guid /dev/sda 2 $DATA_UUID
 
 mkfs vfat /dev/sda1
 mount /dev/sda1 /
-
+set-verbose false
 tar-in /workspace/boot-files.tar /
 EOF
   artifacts[disk.img]=/workspace/disk.img

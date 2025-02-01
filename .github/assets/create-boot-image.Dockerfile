@@ -20,8 +20,7 @@ EOR
 RUN <<EOR
 apt-get -y update
 apt-get -y install --no-install-recommends \
-  guestfish ipxe-qemu dosfstools linux-image-${TARGETARCH} binutils curl \
-  systemd-ukify sbsigntool gettext
+  guestfish dosfstools curl systemd-ukify sbsigntool gettext
 EOR
 
 ENTRYPOINT ["/scripts/create-boot-image.sh"]

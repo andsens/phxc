@@ -2,7 +2,8 @@
 Description=Unenroll all TPM2 disk encryption keys other than the one for the currently booted image
 Requires=switch-boot.service
 After=switch-boot.service
-ConditionKernelCommandLine=!phxc.diskenc-nopw
+ConditionSecurity=measured-uki
+ConditionKernelCommandLine=!phxc.diskenc-allow-empty-pw
 
 [Install]
 WantedBy=multi-user.target
@@ -11,5 +12,4 @@ WantedBy=multi-user.target
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=cryptenroll-uki --exclusive --device "/dev/disk/by-partuuid/${DATA_UUID}" \
-            --record /usr/lib/pcrlock.d/800-leave-initrd.pcrlock \
             /var/lib/phxc/disk-encryption.recovery.key /boot/EFI/BOOT/BOOT${EFI_ARCH}.EFI

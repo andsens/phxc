@@ -1,0 +1,14 @@
+[Unit]
+Description=Generate the disk encryption key using the RPi OTP memory
+DefaultDependencies=no
+Before=cryptsetup-empty-pw.service
+ConditionSecurity=measured-uki
+ConditionKernelCommandLine=!phxc.diskenc-allow-empty-pw
+
+[Install]
+WantedBy=initrd.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=sh -c 'printf "Encrypt=tpm2\n" >>/etc/repart.d/60-data.conf'

@@ -1,0 +1,18 @@
+[Unit]
+Description=Generate the disk encryption key using the RPi OTP memory
+DefaultDependencies=no
+Before=cryptsetup-empty-pw.service
+ConditionKernelCommandLine=!phxc.diskenc-allow-empty-pw
+
+[Install]
+WantedBy=initrd.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+Environment=PATH=/sysroot/usr/local/bin:/sysroot/usr/bin
+UMask=0077
+ExecCondition=sh -ec 'rpi-otp-private-key -c -o $(get-config rpi-otp offset) -l $(get-config rpi-otp length)'
+ExecStartPre=mkdir /run/cryptsetup-keys.d
+ExecStart=rpi-otp-disk-encryption-key /run/cryptsetup-keys.d/data.key
+ExecStart=sh -c 'printf "Encrypt=key-file\n" >>/etc/repart.d/60-data.conf'

@@ -20,7 +20,8 @@ main() {
   # Enable non-free components
   sed -i 's/Components: main/Components: main contrib non-free non-free-firmware/' /etc/apt/sources.list.d/debian.sources
 
-  PACKAGES_PURGE=(gettext)
+  PACKAGES=(jq)
+  PACKAGES_TMP=(gettext)
   FILES_ENVSUBST=()
 
   info "Copying files"
@@ -29,6 +30,7 @@ main() {
     dest=${src#"$PKGROOT/bootstrap/root"}
     mkdir -p "$(dirname "$dest")"
     [[ $(basename "$src") != .gitkeep ]] || continue
+    verbose "Copying %s" "$dest"
     cp -PT --preserve=all "$src" "$dest"
   done < <(find "$PKGROOT/bootstrap/root" \( -type f -o -type l \) -print0)
 
@@ -40,13 +42,13 @@ main() {
     if grep -q '^\[Install\]$' "$src" && [[ $unit != *@* ]]; then
       enable_units+=("$unit")
     fi
+    verbose "Copying %s" "$unit"
     cp -PT --preserve=all "$src" "/etc/systemd/system/$unit"
   done < <(find "$unit_files" -type f -print0)
 
-  PACKAGES=(apt-utils jq)
-  PACKAGES_TMP=()
   local taskfile
   for taskfile in "$PKGROOT/bootstrap/tasks.d/"??-*.sh; do
+    verbose "Including task %s" "$taskfile"
     # shellcheck disable=SC1090
     source "$taskfile"
   done
@@ -56,15 +58,17 @@ main() {
   local file replacements=('${DISK_UUID}' '${BOOT_UUID}' '${DATA_UUID}' '${LUKS_UUID}' '${VARIANT}' '${EFI_ARCH}')
   for file in "${FILES_ENVSUBST[@]}"; do
     cp "$file" /workspace/envsubst.tmp
+    verbose "Replace vars in %s" "$file"
     envsubst "${replacements[*]}" </workspace/envsubst.tmp >"$file"
   done
+  rm -f /workspace/envsubst.tmp
 
-  local all_packages=()
-  readarray -t -d $'\n' all_packages < <(printf "%s\n" "${PACKAGES[@]}" "${PACKAGES_TMP[@]}" | sort -u)
   info "Upgrading all packages"
   apt-get upgrade -qq
-  info "Installing packages: %s" "${all_packages[*]}"
-  apt-get install -qq --no-install-recommends "${all_packages[@]}"
+  info "Installing packages: %s" "${PACKAGES[*]}"
+  apt-get install -qq --no-install-recommends "${PACKAGES[@]}"
+  info "Installing tmp packages: %s" "${PACKAGES_TMP[*]}"
+  apt-get install --mark-auto -qq --no-install-recommends "${PACKAGES_TMP[@]}"
 
   local task
   for taskfile in "$PKGROOT/bootstrap/tasks.d/"??-*.sh; do
@@ -84,13 +88,6 @@ main() {
     [[ ! -e /etc/systemd/system/$unit ]] || systemctl enable "$unit"
   done
 
-  # `comm -13`: Only remove temp packages that don't also appear in PACKAGES_TMP
-  local packages_purge=()
-  readarray -t -d $'\n' packages_purge < <(\
-    [[ ${#PACKAGES_TMP[@]} -eq 0 ]] || comm -13 <(printf "%s\n" "${PACKAGES[@]}" | sort -u) <(printf "%s\n" "${PACKAGES_TMP[@]}" | sort -u)
-    [[ ${#PACKAGES_PURGE[@]} -eq 0 ]] || printf "%s\n" "${PACKAGES_PURGE[@]}"
-  )
-  apt-get purge -qq "${packages_purge[@]}"
   apt-get autoremove -qq
   apt-get autoclean -qq
 }

@@ -1,9 +1,7 @@
 [Unit]
 Description=Restore the machine-id from /boot/phxc/machine-id
 DefaultDependencies=no
-Requires=boot.mount
-After=boot.mount
-Before=systemd-journald.service
+RequiresMountsFor=/boot
 ConditionPathExists=/boot/phxc/machine-id
 
 [Install]

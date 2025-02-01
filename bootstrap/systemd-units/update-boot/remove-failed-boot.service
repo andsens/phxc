@@ -1,7 +1,8 @@
 [Unit]
 Description=Remove the failed UKI or boot.img
-Requires=boot.mount k3s.target
-After=boot.mount k3s.target
+RequiresMountsFor=/boot
+Requires=k3s.target
+After=k3s.target
 ConditionPathExists=/boot/phxc/pending.sha256
 
 [Install]

@@ -1,2 +1,0 @@
-# <target name> <source device>                               <key file> <options>
-data            PARTUUID=$DATA_UUID -          tpm2-device=auto,luks,discard

@@ -81,23 +81,22 @@ for varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   if [[ $VARIANT = rpi* ]]; then
     if ! rpi-otp-private-key -c -o "$(get-config rpi-otp offset)"; then
       warning "The RPi OTP is not initialized, using disk-encryption with a static password"
-      curl_img_reg "$VARIANT/boot.nopw-diskenc.efi" -o/boot/tryboot.img -f
+      curl_img_reg "$VARIANT/boot.allow-empty-pw-diskenc.efi" -o/boot/tryboot.img -f
     else
-      if ! cryptsetup luksOpen --test-passphrase \
-        --key-file=/run/initramfs/disk-encryption.rpi-otp.key "/dev/disk/by-partuuid/${DATA_UUID}"; then
+      if [[ $(stat -c%s /run/cryptsetup-keys.d/data.key) = 0 ]]; then
+        rpi-otp-disk-encryption-key >/run/cryptsetup-keys.d/data.key
         systemd-cryptenroll --unlock-key-file /var/lib/phxc/disk-encryption.recovery.key \
-          --new-keyfile /run/initramfs/disk-encryption.rpi-otp.key "/dev/disk/by-partuuid/${DATA_UUID}"
+          --new-keyfile /run/cryptsetup-keys.d/data.key "/dev/disk/by-partuuid/${DATA_UUID}"
       fi
-      curl_img_reg "$VARIANT/boot.otp-diskenc.efi" -o/boot/tryboot.img -f
+      curl_img_reg "$VARIANT/boot.otp-diskenc.img" -o/boot/tryboot.img -f
     fi
   else
     if ! compgen -G '/sys/kernel/security/tpm*' &>/dev/null; then
       warning "No TPM available, using disk-encryption with a static password"
-      curl_img_reg "$VARIANT/uki.nopw-diskenc.efi" -o/boot/EFI/BOOT/BOOT.TRY.EFI -f
+      curl_img_reg "$VARIANT/uki.allow-empty-pw-diskenc.efi" -o/boot/EFI/BOOT/BOOT.TRY.EFI -f
     else
       curl_img_reg "$VARIANT/uki.tpm2-diskenc.efi" -o/boot/EFI/BOOT/BOOT.TRY.EFI -f
       cryptenroll-uki --device "/dev/disk/by-partuuid/${DATA_UUID}" \
-        --record /usr/lib/pcrlock.d/800-leave-initrd.pcrlock \
         /var/lib/phxc/disk-encryption.recovery.key /boot/EFI/BOOT/BOOT.TRY.EFI
     fi
   fi
@@ -118,6 +117,5 @@ curl_img_reg() {
     --retry 10 --retry-delay 60 --retry-all-errors \
     "https://image-registry.phxc.svc.cluster.local:8020/$path" "$@"
 }
-
 
 main "$@"

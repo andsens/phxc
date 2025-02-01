@@ -1,8 +1,11 @@
 [Unit]
 Description=Create the overlay working & upper directories
 DefaultDependencies=no
-Requires=overlay-rw.mount
-After=overlay-rw.mount
+RequiresMountsFor=/overlay/rw
+Before=sysroot.mount
+
+[Install]
+RequiredBy=sysroot.mount
 
 [Service]
 Type=oneshot

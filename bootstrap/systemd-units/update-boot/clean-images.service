@@ -1,7 +1,8 @@
 [Unit]
 Description=Remove all root images except the current one
-Requires=boot.mount k3s.target
-After=boot.mount k3s.target
+RequiresMountsFor=/boot
+Requires=k3s.target
+After=k3s.target
 
 [Install]
 WantedBy=multi-user.target

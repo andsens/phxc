@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
-PACKAGES+=(sudo adduser)
+PACKAGES+=(sudo)
 ! $DEBUG || PACKAGES+=(less nano bsdextrautils tree psmisc dnsutils lsof netcat-openbsd)
+PACKAGES_TMP+=(adduser)
 
 admin() {
   chmod 0440 /etc/sudoers.d/20_admin_nopass

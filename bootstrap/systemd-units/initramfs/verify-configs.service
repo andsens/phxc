@@ -1,6 +1,7 @@
 [Unit]
 Description=Verifies and validates all config files on the boot partition
 DefaultDependencies=no
+RequiresMountsFor=/sysroot
 Wants=configure-authorized-keys.service
 After=configure-authorized-keys.service
 Before=initrd.target
@@ -24,3 +25,4 @@ StandardInputText=PKGROOT=/sysroot/usr/local/lib/upkg/.upkg/phxc; LOGPROGRAM=ver
                       fatal 'Failed to validate "%%s". Errors: %%s' "$filepath" "$validation_errors"; \
                     info "Verified and validated %%s" "$filepath"; \
                   done
+StandardOutput=journal+console

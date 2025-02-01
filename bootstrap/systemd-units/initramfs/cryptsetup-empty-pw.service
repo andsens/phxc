@@ -1,0 +1,16 @@
+[Unit]
+Description=Use the empty password for decrypting the data partition
+DefaultDependencies=no
+Before=systemd-cryptsetup@data.service systemd-repart.service
+ConditionKernelCommandLine=phxc.diskenc-allow-empty-pw
+
+[Install]
+WantedBy=initrd.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+UMask=0077
+ExecStartPre=mkdir /run/cryptsetup-keys.d
+ExecStart=touch /run/cryptsetup-keys.d/data.key
+ExecStart=sh -c 'printf "Encrypt=key-file\n" >>/etc/repart.d/60-data.conf'

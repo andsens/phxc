@@ -1,0 +1,13 @@
+[Unit]
+Description=SSH server for entering the disk-encryption recovery password
+DefaultDependencies=no
+Requires=dropbear-run-dir.service
+After=dropbear-run-dir.service
+ConditionPathExists=/root/.ssh/authorized_keys
+
+[Service]
+BindPaths=/etc/dropbear:/run/dropbear
+ExecStartPre=sh -c 'printf "To enter the data partition recovery key, log in with \\`ssh -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null root@<HOST-IP>\\`\\n"'
+ExecStartPre=sh -c 'printf "The machine has been assigned the following IPs:\\n%%s" "$(ip -j a | jq -r ".[] | select(.ifname!=\\"lo\\") | .addr_info[] | .local")"'
+ExecStart=dropbear -FERmsgjk -c 'systemd-tty-ask-password-agent --query'
+StandardOutput=journal+console

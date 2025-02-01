@@ -1,7 +1,7 @@
 [Unit]
 Description=Permanently switch to the new image
-Requires=boot.mount
-After=boot.mount remove-failed-boot.service
+RequiresMountsFor=/boot
+After=remove-failed-boot.service
 ConditionPathExists=/boot/phxc/pending.sha256
 
 [Install]

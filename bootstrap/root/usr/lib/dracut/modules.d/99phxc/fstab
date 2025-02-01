@@ -1,0 +1,6 @@
+# <device>                         <dir>                      <type>   <options>           <dump> <fsck>
+PARTUUID=${BOOT_UUID}              /boot                      vfat     defaults,umask=0177 0      2
+tmpfs                              /overlay/rw                tmpfs    mode=0755           0      0
+/boot/phxc/root.${ROOT_SHA256}.img /overlay/image             squashfs ro,noatime,loop     0      0
+overlay                            /sysroot                   overlay  x-systemd.requires-mounts-for=/overlay/image,x-systemd.requires-mounts-for=/overlay/rw,noatime,lowerdir=/overlay/image,upperdir=/overlay/rw/upper,workdir=/overlay/rw/work,default_permissions 0 0
+/overlay/rw/upper                  /sysroot/mnt/overlay-upper none     bind                0      0

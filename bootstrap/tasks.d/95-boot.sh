@@ -4,20 +4,20 @@ PACKAGES+=(
   systemd systemd-sysv # systemd bootup
   dosfstools # Used for mounting ESP
   systemd-resolved # DNS resolution setup
-  zstd # initramfs compression
   dracut # initramfs, replaced with tiny-initramfs when done
+  systemd-boot-efi # EFI stub for UKI
+)
+PACKAGES_TMP+=(
+  dracut-network dropbear # for entering the recovery key (+ connection info message)
+  fatresize # boot partition expansion
 )
 
 case $VARIANT in
-  amd64) PACKAGES+=(
-    linux-image-amd64 # kernel
+  amd64|arm64) PACKAGES+=(
+    "linux-image-$VARIANT" # kernel
     efibootmgr # UEFI boot entries
     tpm2-tools # pulls in TPM2 library deps for systemd-pcrextend
     binutils # Need objcopy & objdump to generate PCR signatures in update-boot
-  ) ;;
-  arm64) PACKAGES+=(
-    linux-image-arm64 # kernel
-    efibootmgr # UEFI boot entries
   ) ;;
   rpi*)
   curl -Lso/etc/apt/trusted.gpg.d/raspberrypi.asc http://archive.raspberrypi.com/debian/raspberrypi.gpg.key
@@ -36,7 +36,7 @@ EOF
 esac
 
 FILES_ENVSUBST+=(
-  /etc/fstab.dracut
+  /usr/lib/dracut/modules.d/99phxc/fstab # Contains $ROOT_SHA256, will be handled by create-boot-image
   /etc/fstab.tmp
 )
 
@@ -66,6 +66,5 @@ boot() {
   mv "$(realpath /vmlinuz)" /boot/vmlinuz
   rm /vmlinuz /vmlinuz.old
 
-  rm /etc/fstab.dracut
   apt-get install -qq tiny-initramfs
 }
