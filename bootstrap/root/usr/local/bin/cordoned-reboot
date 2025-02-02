@@ -15,7 +15,7 @@ Usage:
 Options:
   -t --try  Attempt to reboot into the new image
 "
-# docopt parser below, refresh this parser with `docopt.sh clean-reboot`
+# docopt parser below, refresh this parser with `docopt.sh cordoned-reboot`
 # shellcheck disable=2016,2086,2317,1090,1091,2034
 docopt() { local v='2.0.2'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
@@ -28,7 +28,7 @@ p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset "$p$varname"
 done;eval $p'__try=${var___try:-false};';local docopt_i=1;[[ $BASH_VERSION =~ \
 ^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for varname in \
 "${varnames[@]}"; do declare -p "$p$varname";done;done;}
-# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' clean-reboot`
+# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' cordoned-reboot`
   eval "$(docopt "$@")"
   # Kubernetes leases would be the best to use but the admission controller for
   # nodes seems to block all except one lease (nodename in kube-node-leases)
@@ -61,7 +61,6 @@ done;eval $p'__try=${var___try:-false};';local docopt_i=1;[[ $BASH_VERSION =~ \
     fi
   else
     if $__try; then
-      # efi-bootentry activate /boot/EFI/BOOT/BOOT.TRY.EFI
       efi-bootentry bootnext /boot/EFI/BOOT/BOOT.TRY.EFI
     fi
     systemd-run --on-active=5 --timer-property=AccuracySec=0 /usr/bin/systemctl reboot
