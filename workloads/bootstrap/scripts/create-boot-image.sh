@@ -3,10 +3,8 @@
 set -Eeo pipefail; shopt -s inherit_errexit
 PKGROOT=/usr/local/lib/upkg
 
-export DISK_UUID=caf66bff-edab-4fb1-8ad9-e570be5415d7
 export EFI_UUID=c427f0ed-0366-4cb2-9ce2-3c8c51c3e89e
 export DATA_UUID=6f07821d-bb94-4d0f-936e-4060cadf18d8
-export LUKS_UUID=2a785738-5af5-4c13-88ae-e5f2d20e7049
 
 main() {
   DOC="create-boot-image - Make an archived container image bootable
@@ -315,7 +313,6 @@ EOF
 part-init /dev/sda gpt
 part-add /dev/sda primary $boot_sector_start $boot_sector_end
 part-set-bootable /dev/sda 1 true
-part-set-disk-guid /dev/sda $DISK_UUID
 part-set-gpt-guid /dev/sda 1 $EFI_UUID
 
 mkfs vfat /dev/sda1
