@@ -5,7 +5,7 @@ images:
 - name: ghcr.io/andsens/phxc-apt-cacher-ng
   newTag: sha-4e07109
 - name: ghcr.io/andsens/phxc-create-boot-image
-  newTag: sha-22ff2c6
+  newTag: sha-62725d7
 resources:
 - network-policy.yaml
 - variants/amd64.yaml
