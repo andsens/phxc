@@ -3,6 +3,7 @@ Systemd
     filter remove_inline #.*$
     extension service
     extension target
+    extension mount
     end_of_line_continuation \\$
     3rd_gen_scale 3.80
 Configuration
