@@ -66,6 +66,8 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
   ln -sf ../run/systemd/resolve/stub-resolv.conf /workspace/root/etc/resolv.conf
   mv /workspace/root/etc/hosts.tmp /workspace/root/etc/hosts
   mv /workspace/root/etc/fstab.tmp /workspace/root/etc/fstab
+  # When bootstrapping outside kubernetes kaniko includes /workspace in the snapshot for some reason, remove it here
+  rm -rf /workspace/root/workspace
 
   local kernver
   kernver=$(echo /workspace/root/lib/modules/*)
