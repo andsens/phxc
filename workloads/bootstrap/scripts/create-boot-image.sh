@@ -132,24 +132,27 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
 
     info "Building RaspberryPI boot.img"
 
+    declare -A boot_img_files
+
     case $VARIANT in
       rpi5)
-        mv /workspace/root/boot/vmlinuz /workspace/root/boot/firmware/kernel_2712.img
-        mv /workspace/root/boot/initramfs.img /workspace/root/boot/firmware/initramfs_2712
-        ! $DEBUG || artifacts[initramfs.img]=/workspace/root/boot/firmware/initramfs_2712
+        boot_img_files[initramfs_2712]=/workspace/root/boot/initramfs.img
+        boot_img_files[kernel_2712.img]=/workspace/root/boot/vmlinuz
         ;;
       rpi4)
-        mv /workspace/root/boot/vmlinuz /workspace/root/boot/firmware/kernel8.img
-        mv /workspace/root/boot/initramfs.img /workspace/root/boot/firmware/initramfs8
-        ! $DEBUG || artifacts[initramfs.img]=/workspace/root/boot/firmware/initramfs8
+        boot_img_files[kernel8]=/workspace/root/boot/initramfs.img
+        boot_img_files[initramfs8.img]=/workspace/root/boot/vmlinuz
         ;;
       rpi3)
-        mv /workspace/root/boot/vmlinuz /workspace/root/boot/firmware/kernel7.img
-        mv /workspace/root/boot/initramfs.img /workspace/root/boot/firmware/initramfs7
-        ! $DEBUG || artifacts[initramfs.img]=/workspace/root/boot/firmware/initramfs7
+        boot_img_files[kernel7]=/workspace/root/boot/initramfs.img
+        boot_img_files[initramfs7.img]=/workspace/root/boot/vmlinuz
         ;;
       *) printf "Unknown rpi* variant: %s\n" "$VARIANT" >&2; return 1 ;;
     esac
+
+    while IFS= read -r -d $'\0' filepath; do
+      boot_img_files["${filepath#'/workspace/root/boot/firmware/'}"]=$filepath
+    done < <(find /workspace/root/boot/firmware -print0)
 
     kernel_cmdline=(
       # The last "console=" wins with respect to initramfs stdout/stderr output
@@ -157,39 +160,38 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
       "${kernel_cmdline[@]}"
     )
     printf "%s " "${kernel_cmdline[@]}" > /workspace/cmdline.txt
+    boot_img_files[cmdline.txt]=/workspace/cmdline.txt
 
     boot_files[config.txt]=/assets/config-${VARIANT}.txt
 
-    # Adjust config.txt for being embedded in boot.img
-    boot_files[config.txt]=/assets/config-${VARIANT}.txt
+    # TODO: Adjust config.txt for being embedded in boot.img
+    boot_img_files[config.txt]=/assets/config-${VARIANT}.txt
 
-    local file_size fs_table_size_b firmware_size_b=0
+    local src dest tar_mode=-c
+    for dest in "${!boot_img_files[@]}"; do
+      src=${boot_img_files[$dest]}
+      tar ${tar_mode}f /workspace/boot-img-files.tar \
+        --transform="s#${src#/}#${dest#/}#" \
+        "$src"
+      tar_mode=-r
+    done
+
+    local disk_size_kib fs_table_size_b boot_img_files_size_b
     fs_table_size_b=$(( 1024 * 1024 )) # Total guess, but should be enough
-    while IFS= read -d $'\n' -r file_size; do
-      firmware_size_b=$(( firmware_size_b + file_size ))
-    done < <(find /workspace/root/boot/firmware -type f -exec stat -c %s \{\} \;)
+    boot_img_files_size_b=$(( $(stat -c%s /workspace/boot-img-files.tar) + ( 1024 * 1024) ))
     disk_size_kib=$((
       (
         fs_table_size_b +
-        $(stat -c %s "/assets/config-${VARIANT}.txt") +
-        $(stat -c %s /workspace/cmdline.txt) +
-        firmware_size_b +
+        boot_img_files_size_b +
         (1024 * 1024) +
         1023
       ) / 1024
     ))
 
-    (( disk_size_kib <= 1024 * 64 )) || \
-      warning "boot.img size exceeds 64MiB (%dMiB). Transferring the image via TFTP will result in its truncation" "$((disk_size_kib / 1024))"
     guestfish -xN /workspace/boot.img=disk:${disk_size_kib}K -- <<EOF
 mkfs fat /dev/sda
 mount /dev/sda /
-
-copy-in /workspace/config.txt /
-copy-in /workspace/cmdline.txt /
-copy-in /workspace/root/boot/firmware /
-glob mv /firmware/* /
-rm-rf /firmware
+tar-in /workspace/boot-img-files.tar /
 EOF
 
     sha256sums[boot.img]=$(sha256sum /workspace/boot.img | cut -d ' ' -f1)
