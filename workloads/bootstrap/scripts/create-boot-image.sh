@@ -4,7 +4,7 @@ set -Eeo pipefail; shopt -s inherit_errexit
 PKGROOT=/usr/local/lib/upkg
 
 export DISK_UUID=caf66bff-edab-4fb1-8ad9-e570be5415d7
-export BOOT_UUID=c427f0ed-0366-4cb2-9ce2-3c8c51c3e89e
+export EFI_UUID=c427f0ed-0366-4cb2-9ce2-3c8c51c3e89e
 export DATA_UUID=6f07821d-bb94-4d0f-936e-4060cadf18d8
 export LUKS_UUID=2a785738-5af5-4c13-88ae-e5f2d20e7049
 
@@ -77,17 +77,12 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
 
   info "Creating squashfs image"
 
-  # Move boot dir out of the way before creating squashfs image, but keep the mountpoint itself
+  # Move boot dir to workspace before creating squashfs image
   mv /workspace/root/boot /workspace/boot
-  mkdir /workspace/root/boot
 
   local noprogress=
   [[ -t 1 ]] || noprogress=-no-progress
   mksquashfs /workspace/root /workspace/root.img -noappend -quiet -comp zstd $noprogress
-
-  # Move boot dir back into place
-  rm -rf /workspace/root/boot
-  mv /workspace/boot /workspace/root/boot
 
   # Hash the root image so we can verify it during boot
   sha256sums[root.img]=$(sha256sum /workspace/root.img | cut -d ' ' -f1)
@@ -104,7 +99,7 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
   mkdir /workspace/initramfs
   (
     cd /workspace/initramfs
-    cpio -id </workspace/root/boot/initramfs.img
+    cpio -id </workspace/boot/initramfs.img
   )
   cp /workspace/initramfs/etc/fstab /workspace/envsubst.tmp
   # shellcheck disable=SC2016
@@ -112,13 +107,13 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
 
   local share_phxc=/workspace/initramfs/usr/share/phxc
   mkdir "$share_phxc"
-  printf '%s  /boot/phxc/root.%s.img' "${sha256sums[root.img]}" "${sha256sums[root.img]}" >"$share_phxc/root.img.sha256.checksum"
+  printf '%s  /efi/phxc/root.%s.img' "${sha256sums[root.img]}" "${sha256sums[root.img]}" >"$share_phxc/root.img.sha256.checksum"
   printf '%s' "${sha256sums[root.img]}" >"$share_phxc/root.img.sha256"
   (
     cd /workspace/initramfs
-    find . -print0 | cpio -o --null --format=newc 2>/dev/null | zstd -15 >/workspace/root/boot/initramfs.img
+    find . -print0 | cpio -o --null --format=newc 2>/dev/null | zstd -15 >/workspace/boot/initramfs.img
   )
-  ! $DEBUG || artifacts[initramfs.img]=/workspace/root/boot/initramfs.img
+  ! $DEBUG || artifacts[initramfs.img]=/workspace/boot/initramfs.img
 
   local kernel_cmdline=()
   ! $DEBUG || kernel_cmdline+=("rd.shell")
@@ -136,23 +131,23 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
 
     case $VARIANT in
       rpi5)
-        boot_img_files[initramfs_2712]=/workspace/root/boot/initramfs.img
-        boot_img_files[kernel_2712.img]=/workspace/root/boot/vmlinuz
+        boot_img_files[initramfs_2712]=/workspace/boot/initramfs.img
+        boot_img_files[kernel_2712.img]=/workspace/boot/vmlinuz
         ;;
       rpi4)
-        boot_img_files[kernel8]=/workspace/root/boot/initramfs.img
-        boot_img_files[initramfs8.img]=/workspace/root/boot/vmlinuz
+        boot_img_files[kernel8]=/workspace/boot/initramfs.img
+        boot_img_files[initramfs8.img]=/workspace/boot/vmlinuz
         ;;
       rpi3)
-        boot_img_files[kernel7]=/workspace/root/boot/initramfs.img
-        boot_img_files[initramfs7.img]=/workspace/root/boot/vmlinuz
+        boot_img_files[kernel7]=/workspace/boot/initramfs.img
+        boot_img_files[initramfs7.img]=/workspace/boot/vmlinuz
         ;;
       *) printf "Unknown rpi* variant: %s\n" "$VARIANT" >&2; return 1 ;;
     esac
 
     while IFS= read -r -d $'\0' filepath; do
-      boot_img_files["${filepath#'/workspace/root/boot/firmware/'}"]=$filepath
-    done < <(find /workspace/root/boot/firmware -print0)
+      boot_img_files["${filepath#'/workspace/boot/firmware/'}"]=$filepath
+    done < <(find /workspace/boot/firmware -print0)
 
     kernel_cmdline=(
       # The last "console=" wins with respect to initramfs stdout/stderr output
@@ -221,11 +216,11 @@ EOF
     mkdir -p /usr/lib/systemd/boot
     ln -s /workspace/root/usr/lib/systemd/boot/efi /usr/lib/systemd/boot/efi
 
-    local uki_empty_pw_path=/workspace/root/boot/uki.diskenc-empty-pw.efi
+    local uki_empty_pw_path=/workspace/boot/uki.diskenc-empty-pw.efi
     /lib/systemd/ukify build \
       --uname="$kernver" \
-      --linux=/workspace/root/boot/vmlinuz \
-      --initrd=/workspace/root/boot/initramfs.img \
+      --linux=/workspace/boot/vmlinuz \
+      --initrd=/workspace/boot/initramfs.img \
       --cmdline="$(printf "%s " "${kernel_cmdline[@]}" "phxc.diskenc-allow-empty-pw")" \
       --output=$uki_empty_pw_path
     boot_files[/EFI/BOOT/BOOT${efi_arch}.EFI]=$uki_empty_pw_path
@@ -234,7 +229,7 @@ EOF
 
     local \
       secureboot_key=/workspace/secureboot/tls.key secureboot_crt=/workspace/secureboot/tls.crt \
-      uki_tpm2_path=/workspace/root/boot/uki.tpm2-diskenc.efi uki_secure_opts=()
+      uki_tpm2_path=/workspace/boot/uki.tpm2-diskenc.efi uki_secure_opts=()
     # Sign UKI if secureboot key & cert are present
     if [[ -e $secureboot_key && -e $secureboot_crt ]]; then
       uki_secure_opts+=("--secureboot-private-key=$secureboot_key" "--secureboot-certificate=$secureboot_crt")
@@ -243,8 +238,8 @@ EOF
     fi
     /lib/systemd/ukify build "${uki_secure_opts[@]}" \
       --uname="$kernver" \
-      --linux=/workspace/root/boot/vmlinuz \
-      --initrd=/workspace/root/boot/initramfs.img \
+      --linux=/workspace/boot/vmlinuz \
+      --initrd=/workspace/boot/initramfs.img \
       --cmdline="$(printf "%s " "${kernel_cmdline[@]}")" \
       --output=$uki_tpm2_path
     artifacts[uki.tpm2-diskenc.efi]=$uki_tpm2_path
@@ -310,7 +305,7 @@ EOF
   mkdir /usr/lib/modules # supermin bug workaround: https://lists.libguestfs.org/archives/list/guestfs@lists.libguestfs.org/thread/XVZXSSFUA5AISDPJKOI35CQB6LFUBXMU/
   # Use the kernel already installed in the image to launch supermin
   export \
-    SUPERMIN_KERNEL=/workspace/root/boot/vmlinuz \
+    SUPERMIN_KERNEL=/workspace/boot/vmlinuz \
     SUPERMIN_KERNEL_VERSION=$kernver \
     SUPERMIN_MODULES=/workspace/root/usr/lib/modules/$kernver
 
@@ -319,7 +314,7 @@ part-init /dev/sda gpt
 part-add /dev/sda primary $boot_sector_start $boot_sector_end
 part-set-bootable /dev/sda 1 true
 part-set-disk-guid /dev/sda $DISK_UUID
-part-set-gpt-guid /dev/sda 1 $BOOT_UUID
+part-set-gpt-guid /dev/sda 1 $EFI_UUID
 
 mkfs vfat /dev/sda1
 mount /dev/sda1 /

@@ -1,8 +1,8 @@
 [Unit]
-Description=Restore the machine-id from /boot/phxc/machine-id
+Description=Restore the machine-id from /efi/phxc/machine-id
 DefaultDependencies=no
-RequiresMountsFor=/boot
-ConditionPathExists=/boot/phxc/machine-id
+RequiresMountsFor=/efi
+ConditionPathExists=/efi/phxc/machine-id
 
 [Install]
 WantedBy=initrd.target
@@ -10,4 +10,4 @@ WantedBy=initrd.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=cp /boot/phxc/machine-id /run/machine-id
+ExecStart=cp /efi/phxc/machine-id /run/machine-id

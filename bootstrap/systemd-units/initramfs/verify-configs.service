@@ -1,5 +1,5 @@
 [Unit]
-Description=Verifies and validates all config files on the boot partition
+Description=Verifies and validates all config files on the efi partition
 DefaultDependencies=no
 RequiresMountsFor=/sysroot
 Wants=configure-authorized-keys.service
@@ -16,7 +16,7 @@ Environment=PATH=/sysroot/usr/local/bin:/sysroot/usr/bin
 ExecStart=/sysroot/usr/bin/bash
 StandardInputText=PKGROOT=/sysroot/usr/local/lib/upkg/.upkg/phxc; LOGPROGRAM=verify-configs; source "$PKGROOT/.upkg/records.sh/records.sh"; \
                   for basename in cluster.json node.json rpi-otp.json; do \
-                    filepath=/boot/phxc/$basename schema=$PKGROOT/lib/schemas/$basename; \
+                    filepath=/efi/phxc/$basename schema=$PKGROOT/lib/schemas/$basename; \
                     [[ -e $filepath ]] || { info "%%s not found, skipping" "$filepath"; continue; }; \
                     [[ -e $filepath.sig ]] || { info "%%s.sig not found, skipping %%s" "$filepath" "$filepath"; continue; }; \
                     ssh-keygen -q -Y verify -f <(sed 's/^/admin /g' </sysroot/home/admin/.ssh/authorized_keys) -I admin -n file -s "$filepath.sig" <"$filepath" || \

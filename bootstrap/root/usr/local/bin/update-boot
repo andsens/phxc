@@ -10,7 +10,7 @@ DATA_UUID=$(systemctl show-environment | grep '^DATA_UUID=')
 DATA_UUID=${DATA_UUID#DATA_UUID=}
 
 main() {
-  DOC="update-boot - Update the boot partition with a new image
+  DOC="update-boot - Update the efi partition with a new image
 Usage:
   update-boot [-r]
 
@@ -21,10 +21,10 @@ Options:
 # shellcheck disable=2016,2086,2317,1090,1091,2034
 docopt() { local v='2.0.2'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
-%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:148};usage=${DOC:57:25}
-digest=22398;options=('-r --reboot 0');node_0(){ switch __reboot 0;};node_1(){
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:147};usage=${DOC:56:25}
+digest=4ef0d;options=('-r --reboot 0');node_0(){ switch __reboot 0;};node_1(){
 optional 0;};cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2
-printf "%s\n" "${DOC:57:25}" >&2;exit 1;}';local varnames=(__reboot) varname
+printf "%s\n" "${DOC:56:25}" >&2;exit 1;}';local varnames=(__reboot) varname
 for varname in "${varnames[@]}"; do unset "var_$varname";done;parse 1 "$@"
 local p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset \
 "$p$varname";done;eval $p'__reboot=${var___reboot:-false};';local docopt_i=1
@@ -50,8 +50,8 @@ for varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   meta_json_new=$(head -n-1 <<<"$meta_json_new")
   local current_rootimg_sha256 pending_rootimg_sha256 failed_rootimg_sha256 new_rootimg_sha256
   current_rootimg_sha256=$(cat /run/initramfs/root.img.sha256)
-  pending_rootimg_sha256=$(cat /boot/phxc/pending.sha256 2>/dev/null || true)
-  failed_rootimg_sha256=$(cat /boot/phxc/failed.sha256 2>/dev/null || true)
+  pending_rootimg_sha256=$(cat /efi/phxc/pending.sha256 2>/dev/null || true)
+  failed_rootimg_sha256=$(cat /efi/phxc/failed.sha256 2>/dev/null || true)
   new_rootimg_sha256=$(jq -re '.sha256sums["root.img"]' <<<"$meta_json_new")
   if [[ $new_rootimg_sha256 = "$current_rootimg_sha256" ]]; then
     info "System is up-to-date and image is currently running (%s)" "${current_rootimg_sha256:0:8}"
@@ -71,33 +71,33 @@ for varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   fi
   info "System is outdated (%s), updating now (%s)" "${current_rootimg_sha256:0:8}" "${new_rootimg_sha256:0:8}"
   clean_update_boot_files() {
-    [[ ! -e /boot/phxc/pending.sha256 ]] || rm -f "/boot/phxc/root.$(cat /boot/phxc/pending.sha256).img"
-    rm -f /boot/tryboot.img /boot/EFI/Linux/uki.try.efi /boot/phxc/pending.sha256
+    [[ ! -e /efi/phxc/pending.sha256 ]] || rm -f "/efi/phxc/root.$(cat /efi/phxc/pending.sha256).img"
+    rm -f /efi/tryboot.img /efi/EFI/Linux/uki.try.efi /efi/phxc/pending.sha256
   }
   trap "clean_update_boot_files" EXIT
-  printf "%s\n" "$new_rootimg_sha256" >/boot/phxc/pending.sha256
-  curl_img_reg "$VARIANT/root.img" -o"/boot/phxc/root.$new_rootimg_sha256.img" -f
+  printf "%s\n" "$new_rootimg_sha256" >/efi/phxc/pending.sha256
+  curl_img_reg "$VARIANT/root.img" -o"/efi/phxc/root.$new_rootimg_sha256.img" -f
 
   if [[ $VARIANT = rpi* ]]; then
     if ! rpi-otp-private-key -c -o "$(get-config rpi-otp offset)"; then
       warning "The RPi OTP is not initialized, using disk-encryption with a static password"
-      curl_img_reg "$VARIANT/boot.allow-empty-pw-diskenc.efi" -o/boot/tryboot.img -f
+      curl_img_reg "$VARIANT/efi.allow-empty-pw-diskenc.efi" -o/efi/tryboot.img -f
     else
       if [[ $(stat -c%s /run/cryptsetup-keys.d/data.key) = 0 ]]; then
         rpi-otp-disk-encryption-key >/run/cryptsetup-keys.d/data.key
         systemd-cryptenroll --unlock-key-file /var/lib/phxc/disk-encryption.recovery.key \
           --new-keyfile /run/cryptsetup-keys.d/data.key "/dev/disk/by-partuuid/${DATA_UUID}"
       fi
-      curl_img_reg "$VARIANT/boot.otp-diskenc.img" -o/boot/tryboot.img -f
+      curl_img_reg "$VARIANT/efi.otp-diskenc.img" -o/efi/tryboot.img -f
     fi
   else
     if ! compgen -G '/sys/kernel/security/tpm*' &>/dev/null; then
       warning "No TPM available, using disk-encryption with a static password"
-      curl_img_reg "$VARIANT/uki.allow-empty-pw-diskenc.efi" -o/boot/EFI/BOOT/BOOT.TRY.EFI -f
+      curl_img_reg "$VARIANT/uki.allow-empty-pw-diskenc.efi" -o/efi/EFI/BOOT/BOOT.TRY.EFI -f
     else
-      curl_img_reg "$VARIANT/uki.tpm2-diskenc.efi" -o/boot/EFI/BOOT/BOOT.TRY.EFI -f
+      curl_img_reg "$VARIANT/uki.tpm2-diskenc.efi" -o/efi/EFI/BOOT/BOOT.TRY.EFI -f
       cryptenroll-uki --device "/dev/disk/by-partuuid/${DATA_UUID}" \
-        /var/lib/phxc/disk-encryption.recovery.key /boot/EFI/BOOT/BOOT.TRY.EFI
+        /var/lib/phxc/disk-encryption.recovery.key /efi/EFI/BOOT/BOOT.TRY.EFI
     fi
   fi
   trap "" EXIT

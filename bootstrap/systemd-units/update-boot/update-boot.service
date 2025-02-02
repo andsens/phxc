@@ -1,6 +1,6 @@
 [Unit]
-Description=Update the boot partition with the latest image and reboot into it
-RequiresMountsFor=/boot
+Description=Update the efi partition with the latest image and reboot into it
+RequiresMountsFor=/efi
 Requires=workload-ready@image-registry.service workload-ready@bootstrap.service init-efi-bootmenu.service
 After=workload-ready@image-registry.service workload-ready@bootstrap.service init-efi-bootmenu.service uncordon.service switch-boot.service
 

@@ -1,6 +1,6 @@
 [Unit]
 Description=Unenrolls the empty disk encryption key
-RequiresMountsFor=/boot
+RequiresMountsFor=/efi
 Requires=upload-recovery-key.service
 After=upload-recovery-key.service
 ConditionKernelCommandLine=!phxc.diskenc-allow-empty-pw

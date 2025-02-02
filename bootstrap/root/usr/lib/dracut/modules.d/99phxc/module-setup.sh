@@ -32,9 +32,9 @@ install() {
   inst /etc/systemd/system.conf.d/disk-uuids.conf
   inst /etc/systemd/system.conf.d/variant.conf
 
-  ### Boot partition ###
+  ### EFI partition ###
   inst "$moddir/repart.d/10-esp.conf" /etc/repart.d/10-esp.conf
-  mkdir "$initdir/boot"
+  mkdir "$initdir/efi"
 
   ### Data partition ###
   # Setup via repart

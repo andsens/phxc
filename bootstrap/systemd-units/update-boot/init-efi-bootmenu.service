@@ -1,6 +1,6 @@
 [Unit]
 Description=Populate the EFI boot menu with Phoenix Cluster entries
-RequiresMountsFor=/boot
+RequiresMountsFor=/efi
 
 [Install]
 WantedBy=multi-user.target
@@ -8,6 +8,6 @@ WantedBy=multi-user.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=efi-bootentry add /boot/EFI/BOOT/BOOT${EFI_ARCH}.EFI "Phoenix Cluster"
-ExecStart=efi-bootentry add /boot/EFI/BOOT/BOOT.TRY.EFI "Phoenix Cluster (new image)"
-ExecStart=efi-bootentry deactivate /boot/EFI/BOOT/BOOT.TRY.EFI
+ExecStart=efi-bootentry add /efi/EFI/BOOT/BOOT${EFI_ARCH}.EFI "Phoenix Cluster"
+ExecStart=efi-bootentry add /efi/EFI/BOOT/BOOT.TRY.EFI "Phoenix Cluster (new image)"
+ExecStart=efi-bootentry deactivate /efi/EFI/BOOT/BOOT.TRY.EFI

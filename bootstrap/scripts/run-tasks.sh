@@ -5,7 +5,7 @@ PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../..")
 source "$PKGROOT/.upkg/records.sh/records.sh"
 
 export DISK_UUID=caf66bff-edab-4fb1-8ad9-e570be5415d7
-export BOOT_UUID=c427f0ed-0366-4cb2-9ce2-3c8c51c3e89e
+export EFI_UUID=c427f0ed-0366-4cb2-9ce2-3c8c51c3e89e
 export DATA_UUID=6f07821d-bb94-4d0f-936e-4060cadf18d8
 export LUKS_UUID=2a785738-5af5-4c13-88ae-e5f2d20e7049
 case "$VARIANT" in
@@ -55,7 +55,7 @@ main() {
 
   info "Replacing variables in files"
   # shellcheck disable=SC2016
-  local file replacements=('${DISK_UUID}' '${BOOT_UUID}' '${DATA_UUID}' '${LUKS_UUID}' '${VARIANT}' '${EFI_ARCH}')
+  local file replacements=('${DISK_UUID}' '${EFI_UUID}' '${DATA_UUID}' '${LUKS_UUID}' '${VARIANT}' '${EFI_ARCH}')
   for file in "${FILES_ENVSUBST[@]}"; do
     cp "$file" /workspace/envsubst.tmp
     verbose "Replace vars in %s" "$file"

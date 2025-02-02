@@ -1,9 +1,9 @@
 [Unit]
-Description=Copy the machine-id to /boot/phxc
+Description=Copy the machine-id to /efi/phxc
 DefaultDependencies=no
 Requires=systemd-machine-id-commit.service
 After=systemd-machine-id-commit.service
-ConditionPathExists=!/boot/phxc/machine-id
+ConditionPathExists=!/efi/phxc/machine-id
 AssertPathExists=/run/machine-id
 
 [Install]
@@ -12,4 +12,4 @@ WantedBy=sysinit.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=cp /run/machine-id /boot/phxc/machine-id
+ExecStart=cp /run/machine-id /efi/phxc/machine-id

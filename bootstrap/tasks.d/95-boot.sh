@@ -51,6 +51,8 @@ boot() {
   # Enable serial console
   systemctl enable serial-getty@ttyS0
 
+  mkdir /efi
+
   if [[ $VARIANT = rpi5 ]]; then
     # Remove Raspberry Pi 4 boot code
     rm boot/firmware/bootcode.bin boot/firmware/fixup*.dat boot/firmware/start*.elf

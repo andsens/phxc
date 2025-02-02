@@ -1,6 +1,6 @@
 [Unit]
 Description=Populate the RPi OTP memory with random data
-RequiresMountsFor=/boot
+RequiresMountsFor=/efi
 
 [Install]
 WantedBy=multi-user.target

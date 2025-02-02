@@ -1,7 +1,7 @@
 [Unit]
 Description=Verify the shasum of the root image
 DefaultDependencies=no
-RequiresMountsFor=/boot
+RequiresMountsFor=/efi
 Before=overlay-image.mount
 
 [Install]
