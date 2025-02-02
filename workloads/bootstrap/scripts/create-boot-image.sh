@@ -173,7 +173,7 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
 
     local disk_size_kib fs_table_size_b boot_img_files_size_b
     fs_table_size_b=$(( 1024 * 1024 )) # Total guess, but should be enough
-    boot_img_files_size_b=$(( $(stat -c%s /workspace/boot-img-files.tar) + ( 1024 * 1024) ))
+    boot_img_files_size_b=$(( $(stat -c%s /workspace/boot-img-files.tar) + ( 1024 * 1024 ) ))
     disk_size_kib=$((
       (
         fs_table_size_b +

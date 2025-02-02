@@ -18,7 +18,7 @@ main() {
   # Enable non-free components
   sed -i 's/Components: main/Components: main contrib non-free non-free-firmware/' /etc/apt/sources.list.d/debian.sources
 
-  PACKAGES=(jq)
+  PACKAGES=()
   PACKAGES_TMP=(gettext)
   FILES_ENVSUBST=()
 
@@ -63,10 +63,9 @@ main() {
 
   info "Upgrading all packages"
   apt-get upgrade -qq
-  info "Installing packages: %s" "${PACKAGES[*]}"
-  apt-get install -qq --no-install-recommends "${PACKAGES[@]}"
-  info "Installing tmp packages: %s" "${PACKAGES_TMP[*]}"
-  apt-get install --mark-auto -qq --no-install-recommends "${PACKAGES_TMP[@]}"
+  info "Installing packages: %s" "${PACKAGES[*]} ${PACKAGES_TMP[*]}"
+  apt-get install -qq --no-install-recommends "${PACKAGES[@]}" "${PACKAGES_TMP[@]}"
+  apt-mark auto "${PACKAGES_TMP[@]}"
 
   local task
   for taskfile in "$PKGROOT/bootstrap/tasks.d/"??-*.sh; do
