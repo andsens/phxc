@@ -9,13 +9,13 @@ WantedBy=multi-user.target
 [Service]
 Type=oneshot
 ExecStart=bash -eo pipefail
-StandardInputText=touch /etc/ssh/sshd_config.d/20-host-key-certs.conf; \
+StandardInputText=printf '' >/etc/ssh/sshd_config.d/30-host-key-certs.conf; \
   password=$(kubectl -n smallstep get secret ssh-host-provisioner-password -o=jsonpath='{.data.password}' | base64 -d); \
-  for pubkey in /etc/ssh/ssh_host_*.pub; do \
+  for pubkey in /var/lib/phxc/ssh/ssh_host_*.pub; do \
     [[ $pubkey != *-cert.pub ]] || continue; \
     printf "Signing %%s\n" "$pubkey" >&2; \
     step ssh certificate --host --sign --force --provisioner=ssh-host --provisioner-password-file=<(printf "%%s" "$password") \
       "%H" "$pubkey"; \
-    printf "HostCertificate %%s-cert.pub\n" "${pubkey%%'.pub'}" >>/etc/ssh/sshd_config.d/20-host-key-certs.conf; \
+    printf "HostCertificate %%s-cert.pub\n" "${pubkey%%'.pub'}" >>/etc/ssh/sshd_config.d/30-host-key-certs.conf; \
   done
 ExecStartPost=-systemctl restart ssh

@@ -1,5 +1,7 @@
 [Unit]
 Description=Generate SSH host keys
+Requires=data-dir@ssh.service
+After=data-dir@ssh.service
 Before=ssh.service
 
 [Install]
@@ -8,4 +10,7 @@ RequiredBy=ssh.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/bin/ssh-keygen -A
+WorkingDirectory=/var/lib/phxc/ssh
+ExecStart=sh -c '[ -e ssh_host_rsa_key     ] || ssh-keygen -t rsa     -f ssh_host_rsa_key'
+ExecStart=sh -c '[ -e ssh_host_ecdsa_key   ] || ssh-keygen -t ecdsa   -f ssh_host_ecdsa_key'
+ExecStart=sh -c '[ -e ssh_host_ed25519_key ] || ssh-keygen -t ed25519 -f ssh_host_ed25519_key'
