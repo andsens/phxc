@@ -3,7 +3,6 @@
 PACKAGES+=(
   systemd systemd-sysv # systemd bootup
   dosfstools # Used for mounting ESP
-  systemd-resolved # DNS resolution setup
   dracut # initramfs, replaced with tiny-initramfs when done
   systemd-boot-efi # EFI stub for UKI
 )

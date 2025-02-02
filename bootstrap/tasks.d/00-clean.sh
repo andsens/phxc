@@ -8,6 +8,7 @@ clean() {
     # Don't filter out locales and manpages when installing packages
     rm /etc/dpkg/dpkg.cfg.d/excludes
   else
+    # Unused i18n libs
     apt-mark auto libc-l10n libicu72
     # Remove existing docs, manpages, locales that came as part of the container
     shopt -s extglob
