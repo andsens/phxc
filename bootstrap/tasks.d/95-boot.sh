@@ -4,11 +4,11 @@ PACKAGES+=(
   systemd systemd-sysv # systemd bootup
   dosfstools # Used for mounting ESP
   dracut # initramfs, replaced with tiny-initramfs when done
-  systemd-boot-efi # EFI stub for UKI
 )
 PACKAGES_TMP+=(
   dracut-network dropbear # for entering the recovery key (+ connection info message)
   fatresize # boot partition expansion
+  systemd-boot-efi # EFI stub for UKI
 )
 
 case $VARIANT in
@@ -68,4 +68,7 @@ boot() {
   rm /vmlinuz /vmlinuz.old
 
   apt-get install -qq tiny-initramfs
+
+  # Copy efi stub to /boot so create-boot-image can use it for the UKI, but uninstall it from the image
+  cp -r /usr/lib/systemd/boot/efi /boot/systemd-boot-efi
 }

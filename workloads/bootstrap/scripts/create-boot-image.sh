@@ -212,9 +212,9 @@ EOF
     esac
 
     # Instead of installing systemd-boot-efi in the rather static create-boot-image image
-    # Use the efi stub from the regularly update actual image we are creating
+    # Use the efi stub from the regularly updated actual image we are creating
     mkdir -p /usr/lib/systemd/boot
-    ln -s /workspace/root/usr/lib/systemd/boot/efi /usr/lib/systemd/boot/efi
+    ln -s /workspace/boot/systemd-boot-efi /usr/lib/systemd/boot/efi
 
     local uki_empty_pw_path=/workspace/boot/uki.diskenc-empty-pw.efi
     /lib/systemd/ukify build \
