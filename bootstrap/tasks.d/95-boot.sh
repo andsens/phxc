@@ -70,5 +70,4 @@ boot() {
 
 boot_cleanup() {
   rm -rf /usr/lib/dracut # Remove the leftovers we copied into the image
-  rm -rf /etc/dracut.conf /etc/dracut.conf.d # Not removed for some reason
 }

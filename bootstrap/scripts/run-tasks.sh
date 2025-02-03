@@ -91,6 +91,8 @@ main() {
   done
 
   apt-get autoremove -qq
+  # shellcheck disable=SC2046
+  apt-get purge -qq $(dpkg -l | grep '^rc' | awk '{print $2}')
   apt-get autoclean -qq
 
   for task in "${cleanup_tasks[@]}"; do
