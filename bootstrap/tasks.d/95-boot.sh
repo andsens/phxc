@@ -19,13 +19,6 @@ case $VARIANT in
     binutils # Need objcopy & objdump to generate PCR signatures in update-boot
   ) ;;
   rpi*)
-  curl -Lso/etc/apt/trusted.gpg.d/raspberrypi.asc http://archive.raspberrypi.com/debian/raspberrypi.gpg.key
-  cat <<EOF >/etc/apt/sources.list.d/raspberrypi.sources
-Types: deb
-URIs: http://archive.raspberrypi.com/debian
-Suites: bookworm
-Components: main
-EOF
   PACKAGES+=(
     linux-image-rpi-2712 # kernel optimized for rpi
     raspi-firmware # rpi firmware drivers
