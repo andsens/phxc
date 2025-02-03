@@ -68,6 +68,7 @@ boot() {
   rm /vmlinuz /vmlinuz.old
 
   apt-get install -qq tiny-initramfs
+  rm -rf /etc/dracut.conf.d /usr/lib/dracut # Remove the leftovers we copied into the image
 
   # Copy efi stub to /boot so create-boot-image can use it for the UKI, but uninstall it from the image
   cp -r /usr/lib/systemd/boot/efi /boot/systemd-boot-efi
