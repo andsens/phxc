@@ -61,6 +61,8 @@ main() {
   done
   rm -f /workspace/envsubst.tmp
 
+  # Update packages a second time in case any sources were added
+  apt-get -qq update
   info "Upgrading all packages"
   apt-get upgrade -qq
   info "Installing packages: %s" "${PACKAGES[*]} ${PACKAGES_TMP[*]}"
