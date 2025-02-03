@@ -160,6 +160,7 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
     boot_files[config.txt]=/workspace/boot/config-${VARIANT}.txt
 
     # TODO: Adjust config.txt for being embedded in boot.img
+    sed 's/boot_ramdisk=1/auto_initramfs=1/' "/workspace/boot/config-${VARIANT}.txt" >/workspace/boot/config-bootfile.txt
     boot_img_files[config.txt]=/workspace/boot/config-${VARIANT}.txt
 
     local src dest tar_mode=-c
