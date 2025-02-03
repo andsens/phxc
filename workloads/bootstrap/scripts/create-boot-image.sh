@@ -157,10 +157,10 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
     printf "%s " "${kernel_cmdline[@]}" > /workspace/cmdline.txt
     boot_img_files[cmdline.txt]=/workspace/cmdline.txt
 
-    boot_files[config.txt]=/assets/config-${VARIANT}.txt
+    boot_files[config.txt]=/workspace/boot/config-${VARIANT}.txt
 
     # TODO: Adjust config.txt for being embedded in boot.img
-    boot_img_files[config.txt]=/assets/config-${VARIANT}.txt
+    boot_img_files[config.txt]=/workspace/boot/config-${VARIANT}.txt
 
     local src dest tar_mode=-c
     for dest in "${!boot_img_files[@]}"; do

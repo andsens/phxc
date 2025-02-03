@@ -17,9 +17,6 @@ configMapGenerator:
   - Dockerfile
   name: node
 - files:
-  - assets/config-rpi5.txt
-  name: assets
-- files:
   - scripts/create-boot-image.sh
   name: scripts
 generators:

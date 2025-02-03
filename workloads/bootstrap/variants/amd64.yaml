@@ -57,8 +57,6 @@ spec:
             volumeMounts:
             - name: scripts
               mountPath: /scripts
-            - name: assets
-              mountPath: /assets
             - name: workspace
               mountPath: /workspace
             - name: secureboot
@@ -71,9 +69,6 @@ spec:
             configMap:
               name: scripts
               defaultMode: 0755
-          - name: assets
-            configMap:
-              name: assets
           - name: cluster-config
             hostPath:
               path: /efi/phxc/cluster.json

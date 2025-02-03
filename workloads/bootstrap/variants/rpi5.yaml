@@ -57,8 +57,6 @@ spec:
             volumeMounts:
             - name: scripts
               mountPath: /scripts
-            - name: assets
-              mountPath: /assets
             - name: rpi-config
               mountPath: /rpi-config
             - name: workspace
@@ -73,9 +71,6 @@ spec:
             configMap:
               name: scripts
               defaultMode: 0755
-          - name: assets
-            configMap:
-              name: assets
           - name: cluster-config
             hostPath:
               path: /efi/phxc/cluster.json
