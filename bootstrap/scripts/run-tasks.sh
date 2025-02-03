@@ -69,7 +69,7 @@ main() {
   apt-get install -qq --no-install-recommends "${PACKAGES[@]}" "${PACKAGES_TMP[@]}"
   apt-mark auto "${PACKAGES_TMP[@]}"
 
-  local task
+  local task cleanup_tasks
   for taskfile in "$PKGROOT/bootstrap/tasks.d/"??-*.sh; do
     task=$(basename "$taskfile" .sh)
     task=${task#[0-9][0-9]-}
@@ -80,6 +80,9 @@ main() {
     else
       warning "%s had no task named %s" "$(basename "$taskfile")" "$task"
     fi
+    if [[ $(type "${task}_cleanup" 2>/dev/null) = "$task is a function"* ]]; then
+      cleanup_tasks+=("${task}_cleanup")
+    fi
   done
 
   info "Enabling systemd units"
@@ -89,6 +92,10 @@ main() {
 
   apt-get autoremove -qq
   apt-get autoclean -qq
+
+  for task in "${cleanup_tasks[@]}"; do
+    eval "$task"
+  done
 }
 
 main "$@"
