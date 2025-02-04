@@ -3,7 +3,7 @@ Description=Unenroll all TPM2 disk encryption keys other than the one for the cu
 Requires=switch-boot.service
 After=switch-boot.service
 ConditionSecurity=measured-uki
-ConditionKernelCommandLine=!phxc.diskenc-allow-empty-pw
+ConditionKernelCommandLine=!phxc.empty-pw
 
 [Install]
 WantedBy=multi-user.target

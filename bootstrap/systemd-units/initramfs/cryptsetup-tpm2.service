@@ -3,7 +3,7 @@ Description=Generate the disk encryption key using the RPi OTP memory
 DefaultDependencies=no
 Before=cryptsetup-empty-pw.service
 ConditionSecurity=measured-uki
-ConditionKernelCommandLine=!phxc.diskenc-allow-empty-pw
+ConditionKernelCommandLine=!phxc.empty-pw
 
 [Install]
 WantedBy=initrd.target

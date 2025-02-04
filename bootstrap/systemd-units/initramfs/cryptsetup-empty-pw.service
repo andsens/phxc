@@ -2,7 +2,7 @@
 Description=Use the empty password for decrypting the data partition
 DefaultDependencies=no
 Before=systemd-cryptsetup@data.service systemd-repart.service
-ConditionKernelCommandLine=phxc.diskenc-allow-empty-pw
+ConditionKernelCommandLine=phxc.empty-pw
 
 [Install]
 WantedBy=initrd.target

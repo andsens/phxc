@@ -81,21 +81,21 @@ for varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   if [[ $VARIANT = rpi* ]]; then
     if ! rpi-otp-private-key -c -o "$(get-config rpi-otp offset)"; then
       warning "The RPi OTP is not initialized, using disk-encryption with a static password"
-      curl_img_reg "$VARIANT/efi.allow-empty-pw-diskenc.efi" -o/efi/tryboot.img -f
+      curl_img_reg "$VARIANT/boot.empty-pw.efi" -o/efi/tryboot.img -f
     else
       if [[ $(stat -c%s /run/cryptsetup-keys.d/data.key) = 0 ]]; then
         rpi-otp-disk-encryption-key >/run/cryptsetup-keys.d/data.key
         systemd-cryptenroll --unlock-key-file /var/lib/phxc/disk-encryption.recovery.key \
           --new-keyfile /run/cryptsetup-keys.d/data.key "/dev/disk/by-partuuid/${DATA_UUID}"
       fi
-      curl_img_reg "$VARIANT/efi.otp-diskenc.img" -o/efi/tryboot.img -f
+      curl_img_reg "$VARIANT/boot.rpi-otp.img" -o/efi/tryboot.img -f
     fi
   else
     if ! compgen -G '/sys/kernel/security/tpm*' &>/dev/null; then
       warning "No TPM available, using disk-encryption with a static password"
-      curl_img_reg "$VARIANT/uki.allow-empty-pw-diskenc.efi" -o/efi/EFI/BOOT/BOOT.TRY.EFI -f
+      curl_img_reg "$VARIANT/uki.empty-pw.efi" -o/efi/EFI/BOOT/BOOT.TRY.EFI -f
     else
-      curl_img_reg "$VARIANT/uki.tpm2-diskenc.efi" -o/efi/EFI/BOOT/BOOT.TRY.EFI -f
+      curl_img_reg "$VARIANT/uki.tpm2.efi" -o/efi/EFI/BOOT/BOOT.TRY.EFI -f
       cryptenroll-uki --device "/dev/disk/by-partuuid/${DATA_UUID}" \
         /var/lib/phxc/disk-encryption.recovery.key /efi/EFI/BOOT/BOOT.TRY.EFI
     fi

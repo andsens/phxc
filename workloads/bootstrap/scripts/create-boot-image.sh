@@ -184,15 +184,25 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
       ) / 1024
     ))
 
-    guestfish -xN /workspace/boot.img=disk:${disk_size_kib}K -- <<EOF
+    guestfish -xN /workspace/boot.rpi-otp.img=disk:${disk_size_kib}K -- <<EOF
 mkfs fat /dev/sda
 mount /dev/sda /
 tar-in /workspace/boot-img-files.tar /
 EOF
 
-    sha256sums[boot.img]=$(sha256sum /workspace/boot.img | cut -d ' ' -f1)
-    artifacts[boot.img]=/workspace/boot.img
-    boot_files[/boot.img]=/workspace/boot.img
+    sha256sums[boot.rpi-otp.img]=$(sha256sum /workspace/boot.rpi-otp.img | cut -d ' ' -f1)
+    artifacts[boot.rpi-otp.img]=/workspace/boot.rpi-otp.img
+    printf "phxc.empty-pw" >>/workspace/cmdline.txt
+
+    guestfish -xN /workspace/boot.empty-pw.img=disk:${disk_size_kib}K -- <<EOF
+mkfs fat /dev/sda
+mount /dev/sda /
+tar-in /workspace/boot-img-files.tar /
+EOF
+
+    sha256sums[boot.empty-pw.img]=$(sha256sum /workspace/boot.empty-pw.img | cut -d ' ' -f1)
+    artifacts[boot.empty-pw.img]=/workspace/boot.empty-pw.img
+    boot_files[/boot.empty-pw.img]=/workspace/boot.empty-pw.img
   fi
 
   ############################
@@ -217,20 +227,20 @@ EOF
     mkdir -p /usr/lib/systemd/boot
     ln -s /workspace/boot/systemd-boot-efi /usr/lib/systemd/boot/efi
 
-    local uki_empty_pw_path=/workspace/boot/uki.diskenc-empty-pw.efi
+    local uki_empty_pw_path=/workspace/boot/uki.empty-pw.efi
     /lib/systemd/ukify build \
       --uname="$kernver" \
       --linux=/workspace/boot/vmlinuz \
       --initrd=/workspace/boot/initramfs.img \
-      --cmdline="$(printf "%s " "${kernel_cmdline[@]}" "phxc.diskenc-allow-empty-pw")" \
+      --cmdline="$(printf "%s " "${kernel_cmdline[@]}" "phxc.empty-pw")" \
       --output=$uki_empty_pw_path
     boot_files[/EFI/BOOT/BOOT${efi_arch}.EFI]=$uki_empty_pw_path
-    artifacts[uki.diskenc-empty-pw.efi]=$uki_empty_pw_path
-    sha256sums[uki.diskenc-empty-pw.efi]=$(sha256sum $uki_empty_pw_path | cut -d ' ' -f1)
+    artifacts[uki.empty-pw.efi]=$uki_empty_pw_path
+    sha256sums[uki.empty-pw.efi]=$(sha256sum $uki_empty_pw_path | cut -d ' ' -f1)
 
     local \
       secureboot_key=/workspace/secureboot/tls.key secureboot_crt=/workspace/secureboot/tls.crt \
-      uki_tpm2_path=/workspace/boot/uki.tpm2-diskenc.efi uki_secure_opts=()
+      uki_tpm2_path=/workspace/boot/uki.tpm2.efi uki_secure_opts=()
     # Sign UKI if secureboot key & cert are present
     if [[ -e $secureboot_key && -e $secureboot_crt ]]; then
       uki_secure_opts+=("--secureboot-private-key=$secureboot_key" "--secureboot-certificate=$secureboot_crt")
@@ -243,8 +253,8 @@ EOF
       --initrd=/workspace/boot/initramfs.img \
       --cmdline="$(printf "%s " "${kernel_cmdline[@]}")" \
       --output=$uki_tpm2_path
-    artifacts[uki.tpm2-diskenc.efi]=$uki_tpm2_path
-    sha256sums[uki.tpm2-diskenc.efi]=$(sha256sum $uki_tpm2_path | cut -d ' ' -f1)
+    artifacts[uki.tpm2.efi]=$uki_tpm2_path
+    sha256sums[uki.tpm2.efi]=$(sha256sum $uki_tpm2_path | cut -d ' ' -f1)
   fi
 
   #######################
