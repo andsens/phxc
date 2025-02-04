@@ -16,6 +16,7 @@ Options:
   --debug  Enable debug build (installs debug tools, no artifact cleanup, etc.)
   --embed-cluster-config PATH  Embed cluster.json in root image
   --no-sb  Do not sign the UKI with secureboot certificate if present
+  --resume  Resume failed create-boot-image run, reuse VARIANT.tmp
 
 Supported variants:
   amd64 - x86_64 image
@@ -26,20 +27,21 @@ Supported variants:
 # shellcheck disable=2016,2086,2317,1090,1091,2034
 docopt() { local v='2.0.2'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
-%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:424};usage=${DOC:29:36}
-digest=de663;options=(' --debug 0' ' --embed-cluster-config 1' ' --no-sb 0')
-node_0(){ switch __debug 0;};node_1(){ value __embed_cluster_config 1;}
-node_2(){ switch __no_sb 2;};node_3(){ value VARIANT a;};node_4(){ optional 0 \
-1 2;};node_5(){ sequence 4 3;};cat <<<' docopt_exit() { [[ -n $1 ]] && printf \
-"%s\n" "$1" >&2;printf "%s\n" "${DOC:29:36}" >&2;exit 1;}';local \
-varnames=(__debug __embed_cluster_config __no_sb VARIANT) varname;for varname \
-in "${varnames[@]}"; do unset "var_$varname";done;parse 5 "$@";local \
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:491};usage=${DOC:29:36}
+digest=cc679;options=(' --debug 0' ' --embed-cluster-config 1' ' --no-sb 0' ' '\
+'--resume 0');node_0(){ switch __debug 0;};node_1(){ value \
+__embed_cluster_config 1;};node_2(){ switch __no_sb 2;};node_3(){ switch \
+__resume 3;};node_4(){ value VARIANT a;};node_5(){ optional 0 1 2 3;};node_6(){
+sequence 5 4;};cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2
+printf "%s\n" "${DOC:29:36}" >&2;exit 1;}';local varnames=(__debug \
+__embed_cluster_config __no_sb __resume VARIANT) varname;for varname in \
+"${varnames[@]}"; do unset "var_$varname";done;parse 6 "$@";local \
 p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset "$p$varname"
 done;eval $p'__debug=${var___debug:-false};'$p'__embed_cluster_config=${var___'\
-'embed_cluster_config:-};'$p'__no_sb=${var___no_sb:-false};'$p'VARIANT=${var_V'\
-'ARIANT:-};';local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
-((;docopt_i>0;docopt_i--)); do for varname in "${varnames[@]}"; do declare -p \
-"$p$varname";done;done;}
+'embed_cluster_config:-};'$p'__no_sb=${var___no_sb:-false};'$p'__resume=${var_'\
+'__resume:-false};'$p'VARIANT=${var_VARIANT:-};';local docopt_i=1;[[ \
+$BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for \
+varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' bootstrap`
   eval "$(docopt "$@")"
 
@@ -53,49 +55,54 @@ done;eval $p'__debug=${var___debug:-false};'$p'__embed_cluster_config=${var___'\
 
   local artifacts
   artifacts=$PKGROOT/images/$VARIANT.tmp
-  $DEBUG || trap_append "rm -rf \"$artifacts\"" EXIT
-  rm -rf "$artifacts"
-  mkdir -p "$artifacts"
+  # shellcheck disable=SC2154
+  if ! $__resume; then
+    $DEBUG || trap_append "rm -rf \"$artifacts\"" EXIT
+    rm -rf "$artifacts"
+    mkdir -p "$artifacts"
 
-  local bundle
-  bundle=$(mktemp --suffix '-phxc-bundle.tar.gz')
-  trap_append "rm \"$bundle\"" EXIT
-  "$PKGROOT/bootstrap/scripts/bundle.sh" "$bundle"
+    local bundle
+    bundle=$(mktemp --suffix '-phxc-bundle.tar.gz')
+    trap_append "rm \"$bundle\"" EXIT
+    "$PKGROOT/bootstrap/scripts/bundle.sh" "$bundle"
 
-  local bootstrap_docker_opts=()
-  [[ -z $__embed_cluster_config ]] || bootstrap_docker_opts+=(-v "$(realpath "$__embed_cluster_config"):/workspace/cluster.json:rw")
+    local bootstrap_docker_opts=()
+    [[ -z $__embed_cluster_config ]] || bootstrap_docker_opts+=(-v "$(realpath "$__embed_cluster_config"):/workspace/cluster.json:rw")
 
-  if [[ $(docker container inspect -f '{{.State.Running}}' phxc-apt-cacher-ng 2>/dev/null) != "true" ]]; then
-    info "Starting apt-cacher-ng"
-    trap_append "docker stop phxc-apt-cacher-ng >/dev/null" EXIT
-    mkdir -p "$PKGROOT/images/apt-cacher-ng"
-    local apt_cacher_ng_tag
-    apt_cacher_ng_tag=$(yq -r '.images[] | select(.name == "ghcr.io/andsens/phxc-apt-cacher-ng") | .newTag' \
-      "$PKGROOT/workloads/bootstrap/kustomization.yaml")
-    docker run --rm --detach \
-      --name phxc-apt-cacher-ng --hostname phxc-apt-cacher-ng \
-      -v "$PKGROOT/workloads/apt-cacher-ng/config/acng.conf:/etc/apt-cacher-ng/acng.conf:ro" \
-      -v "$PKGROOT/images/apt-cacher-ng:/var/cache/apt-cacher-ng:rw" \
-      "ghcr.io/andsens/phxc-apt-cacher-ng:$apt_cacher_ng_tag"
+    if [[ $(docker container inspect -f '{{.State.Running}}' phxc-apt-cacher-ng 2>/dev/null) != "true" ]]; then
+      info "Starting apt-cacher-ng"
+      trap_append "docker stop phxc-apt-cacher-ng >/dev/null" EXIT
+      mkdir -p "$PKGROOT/images/apt-cacher-ng"
+      local apt_cacher_ng_tag
+      apt_cacher_ng_tag=$(yq -r '.images[] | select(.name == "ghcr.io/andsens/phxc-apt-cacher-ng") | .newTag' \
+        "$PKGROOT/workloads/bootstrap/kustomization.yaml")
+      docker run --rm --detach \
+        --name phxc-apt-cacher-ng --hostname phxc-apt-cacher-ng \
+        -v "$PKGROOT/workloads/apt-cacher-ng/config/acng.conf:/etc/apt-cacher-ng/acng.conf:ro" \
+        -v "$PKGROOT/images/apt-cacher-ng:/var/cache/apt-cacher-ng:rw" \
+        "ghcr.io/andsens/phxc-apt-cacher-ng:$apt_cacher_ng_tag"
+    fi
+
+    info "Building '%s'" "node:$VARIANT"
+    docker run --rm -ti \
+      --platform "$DOCKER_PLATFORM" \
+      --add-host "apt-cacher-ng.phxc.svc.cluster.local:$(docker container inspect -f '{{.NetworkSettings.IPAddress}}' phxc-apt-cacher-ng)" \
+      -v "$PKGROOT/workloads/bootstrap/Dockerfile:/workspace/context/Dockerfile:ro" \
+      -v "$bundle:/workspace/phxc.tar.gz:ro" \
+      -v "$artifacts:/workspace/artifacts:rw" \
+      "${bootstrap_docker_opts[@]}" \
+      gcr.io/kaniko-project/executor:latest \
+      --dockerfile context/Dockerfile \
+      --build-arg "VARIANT=$VARIANT" \
+      --build-arg "DEBUG=$DEBUG" \
+      --custom-platform="$DOCKER_PLATFORM" \
+      --destination "cluster.local/node:$VARIANT" \
+      --insecure-registry=cluster.local \
+      --tar-path "/workspace/artifacts/node.tar" \
+      --no-push
+  elif [[ ! -e $artifacts/node.tar ]]; then
+    fatal "%s does not exist, unable to run create-boot-image" "$artifacts/node.tar"
   fi
-
-  info "Building '%s'" "node:$VARIANT"
-  docker run --rm -ti \
-    --platform "$DOCKER_PLATFORM" \
-    --add-host "apt-cacher-ng.phxc.svc.cluster.local:$(docker container inspect -f '{{.NetworkSettings.IPAddress}}' phxc-apt-cacher-ng)" \
-    -v "$PKGROOT/workloads/bootstrap/Dockerfile:/workspace/context/Dockerfile:ro" \
-    -v "$bundle:/workspace/phxc.tar.gz:ro" \
-    -v "$artifacts:/workspace/artifacts:rw" \
-    "${bootstrap_docker_opts[@]}" \
-    gcr.io/kaniko-project/executor:latest \
-    --dockerfile context/Dockerfile \
-    --build-arg "VARIANT=$VARIANT" \
-    --build-arg "DEBUG=$DEBUG" \
-    --custom-platform="$DOCKER_PLATFORM" \
-    --destination "cluster.local/node:$VARIANT" \
-    --insecure-registry=cluster.local \
-    --tar-path "/workspace/artifacts/node.tar" \
-    --no-push
 
   local create_boot_image_tag create_boot_docker_opts=()
   create_boot_image_tag=$(yq -r '.images[] | select(.name == "ghcr.io/andsens/phxc-create-boot-image") | .newTag' \
