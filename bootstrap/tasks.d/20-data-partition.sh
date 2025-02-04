@@ -23,6 +23,9 @@ fi
 data_partition() {
   if [[ $VARIANT = rpi* ]]; then
     rm /etc/systemd/system/unenroll-tpm2-keys.service
+  else
+    rm /usr/local/bin/rpi-otp-disk-encryption-key \
+       /usr/local/bin/phxc-rpi
   fi
 
   rm /etc/dropbear/dropbear_*_host_key*

@@ -42,13 +42,14 @@ install() {
   inst "$moddir/repart.d/60-data.conf" /etc/repart.d/60-data.conf
   inst "$moddir/crypttab" /etc/crypttab
   rm "$initdir/lib/dracut/hooks/cmdline/30-parse-crypt.sh" # Only thing the hook does is put in timeout configs for units it malparsed
-  inst rpi-otp-disk-encryption-key
 
   if [[ $VARIANT != rpi* ]]; then
     # tss user setup, the tpm2-tss module seems to miss this
     inst "$moddir/tpm2-sysuser.conf" /usr/lib/sysusers.d/tpm2.conf
     mkdir "$initdir/var/lib/tpm"
     chown 101:102 "$initdir/var/lib/tpm"
+  else
+    inst /usr/local/bin/rpi-otp-disk-encryption-key
   fi
 
   if [[ -e /home/admin/.ssh/authorized_keys ]]; then
@@ -72,6 +73,8 @@ install() {
     fi
     if [[ $VARIANT != rpi* ]]; then
       [[ $unit != cryptsetup-rpi-otp.service ]] || continue
+    else
+      [[ $unit != cryptsetup-tpm2.service ]] || continue
     fi
     inst "$src" "/etc/systemd/system/$unit"
     ! grep -q '^\[Install\]$' "$src" || enable_units+=("$unit")
