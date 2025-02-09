@@ -35,10 +35,7 @@ EOF
 fi
 
 rpi() {
-  if [[ $VARIANT != rpi* ]]; then
-    rm /usr/local/bin/phxc-rpi
-    return 0
-  fi
+  [[ $VARIANT = rpi* ]] || return 0
 
   local kver kerneltmp rpi_suffix
   kerneltmp=$(mktemp -d)
