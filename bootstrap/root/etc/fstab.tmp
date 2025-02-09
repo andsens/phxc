@@ -1,7 +1,7 @@
 # <device>                  <dir>             <type> <options>                                              <dump> <fsck>
 PARTUUID=${EFI_UUID}        /efi              vfat   defaults,x-initrd.mount,umask=0177                     0      2
 /dev/mapper/data            /var/lib/phxc     ext4   defaults                                               0      2
-/var/lib/phxc/swap          none              swap   sw                                                     0      0
+/var/lib/phxc/swap          none              swap   sw,x-systemd.requires=mkswap.service                   0      0
 /var/lib/phxc/node-password /etc/rancher/node none   bind,x-systemd.requires=data-dir@node-password.service 0      0
 /var/lib/phxc/rancher/k3s   /var/lib/rancher  none   bind,x-systemd.requires=data-dir@k3s.service           0      0
 /var/lib/phxc/iscsi         /var/lib/iscsi    none   bind,x-systemd.requires=data-dir@iscsi.service         0      0
