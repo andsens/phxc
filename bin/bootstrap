@@ -105,7 +105,7 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   fi
 
   local create_boot_image_tag create_boot_docker_opts=()
-  create_boot_image_tag=$(yq -r '.images[] | select(.name == "ghcr.io/andsens/phxc-create-boot-image") | .newTag' \
+  create_boot_image_tag=$(yq -r '.images[] | select(.name == "ghcr.io/andsens/phxc-disk-utils") | .newTag' \
     "$PKGROOT/workloads/bootstrap/kustomization.yaml")
   # shellcheck disable=SC2154
   if ! $__no_sb && [[ -e $HOME/.config/phxc/secureboot.key ]]; then
@@ -122,7 +122,8 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
     -e "DEBUG=$DEBUG" \
     --device=/dev/kvm \
     --group-add "$(stat -c %g /dev/kvm)" \
-    "ghcr.io/andsens/phxc-create-boot-image:$create_boot_image_tag" --chown $UID
+    --entrypoint /scripts/create-boot-image.sh \
+    "ghcr.io/andsens/phxc-disk-utils:$create_boot_image_tag" --chown $UID
 
   rm -rf "$PKGROOT/images/$VARIANT.old"
   mv "$PKGROOT/images/$VARIANT" "$PKGROOT/images/$VARIANT.old"

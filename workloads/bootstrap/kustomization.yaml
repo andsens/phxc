@@ -4,8 +4,8 @@ namespace: phxc
 images:
 - name: ghcr.io/andsens/phxc-apt-cacher-ng
   newTag: sha-4e07109
-- name: ghcr.io/andsens/phxc-create-boot-image
-  newTag: sha-62725d7
+- name: ghcr.io/andsens/phxc-disk-utils
+  newTag: sha-5515005
 resources:
 - network-policy.yaml
 - variants/amd64.yaml

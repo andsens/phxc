@@ -261,7 +261,8 @@ embed_configs() {
     -e "DEBUG=$DEBUG" \
     --device=/dev/kvm \
     --group-add "$(stat -c %g /dev/kvm)" \
-    ghcr.io/andsens/phxc-embed-configs:sha-3e0c5ff
+    --entrypoint /scripts/embed-configs.sh \
+    ghcr.io/andsens/phxc-disk-utils:sha-5515005
 }
 
 recovery_keys() {
