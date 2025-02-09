@@ -55,6 +55,8 @@ spec:
             env:
             - name: VARIANT
               value: rpi5
+            - name: DEBUG
+              value: "false"
             volumeMounts:
             - name: scripts
               mountPath: /scripts
