@@ -66,15 +66,21 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
   ln -sf ../run/systemd/resolve/stub-resolv.conf /workspace/root/etc/resolv.conf
   mv /workspace/root/etc/hosts.tmp /workspace/root/etc/hosts
   mv /workspace/root/etc/fstab.tmp /workspace/root/etc/fstab
-  # When bootstrapping outside kubernetes kaniko includes /workspace in the snapshot for some reason, remove it here
+  # When bootstrapping outside kubernetes, kaniko includes /workspace in the snapshot for some reason, remove it here
   rm -rf /workspace/root/workspace
 
   # Move boot dir to workspace before creating squashfs image
   mv /workspace/root/boot /workspace/boot
 
   local kernver
-  kernver=$(echo /workspace/root/lib/modules/*)
-  kernver=${kernver#'/workspace/root/lib/modules/'}
+  kernver=$(readlink /workspace/root/vmlinuz)
+  kernver=${kernver#'boot/vmlinuz-'}
+  mv "/workspace/boot/initrd.img-$kernver" /workspace/boot/initramfs.img
+  mv "/workspace/boot/vmlinuz-$kernver" /workspace/boot/vmlinuz
+  rm /workspace/root/vmlinuz \
+     /workspace/root/vmlinuz.old
+  rm -f /workspace/root/initrd.img \
+        /workspace/root/initrd.img.old
 
   #######################
   ### Create root.img ###

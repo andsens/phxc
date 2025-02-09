@@ -3,7 +3,7 @@
 PACKAGES+=(
   systemd systemd-sysv # systemd bootup
   dosfstools # Used for mounting ESP
-  dracut # initramfs, replaced with tiny-initramfs when done
+  dracut # initramfs
 )
 PACKAGES_TMP+=(
   dracut-network dropbear # for entering the recovery key (+ connection info message)
@@ -53,14 +53,9 @@ boot() {
   # Re-enable initramfs updates
   unset INITRD
   local kernver
-  kernver=$(echo /lib/modules/*)
-  kernver=${kernver#'/lib/modules/'}
+  kernver=$(readlink /vmlinuz)
+  kernver=${kernver#'boot/vmlinuz-'}
   dracut --force --kver "$kernver"
-  mv "/boot/initrd.img-$kernver" /boot/initramfs.img
-  mv "$(realpath /vmlinuz)" /boot/vmlinuz
-  rm /vmlinuz /vmlinuz.old
-
-  apt-get install -qq tiny-initramfs
 }
 
 boot_cleanup() {
