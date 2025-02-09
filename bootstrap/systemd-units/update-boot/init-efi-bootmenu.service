@@ -1,6 +1,7 @@
 [Unit]
 Description=Populate the EFI boot menu with Phoenix Cluster entries
 RequiresMountsFor=/efi
+ConditionFirmware=uefi
 
 [Install]
 WantedBy=multi-user.target
