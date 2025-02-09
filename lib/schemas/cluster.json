@@ -11,13 +11,13 @@
       "format": "hostname"
     },
     "admin": {
-      "description": "Configuration of the \"admin\" user",
+      "description": "Configuration of the admin user",
       "type": "object",
       "properties": {
         "ssh-keys": {
           "type": "array",
+          "description": "List of admin SSH keys. Used for SSH login, Kubernetes authentication, and config signature verification",
           "items": {
-            "description": "The admin SSH key. Used for SSH login, Kubernetes authentication, and config signing",
             "type": "string"
           }
         },
