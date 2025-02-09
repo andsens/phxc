@@ -157,6 +157,8 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
       # The last "console=" wins with respect to initramfs stdout/stderr output
       "console=ttyS0,115200" console=tty0
       "${kernel_cmdline[@]}"
+      # See https://github.com/k3s-io/k3s-ansible/issues/179
+      cgroup_enable=memory
     )
     printf "%s " "${kernel_cmdline[@]}" > /workspace/cmdline.txt
 
