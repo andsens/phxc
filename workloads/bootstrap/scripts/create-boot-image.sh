@@ -140,15 +140,15 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
     case $VARIANT in
       rpi2|rpi3)
         boot_img_files[kernel7.img]=/workspace/boot/vmlinuz
-        boot_img_files[initramfs7.img]=/workspace/boot/initramfs.img
+        boot_img_files[initramfs7]=/workspace/boot/initramfs.img
         ;;
       rpi4)
         boot_img_files[kernel8.img]=/workspace/boot/vmlinuz
-        boot_img_files[initramfs8.img]=/workspace/boot/initramfs.img
+        boot_img_files[initramfs8]=/workspace/boot/initramfs.img
         ;;
       rpi5)
         boot_img_files[kernel_2712.img]=/workspace/boot/vmlinuz
-        boot_img_files[initramfs_2712.img]=/workspace/boot/initramfs.img
+        boot_img_files[initramfs_2712]=/workspace/boot/initramfs.img
         ;;
       *) printf "Unknown rpi* variant: %s\n" "$VARIANT" >&2; return 1 ;;
     esac
