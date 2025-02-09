@@ -1,8 +1,8 @@
 [Unit]
 Description=Remove all root images except the current one
 RequiresMountsFor=/efi
-Requires=k3s.target
-After=k3s.target
+Requires=switch-boot.service
+After=switch-boot.service
 
 [Install]
 WantedBy=multi-user.target
@@ -13,5 +13,5 @@ RemainAfterExit=yes
 ExecStart=bash -eo pipefail
 StandardInputText=current_rootimg_sha256=$(cat /run/initramfs/root.img.sha256); \
                   for rootimg in /efi/phxc/root.*.img; do \
-                    [[ $rootimg = "/efi/phxc/root.$current_rootimg_sha256.img" ]] || rm "$rootimg"; \
+                    [[ $rootimg = "/efi/phxc/root.${current_rootimg_sha256}.img" ]] || rm "$rootimg"; \
                   done
