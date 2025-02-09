@@ -22,10 +22,14 @@ fi
 
 data_partition() {
   if [[ $VARIANT = rpi* ]]; then
-    rm /etc/systemd/system/unenroll-tpm2-keys.service
+    rm /etc/systemd/system/unenroll-tpm2-keys.service \
+       "$PKGROOT/bootstrap/systemd-units/initramfs/cryptsetup-tpm2.service"
   else
-    rm /usr/local/bin/rpi-otp-disk-encryption-key \
-       /usr/local/bin/phxc-rpi
+    rm /usr/local/bin/phxc-rpi
+  fi
+  if [[ $VARIANT != rpi4 && $VARIANT != rpi5 ]]; then
+    rm "$PKGROOT/bootstrap/systemd-units/initramfs/cryptsetup-rpi-otp.service" \
+       /usr/local/bin/rpi-otp-disk-encryption-key
   fi
 
   rm /etc/dropbear/dropbear_*_host_key*

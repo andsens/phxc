@@ -6,7 +6,7 @@ boot_ramdisk=1
 # Uncomment some or all of these to enable the optional hardware interfaces
 #dtparam=i2c_arm=on
 #dtparam=i2s=on
-dtparam=spi=on
+#dtparam=spi=on
 
 # Enable audio (loads snd_bcm2835)
 dtparam=audio=on
@@ -38,7 +38,7 @@ disable_overscan=1
 arm_boost=1
 
 # Enable Let's Trust TPM
-dtoverlay=tpm-slb9670
+#dtoverlay=tpm-slb9670
 
 [cm4]
 # Enable host mode on the 2711 built-in XHCI USB controller.

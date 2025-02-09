@@ -67,6 +67,9 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
   # When bootstrapping outside kubernetes kaniko includes /workspace in the snapshot for some reason, remove it here
   rm -rf /workspace/root/workspace
 
+  # Move boot dir to workspace before creating squashfs image
+  mv /workspace/root/boot /workspace/boot
+
   local kernver
   kernver=$(echo /workspace/root/lib/modules/*)
   kernver=${kernver#'/workspace/root/lib/modules/'}
@@ -76,9 +79,6 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
   #######################
 
   info "Creating squashfs image"
-
-  # Move boot dir to workspace before creating squashfs image
-  mv /workspace/root/boot /workspace/boot
 
   local noprogress=
   [[ -t 1 ]] || noprogress=-no-progress
@@ -130,24 +130,20 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
     declare -A boot_img_files
 
     case $VARIANT in
-      rpi5)
-        boot_img_files[initramfs_2712]=/workspace/boot/initramfs.img
-        boot_img_files[kernel_2712.img]=/workspace/boot/vmlinuz
+      rpi2|rpi3)
+        boot_img_files[kernel7.img]=/workspace/boot/vmlinuz
+        boot_img_files[initramfs7.img]=/workspace/boot/initramfs.img
         ;;
       rpi4)
-        boot_img_files[kernel8]=/workspace/boot/initramfs.img
-        boot_img_files[initramfs8.img]=/workspace/boot/vmlinuz
+        boot_img_files[kernel8.img]=/workspace/boot/vmlinuz
+        boot_img_files[initramfs8.img]=/workspace/boot/initramfs.img
         ;;
-      rpi3)
-        boot_img_files[kernel7]=/workspace/boot/initramfs.img
-        boot_img_files[initramfs7.img]=/workspace/boot/vmlinuz
+      rpi5)
+        boot_img_files[kernel_2712.img]=/workspace/boot/vmlinuz
+        boot_img_files[initramfs_2712.img]=/workspace/boot/initramfs.img
         ;;
       *) printf "Unknown rpi* variant: %s\n" "$VARIANT" >&2; return 1 ;;
     esac
-
-    while IFS= read -r -d $'\0' filepath; do
-      boot_img_files["${filepath#'/workspace/boot/firmware/'}"]=$filepath
-    done < <(find /workspace/boot/firmware -print0)
 
     kernel_cmdline=(
       # The last "console=" wins with respect to initramfs stdout/stderr output
@@ -155,13 +151,12 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
       "${kernel_cmdline[@]}"
     )
     printf "%s " "${kernel_cmdline[@]}" > /workspace/cmdline.txt
-    boot_img_files[cmdline.txt]=/workspace/cmdline.txt
 
     boot_files[config.txt]=/workspace/boot/config-${VARIANT}.txt
 
     # TODO: Adjust config.txt for being embedded in boot.img
-    sed 's/boot_ramdisk=1/auto_initramfs=1/' "/workspace/boot/config-${VARIANT}.txt" >/workspace/boot/config-bootfile.txt
-    boot_img_files[config.txt]=/workspace/boot/config-${VARIANT}.txt
+    sed 's/boot_ramdisk=1/auto_initramfs=1/' "/workspace/boot/config-${VARIANT}.txt" >/workspace/boot/config-bootimg.txt
+    boot_img_files[config.txt]=/workspace/boot/config-bootimg.txt
 
     local src dest tar_mode=-c
     for dest in "${!boot_img_files[@]}"; do
@@ -171,6 +166,8 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
         "$src"
       tar_mode=-r
     done
+
+    (cd /workspace/boot/firmware; tar -cf /workspace/boot/firmware.tar -- *)
 
     local disk_size_kib fs_table_size_b boot_img_files_size_b
     fs_table_size_b=$(( 1024 * 1024 )) # Total guess, but should be enough
@@ -185,9 +182,12 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
     ))
 
     guestfish -xN /workspace/boot.rpi-otp.img=disk:${disk_size_kib}K -- <<EOF
-mkfs fat /dev/sda
+mkfs vfat /dev/sda
 mount /dev/sda /
+set-verbose false
 tar-in /workspace/boot-img-files.tar /
+tar-in /workspace/boot/firmware.tar /
+copy-in /workspace/cmdline.txt /
 EOF
 
     sha256sums[boot.rpi-otp.img]=$(sha256sum /workspace/boot.rpi-otp.img | cut -d ' ' -f1)
@@ -195,14 +195,17 @@ EOF
     printf "phxc.empty-pw" >>/workspace/cmdline.txt
 
     guestfish -xN /workspace/boot.empty-pw.img=disk:${disk_size_kib}K -- <<EOF
-mkfs fat /dev/sda
+mkfs vfat /dev/sda
 mount /dev/sda /
+set-verbose false
 tar-in /workspace/boot-img-files.tar /
+tar-in /workspace/boot/firmware.tar /
+copy-in /workspace/cmdline.txt /
 EOF
 
     sha256sums[boot.empty-pw.img]=$(sha256sum /workspace/boot.empty-pw.img | cut -d ' ' -f1)
     artifacts[boot.empty-pw.img]=/workspace/boot.empty-pw.img
-    boot_files[/boot.empty-pw.img]=/workspace/boot.empty-pw.img
+    boot_files[/boot.img]=/workspace/boot.empty-pw.img
   fi
 
   ############################

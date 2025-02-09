@@ -22,10 +22,7 @@ case $VARIANT in
   )
   ;;
   rpi*)
-  PACKAGES+=(
-    linux-image-rpi-2712 # kernel optimized for rpi
-    raspi-firmware # rpi firmware drivers
-  )
+  # See 30-rpi.sh
   ;;
   *) printf "Unknown variant: %s\n" "$VARIANT" >&2; return 1 ;;
 esac
@@ -47,8 +44,6 @@ boot() {
   systemctl enable serial-getty@ttyS0
 
   if [[ $VARIANT = rpi5 ]]; then
-    # Remove Raspberry Pi 4 boot code
-    rm boot/firmware/bootcode.bin boot/firmware/fixup*.dat boot/firmware/start*.elf
     cp "$PKGROOT/bootstrap/assets/config-rpi5.txt" /boot
   else
     # Copy efi stub to /boot so create-boot-image can use it for the UKI, but uninstall it from the image

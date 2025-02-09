@@ -80,7 +80,7 @@ for varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 
   if [[ $VARIANT = rpi* ]]; then
     if ! rpi-otp-private-key -c -o "$(get-config rpi-otp offset)"; then
-      warning "The RPi OTP is not initialized, using disk-encryption with a static password"
+      warning "The RPi OTP is not initialized or not supported, using disk-encryption with a static password"
       curl_img_reg "$VARIANT/boot.empty-pw.efi" -o/efi/tryboot.img -f
     else
       if [[ $(stat -c%s /run/cryptsetup-keys.d/data.key) = 0 ]]; then

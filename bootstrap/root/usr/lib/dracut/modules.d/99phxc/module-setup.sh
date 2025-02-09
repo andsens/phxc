@@ -49,7 +49,7 @@ install() {
     mkdir "$initdir/var/lib/tpm"
     chown 101:102 "$initdir/var/lib/tpm"
   else
-    inst /usr/local/bin/rpi-otp-disk-encryption-key
+    [[ ! -e /usr/local/bin/rpi-otp-disk-encryption-key ]] || inst /usr/local/bin/rpi-otp-disk-encryption-key
   fi
 
   if [[ -e /home/admin/.ssh/authorized_keys ]]; then
@@ -70,11 +70,6 @@ install() {
     unit=$(basename "$src")
     if [[ ! $DEBUG && $unit == sysroot-mnt-overlay\\x2dupper.mount ]]; then
       continue
-    fi
-    if [[ $VARIANT != rpi* ]]; then
-      [[ $unit != cryptsetup-rpi-otp.service ]] || continue
-    else
-      [[ $unit != cryptsetup-tpm2.service ]] || continue
     fi
     inst "$src" "/etc/systemd/system/$unit"
     ! grep -q '^\[Install\]$' "$src" || enable_units+=("$unit")
