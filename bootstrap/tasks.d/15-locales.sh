@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 
+PACKAGES+=(tzdata)
 if $DEBUG; then
   PACKAGES+=(locales)
 fi
 
 locales() {
-  rm /etc/timezone /etc/localtime
+  rm -f /etc/timezone /etc/localtime
   debconf-set-selections - <<<"tzdata tzdata/Areas select Europe
 tzdata tzdata/Zones/Europe select Copenhagen"
   dpkg-reconfigure --frontend noninteractive tzdata
