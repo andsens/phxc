@@ -1,12 +1,12 @@
-name: Build embed-configs tool image
+name: Build disk-utils image
 
 on:
   push:
     branches: [ '*' ]
     tags: [ 'v*' ]
     paths:
-    - .github/workflows/build-embed-configs.yaml
-    - .github/assets/embed-configs.Dockerfile
+    - .github/workflows/build-disk-utils.yaml
+    - .github/assets/disk-utils.Dockerfile
 
 env:
   ALPINE_VERSION: '3.21'
@@ -36,14 +36,14 @@ jobs:
       id: meta
       uses: docker/metadata-action@v4
       with:
-        images: ghcr.io/andsens/phxc-embed-configs
+        images: ghcr.io/andsens/phxc-disk-utils
         tags: type=sha
     - name: Build and push Docker image
       id: push
       uses: docker/build-push-action@v5
       with:
         context: lib/common-context
-        file: .github/assets/embed-configs.Dockerfile
+        file: .github/assets/disk-utils.Dockerfile
         platforms: linux/amd64,linux/arm64
         provenance: false
         push: true
@@ -51,4 +51,4 @@ jobs:
           ALPINE_VERSION=${{ env.ALPINE_VERSION }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: |
-          org.opencontainers.image.description="Image with tooling dependencies for embedding PHXC configs in a disk image"
+          org.opencontainers.image.description="Image for running the disk-utils script, which converts a container image to bootable disk image"

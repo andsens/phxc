@@ -22,5 +22,3 @@ apt-get -y update
 apt-get -y install --no-install-recommends \
   linux-image-${TARGETARCH} guestfish dosfstools curl systemd-ukify sbsigntool gettext
 EOR
-
-ENTRYPOINT ["/scripts/create-boot-image.sh"]
