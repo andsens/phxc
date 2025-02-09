@@ -17,8 +17,9 @@ upkg add -gp docopt-lib-v2.0.2 https://github.com/andsens/docopt.sh/releases/dow
 upkg add -g https://github.com/orbit-online/records.sh/releases/download/v1.0.2/records.sh.tar.gz 201977ecc5fc9069d8eff12ba6adc9ce1286ba66c9aeee19184e26185cc6ef63
 EOR
 
+# The IPXE boot ROMs are needed for guestfish to be able to work
 RUN <<EOR
 apt-get -y update
 apt-get -y install --no-install-recommends \
-  linux-image-${TARGETARCH} guestfish dosfstools curl systemd-ukify sbsigntool gettext
+  linux-image-${TARGETARCH} ipxe-qemu guestfish dosfstools curl systemd-ukify sbsigntool gettext
 EOR
