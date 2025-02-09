@@ -62,11 +62,11 @@ main() {
   rm -f /workspace/envsubst.tmp
 
   # Update packages a second time in case any sources were added
-  apt-get -qq update
+  apt-get -qy update
   info "Upgrading all packages"
-  apt-get upgrade -qq
+  apt-get upgrade -qy
   info "Installing packages: %s" "${PACKAGES[*]} ${PACKAGES_TMP[*]}"
-  apt-get install -qq --no-install-recommends "${PACKAGES[@]}" "${PACKAGES_TMP[@]}"
+  apt-get install -qy --no-install-recommends "${PACKAGES[@]}" "${PACKAGES_TMP[@]}"
   apt-mark auto "${PACKAGES_TMP[@]}"
 
   local task cleanup_tasks
@@ -90,10 +90,10 @@ main() {
     [[ ! -e /etc/systemd/system/$unit ]] || systemctl enable "$unit"
   done
 
-  apt-get autoremove -qq
+  apt-get autoremove -qy
   # shellcheck disable=SC2046
-  apt-get purge -qq $(dpkg -l | grep '^rc' | awk '{print $2}')
-  apt-get autoclean -qq
+  apt-get purge -qy $(dpkg -l | grep '^rc' | awk '{print $2}')
+  apt-get autoclean -qy
 
   for task in "${cleanup_tasks[@]}"; do
     eval "$task"
