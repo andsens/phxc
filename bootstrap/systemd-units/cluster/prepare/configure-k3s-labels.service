@@ -8,7 +8,6 @@ WantedBy=k3s.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecCondition=get-config node labels
 ExecStart=bash -eo pipefail
 StandardInputText=jq -n \
     --argjson labels "$(get-config -q node | jq .labels || true)" \
