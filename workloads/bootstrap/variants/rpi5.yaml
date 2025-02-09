@@ -8,14 +8,14 @@ metadata:
 spec:
   schedule: 0 3 * * 2
   jobTemplate:
-    metadata:
-      labels:
-        app.kubernetes.io/name: bootstrap
-        app.kubernetes.io/component: rpi5
-        cluster.local/allow-apiserver-egress: "true"
-        cluster.local/allow-internet-egress: "true"
     spec:
       template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: bootstrap
+            app.kubernetes.io/component: rpi5
+            cluster.local/allow-apiserver-egress: "true"
+            cluster.local/allow-internet-egress: "true"
         spec:
           restartPolicy: Never
           nodeSelector:
@@ -58,8 +58,6 @@ spec:
             volumeMounts:
             - name: scripts
               mountPath: /scripts
-            - name: rpi-config
-              mountPath: /rpi-config
             - name: workspace
               mountPath: /workspace
             - name: secureboot
@@ -80,9 +78,6 @@ spec:
             secret:
               secretName: secureboot
               optional: true
-          - name: rpi-config
-            configMap:
-              name: rpi-config
           - name: bundle
             configMap:
               name: bundle
