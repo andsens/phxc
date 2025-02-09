@@ -126,7 +126,7 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
     "ghcr.io/andsens/phxc-disk-utils:$create_boot_image_tag" --chown $UID
 
   rm -rf "$PKGROOT/images/$VARIANT.old"
-  mv "$PKGROOT/images/$VARIANT" "$PKGROOT/images/$VARIANT.old"
+  [[ ! -e "$PKGROOT/images/$VARIANT" ]] || mv "$PKGROOT/images/$VARIANT" "$PKGROOT/images/$VARIANT.old"
   mv "$artifacts" "$PKGROOT/images/$VARIANT"
 }
 
