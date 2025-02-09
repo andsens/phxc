@@ -2,6 +2,7 @@
 # shellcheck source-path=../../..
 set -Eeo pipefail; shopt -s inherit_errexit
 PKGROOT=/usr/local/lib/upkg
+source "$PKGROOT/.upkg/records.sh/records.sh"
 
 export EFI_UUID=c427f0ed-0366-4cb2-9ce2-3c8c51c3e89e
 export DATA_UUID=6f07821d-bb94-4d0f-936e-4060cadf18d8
@@ -32,13 +33,13 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' create-boot-image.sh`
   eval "$(docopt "$@")"
 
-  source "$PKGROOT/.upkg/records.sh/records.sh"
-
   declare -A artifacts
   declare -A sha256sums
-  declare -A boot_files
 
-  ! $DEBUG || export LIBGUESTFS_DEBUG=1 # LIBGUESTFS_TRACE=1
+  mkdir -p /workspace/esp-staging/phxc
+
+  # filesystem constants
+  local block_size_b=512 fat_table_size_b=$((1024 + 28)) esp_free_b=$((1024 * 1024 * 4)) disk_size_b
 
   #################################
   ### Extract container archive ###
@@ -94,9 +95,8 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
 
   # Hash the root image so we can verify it during boot
   sha256sums[root.img]=$(sha256sum /workspace/root.img | cut -d ' ' -f1)
-
-  artifacts[root.img]=/workspace/root.img
-  boot_files["/phxc/root.${sha256sums[root.img]}.img"]=/workspace/root.img
+  mv /workspace/root.img "/workspace/esp-staging/phxc/root.${sha256sums[root.img]}.img"
+  artifacts[root.img]=/workspace/esp-staging/phxc/root.${sha256sums[root.img]}.img
 
   ##################################################
   ### Inject root.img SHA-256 sum into initramfs ###
@@ -135,20 +135,20 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
 
     info "Building RaspberryPI boot.img"
 
-    declare -A boot_img_files
+    mkdir /workspace/bootimg-staging
 
     case $VARIANT in
       rpi2|rpi3)
-        boot_img_files[kernel7.img]=/workspace/boot/vmlinuz
-        boot_img_files[initramfs7]=/workspace/boot/initramfs.img
+        cp /workspace/boot/vmlinuz /workspace/bootimg-staging/kernel7.img
+        cp /workspace/boot/initramfs.img /workspace/bootimg-staging/initramfs7
         ;;
       rpi4)
-        boot_img_files[kernel8.img]=/workspace/boot/vmlinuz
-        boot_img_files[initramfs8]=/workspace/boot/initramfs.img
+        cp /workspace/boot/vmlinuz /workspace/bootimg-staging/kernel8.img
+        cp /workspace/boot/initramfs.img /workspace/bootimg-staging/initramfs8
         ;;
       rpi5)
-        boot_img_files[kernel_2712.img]=/workspace/boot/vmlinuz
-        boot_img_files[initramfs_2712]=/workspace/boot/initramfs.img
+        cp /workspace/boot/vmlinuz /workspace/bootimg-staging/kernel_2712.img
+        cp /workspace/boot/initramfs.img /workspace/bootimg-staging/initramfs_2712
         ;;
       *) printf "Unknown rpi* variant: %s\n" "$VARIANT" >&2; return 1 ;;
     esac
@@ -160,62 +160,36 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
       # See https://github.com/k3s-io/k3s-ansible/issues/179
       cgroup_enable=memory
     )
-    printf "%s " "${kernel_cmdline[@]}" > /workspace/cmdline.txt
+    printf "%s " "${kernel_cmdline[@]}" >/workspace/bootimg-staging/cmdline.txt
 
-    boot_files[config.txt]=/workspace/boot/config-${VARIANT}.txt
+    cp "/workspace/boot/config-${VARIANT}.txt" /workspace/esp-staging/config.txt
 
-    # TODO: Adjust config.txt for being embedded in boot.img
-    sed 's/boot_ramdisk=1/auto_initramfs=1/' "/workspace/boot/config-${VARIANT}.txt" >/workspace/boot/config-bootimg.txt
-    boot_img_files[config.txt]=/workspace/boot/config-bootimg.txt
+    sed 's/boot_ramdisk=1/auto_initramfs=1/' "/workspace/boot/config-${VARIANT}.txt" >/workspace/bootimg-staging/config.txt
 
-    local src dest tar_mode=-c
-    for dest in "${!boot_img_files[@]}"; do
-      src=${boot_img_files[$dest]}
-      tar ${tar_mode}f /workspace/boot-img-files.tar \
-        --transform="s#${src#/}#${dest#/}#" \
-        "$src"
-      tar_mode=-r
-    done
+    cp -r /workspace/boot/firmware/* /workspace/bootimg-staging
 
-    (cd /workspace/boot/firmware; tar -cf /workspace/boot/firmware.tar -- *)
-
-    local disk_size_kib fs_table_size_b boot_img_files_size_b
-    fs_table_size_b=$(( 1024 * 1024 )) # Total guess, but should be enough
-    boot_img_files_size_b=$(( $(stat -c%s /workspace/boot-img-files.tar) + ( 1024 * 1024 ) ))
-    disk_size_kib=$((
+    disk_size_b=$((
       (
-        fs_table_size_b +
-        boot_img_files_size_b +
-        (1024 * 1024) +
-        1023
-      ) / 1024
+        fat_table_size_b +
+        $(du -sB$block_size_b /workspace/bootimg-staging | cut -d$'\t' -f1) * block_size_b +
+        block_size_b - 1
+      ) / block_size_b * block_size_b
     ))
 
-    guestfish -xN /workspace/boot.rpi-otp.img=disk:${disk_size_kib}K -- <<EOF
-mkfs vfat /dev/sda
-mount /dev/sda /
-set-verbose false
-tar-in /workspace/boot-img-files.tar /
-tar-in /workspace/boot/firmware.tar /
-copy-in /workspace/cmdline.txt /
-EOF
-
+    truncate -s"$disk_size_b" /workspace/boot.rpi-otp.img
+    mkfs.vfat -F 32 /workspace/boot.rpi-otp.img
+    mcopy -sbQmi /workspace/boot.rpi-otp.img /workspace/bootimg-staging/* ::/
     sha256sums[boot.rpi-otp.img]=$(sha256sum /workspace/boot.rpi-otp.img | cut -d ' ' -f1)
     artifacts[boot.rpi-otp.img]=/workspace/boot.rpi-otp.img
-    printf "phxc.empty-pw" >>/workspace/cmdline.txt
 
-    guestfish -xN /workspace/boot.empty-pw.img=disk:${disk_size_kib}K -- <<EOF
-mkfs vfat /dev/sda
-mount /dev/sda /
-set-verbose false
-tar-in /workspace/boot-img-files.tar /
-tar-in /workspace/boot/firmware.tar /
-copy-in /workspace/cmdline.txt /
-EOF
+    printf "phxc.empty-pw" >>/workspace/bootimg-staging/cmdline.txt
 
+    truncate -s"$disk_size_b" /workspace/boot.empty-pw.img
+    mkfs.vfat -F 32 /workspace/boot.empty-pw.img
+    mcopy -sbQmi /workspace/boot.empty-pw.img /workspace/bootimg-staging/* ::/
     sha256sums[boot.empty-pw.img]=$(sha256sum /workspace/boot.empty-pw.img | cut -d ' ' -f1)
     artifacts[boot.empty-pw.img]=/workspace/boot.empty-pw.img
-    boot_files[/boot.img]=/workspace/boot.empty-pw.img
+    cp /workspace/boot.empty-pw.img /workspace/esp-staging/boot.img
   fi
 
   ############################
@@ -240,14 +214,14 @@ EOF
     mkdir -p /usr/lib/systemd/boot
     ln -s /workspace/boot/systemd-boot-efi /usr/lib/systemd/boot/efi
 
-    local uki_empty_pw_path=/workspace/boot/uki.empty-pw.efi
+    mkdir -p /workspace/esp-staging/EFI/BOOT
+    local uki_empty_pw_path=/workspace/esp-staging/EFI/BOOT/BOOT${efi_arch}.EFI
     /lib/systemd/ukify build \
       --uname="$kernver" \
       --linux=/workspace/boot/vmlinuz \
       --initrd=/workspace/boot/initramfs.img \
       --cmdline="$(printf "%s " "${kernel_cmdline[@]}" "phxc.empty-pw")" \
       --output=$uki_empty_pw_path
-    boot_files[/EFI/BOOT/BOOT${efi_arch}.EFI]=$uki_empty_pw_path
     artifacts[uki.empty-pw.efi]=$uki_empty_pw_path
     sha256sums[uki.empty-pw.efi]=$(sha256sum $uki_empty_pw_path | cut -d ' ' -f1)
 
@@ -257,8 +231,7 @@ EOF
     # Sign UKI if secureboot key & cert are present
     if [[ -e $secureboot_key && -e $secureboot_crt ]]; then
       uki_secure_opts+=("--secureboot-private-key=$secureboot_key" "--secureboot-certificate=$secureboot_crt")
-      openssl x509 -in $secureboot_crt -outform der -out /workspace/secureboot.der
-      boot_files[/phxc/secureboot.der]=/workspace/secureboot.der
+      openssl x509 -in $secureboot_crt -outform der -out /workspace/esp-staging/phxc/secureboot.der
     fi
     /lib/systemd/ukify build "${uki_secure_opts[@]}" \
       --uname="$kernver" \
@@ -296,45 +269,43 @@ EOF
   ##################
 
   info "Building disk image from artifacts"
-
-  local src dest tar_mode=-c
-  for dest in "${!boot_files[@]}"; do
-    src=${boot_files[$dest]}
-    tar ${tar_mode}f /workspace/boot-files.tar \
-      --transform="s#${src#/}#${dest#/}#" \
-      "$src"
-    tar_mode=-r
-  done
   local \
-    sector_size_b=512 \
-    gpt_size_b \
     partition_offset_b=$((1024 * 1024)) \
-    boot_partition_size_b=$(( $(stat -c%s /workspace/boot-files.tar) + ( 1024 * 1024 * 5) )) \
-    boot_sector_start boot_sector_end \
-    disk_size_kib
-  gpt_size_b=$((33 * sector_size_b))
-  boot_sector_start=$(( partition_offset_b / sector_size_b ))
-  boot_sector_end=$(( boot_sector_start + ( boot_partition_size_b / sector_size_b ) - 1 ))
-  disk_size_kib=$((
+    gpt_size_b \
+    esp_size_b
+  gpt_size_b=$((33 * 512))
+  esp_size_b=$((
+    (
+      fat_table_size_b +
+      $(du -sB$block_size_b /workspace/esp-staging | cut -d$'\t' -f1) * block_size_b +
+      esp_free_b +
+      block_size_b - 1
+    ) / block_size_b * block_size_b
+  ))
+  disk_size_b=$((
     (
       partition_offset_b +
-      boot_partition_size_b +
+      esp_size_b +
       gpt_size_b +
-      1023
-    ) / 1024
+      block_size_b - 1
+    ) / block_size_b * block_size_b
   ))
 
-  guestfish -xN /workspace/disk.img=disk:${disk_size_kib}K -- <<EOF
-part-init /dev/sda gpt
-part-add /dev/sda primary $boot_sector_start $boot_sector_end
-part-set-bootable /dev/sda 1 true
-part-set-gpt-guid /dev/sda 1 $EFI_UUID
+  truncate -s"$esp_size_b" /workspace/esp.img
+  mkfs.vfat -F 32 /workspace/esp.img
+  mcopy -sbQmi /workspace/esp.img /workspace/esp-staging/* ::/
 
-mkfs vfat /dev/sda1
-mount /dev/sda1 /
-set-verbose false
-tar-in /workspace/boot-files.tar /
+  ! $DEBUG || artifacts[esp.img]=/workspace/esp.img
+
+  truncate -s"$disk_size_b" /workspace/disk.img
+  # parted -s -a optimal /workspace/disk.img mklabel gpt mkpart primary fat32 \
+  #   ${partition_offset_b}B $(( partition_offset_b + esp_size_b - 1 ))B set 1 esp on
+  sfdisk -q /workspace/disk.img <<EOF
+label: gpt
+start=$(( partition_offset_b / block_size_b )) size=$(( esp_size_b / block_size_b )), type=U, bootable, uuid=$EFI_UUID
 EOF
+  dd if=/workspace/esp.img of=/workspace/disk.img bs=$block_size_b seek=$((partition_offset_b / block_size_b)) conv=notrunc
+
   artifacts[disk.img]=/workspace/disk.img
 
   #################

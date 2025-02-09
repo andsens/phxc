@@ -10,7 +10,7 @@ Type=oneshot
 RemainAfterExit=yes
 ExecStart=bash -eo pipefail
 StandardInputText=jq -n \
-    --argjson labels "$(get-config -q node | jq .labels || true)" \
+    --argjson labels "$(get-config -q node labels || printf '[]')" \
     --arg sha256 "$(compgen -G /run/initramfs/root.*.img | cut -d. -f2)" \
     --arg variant ${VARIANT} \
     '{"node-label": (.labels + ["cluster.local/rootimg-sha256=" + $sha256[0:8], "cluster.local/rootimg-variant=" + $variant])}' \

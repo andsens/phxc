@@ -5,7 +5,7 @@ images:
 - name: ghcr.io/andsens/phxc-apt-cacher-ng
   newTag: sha-4e07109
 - name: ghcr.io/andsens/phxc-disk-utils
-  newTag: sha-5515005
+  newTag: sha-4c67afd
 resources:
 - network-policy.yaml
 - variants/amd64.yaml

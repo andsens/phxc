@@ -73,14 +73,11 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
       info "Starting apt-cacher-ng"
       trap_append "docker stop phxc-apt-cacher-ng >/dev/null" EXIT
       mkdir -p "$PKGROOT/images/apt-cacher-ng"
-      local apt_cacher_ng_tag
-      apt_cacher_ng_tag=$(yq -r '.images[] | select(.name == "ghcr.io/andsens/phxc-apt-cacher-ng") | .newTag' \
-        "$PKGROOT/workloads/bootstrap/kustomization.yaml")
       docker run --rm --detach \
         --name phxc-apt-cacher-ng --hostname phxc-apt-cacher-ng \
         -v "$PKGROOT/workloads/apt-cacher-ng/config/acng.conf:/etc/apt-cacher-ng/acng.conf:ro" \
         -v "$PKGROOT/images/apt-cacher-ng:/var/cache/apt-cacher-ng:rw" \
-        "ghcr.io/andsens/phxc-apt-cacher-ng:$apt_cacher_ng_tag"
+        "ghcr.io/andsens/phxc-apt-cacher-ng:sha-4e07109"
     fi
 
     info "Building '%s'" "node:$VARIANT"
@@ -104,9 +101,7 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
     fatal "%s does not exist, unable to run create-boot-image" "$artifacts/node.tar"
   fi
 
-  local create_boot_image_tag create_boot_docker_opts=()
-  create_boot_image_tag=$(yq -r '.images[] | select(.name == "ghcr.io/andsens/phxc-disk-utils") | .newTag' \
-    "$PKGROOT/workloads/bootstrap/kustomization.yaml")
+  local create_boot_docker_opts=()
   # shellcheck disable=SC2154
   if ! $__no_sb && [[ -e $HOME/.config/phxc/secureboot.key ]]; then
     create_boot_docker_opts+=(-v "$HOME/.config/phxc/secureboot.key:/workspace/secureboot/tls.key")
@@ -123,7 +118,7 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
     --device=/dev/kvm \
     --group-add "$(stat -c %g /dev/kvm)" \
     --entrypoint /scripts/create-boot-image.sh \
-    "ghcr.io/andsens/phxc-disk-utils:$create_boot_image_tag" --chown $UID
+    "ghcr.io/andsens/phxc-disk-utils:sha-4c67afd" --chown $UID
 
   rm -rf "$PKGROOT/images/$VARIANT.old"
   [[ ! -e "$PKGROOT/images/$VARIANT" ]] || mv "$PKGROOT/images/$VARIANT" "$PKGROOT/images/$VARIANT.old"
