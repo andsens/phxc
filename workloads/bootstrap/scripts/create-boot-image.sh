@@ -38,6 +38,8 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
   declare -A sha256sums
   declare -A boot_files
 
+  ! $DEBUG || export LIBGUESTFS_DEBUG=1 # LIBGUESTFS_TRACE=1
+
   #################################
   ### Extract container archive ###
   #################################
@@ -313,15 +315,6 @@ EOF
       1023
     ) / 1024
   ))
-
-  ! $DEBUG || export LIBGUESTFS_TRACE=1 # LIBGUESTFS_DEBUG=1
-
-  mkdir /usr/lib/modules # supermin bug workaround: https://lists.libguestfs.org/archives/list/guestfs@lists.libguestfs.org/thread/XVZXSSFUA5AISDPJKOI35CQB6LFUBXMU/
-  # Use the kernel already installed in the image to launch supermin
-  export \
-    SUPERMIN_KERNEL=/workspace/boot/vmlinuz \
-    SUPERMIN_KERNEL_VERSION=$kernver \
-    SUPERMIN_MODULES=/workspace/root/usr/lib/modules/$kernver
 
   guestfish -xN /workspace/disk.img=disk:${disk_size_kib}K -- <<EOF
 part-init /dev/sda gpt

@@ -116,7 +116,6 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   fi
 
   docker run --rm -ti \
-    --platform "$DOCKER_PLATFORM" \
     -v "$PKGROOT/workloads/bootstrap/scripts:/scripts:ro" \
     -v "$artifacts:/workspace/artifacts:rw" "${create_boot_docker_opts[@]}" \
     -e "VARIANT=$VARIANT" \
