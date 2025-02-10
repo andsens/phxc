@@ -21,5 +21,5 @@ EOR
 RUN <<EOR
 apt-get -y update
 apt-get -y install --no-install-recommends \
-  linux-image-${TARGETARCH} ipxe-qemu guestfish dosfstools curl systemd-ukify sbsigntool gettext
+  squashfs-tools cpio zstd dosfstools mtools fdisk curl systemd-ukify sbsigntool gettext
 EOR
