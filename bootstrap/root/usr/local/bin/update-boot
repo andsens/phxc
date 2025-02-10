@@ -66,7 +66,7 @@ for varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
     fi
     return 0
   elif [[ $new_rootimg_sha256 = "$failed_rootimg_sha256" ]]; then
-    info "System is outdated (%s) but the newer boot image (%s) failed to boot" "${current_rootimg_sha256:0:8}" "${pending_rootimg_sha256:0:8}"
+    info "System is outdated (%s) but the newer boot image (%s) failed to boot" "${current_rootimg_sha256:0:8}" "${failed_rootimg_sha256:0:8}"
     return 0
   fi
   info "System is outdated (%s), updating now (%s)" "${current_rootimg_sha256:0:8}" "${new_rootimg_sha256:0:8}"
@@ -80,8 +80,8 @@ for varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 
   if [[ $VARIANT = rpi* ]]; then
     if ! rpi-otp-private-key -c -o "$(get-config rpi-otp offset)"; then
-      warning "The RPi OTP is not initialized or not supported, using disk-encryption with a static password"
-      curl_img_reg "$VARIANT/boot.empty-pw.efi" -o/efi/tryboot.img -f
+      warning "RPi OTP is not initialized or not supported, using disk-encryption with a static password"
+      curl_img_reg "$VARIANT/boot.empty-pw.img" -o/efi/tryboot.img -f
     else
       if [[ $(stat -c%s /run/cryptsetup-keys.d/data.key) = 0 ]]; then
         rpi-otp-disk-encryption-key >/run/cryptsetup-keys.d/data.key
