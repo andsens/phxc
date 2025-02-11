@@ -115,8 +115,6 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
     -v "$artifacts:/workspace/artifacts:rw" "${create_boot_docker_opts[@]}" \
     -e "VARIANT=$VARIANT" \
     -e "DEBUG=$DEBUG" \
-    --device=/dev/kvm \
-    --group-add "$(stat -c %g /dev/kvm)" \
     --entrypoint /scripts/create-boot-image.sh \
     "ghcr.io/andsens/phxc-disk-utils:sha-4c67afd" --chown $UID
 

@@ -267,8 +267,6 @@ embed_configs() {
     -v "$PKGROOT/scripts:/scripts:ro" \
     -v "$(realpath "$image"):/workspace/disk.img:rw" \
     -e "DEBUG=$DEBUG" \
-    --device=/dev/kvm \
-    --group-add "$(stat -c %g /dev/kvm)" \
     --entrypoint /scripts/embed-configs.sh \
     ghcr.io/andsens/phxc-disk-utils:sha-4c67afd
 }

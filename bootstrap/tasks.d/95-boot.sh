@@ -7,7 +7,7 @@ PACKAGES+=(
 )
 PACKAGES_TMP+=(
   dracut-network dropbear # for entering the recovery key (+ connection info message)
-  fatresize # boot partition expansion
+  mtools util-linux # wipefs, minfo, mcopy needed for ESP rebuild
 )
 
 case $VARIANT in

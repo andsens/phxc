@@ -38,9 +38,6 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
 
   mkdir -p /workspace/esp-staging/phxc
 
-  # filesystem constants
-  local block_size_b=512 fat_table_size_b=$((1024 + 28)) esp_free_b=$((1024 * 1024 * 4)) disk_size_b
-
   #################################
   ### Extract container archive ###
   #################################
@@ -166,16 +163,21 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
     cp "/workspace/boot/config-${VARIANT}-bootimg.txt" /workspace/bootimg-staging/config.txt
     cp -r /workspace/boot/firmware/* /workspace/bootimg-staging
 
-    disk_size_b=$((
+    local block_size_b=512
+    local bootimg_fat16_table_size_b=$(( 512 * 1024 )) bootimg_files_size_b
+    bootimg_files_size_b=$(($(du -sB$block_size_b /workspace/bootimg-staging | cut -d$'\t' -f1) * block_size_b))
+    # The extra 256 * block_size_b is wiggleroom for directories
+    local disk_size_b=$((
       (
-        fat_table_size_b +
-        $(du -sB$block_size_b /workspace/bootimg-staging | cut -d$'\t' -f1) * block_size_b +
+        bootimg_fat16_table_size_b +
+        bootimg_files_size_b +
+        256 * block_size_b +
         block_size_b - 1
       ) / block_size_b * block_size_b
     ))
 
     truncate -s"$disk_size_b" /workspace/boot.rpi-otp.img
-    mkfs.vfat -F 32 /workspace/boot.rpi-otp.img
+    mkfs.vfat -n "RPI-RAMDISK" /workspace/boot.rpi-otp.img
     mcopy -sbQmi /workspace/boot.rpi-otp.img /workspace/bootimg-staging/* ::/
     sha256sums[boot.rpi-otp.img]=$(sha256sum /workspace/boot.rpi-otp.img | cut -d ' ' -f1)
     artifacts[boot.rpi-otp.img]=/workspace/boot.rpi-otp.img
@@ -183,7 +185,7 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
     printf "phxc.empty-pw" >>/workspace/bootimg-staging/cmdline.txt
 
     truncate -s"$disk_size_b" /workspace/boot.empty-pw.img
-    mkfs.vfat -F 32 /workspace/boot.empty-pw.img
+    mkfs.vfat -n "RPI-RAMDISK" /workspace/boot.empty-pw.img
     mcopy -sbQmi /workspace/boot.empty-pw.img /workspace/bootimg-staging/* ::/
     sha256sums[boot.empty-pw.img]=$(sha256sum /workspace/boot.empty-pw.img | cut -d ' ' -f1)
     artifacts[boot.empty-pw.img]=/workspace/boot.empty-pw.img
@@ -267,20 +269,20 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
   ##################
 
   info "Building disk image from artifacts"
-  local \
-    partition_offset_b=$((1024 * 1024)) \
-    gpt_size_b \
-    esp_size_b
-  gpt_size_b=$((33 * 512))
-  esp_size_b=$((
+  local block_size_b=512
+  local esp_files_size_b esp_reserved_b=$((1024 * 1024 * 4))
+  esp_files_size_b=$(($(du -sB$block_size_b /workspace/esp-staging | cut -d$'\t' -f1) * block_size_b))
+  local esp_fat32_table_size_b=$(( (2 * ((esp_files_size_b + esp_reserved_b) / 1024 / 1024) + 20) * 1024 ))
+  local esp_size_b=$((
     (
-      fat_table_size_b +
-      $(du -sB$block_size_b /workspace/esp-staging | cut -d$'\t' -f1) * block_size_b +
-      esp_free_b +
+      esp_fat32_table_size_b +
+      esp_files_size_b +
+      esp_reserved_b +
       block_size_b - 1
     ) / block_size_b * block_size_b
   ))
-  disk_size_b=$((
+  local gpt_size_b=$((33 * 512)) partition_offset_b=$((1024 * 1024))
+  local disk_size_b=$((
     (
       partition_offset_b +
       esp_size_b +
@@ -290,19 +292,18 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
   ))
 
   truncate -s"$esp_size_b" /workspace/esp.img
-  mkfs.vfat -F 32 /workspace/esp.img
+  mkfs.vfat -n EFI-SYSTEM -F 32 /workspace/esp.img
   mcopy -sbQmi /workspace/esp.img /workspace/esp-staging/* ::/
 
   ! $DEBUG || artifacts[esp.img]=/workspace/esp.img
 
   truncate -s"$disk_size_b" /workspace/disk.img
-  # parted -s -a optimal /workspace/disk.img mklabel gpt mkpart primary fat32 \
-  #   ${partition_offset_b}B $(( partition_offset_b + esp_size_b - 1 ))B set 1 esp on
   sfdisk -q /workspace/disk.img <<EOF
 label: gpt
 start=$(( partition_offset_b / block_size_b )) size=$(( esp_size_b / block_size_b )), type=U, bootable, uuid=$EFI_UUID
 EOF
-  dd if=/workspace/esp.img of=/workspace/disk.img bs=$block_size_b seek=$((partition_offset_b / block_size_b)) conv=notrunc
+  dd if=/workspace/esp.img of=/workspace/disk.img \
+    bs=$block_size_b seek=$((partition_offset_b / block_size_b)) count=$((esp_size_b / block_size_b)) conv=notrunc
 
   artifacts[disk.img]=/workspace/disk.img
 

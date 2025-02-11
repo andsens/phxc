@@ -24,22 +24,30 @@ installkernel() {
 # Install the required file(s) and directories for the module in the initramfs.
 # shellcheck disable=SC2154
 install() {
+  ### Tools ###
   local pkgroot=/usr/local/lib/upkg/.upkg/phxc
-  inst_multiple sha256sum jq lsblk mkfs.ext4 touch fatresize
+  inst jq
   if $DEBUG; then
     inst_multiple cat nano less
   fi
+  inst "$moddir/fat32-size" /usr/bin/fat32-size
+
   inst /etc/systemd/system.conf.d/disk-uuids.conf
   inst /etc/systemd/system.conf.d/variant.conf
 
+  ### Repartitioning ###
+  inst_multiple lsblk mkfs.ext4
+  inst "$moddir/repart.conf" /etc/systemd/system/systemd-repart.service.d/repart.conf
+  inst "$moddir/repart.d/60-data.conf" /etc/repart.d/60-data.conf
+
   ### EFI partition ###
+  inst_multiple mkfs.vfat minfo mcopy wipefs
+  inst_libdir_file gconv/gconv-modules.cache gconv/IBM850.so
   inst "$moddir/repart.d/10-esp.conf" /etc/repart.d/10-esp.conf
   mkdir "$initdir/efi"
 
   ### Data partition ###
-  # Setup via repart
-  inst "$moddir/repart.conf" /etc/systemd/system/systemd-repart.service.d/repart.conf
-  inst "$moddir/repart.d/60-data.conf" /etc/repart.d/60-data.conf
+  inst touch
   inst "$moddir/crypttab" /etc/crypttab
   rm "$initdir/lib/dracut/hooks/cmdline/30-parse-crypt.sh" # Only thing the hook does is put in timeout configs for units it malparsed
 
@@ -77,6 +85,7 @@ install() {
   $SYSTEMCTL -q --root "$initdir" enable "${enable_units[@]}"
 
   ### Root setup ###
+  inst sha256sum
   mkdir -p /mnt/overlay-upper
   mkdir -p "$initdir/overlay/image" "$initdir/overlay/rw"
 

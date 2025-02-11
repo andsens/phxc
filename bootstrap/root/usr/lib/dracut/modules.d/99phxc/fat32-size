@@ -1,0 +1,21 @@
+#!/bin/sh
+set -e
+IFS='
+'
+info=$(minfo -i "$1")
+for line in $info; do
+  case "$line" in
+    sector\ size:*)
+      sector_size=${line#'sector size: '}
+      sector_size=${sector_size%%' bytes'}
+      ;;
+    big\ size:*)
+      sectors=${line#'big size: '}
+      sectors=${sectors%%' sectors'}
+      printf "%d" "$((sectors * sector_size))"
+      exit 0
+      ;;
+  esac
+done
+printf "fat32-size: Unable to determine size of filesystem\n" >&2
+exit 1
