@@ -160,12 +160,10 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
       # See https://github.com/k3s-io/k3s-ansible/issues/179
       cgroup_enable=memory
     )
+
     printf "%s " "${kernel_cmdline[@]}" >/workspace/bootimg-staging/cmdline.txt
-
-    cp "/workspace/boot/config-${VARIANT}.txt" /workspace/esp-staging/config.txt
-
-    sed 's/boot_ramdisk=1/auto_initramfs=1/' "/workspace/boot/config-${VARIANT}.txt" >/workspace/bootimg-staging/config.txt
-
+    cp "/workspace/boot/config-${VARIANT}-esp.txt" /workspace/esp-staging/config.txt
+    cp "/workspace/boot/config-${VARIANT}-bootimg.txt" /workspace/bootimg-staging/config.txt
     cp -r /workspace/boot/firmware/* /workspace/bootimg-staging
 
     disk_size_b=$((

@@ -1,4 +1,4 @@
-boot_ramdisk=1
+auto_initramfs=1
 # For more options and information see
 # http://rptl.io/configtxt
 # Some settings may impact device functionality. See link above for details
