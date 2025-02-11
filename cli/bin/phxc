@@ -218,24 +218,32 @@ renew_kube_client_cert() {
       "kid": .kid,
       "typ": "JWT"
     }' <<<"$admin_jwk" | jq -cS . | base64 -w0 | tr -d '=' | tr '/+' '_-')
-    payload=$(jq -n --arg ca_url "$ca_url" --argjson now "$(date +%s)" --arg kid "$kid" \
-                    --arg jti "$(openssl rand -hex 32)" --arg sub "$username" '{
-      "aud": ($ca_url + "/1.0/sign"),
-      "exp": ($now + 30),
-      "iat": $now,
-      "iss": $kid,
-      "jti": $jti,
-      "nbf": ($now - 30),
-      "sans": [$sub],
-      "sub": $sub
-    }' | jq -cS . | base64 -w0 | tr -d '=' | tr '/+' '_-')
-    signature=$(step kms sign --format jws --in <(printf "%s.%s" "$header" "$payload") \
-      --kms "sshagentkms" "sshagentkms:$ssh_keyname")
-    if ! step_logs=$(step ca certificate --ca-url="$ca_url" --root="$KUBE_API_CLIENT_CA_CRT" \
-      --token="$header.$payload.$signature" --force \
-      "$username" "$CONFIG_DIR/$username.crt" "$CONFIG_DIR/$username.key" 2>&1); then
-      fatal "Failed to issue kube-api certificate:\n%s" "$step_logs"
-    fi
+    local tries_remaining=3
+    while true; do
+      payload=$(jq -n --arg ca_url "$ca_url" --argjson now "$(date +%s)" --arg kid "$kid" \
+                      --arg jti "$(openssl rand -hex 32)" --arg sub "$username" '{
+        "aud": ($ca_url + "/1.0/sign"),
+        "exp": ($now + 30),
+        "iat": $now,
+        "iss": $kid,
+        "jti": $jti,
+        "nbf": ($now - 30),
+        "sans": [$sub],
+        "sub": $sub
+      }' | jq -cS . | base64 -w0 | tr -d '=' | tr '/+' '_-')
+      signature=$(step kms sign --format jws --in <(printf "%s.%s" "$header" "$payload") \
+        --kms "sshagentkms" "sshagentkms:$ssh_keyname")
+      if step_logs=$(step ca certificate --ca-url="$ca_url" --root="$KUBE_API_CLIENT_CA_CRT" \
+        --token="$header.$payload.$signature" --force \
+        "$username" "$CONFIG_DIR/$username.crt" "$CONFIG_DIR/$username.key" 2>&1); then
+        return 0
+      elif (( --tries_remaining > 0 )); then
+        error "Failed to issue kube-api certificate (%d tries remaining):\n%s" "$tries_remaining" "$step_logs"
+        sleep 5
+      else
+        fatal "Failed to issue kube-api certificate (aborting):\n%s" "$step_logs"
+      fi
+    done
   fi
 }
 
