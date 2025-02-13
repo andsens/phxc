@@ -296,8 +296,8 @@ bootstrap() {
   fi
   # shellcheck disable=SC2046
   if $update; then
-    info "Updating all nodes"
-    update_nodes $(kubectl --context phxc get nodes -ojsonpath='{.items[*].metadata.name}')
+    info "Updating all %s nodes" "$variant"
+    update_nodes $(kubectl --context phxc get nodes --selector="cluster.local/variant=$variant" -ojsonpath='{.items[*].metadata.name}')
   fi
 }
 
