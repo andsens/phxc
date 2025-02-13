@@ -9,4 +9,6 @@ ConditionPathExists=!/var/lib/phxc/swap
 WantedBy=sysinit.target
 
 [Service]
+Type=oneshot
+RemainAfterExit=yes
 ExecStart=mkswap -U clear --size 2G --file /var/lib/phxc/swap
