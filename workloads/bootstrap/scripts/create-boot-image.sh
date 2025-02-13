@@ -160,7 +160,9 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
 
     printf "%s " "${kernel_cmdline[@]}" >/workspace/bootimg-staging/cmdline.txt
     cp "/workspace/boot/config-${VARIANT}-esp.txt" /workspace/esp-staging/config.txt
+    cp "/workspace/boot/config-${VARIANT}-esp.txt" /workspace/esp-staging/tryboot.txt
     cp "/workspace/boot/config-${VARIANT}-bootimg.txt" /workspace/bootimg-staging/config.txt
+    cp "/workspace/boot/config-${VARIANT}-bootimg.txt" /workspace/bootimg-staging/tryboot.txt
     cp -r /workspace/boot/firmware/* /workspace/bootimg-staging
 
     local block_size_b=512
