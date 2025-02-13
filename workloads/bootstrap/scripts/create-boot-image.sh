@@ -112,8 +112,8 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
 
   local share_phxc=/workspace/initramfs/usr/share/phxc
   mkdir "$share_phxc"
-  printf '%s  /efi/phxc/root.%s.img' "${sha256sums[root.img]}" "${sha256sums[root.img]}" >"$share_phxc/root.img.sha256.checksum"
-  printf '%s' "${sha256sums[root.img]}" >"$share_phxc/root.img.sha256"
+  printf '%s  /efi/phxc/root.%s.img\n' "${sha256sums[root.img]}" "${sha256sums[root.img]}" >"$share_phxc/root.img.sha256.checksum"
+  printf '%s\n' "${sha256sums[root.img]}" >"$share_phxc/root.img.sha256"
   (
     cd /workspace/initramfs
     find . -print0 | cpio -o --null --format=newc 2>/dev/null | zstd -15 >/workspace/boot/initramfs.img
