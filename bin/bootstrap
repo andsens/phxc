@@ -13,10 +13,10 @@ Usage:
   bootstrap [options] VARIANT
 
 Options:
-  --debug  Enable debug build (installs debug tools, no artifact cleanup, etc.)
-  --embed-cluster-config PATH  Embed cluster.json in root image
-  --no-sb  Do not sign the UKI with secureboot certificate if present
+  --setup-admin PATH  Embed admin credentials from cluster.json in root image
   --resume  Resume failed create-boot-image run, reuse VARIANT.tmp
+  --no-sb  Do not sign the UKI with secureboot certificate if present
+  --debug  Enable debug build (installs debug tools, no artifact cleanup, etc.)
 
 Supported variants:
   amd64 - x86_64 image
@@ -27,21 +27,20 @@ Supported variants:
 # shellcheck disable=2016,2086,2317,1090,1091,2034
 docopt() { local v='2.0.2'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
-%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:491};usage=${DOC:29:36}
-digest=cc679;options=(' --debug 0' ' --embed-cluster-config 1' ' --no-sb 0' ' '\
-'--resume 0');node_0(){ switch __debug 0;};node_1(){ value \
-__embed_cluster_config 1;};node_2(){ switch __no_sb 2;};node_3(){ switch \
-__resume 3;};node_4(){ value VARIANT a;};node_5(){ optional 0 1 2 3;};node_6(){
-sequence 5 4;};cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2
-printf "%s\n" "${DOC:29:36}" >&2;exit 1;}';local varnames=(__debug \
-__embed_cluster_config __no_sb __resume VARIANT) varname;for varname in \
-"${varnames[@]}"; do unset "var_$varname";done;parse 6 "$@";local \
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:505};usage=${DOC:29:36}
+digest=2c6f2;options=(' --setup-admin 1' ' --resume 0' ' --no-sb 0' ' --debug '\
+'0');node_0(){ value __setup_admin 0;};node_1(){ switch __resume 1;};node_2(){
+switch __no_sb 2;};node_3(){ switch __debug 3;};node_4(){ value VARIANT a;}
+node_5(){ optional 0 1 2 3;};node_6(){ sequence 5 4;};cat <<<' docopt_exit() {
+[[ -n $1 ]] && printf "%s\n" "$1" >&2;printf "%s\n" "${DOC:29:36}" >&2;exit 1;}'
+local varnames=(__setup_admin __resume __no_sb __debug VARIANT) varname;for \
+varname in "${varnames[@]}"; do unset "var_$varname";done;parse 6 "$@";local \
 p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset "$p$varname"
-done;eval $p'__debug=${var___debug:-false};'$p'__embed_cluster_config=${var___'\
-'embed_cluster_config:-};'$p'__no_sb=${var___no_sb:-false};'$p'__resume=${var_'\
-'__resume:-false};'$p'VARIANT=${var_VARIANT:-};';local docopt_i=1;[[ \
-$BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for \
-varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
+done;eval $p'__setup_admin=${var___setup_admin:-};'$p'__resume=${var___resume:'\
+'-false};'$p'__no_sb=${var___no_sb:-false};'$p'__debug=${var___debug:-false};'\
+$p'VARIANT=${var_VARIANT:-};';local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && \
+docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for varname in "${varnames[@]}"; \
+do declare -p "$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' bootstrap`
   eval "$(docopt "$@")"
 
@@ -67,7 +66,7 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
     "$PKGROOT/bootstrap/scripts/bundle.sh" "$bundle"
 
     local bootstrap_docker_opts=()
-    [[ -z $__embed_cluster_config ]] || bootstrap_docker_opts+=(-v "$(realpath "$__embed_cluster_config"):/workspace/cluster.json:rw")
+    [[ -z $__setup_admin ]] || bootstrap_docker_opts+=(-v "$(realpath "$__setup_admin"):/workspace/cluster.json:rw")
 
     if [[ $(docker container inspect -f '{{.State.Running}}' phxc-apt-cacher-ng 2>/dev/null) != "true" ]]; then
       info "Starting apt-cacher-ng"
