@@ -13,4 +13,4 @@ Type=oneshot
 RemainAfterExit=yes
 ExecCondition=bash -c '! diff -q /run/initramfs/root.img.sha256 /efi/phxc/pending.sha256'
 ExecStart=mv /efi/phxc/pending.sha256 /efi/phxc/failed.sha256
-ExecStart=rm -f /efi/EFI/Linux/uki.try.efi /efi/tryboot.img
+ExecStart=rm -f /efi/EFI/BOOT/BOOT.TRY.EFI /efi/tryboot.img
