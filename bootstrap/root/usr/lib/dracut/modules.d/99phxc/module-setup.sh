@@ -57,7 +57,7 @@ install() {
     mkdir "$initdir/var/lib/tpm"
     chown 101:102 "$initdir/var/lib/tpm"
   else
-    [[ ! -e /usr/local/bin/rpi-otp-disk-encryption-key ]] || inst /usr/local/bin/rpi-otp-disk-encryption-key
+    [[ ! -e /usr/local/sbin/rpi-otp-disk-encryption-key ]] || inst /usr/bin/rpi-otp-disk-encryption-key
   fi
 
   if [[ -e /home/admin/.ssh/authorized_keys ]]; then
