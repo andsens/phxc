@@ -1,30 +1,50 @@
-[Unit]
-Description=Populate the RPi OTP memory with random data
-RequiresMountsFor=/efi
+#!/usr/bin/env bash
+# shellcheck source-path=../../../../..
+set -Eeo pipefail; shopt -s inherit_errexit
+PKGROOT=/usr/local/lib/upkg/.upkg/phxc
+source "$PKGROOT/.upkg/records.sh/records.sh"
 
-[Install]
-WantedBy=multi-user.target
+main() {
+  DOC="phxc-rpi - Manage RaspberryPI secure-boot & disk-encryption
+Usage:
+  phxc-rpi otp init
+  phxc-rpi secureboot (enable|check|persist)
+"
+# docopt parser below, refresh this parser with `docopt.sh phxc-rpi`
+# shellcheck disable=2016,2086,2317,1090,1091,2034
+docopt() { local v='2.0.2'; source \
+"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:131};usage=${DOC:60:71}
+digest=330e4;options=();node_0(){ switch otp a:otp;};node_1(){ switch init \
+a:init;};node_2(){ switch secureboot a:secureboot;};node_3(){ switch enable \
+a:enable;};node_4(){ switch check a:check;};node_5(){ switch persist a:persist;}
+node_6(){ sequence 0 1;};node_7(){ sequence 2 8;};node_8(){ choice 3 4 5;}
+node_9(){ choice 6 7;};cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" \
+"$1" >&2;printf "%s\n" "${DOC:60:71}" >&2;exit 1;}';local varnames=(otp init \
+secureboot enable check persist) varname;for varname in "${varnames[@]}"; do
+unset "var_$varname";done;parse 9 "$@";local p=${DOCOPT_PREFIX:-''};for \
+varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'otp=${var_otp:'\
+'-false};'$p'init=${var_init:-false};'$p'secureboot=${var_secureboot:-false};'\
+$p'enable=${var_enable:-false};'$p'check=${var_check:-false};'$p'persist=${var'\
+'_persist:-false};';local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2
+for ((;docopt_i>0;docopt_i--)); do for varname in "${varnames[@]}"; do declare \
+-p "$p$varname";done;done;}
+# docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' phxc-rpi`
+  eval "$(docopt "$@")"
 
-[Service]
-Type=oneshot
-RemainAfterExit=yes
-ExecCondition=bash -ec '! rpi-otp-private-key -c \
-  -o $(get-config rpi-otp offset) \
-  -l $(get-config rpi-otp length)'
-ExecStart=bash -ec ':;\
-  o=$(get-config rpi-otp offset); \
-  l=$(get-config rpi-otp length); \
-  echo rpi-otp-private-key -w -o $o -l $l "$(openssl rand -hex $((l*2)))"'
+  # shellcheck disable=SC2154
+  if $otp && $init; then
+    local otp_offset
+    otp_offset=$(get-config rpi-otp offset)
+    if rpi-otp-private-key -c -o "$otp_offset" -l 8; then
+      warning "RPi OTP is already initialized at offset %d" "$otp_offset"
+    else
+      type openssl &>/dev/null || fatal "openssl not found"
+      local key
+      key=$(openssl rand -hex 16)
+      rpi-otp-private-key -w -o "$otp_offset" -l 8 "$key"
+    fi
+  fi
+}
 
-
-[Unit]
-Description=Write the secureboot cert to the RPi OTP
-ConditionPathExists=/usr/local/share/phxc/secureboot.der
-
-[Install]
-WantedBy=multi-user.target
-
-[Service]
-Type=oneshot
-RemainAfterExit=yes
-ExecStart=true
+main "$@"
