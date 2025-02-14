@@ -5,20 +5,20 @@ if [[ $VARIANT = rpi* ]]; then
   curl -Lso/etc/apt/trusted.gpg.d/raspberrypi.asc http://archive.raspberrypi.com/debian/raspberrypi.gpg.key
   cat <<EOF >/etc/apt/sources.list.d/raspberrypi.sources
 Types: deb
-URIs: http://archive.raspberrypi.com/debian
+URIs: https://archive.raspberrypi.com/debian
 Suites: bookworm
 Components: main
 EOF
   # Some deps are needed from bookworm
   cat <<EOF >/etc/apt/sources.list.d/bookworm.sources
 Types: deb
-URIs: http://deb.debian.org/debian
+URIs: https://deb.debian.org/debian
 Suites: bookworm bookworm-updates
 Components: main contrib non-free non-free-firmware
 Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
 
 Types: deb
-URIs: http://deb.debian.org/debian-security
+URIs: https://deb.debian.org/debian-security
 Suites: bookworm-security
 Components: main contrib non-free non-free-firmware
 Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
