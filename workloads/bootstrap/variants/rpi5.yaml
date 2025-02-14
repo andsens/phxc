@@ -14,7 +14,6 @@ spec:
           labels:
             app.kubernetes.io/name: bootstrap
             app.kubernetes.io/component: rpi5
-            cluster.local/allow-apiserver-egress: "true"
             cluster.local/allow-internet-egress: "true"
         spec:
           restartPolicy: Never
