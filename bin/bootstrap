@@ -68,21 +68,9 @@ do declare -p "$p$varname";done;done;}
     local bootstrap_docker_opts=()
     [[ -z $__setup_admin ]] || bootstrap_docker_opts+=(-v "$(realpath "$__setup_admin"):/workspace/cluster.json:rw")
 
-    if [[ $(docker container inspect -f '{{.State.Running}}' phxc-apt-cacher-ng 2>/dev/null) != "true" ]]; then
-      info "Starting apt-cacher-ng"
-      trap_append "docker stop phxc-apt-cacher-ng >/dev/null" EXIT
-      mkdir -p "$PKGROOT/images/apt-cacher-ng"
-      docker run --rm --detach \
-        --name phxc-apt-cacher-ng --hostname phxc-apt-cacher-ng \
-        -v "$PKGROOT/workloads/apt-cacher-ng/config/acng.conf:/etc/apt-cacher-ng/acng.conf:ro" \
-        -v "$PKGROOT/images/apt-cacher-ng:/var/cache/apt-cacher-ng:rw" \
-        "ghcr.io/andsens/phxc-apt-cacher-ng:sha-4e07109"
-    fi
-
     info "Building '%s'" "node:$VARIANT"
     docker run --rm -ti \
       --platform "$DOCKER_PLATFORM" \
-      --add-host "apt-cacher-ng.phxc.svc.cluster.local:$(docker container inspect -f '{{.NetworkSettings.IPAddress}}' phxc-apt-cacher-ng)" \
       -v "$PKGROOT/workloads/bootstrap/Dockerfile:/workspace/context/Dockerfile:ro" \
       -v "$bundle:/workspace/phxc.tar.gz:ro" \
       -v "$artifacts:/workspace/artifacts:rw" \
