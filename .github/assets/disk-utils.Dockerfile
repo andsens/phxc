@@ -21,5 +21,6 @@ EOR
 RUN <<EOR
 apt-get -y update
 apt-get -y install --no-install-recommends \
-  squashfs-tools cpio zstd dosfstools mtools fdisk curl systemd-ukify sbsigntool gettext
+  squashfs-tools cpio zstd dosfstools mtools fdisk curl systemd-ukify gettext \
+  sbsigntool openssl xxd
 EOR
