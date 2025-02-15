@@ -8,6 +8,7 @@ Types: deb
 URIs: https://archive.raspberrypi.com/debian
 Suites: bookworm
 Components: main
+Signed-By: /etc/apt/trusted.gpg.d/raspberrypi.asc
 EOF
   # Some deps are needed from bookworm
   cat <<EOF >/etc/apt/sources.list.d/bookworm.sources
