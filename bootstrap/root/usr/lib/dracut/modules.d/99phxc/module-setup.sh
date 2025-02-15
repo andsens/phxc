@@ -77,6 +77,11 @@ install() {
   local src unit enable_units
   for src in "$pkgroot/bootstrap/systemd-units/initramfs"/*; do
     unit=$(basename "$src")
+    if [[ $VARIANT = rpi* ]]; then
+      [[ $unit != cryptsetup-tpm2.service ]] || continue
+    else
+      [[ $unit != cryptsetup-rpi-otp.service ]] || continue
+    fi
     if [[ ! $DEBUG && $unit == sysroot-mnt-overlay\\x2dupper.mount ]]; then
       continue
     fi
