@@ -35,6 +35,16 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
 
   declare -A artifacts
   declare -A sha256sums
+  local secureboot_key=/workspace/secureboot/tls.key \
+        secureboot_crt=/workspace/secureboot/tls.crt
+  if [[ -e $secureboot_key ]]; then
+    info "Checking secureboot key"
+    openssl rsa -in $secureboot_key -noout -check || fatal "Secureboot key must be a 2048 bit RSA key"
+    local sbkeyinfo=
+    sbkeyinfo=$(openssl rsa -in $secureboot_key -noout -text)
+    [[ $sbkeyinfo =~ Private-Key:\ \(([0-9]+)\ bit, ]] || fatal "Unable to determine secureboot keysize"
+    [[ ${BASH_REMATCH[1]} = 2048 ]] || fatal "Secureboot key must be a 2048 bit RSA key (got %d bit)" "${BASH_REMATCH[1]}"
+  fi
 
   mkdir -p /workspace/esp-staging/phxc
 
@@ -184,6 +194,14 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
     sha256sums[boot.rpi-otp.img]=$(sha256sum /workspace/boot.rpi-otp.img | cut -d ' ' -f1)
     artifacts[boot.rpi-otp.img]=/workspace/boot.rpi-otp.img
 
+    printf "%s\nts: %d\n" "${sha256sums[boot.rpi-otp.img]}" "$(date -u +%s)" >/workspace/boot.rpi-otp.sig
+    if [[ -e $secureboot_key ]]; then
+      local bootimg_sig
+      bootimg_sig=$(openssl dgst -sign $secureboot_key -sha256 /workspace/boot.rpi-otp.img | xxd -p -c0)
+      printf "rsa2048: %s\n" "$bootimg_sig" >>/workspace/boot.rpi-otp.sig
+    fi
+    artifacts[boot.rpi-otp.sig]=/workspace/boot.rpi-otp.sig
+
     printf "phxc.empty-pw" >>/workspace/bootimg-staging/cmdline.txt
 
     truncate -s"$disk_size_b" /workspace/boot.empty-pw.img
@@ -192,6 +210,10 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
     sha256sums[boot.empty-pw.img]=$(sha256sum /workspace/boot.empty-pw.img | cut -d ' ' -f1)
     artifacts[boot.empty-pw.img]=/workspace/boot.empty-pw.img
     cp /workspace/boot.empty-pw.img /workspace/esp-staging/boot.img
+
+    printf "%s\nts: %d\n" "${sha256sums[boot.rpi-otp.img]}" "$(date -u +%s)" >/workspace/boot.empty-pw.sig
+    artifacts[boot.empty-pw.sig]=/workspace/boot.empty-pw.sig
+    cp /workspace/boot.empty-pw.sig /workspace/esp-staging/boot.sig
   fi
 
   ############################
@@ -227,9 +249,7 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
     artifacts[uki.empty-pw.efi]=$uki_empty_pw_path
     sha256sums[uki.empty-pw.efi]=$(sha256sum $uki_empty_pw_path | cut -d ' ' -f1)
 
-    local \
-      secureboot_key=/workspace/secureboot/tls.key secureboot_crt=/workspace/secureboot/tls.crt \
-      uki_tpm2_path=/workspace/boot/uki.tpm2.efi uki_secure_opts=()
+    local uki_tpm2_path=/workspace/boot/uki.tpm2.efi uki_secure_opts=()
     # Sign UKI if secureboot key & cert are present
     if [[ -e $secureboot_key && -e $secureboot_crt ]]; then
       uki_secure_opts+=("--secureboot-private-key=$secureboot_key" "--secureboot-certificate=$secureboot_crt")

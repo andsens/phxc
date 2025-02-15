@@ -82,6 +82,7 @@ for varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
     if ! rpi-otp-private-key -c -o "$(get-config rpi-otp offset)"; then
       warning "RPi OTP is not initialized or not supported, using disk-encryption with a static password"
       curl_img_reg "$VARIANT/boot.empty-pw.img" -o/efi/tryboot.img -f
+      curl_img_reg "$VARIANT/boot.empty-pw.sig" -o/efi/tryboot.sig -f
     else
       if [[ $(stat -c%s /run/cryptsetup-keys.d/data.key) = 0 ]]; then
         rpi-otp-disk-encryption-key >/run/cryptsetup-keys.d/data.key
@@ -89,6 +90,7 @@ for varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
           --new-keyfile /run/cryptsetup-keys.d/data.key "/dev/disk/by-partuuid/${DATA_UUID}"
       fi
       curl_img_reg "$VARIANT/boot.rpi-otp.img" -o/efi/tryboot.img -f
+      curl_img_reg "$VARIANT/boot.rpi-otp.sig" -o/efi/tryboot.sig -f
     fi
   else
     if ! compgen -G '/sys/kernel/security/tpm*' &>/dev/null; then

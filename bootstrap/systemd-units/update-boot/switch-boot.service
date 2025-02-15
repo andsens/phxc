@@ -12,6 +12,6 @@ Type=oneshot
 RemainAfterExit=yes
 ExecCondition=diff -q /run/initramfs/root.img.sha256 /efi/phxc/pending.sha256
 ExecStart=bash -eo pipefail
-StandardInputText=if [[ ${VARIANT} = rpi* ]]; then mv /efi/tryboot.img /efi/boot.img; \
+StandardInputText=if [[ ${VARIANT} = rpi* ]]; then mv /efi/tryboot.img /efi/boot.img; mv /efi/tryboot.sig /efi/boot.sig; \
                   else mv /efi/EFI/BOOT/BOOT.TRY.EFI /efi/EFI/BOOT/BOOT${EFI_ARCH}.EFI; fi
 ExecStartPost=rm /efi/phxc/pending.sha256

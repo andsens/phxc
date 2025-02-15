@@ -103,7 +103,7 @@ do declare -p "$p$varname";done;done;}
     -e "VARIANT=$VARIANT" \
     -e "DEBUG=$DEBUG" \
     --entrypoint /scripts/create-boot-image.sh \
-    "ghcr.io/andsens/phxc-disk-utils:sha-4c67afd" --chown $UID
+    "ghcr.io/andsens/phxc-disk-utils:sha-e1bf136" --chown $UID
 
   rm -rf "$PKGROOT/images/$VARIANT.old"
   [[ ! -e "$PKGROOT/images/$VARIANT" ]] || mv "$PKGROOT/images/$VARIANT" "$PKGROOT/images/$VARIANT.old"
