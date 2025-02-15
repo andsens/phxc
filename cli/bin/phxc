@@ -342,10 +342,10 @@ update_nodes() {
     done
     new_rootimg_sha256=$(LC_ALL=C ssh "admin@$node" cat /run/initramfs/root.img.sha256)
     if [[ $current_rootimg_sha256 = "$new_rootimg_sha256" ]]; then
-      info "%s failed to update to the new image (still on %s)" "$node" "$current_rootimg_sha256"
+      info "%s failed to update to the new image (still on %s)" "$node" "${current_rootimg_sha256:0:8}"
       failed_nodes+=("$node")
     else
-      info "%s successfully updated to the new image (updated from %s to %s)" "$node" "$current_rootimg_sha256" "$new_rootimg_sha256"
+      info "%s successfully updated to the new image (updated from %s to %s)" "$node" "${current_rootimg_sha256:0:8}" "${new_rootimg_sha256:0:8}"
     fi
   done
   if [[ ${#failed_nodes[@]} -gt 0 ]]; then
