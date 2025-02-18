@@ -76,6 +76,12 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
   mv /workspace/root/etc/fstab.tmp /workspace/root/etc/fstab
   # When bootstrapping outside kubernetes, kaniko includes /workspace in the snapshot for some reason, remove it here
   rm -rf /workspace/root/workspace
+  if [[ -e $secureboot_key ]]; then
+    openssl rsa -in $secureboot_key -pubout >/workspace/root/usr/local/share/phxc/secureboot.pub
+    if [[ -e $secureboot_crt ]]; then
+      cp $secureboot_crt /workspace/root/usr/local/share/phxc/secureboot.crt
+    fi
+  fi
 
   # Move boot dir to workspace before creating squashfs image
   mv /workspace/root/boot /workspace/boot
