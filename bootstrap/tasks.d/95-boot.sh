@@ -22,7 +22,7 @@ case $VARIANT in
   )
   ;;
   rpi*)
-  # See 30-rpi.sh
+  # See rpi_kernel further down
   ;;
   *) printf "Unknown variant: %s\n" "$VARIANT" >&2; return 1 ;;
 esac

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 if [[ $VARIANT = rpi* ]]; then
-  PACKAGES+=(raspi-config rpi-update rpi-eeprom)
+  PACKAGES+=(rpi-eeprom flashrom)
   curl -Lso/etc/apt/trusted.gpg.d/raspberrypi.asc http://archive.raspberrypi.com/debian/raspberrypi.gpg.key
   cat <<EOF >/etc/apt/sources.list.d/raspberrypi.sources
 Types: deb
