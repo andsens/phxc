@@ -41,7 +41,7 @@ for ((;docopt_i>0;docopt_i--)); do for varname in "${varnames[@]}"; do declare \
     else
       type openssl &>/dev/null || fatal "openssl not found"
       local key
-      key=$(openssl rand -hex 16)
+      key=$(openssl rand -hex 32)
       rpi-otp-private-key -w -o "$otp_offset" -l 8 "$key"
     fi
   elif $secureboot && $check; then
