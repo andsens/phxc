@@ -1,8 +1,8 @@
 [Unit]
 Description=Uploads the disk encryption recovery key to the cluster
-Requires=install-node-packages.service workload@phxc.target
+Requires=install-node-packages.service workload@bootstrap.target
 Wants=enroll-recovery-key.service
-After=enroll-recovery-key.service install-node-packages.service workload@phxc.target
+After=enroll-recovery-key.service install-node-packages.service workload@bootstrap.target
 AssertPathExists=/var/lib/phxc/disk-encryption.recovery.key
 
 [Install]
@@ -12,5 +12,6 @@ WantedBy=multi-user.target
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=bash -eo pipefail
-StandardInputText=/var/lib/phxc/.upkg/.bin/kubectl -n phxc get secret -oname | grep -q "secret/diskenc-recovery-%H" || \
-  /var/lib/phxc/.upkg/.bin/kubectl -n phxc create secret generic --from-file=/var/lib/phxc/disk-encryption.recovery.key "diskenc-recovery-%H"
+StandardInputText=manifest=$(kubectl -n phxc create secret generic --dry-run=client -o yaml --from-file=/var/lib/phxc/disk-encryption.recovery.key "diskenc-recovery-%H"); \
+                  printf "%%s\n" "$manifest" | kubectl create -f - || \
+                  printf "%%s\n" "$manifest" | kubectl replace -f -
