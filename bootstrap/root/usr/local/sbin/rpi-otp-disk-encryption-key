@@ -1,9 +1,1 @@
-#!/bin/sh
-[ $# -eq 1 ] || { printf "Usage: rpi-otp-disk-encryption-key DEST"; exit 1; }
-o=$(get-config rpi-otp offset)
-k=$(rpi-otp-private-key -o "$o" -l 8)
-s=$(get-config rpi-otp key-derivation-suffix)
-openssl kdf \
-  -kdfopt info:"disk-encryption-key-$s" -keylen 32 \
-  -kdfopt digest:SHA3-512 -kdfopt hexkey:"$k" \
-  -out "$1" -binary HKDF
+../lib/upkg/.upkg/phxc/bootstrap/bin/rpi-otp-disk-encryption-key
