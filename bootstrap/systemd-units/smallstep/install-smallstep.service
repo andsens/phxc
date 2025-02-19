@@ -6,5 +6,6 @@ After=var-lib-phxc.mount network-online.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=upkg add -f /usr/local/lib/upkg/.upkg/phxc/lib/common-context/step-cli.upkg.json
 WorkingDirectory=/var/lib/phxc
+ExecStart=upkg add -f /usr/local/lib/upkg/.upkg/phxc/lib/common-context/step-cli.upkg.json
+ExecStartPost=ln -s ../../../var/lib/phxc/.upkg/.bin/step /usr/local/bin/step

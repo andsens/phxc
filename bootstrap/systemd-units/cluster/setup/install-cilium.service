@@ -13,7 +13,7 @@ ExecCondition=bash -ec '! kubectl get -n kube-system deployment cilium-operator 
 ExecStart=bash -eo pipefail
 StandardInputText=cidr_pod_ipv4=$(get-config cluster cidrs.pod.ipv4); \
   cidr_pod_ipv6=$(get-config cluster cidrs.pod.ipv6); \
-  /var/lib/phxc/.upkg/.bin/cilium install --version=1.15.5 \
+  cilium install --version=1.15.5 \
     --set ipam.mode=cluster-pool \
     --set ipam.operator.clusterPoolIPv4PodCIDRList=$cidr_pod_ipv4 \
     --set ipam.operator.clusterPoolIPv6PodCIDRList=$cidr_pod_ipv6 \

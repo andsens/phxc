@@ -12,3 +12,7 @@ Type=oneshot
 RemainAfterExit=yes
 ExecStart=upkg add -fp node /usr/local/lib/upkg/.upkg/phxc/bootstrap/assets/node.upkg.json
 WorkingDirectory=/var/lib/phxc
+ExecStartPost=ln -s ../../../var/lib/phxc/.upkg/.bin/k3s /usr/local/bin/k3s
+ExecStartPost=ln -s ../../../var/lib/phxc/.upkg/.bin/k3s /usr/local/bin/kubectl
+ExecStartPost=ln -s ../../../var/lib/phxc/.upkg/.bin/k3s /usr/local/bin/crictl
+ExecStartPost=ln -s ../../../var/lib/phxc/.upkg/.bin/k3s /usr/local/bin/ctr

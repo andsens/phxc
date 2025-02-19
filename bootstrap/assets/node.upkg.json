@@ -9,43 +9,7 @@
       "sha256": "256ca852ff2ca165afbc14ed34df450aa1295e4eb01e3d1da9f251f37e546712"
     },
     {
-      "name": "kubectl",
-      "os/arch": "Linux/x86_64",
-      "file": "https://github.com/k3s-io/k3s/releases/download/v1.31.2%2Bk3s1/k3s",
-      "sha256": "256ca852ff2ca165afbc14ed34df450aa1295e4eb01e3d1da9f251f37e546712"
-    },
-    {
-      "name": "crictl",
-      "os/arch": "Linux/x86_64",
-      "file": "https://github.com/k3s-io/k3s/releases/download/v1.31.2%2Bk3s1/k3s",
-      "sha256": "256ca852ff2ca165afbc14ed34df450aa1295e4eb01e3d1da9f251f37e546712"
-    },
-    {
-      "name": "ctr",
-      "os/arch": "Linux/x86_64",
-      "file": "https://github.com/k3s-io/k3s/releases/download/v1.31.2%2Bk3s1/k3s",
-      "sha256": "256ca852ff2ca165afbc14ed34df450aa1295e4eb01e3d1da9f251f37e546712"
-    },
-    {
       "name": "k3s",
-      "os/arch": "Linux/aarch64",
-      "file": "https://github.com/k3s-io/k3s/releases/download/v1.31.2%2Bk3s1/k3s-arm64",
-      "sha256": "a9c4cdb7f038ea46f84bdf1b5c1e518637a8bdf84c39f281a6400bc7e9d8f9f0"
-    },
-    {
-      "name": "kubectl",
-      "os/arch": "Linux/aarch64",
-      "file": "https://github.com/k3s-io/k3s/releases/download/v1.31.2%2Bk3s1/k3s-arm64",
-      "sha256": "a9c4cdb7f038ea46f84bdf1b5c1e518637a8bdf84c39f281a6400bc7e9d8f9f0"
-    },
-    {
-      "name": "crictl",
-      "os/arch": "Linux/aarch64",
-      "file": "https://github.com/k3s-io/k3s/releases/download/v1.31.2%2Bk3s1/k3s-arm64",
-      "sha256": "a9c4cdb7f038ea46f84bdf1b5c1e518637a8bdf84c39f281a6400bc7e9d8f9f0"
-    },
-    {
-      "name": "ctr",
       "os/arch": "Linux/aarch64",
       "file": "https://github.com/k3s-io/k3s/releases/download/v1.31.2%2Bk3s1/k3s-arm64",
       "sha256": "a9c4cdb7f038ea46f84bdf1b5c1e518637a8bdf84c39f281a6400bc7e9d8f9f0"
