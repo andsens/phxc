@@ -269,7 +269,7 @@ embed_configs() {
     -v "$(realpath "$image"):/workspace/disk.img:rw" \
     -e "DEBUG=$DEBUG" \
     --entrypoint /scripts/embed-configs.sh \
-    ghcr.io/andsens/phxc-disk-utils:sha-e1bf136
+    ghcr.io/andsens/phxc-disk-utils:sha-db8e6bd
 }
 
 recovery_keys() {

@@ -47,6 +47,7 @@ boot() {
   if [[ $VARIANT = rpi5 ]]; then
     cp "$PKGROOT/bootstrap/assets/config-rpi5-bootimg.txt" /boot
     cp "$PKGROOT/bootstrap/assets/config-rpi5-esp.txt" /boot
+    cp "$PKGROOT/bootstrap/assets/boot.conf" /boot
   else
     # Copy efi stub to /boot so create-boot-image can use it for the UKI, but uninstall it from the image
     cp -r /usr/lib/systemd/boot/efi /boot/systemd-boot-efi

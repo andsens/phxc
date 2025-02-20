@@ -3,7 +3,7 @@ kind: Kustomization
 namespace: phxc
 images:
 - name: ghcr.io/andsens/phxc-disk-utils
-  newTag: sha-e1bf136
+  newTag: sha-db8e6bd
 resources:
 - network-policy.yaml
 - variants/amd64.yaml

@@ -153,16 +153,22 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
 
     mkdir /workspace/bootimg-staging
 
+    # kernel/initramfs/firmware names
+    local firmware_dir bootcode_filename
     case $VARIANT in
       rpi2|rpi3)
         cp /workspace/boot/vmlinuz /workspace/bootimg-staging/kernel7.img
         cp /workspace/boot/initramfs.img /workspace/bootimg-staging/initramfs7
         ;;
       rpi4)
+        firmware_dir=/workspace/root/usr/lib/firmware/raspberrypi/bootloader-2711/stable
+        bootcode_filename=bootcode4.bin
         cp /workspace/boot/vmlinuz /workspace/bootimg-staging/kernel8.img
         cp /workspace/boot/initramfs.img /workspace/bootimg-staging/initramfs8
         ;;
       rpi5)
+        firmware_dir=/workspace/root/usr/lib/firmware/raspberrypi/bootloader-2712/stable
+        bootcode_filename=bootcode5.bin
         cp /workspace/boot/vmlinuz /workspace/bootimg-staging/kernel_2712.img
         cp /workspace/boot/initramfs.img /workspace/bootimg-staging/initramfs_2712
         ;;
@@ -229,6 +235,33 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
     printf "%s\nts: %d\n" "${sha256sums[boot.rpi-otp.img]}" "$(date -u +%s)" >/workspace/boot.empty-pw.sig
     artifacts[boot.empty-pw.sig]=/workspace/boot.empty-pw.sig
     cp /workspace/boot.empty-pw.sig /workspace/esp-staging/boot.sig
+
+    if [[ -e $secureboot_key ]]; then
+      verbose "Creating signed bootloader"
+      local sign_dir pieeprom_path
+      sign_dir=$(mktemp -d)
+      mkdir "$sign_dir/bin"
+      local executable
+      for executable in rpi-eeprom-update rpi-eeprom-config rpi-eeprom-digest rpi-sign-bootcode; do
+        ln -s /workspace/root/usr/bin/$executable "$sign_dir/bin/$executable"
+      done
+      cp "$firmware_dir/recovery.bin" "$sign_dir/recovery.original.bin"
+      pieeprom_path=$(LC_ALL=C compgen -G "$firmware_dir/pieeprom-*.bin" | head -n1)
+      (
+        PATH=$sign_dir/bin:$PATH
+        cd "$sign_dir"
+        update-pieeprom -f -r -k $secureboot_key -c /workspace/boot/boot.conf -i "$pieeprom_path"
+      )
+      mv "$sign_dir/pieeprom.bin" \
+         "$sign_dir/pieeprom.sig" \
+         "$sign_dir/$bootcode_filename" \
+         /workspace/boot
+      rm -rf "$sign_dir"
+      artifacts[pieeprom.bin]=/workspace/boot/pieeprom.bin
+      artifacts[pieeprom.sig]=/workspace/boot/pieeprom.sig
+      artifacts[$bootcode_filename]=/workspace/boot/$bootcode_filename
+      sha256sums[pieeprom.bin]=$(sha256sum /workspace/boot/pieeprom.bin | cut -d ' ' -f1)
+    fi
   fi
 
   ############################
