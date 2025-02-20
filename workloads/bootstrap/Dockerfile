@@ -2,6 +2,7 @@ FROM debian:trixie
 SHELL ["/usr/bin/bash", "-Eeo", "pipefail", "-c"]
 ARG VARIANT
 ARG DEBUG=false
+ARG LOGLEVEL=info
 
 RUN apt-get -qq update; apt-get -y install --no-install-recommends jq wget curl ca-certificates gettext; \
   temp=$(mktemp); \

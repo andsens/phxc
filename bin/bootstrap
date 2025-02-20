@@ -46,6 +46,7 @@ do declare -p "$p$varname";done;done;}
 
   # shellcheck disable=SC2154
   local DEBUG=$__debug DOCKER_PLATFORM
+  ! $DEBUG || LOGLEVEL=${LOGLEVEL:-verbose}
   case $VARIANT in
     amd64) DOCKER_PLATFORM=linux/amd64 ;;
     arm64|rpi*) DOCKER_PLATFORM=linux/arm64 ;;
@@ -79,6 +80,7 @@ do declare -p "$p$varname";done;done;}
       --dockerfile context/Dockerfile \
       --build-arg "VARIANT=$VARIANT" \
       --build-arg "DEBUG=$DEBUG" \
+      --build-arg "LOGLEVEL=$LOGLEVEL" \
       --custom-platform="$DOCKER_PLATFORM" \
       --destination "cluster.local/node:$VARIANT" \
       --insecure-registry=cluster.local \
@@ -102,6 +104,7 @@ do declare -p "$p$varname";done;done;}
     -v "$artifacts:/workspace/artifacts:rw" "${create_boot_docker_opts[@]}" \
     -e "VARIANT=$VARIANT" \
     -e "DEBUG=$DEBUG" \
+    -e "LOGLEVEL=$LOGLEVEL" \
     --entrypoint /scripts/create-boot-image.sh \
     "ghcr.io/andsens/phxc-disk-utils:sha-e1bf136" --chown $UID
 

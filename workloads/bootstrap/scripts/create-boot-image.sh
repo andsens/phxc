@@ -68,6 +68,7 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
       rm -rf "$filepath" "$(dirname "$filepath")/${filename#'.wh.'}"
     done < <(find /workspace/root -name '.wh.*' -print0)
   done
+  verbose "Adding post-build files to root filesystem"
   # During bootstrapping with kaniko these files can't be removed/overwritten,
   # instead we do it when creating the image
   rm /workspace/root/etc/hostname /workspace/root/etc/resolv.conf
@@ -83,7 +84,7 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
     fi
   fi
 
-  # Move boot dir to workspace before creating squashfs image
+  # Move boot dir to workspace, it's not part of the root image
   mv /workspace/root/boot /workspace/boot
 
   local kernver
@@ -118,6 +119,7 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
   info "Injecting SHA-256 of rootimg into initramfs"
 
   mkdir /workspace/initramfs
+  verbose "Decompressing initramfs"
   (
     cd /workspace/initramfs
     cpio -id </workspace/boot/initramfs.img
@@ -130,6 +132,7 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
   mkdir "$share_phxc"
   printf '%s  /efi/phxc/root.%s.img\n' "${sha256sums[root.img]}" "${sha256sums[root.img]}" >"$share_phxc/root.img.sha256.checksum"
   printf '%s\n' "${sha256sums[root.img]}" >"$share_phxc/root.img.sha256"
+  verbose "Compressing initramfs"
   (
     cd /workspace/initramfs
     find . -print0 | cpio -o --null --format=newc 2>/dev/null | zstd -15 >/workspace/boot/initramfs.img
@@ -174,6 +177,7 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
       cgroup_enable=memory
     )
 
+    verbose "Staging static RPi configuration files"
     printf "%s " "${kernel_cmdline[@]}" >/workspace/bootimg-staging/cmdline.txt
     cp "/workspace/boot/config-${VARIANT}-esp.txt" /workspace/esp-staging/config.txt
     cp "/workspace/boot/config-${VARIANT}-esp.txt" /workspace/esp-staging/tryboot.txt
@@ -181,6 +185,7 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
     cp "/workspace/boot/config-${VARIANT}-bootimg.txt" /workspace/bootimg-staging/tryboot.txt
     cp -r /workspace/boot/firmware/* /workspace/bootimg-staging
 
+    verbose "Calculating the required boot.img size"
     local block_size_b=512
     local bootimg_fat16_table_size_b=$(( 512 * 1024 )) bootimg_files_size_b
     bootimg_files_size_b=$(($(du -sB$block_size_b /workspace/bootimg-staging | cut -d$'\t' -f1) * block_size_b))
@@ -194,22 +199,25 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
       ) / block_size_b * block_size_b
     ))
 
+    verbose "Creating boot.img for disk encryption with RPi OTP"
     truncate -s"$disk_size_b" /workspace/boot.rpi-otp.img
     mkfs.vfat -n "RPI-RAMDISK" /workspace/boot.rpi-otp.img
     mcopy -sbQmi /workspace/boot.rpi-otp.img /workspace/bootimg-staging/* ::/
     sha256sums[boot.rpi-otp.img]=$(sha256sum /workspace/boot.rpi-otp.img | cut -d ' ' -f1)
     artifacts[boot.rpi-otp.img]=/workspace/boot.rpi-otp.img
 
+    verbose "Creating boot.rpi-otp.img digest"
     printf "%s\nts: %d\n" "${sha256sums[boot.rpi-otp.img]}" "$(date -u +%s)" >/workspace/boot.rpi-otp.sig
     if [[ -e $secureboot_key ]]; then
+      verbose "Signing boot.rpi-otp.img and adding signature to checksum file"
       local bootimg_sig
       bootimg_sig=$(openssl dgst -sign $secureboot_key -sha256 /workspace/boot.rpi-otp.img | xxd -p -c0)
       printf "rsa2048: %s\n" "$bootimg_sig" >>/workspace/boot.rpi-otp.sig
     fi
     artifacts[boot.rpi-otp.sig]=/workspace/boot.rpi-otp.sig
 
+    verbose "Creating boot.empty-pw.img for disk encryption with an empty password"
     printf "phxc.empty-pw" >>/workspace/bootimg-staging/cmdline.txt
-
     truncate -s"$disk_size_b" /workspace/boot.empty-pw.img
     mkfs.vfat -n "RPI-RAMDISK" /workspace/boot.empty-pw.img
     mcopy -sbQmi /workspace/boot.empty-pw.img /workspace/bootimg-staging/* ::/
@@ -217,6 +225,7 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
     artifacts[boot.empty-pw.img]=/workspace/boot.empty-pw.img
     cp /workspace/boot.empty-pw.img /workspace/esp-staging/boot.img
 
+    verbose "Creating boot.empty-pw.img checksum"
     printf "%s\nts: %d\n" "${sha256sums[boot.rpi-otp.img]}" "$(date -u +%s)" >/workspace/boot.empty-pw.sig
     artifacts[boot.empty-pw.sig]=/workspace/boot.empty-pw.sig
     cp /workspace/boot.empty-pw.sig /workspace/esp-staging/boot.sig
@@ -244,6 +253,7 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
     mkdir -p /usr/lib/systemd/boot
     ln -s /workspace/boot/systemd-boot-efi /usr/lib/systemd/boot/efi
 
+    verbose "Creating uki.efi for disk encryption with an empty password"
     mkdir -p /workspace/esp-staging/EFI/BOOT
     local uki_empty_pw_path=/workspace/esp-staging/EFI/BOOT/BOOT${efi_arch}.EFI
     /lib/systemd/ukify build \
@@ -258,9 +268,11 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
     local uki_tpm2_path=/workspace/boot/uki.tpm2.efi uki_secure_opts=()
     # Sign UKI if secureboot key & cert are present
     if [[ -e $secureboot_key && -e $secureboot_crt ]]; then
+      verbose "Adding secureboot signing parameters for uki.efi creation"
       uki_secure_opts+=("--secureboot-private-key=$secureboot_key" "--secureboot-certificate=$secureboot_crt")
       openssl x509 -in $secureboot_crt -outform der -out /workspace/esp-staging/phxc/secureboot.der
     fi
+    verbose "Creating uki.efi for disk encryption with TPM2"
     /lib/systemd/ukify build "${uki_secure_opts[@]}" \
       --uname="$kernver" \
       --linux=/workspace/boot/vmlinuz \
@@ -301,6 +313,7 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
   local esp_files_size_b esp_reserved_b=$((1024 * 1024 * 4))
   esp_files_size_b=$(($(du -sB$block_size_b /workspace/esp-staging | cut -d$'\t' -f1) * block_size_b))
   local esp_fat32_table_size_b=$(( (2 * ((esp_files_size_b + esp_reserved_b) / 1024 / 1024) + 20) * 1024 ))
+  verbose "Calculating size of ESP"
   local esp_size_b=$((
     (
       esp_fat32_table_size_b +
@@ -309,6 +322,14 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
       block_size_b - 1
     ) / block_size_b * block_size_b
   ))
+
+  verbose "Building ESP"
+  truncate -s"$esp_size_b" /workspace/esp.img
+  mkfs.vfat -n EFI-SYSTEM -F 32 /workspace/esp.img
+  mcopy -sbQmi /workspace/esp.img /workspace/esp-staging/* ::/
+  ! $DEBUG || artifacts[esp.img]=/workspace/esp.img
+
+  verbose "Calculating size of disk image"
   local gpt_size_b=$((33 * 512)) partition_offset_b=$((1024 * 1024))
   local disk_size_b=$((
     (
@@ -318,13 +339,7 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
       block_size_b - 1
     ) / block_size_b * block_size_b
   ))
-
-  truncate -s"$esp_size_b" /workspace/esp.img
-  mkfs.vfat -n EFI-SYSTEM -F 32 /workspace/esp.img
-  mcopy -sbQmi /workspace/esp.img /workspace/esp-staging/* ::/
-
-  ! $DEBUG || artifacts[esp.img]=/workspace/esp.img
-
+  verbose "Building disk image"
   truncate -s"$disk_size_b" /workspace/disk.img
   sfdisk -q /workspace/disk.img <<EOF
 label: gpt
