@@ -19,6 +19,7 @@ case $VARIANT in
   )
   PACKAGES_TMP+=(
     systemd-boot-efi # EFI stub for UKI
+    amd64-microcode intel-microcode # Microcode updates that will be embedded in the UKI
   )
   ;;
   rpi*)
@@ -59,6 +60,8 @@ boot() {
   kernver=$(readlink /vmlinuz)
   kernver=${kernver#'boot/vmlinuz-'}
   dracut --force --kver "$kernver"
+  # Disable initramfs updates again, so they won't be triggered by uninstalls
+  export INITRD=No
 }
 
 boot_cleanup() {
