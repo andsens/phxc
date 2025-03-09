@@ -34,7 +34,7 @@ for varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   eval "$(docopt "$@")"
 
   local meta_json_new http_code
-  if ! meta_json_new=$(curl_img_reg "$VARIANT/meta.json" -w '%{http_code}'); then
+  if ! meta_json_new=$(curl-imgreg "$VARIANT/meta.json" -w '%{http_code}'); then
     info "Unable to retrieve image metadata from image-registry"
     return 1
   fi
@@ -76,28 +76,28 @@ for varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   }
   trap "clean_update_boot_files" EXIT
   printf "%s\n" "$new_rootimg_sha256" >/efi/phxc/pending.sha256
-  curl_img_reg "$VARIANT/root.img" -o"/efi/phxc/root.$new_rootimg_sha256.img" -f
+  curl-imgreg "$VARIANT/root.img" -o"/efi/phxc/root.$new_rootimg_sha256.img" -f
 
   if [[ $VARIANT = rpi* ]]; then
     if ! rpi-otp-private-key -c -o 0; then
       warning "RPi OTP is not initialized or not supported, using disk-encryption with a static password"
-      curl_img_reg "$VARIANT/boot.empty-pw.img" -o/efi/tryboot.img -f
-      curl_img_reg "$VARIANT/boot.empty-pw.sig" -o/efi/tryboot.sig -f
+      curl-imgreg "$VARIANT/boot.empty-pw.img" -o/efi/tryboot.img -f
+      curl-imgreg "$VARIANT/boot.empty-pw.sig" -o/efi/tryboot.sig -f
     else
       mkdir -p /run/cryptsetup-keys.d
       rpi-otp-disk-encryption-key /run/cryptsetup-keys.d/data.key
       cryptsetup luksOpen --test-passphrase --key-file /run/cryptsetup-keys.d/data.key "/dev/disk/by-partuuid/${DATA_UUID}" || \
         cryptsetup luksAddKey --key-file /var/lib/phxc/disk-encryption.recovery.key \
           "/dev/disk/by-partuuid/${DATA_UUID}" /run/cryptsetup-keys.d/data.key
-      curl_img_reg "$VARIANT/boot.rpi-otp.img" -o/efi/tryboot.img -f
-      curl_img_reg "$VARIANT/boot.rpi-otp.sig" -o/efi/tryboot.sig -f
+      curl-imgreg "$VARIANT/boot.rpi-otp.img" -o/efi/tryboot.img -f
+      curl-imgreg "$VARIANT/boot.rpi-otp.sig" -o/efi/tryboot.sig -f
     fi
   else
     if ! compgen -G '/sys/kernel/security/tpm*' &>/dev/null; then
       warning "No TPM available, using disk-encryption with a static password"
-      curl_img_reg "$VARIANT/uki.empty-pw.efi" -o/efi/EFI/BOOT/BOOT.TRY.EFI -f
+      curl-imgreg "$VARIANT/uki.empty-pw.efi" -o/efi/EFI/BOOT/BOOT.TRY.EFI -f
     else
-      curl_img_reg "$VARIANT/uki.tpm2.efi" -o/efi/EFI/BOOT/BOOT.TRY.EFI -f
+      curl-imgreg "$VARIANT/uki.tpm2.efi" -o/efi/EFI/BOOT/BOOT.TRY.EFI -f
       cryptenroll-uki --device "/dev/disk/by-partuuid/${DATA_UUID}" \
         /var/lib/phxc/disk-encryption.recovery.key /efi/EFI/BOOT/BOOT.TRY.EFI
     fi
@@ -111,13 +111,5 @@ for varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   fi
 }
 
-curl_img_reg() {
-  local path=$1
-  shift
-  curl --cacert /var/lib/rancher/k3s/agent/server-ca.crt \
-    -L --no-progress-meter --connect-timeout 5 \
-    --retry 10 --retry-delay 60 --retry-all-errors \
-    "https://image-registry.phxc.svc.cluster.local:8020/$path" "$@"
-}
 
 main "$@"

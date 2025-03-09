@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# shellcheck source-path=../..
+set -Eeo pipefail; shopt -s inherit_errexit
+
+main() {
+  [[ $# -ge 1 ]] || usage
+  local e; for e; do [[ $e != --help ]] || usage; done
+  local path=$1
+  shift
+  curl --cacert /var/lib/rancher/k3s/agent/server-ca.crt \
+    -L --no-progress-meter --connect-timeout 5 \
+    --retry 10 --retry-delay 60 --retry-all-errors \
+    "https://image-registry.phxc.svc.cluster.local:8020/$path" "$@"
+}
+
+usage() {
+  printf "Usage: curl-imgreg PATH [CURLOPTS...]\n" >&2
+  return 1
+}
+
+main "$@"
