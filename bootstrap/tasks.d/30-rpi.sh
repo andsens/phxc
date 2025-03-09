@@ -2,6 +2,7 @@
 
 if [[ $VARIANT = rpi* ]]; then
   PACKAGES+=(rpi-eeprom flashrom)
+  PACKAGES_TMP+=(libusb-1.0-0-dev libc6-dev gcc make pkgconf) # Deps for usbboot repo
   curl -Lso/etc/apt/trusted.gpg.d/raspberrypi.asc http://archive.raspberrypi.com/debian/raspberrypi.gpg.key
   cat <<EOF >/etc/apt/sources.list.d/raspberrypi.sources
 Types: deb
@@ -37,7 +38,12 @@ fi
 
 rpi() {
   if [[ $VARIANT = rpi* ]]; then
-    :
+    local usbboottmp
+    usbboottmp=$(mktemp -d)
+    wget -qO>(tar -xzC "$usbboottmp" --strip-components=1) \
+      "https://github.com/raspberrypi/usbboot/archive/refs/tags/20250129-123632.tar.gz"
+    make -C "$usbboottmp" install
+    rm -rf "$usbboottmp"
   else
     rm -rf /etc/systemd/system/rpi-eeprom-update.service.d \
            /etc/default/rpi-eeprom-update
