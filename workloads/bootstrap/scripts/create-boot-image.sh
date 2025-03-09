@@ -36,6 +36,7 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
   declare -A artifacts
   declare -A sha256sums
   local secureboot_key=/workspace/secureboot/tls.key \
+        secureboot_pub=/workspace/secureboot.pub \
         secureboot_crt=/workspace/secureboot/tls.crt
   if [[ -e $secureboot_key ]]; then
     info "Checking secureboot key"
@@ -44,6 +45,7 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
     sbkeyinfo=$(openssl rsa -in $secureboot_key -noout -text)
     [[ $sbkeyinfo =~ Private-Key:\ \(([0-9]+)\ bit, ]] || fatal "Unable to determine secureboot keysize"
     [[ ${BASH_REMATCH[1]} = 2048 ]] || fatal "Secureboot key must be a 2048 bit RSA key (got %d bit)" "${BASH_REMATCH[1]}"
+    openssl rsa -in $secureboot_key -pubout >$secureboot_pub
   fi
 
   mkdir -p /workspace/esp-staging/phxc
