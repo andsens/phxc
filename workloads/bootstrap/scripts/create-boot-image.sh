@@ -62,7 +62,7 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
 
   local filepath filename
   for layer in $(jq -r '.[0].Layers[]' <(tar -xOf "/workspace/artifacts/node.tar" manifest.json)); do
-    tar -xOf "/workspace/artifacts/node.tar" "$layer" | tar -xz -C /workspace/root
+    tar -xOf "/workspace/artifacts/node.tar" "$layer" | tar -xzC /workspace/root
     # See https://github.com/opencontainers/image-spec/blob/5325ec48851022d6ded604199a3566254e72842a/layer.md#whiteouts
     while IFS= read -r -d $'\0' filepath; do
       filename=$(basename "$filepath")
@@ -99,6 +99,68 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
   rm -f /workspace/root/initrd.img \
         /workspace/root/initrd.img.old
 
+  ###############################
+  ### Sign the RPi bootloader ###
+  ###############################
+
+  if [[ $VARIANT = rpi* ]]; then
+    info "Creating Raspberry Pi bootloader variants"
+
+    local sign_dir
+    sign_dir=$(mktemp -d)
+    mkdir "$sign_dir/orig"
+    # Creates bootcode.bin, bootconf.sig, bootconf.txt, cacert.der, pubkey.bin
+    (cd "$sign_dir/orig"; rpi-eeprom-config --extract /workspace/root/usr/local/lib/phxc/pieeprom.orig.bin)
+
+    cp /workspace/boot/bootconf.txt "$sign_dir/bootconf.txt"
+    rpi-eeprom-digest -i "$sign_dir/bootconf.txt" \
+                      -o "$sign_dir/bootconf.txt.sig"
+
+    verbose "Creating bootloader with custom bootconf.txt"
+    rpi-eeprom-config --config "$sign_dir/bootconf.txt" \
+                      --digest "$sign_dir/bootconf.txt.sig" \
+                      --out /workspace/root/usr/local/lib/phxc/pieeprom.bootconf.bin \
+                      /workspace/root/usr/local/lib/phxc/pieeprom.orig.bin
+
+    if [[ -e $secureboot_key ]]; then
+      printf "SIGNED_BOOT=1\n" >>"$sign_dir/bootconf.txt"
+      rpi-eeprom-digest -k "$secureboot_key" \
+                        -i "$sign_dir/bootconf.txt" \
+                        -o "$sign_dir/bootconf.txt.signed.sig"
+
+      verbose "Creating signed recovery.bin"
+      rpi-sign-bootcode --chip 2712 \
+                        --private-keynum 16 \
+                        --private-version 0 \
+                        --private-key "$secureboot_key" \
+                        --input /workspace/root/usr/local/lib/phxc/recovery.orig.bin \
+                        --output /workspace/root/usr/local/lib/phxc/recovery.signed.bin
+
+      verbose "Creating signed pieeprom.bin"
+      rpi-eeprom-config --config "$sign_dir/bootconf.txt" \
+                        --digest "$sign_dir/bootconf.txt.sig" \
+                        --pubkey $secureboot_pub \
+                        --out /workspace/root/usr/local/lib/phxc/pieeprom.unsigned-bootcode.bin \
+                        /workspace/root/usr/local/lib/phxc/pieeprom.orig.bin
+
+      rpi-sign-bootcode --chip 2712 \
+                        --private-keynum 16 \
+                        --private-version 0 \
+                        --private-key "$secureboot_key" \
+                        --input "$sign_dir/orig/bootcode.bin" \
+                        --output "$sign_dir/bootcode.signed.bin"
+
+      verbose "Creating signed pieeprom.bin with counter-signed bootcode.bin"
+      rpi-eeprom-config --config "$sign_dir/bootconf.txt" \
+                        --digest "$sign_dir/bootconf.txt.signed.sig" \
+                        --bootcode "$sign_dir/bootcode.signed.bin" \
+                        --pubkey $secureboot_pub \
+                        --out /workspace/boot/pieeprom.signed-bootcode.bin \
+                        /workspace/root/usr/local/lib/phxc/pieeprom.orig.bin
+    fi
+    rm -rf "$sign_dir"
+  fi
+
   #######################
   ### Create root.img ###
   #######################
@@ -110,7 +172,7 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
   mksquashfs /workspace/root /workspace/root.img -noappend -quiet -comp zstd $noprogress
 
   # Hash the root image so we can verify it during boot
-  sha256sums[root.img]=$(sha256sum /workspace/root.img | cut -d ' ' -f1)
+  sha256sums[root.img]=$(sha256 /workspace/root.img)
   mv /workspace/root.img "/workspace/esp-staging/phxc/root.${sha256sums[root.img]}.img"
   artifacts[root.img]=/workspace/esp-staging/phxc/root.${sha256sums[root.img]}.img
 
@@ -156,21 +218,16 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
     mkdir /workspace/bootimg-staging
 
     # kernel/initramfs/firmware names
-    local firmware_dir bootcode_filename
     case $VARIANT in
       rpi2|rpi3)
         cp /workspace/boot/vmlinuz /workspace/bootimg-staging/kernel7.img
         cp /workspace/boot/initramfs.img /workspace/bootimg-staging/initramfs7
         ;;
       rpi4)
-        firmware_dir=/workspace/root/usr/lib/firmware/raspberrypi/bootloader-2711/stable
-        bootcode_filename=bootcode4.bin
         cp /workspace/boot/vmlinuz /workspace/bootimg-staging/kernel8.img
         cp /workspace/boot/initramfs.img /workspace/bootimg-staging/initramfs8
         ;;
       rpi5)
-        firmware_dir=/workspace/root/usr/lib/firmware/raspberrypi/bootloader-2712/stable
-        bootcode_filename=bootcode5.bin
         cp /workspace/boot/vmlinuz /workspace/bootimg-staging/kernel_2712.img
         cp /workspace/boot/initramfs.img /workspace/bootimg-staging/initramfs_2712
         ;;
@@ -211,7 +268,7 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
     truncate -s"$disk_size_b" /workspace/boot.rpi-otp.img
     mkfs.vfat -n "RPI-RAMDISK" /workspace/boot.rpi-otp.img
     mcopy -sbQmi /workspace/boot.rpi-otp.img /workspace/bootimg-staging/* ::/
-    sha256sums[boot.rpi-otp.img]=$(sha256sum /workspace/boot.rpi-otp.img | cut -d ' ' -f1)
+    sha256sums[boot.rpi-otp.img]=$(sha256 /workspace/boot.rpi-otp.img)
     artifacts[boot.rpi-otp.img]=/workspace/boot.rpi-otp.img
 
     verbose "Creating boot.rpi-otp.img digest"
@@ -229,7 +286,7 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
     truncate -s"$disk_size_b" /workspace/boot.empty-pw.img
     mkfs.vfat -n "RPI-RAMDISK" /workspace/boot.empty-pw.img
     mcopy -sbQmi /workspace/boot.empty-pw.img /workspace/bootimg-staging/* ::/
-    sha256sums[boot.empty-pw.img]=$(sha256sum /workspace/boot.empty-pw.img | cut -d ' ' -f1)
+    sha256sums[boot.empty-pw.img]=$(sha256 /workspace/boot.empty-pw.img)
     artifacts[boot.empty-pw.img]=/workspace/boot.empty-pw.img
     cp /workspace/boot.empty-pw.img /workspace/esp-staging/boot.img
 
@@ -237,33 +294,6 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
     printf "%s\nts: %d\n" "${sha256sums[boot.rpi-otp.img]}" "$(date -u +%s)" >/workspace/boot.empty-pw.sig
     artifacts[boot.empty-pw.sig]=/workspace/boot.empty-pw.sig
     cp /workspace/boot.empty-pw.sig /workspace/esp-staging/boot.sig
-
-    if [[ -e $secureboot_key ]]; then
-      verbose "Creating signed bootloader"
-      local sign_dir pieeprom_path
-      sign_dir=$(mktemp -d)
-      mkdir "$sign_dir/bin"
-      local executable
-      for executable in rpi-eeprom-update rpi-eeprom-config rpi-eeprom-digest rpi-sign-bootcode; do
-        ln -s /workspace/root/usr/bin/$executable "$sign_dir/bin/$executable"
-      done
-      cp "$firmware_dir/recovery.bin" "$sign_dir/recovery.original.bin"
-      pieeprom_path=$(LC_ALL=C compgen -G "$firmware_dir/pieeprom-*.bin" | head -n1)
-      (
-        PATH=$sign_dir/bin:$PATH
-        cd "$sign_dir"
-        update-pieeprom -f -r -k $secureboot_key -c /workspace/boot/boot.conf -i "$pieeprom_path"
-      )
-      mv "$sign_dir/pieeprom.bin" \
-         "$sign_dir/pieeprom.sig" \
-         "$sign_dir/$bootcode_filename" \
-         /workspace/boot
-      rm -rf "$sign_dir"
-      artifacts[pieeprom.bin]=/workspace/boot/pieeprom.bin
-      artifacts[pieeprom.sig]=/workspace/boot/pieeprom.sig
-      artifacts[$bootcode_filename]=/workspace/boot/$bootcode_filename
-      sha256sums[pieeprom.bin]=$(sha256sum /workspace/boot/pieeprom.bin | cut -d ' ' -f1)
-    fi
   fi
 
   ############################
@@ -298,7 +328,7 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
       --cmdline="$(printf "%s " "${kernel_cmdline[@]}" "phxc.empty-pw")" \
       --output=$uki_empty_pw_path
     artifacts[uki.empty-pw.efi]=$uki_empty_pw_path
-    sha256sums[uki.empty-pw.efi]=$(sha256sum $uki_empty_pw_path | cut -d ' ' -f1)
+    sha256sums[uki.empty-pw.efi]=$(sha256 $uki_empty_pw_path)
 
     local uki_tpm2_path=/workspace/boot/uki.tpm2.efi uki_secure_opts=()
     # Sign UKI if secureboot key & cert are present
@@ -315,7 +345,7 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
       --cmdline="$(printf "%s " "${kernel_cmdline[@]}")" \
       --output=$uki_tpm2_path
     artifacts[uki.tpm2.efi]=$uki_tpm2_path
-    sha256sums[uki.tpm2.efi]=$(sha256sum $uki_tpm2_path | cut -d ' ' -f1)
+    sha256sums[uki.tpm2.efi]=$(sha256 $uki_tpm2_path)
   fi
 
   #######################
@@ -412,15 +442,20 @@ EOF
     for dest in "${!artifacts[@]}"; do
       upload_files="$upload_files,/workspace/artifacts/$dest"
     done
-    curl_img_reg -DELETE "$__upload/$VARIANT.tmp/" || info "404 => No previous %s.tmp/ to delete" "$VARIANT"
-    curl_img_reg --upload-file "{${upload_files#,}}" "$__upload/$VARIANT.tmp/"
-    curl_img_reg -DELETE "$__upload/$VARIANT.old/" || info "404 => No previous %s.old/ to delete" "$VARIANT"
-    curl_img_reg -XMOVE "$__upload/$VARIANT/" --header "Destination:$__upload/$VARIANT.old/" || info "404 => No previous %s/ to move to %s.old/" "$VARIANT" "$VARIANT"
-    curl_img_reg -XMOVE "$__upload/$VARIANT.tmp/" --header "Destination:$__upload/${VARIANT}/"
+    curl_imgreg -DELETE "$__upload/$VARIANT.tmp/" || info "404 => No previous %s.tmp/ to delete" "$VARIANT"
+    curl_imgreg --upload-file "{${upload_files#,}}" "$__upload/$VARIANT.tmp/"
+    curl_imgreg -DELETE "$__upload/$VARIANT.old/" || info "404 => No previous %s.old/ to delete" "$VARIANT"
+    curl_imgreg -XMOVE "$__upload/$VARIANT/" --header "Destination:$__upload/$VARIANT.old/" || info "404 => No previous %s/ to move to %s.old/" "$VARIANT" "$VARIANT"
+    curl_imgreg -XMOVE "$__upload/$VARIANT.tmp/" --header "Destination:$__upload/${VARIANT}/"
   fi
 }
 
-curl_img_reg() {
+sha256() {
+  local file=$1
+  sha256sum "$1" | cut -d ' ' -f1
+}
+
+curl_imgreg() {
   curl --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
     -fL --no-progress-meter --connect-timeout 5 \
     --retry 10 --retry-delay 60 \

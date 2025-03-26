@@ -86,7 +86,7 @@ for varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
     else
       mkdir -p /run/cryptsetup-keys.d
       rpi-otp-disk-encryption-key /run/cryptsetup-keys.d/data.key
-      cryptsetup luksOpen --test-passphrase --key-file /run/cryptsetup-keys.d/data.key "/dev/disk/by-partuuid/${DATA_UUID}" || \
+      cryptsetup luksOpen --test-passphrase --key-file /run/cryptsetup-keys.d/data.key "/dev/disk/by-partuuid/${DATA_UUID}" &>/dev/null || \
         cryptsetup luksAddKey --key-file /var/lib/phxc/disk-encryption.recovery.key \
           "/dev/disk/by-partuuid/${DATA_UUID}" /run/cryptsetup-keys.d/data.key
       curl-imgreg "$VARIANT/boot.rpi-otp.img" -o/efi/tryboot.img -f
@@ -110,6 +110,5 @@ for varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
     info "The boot image has been updated (%s) but will not be tried on next boot" "${new_rootimg_sha256:0:8}"
   fi
 }
-
 
 main "$@"
