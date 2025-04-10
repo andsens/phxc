@@ -1,7 +1,0 @@
-#!/bin/sh
-[ $# -eq 1 ] || { printf "Usage: rpi-otp-disk-encryption-key DEST"; exit 1; }
-k=$(rpi-otp-private-key -o 0 -l 8)
-openssl kdf \
-  -kdfopt info:"phxc-disk-encryption-key" -keylen 32 \
-  -kdfopt digest:SHA3-512 -kdfopt hexkey:"$k" \
-  -out "$1" -binary HKDF

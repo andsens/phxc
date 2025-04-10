@@ -57,7 +57,7 @@ install() {
     mkdir "$initdir/var/lib/tpm"
     chown 101:102 "$initdir/var/lib/tpm"
   else
-    inst /usr/local/sbin/rpi-otp-disk-encryption-key /usr/bin/rpi-otp-disk-encryption-key
+    inst /usr/local/sbin/rpi-otp-derive-key /usr/bin/rpi-otp-derive-key
     inst_multiple rpi-otp-private-key od which vcmailbox awk openssl
   fi
 

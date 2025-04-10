@@ -26,7 +26,7 @@ data_partition() {
   fi
   if [[ $VARIANT != rpi4 && $VARIANT != rpi5 ]]; then
     rm /usr/local/sbin/phxc-rpi \
-       /usr/local/sbin/rpi-otp-disk-encryption-key
+       /usr/local/sbin/rpi-otp-derive-key
   fi
 
   rm /etc/dropbear/dropbear_*_host_key*

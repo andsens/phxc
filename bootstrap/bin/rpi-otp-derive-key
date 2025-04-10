@@ -1,0 +1,7 @@
+#!/bin/sh
+[ $# -eq 2 ] || { printf "Usage: rpi-otp-derive-key LABEL DEST"; exit 1; }
+k=$(rpi-otp-private-key -o 0 -l 8)
+openssl kdf \
+  -kdfopt info:"$1" -keylen 32 \
+  -kdfopt digest:SHA3-512 -kdfopt hexkey:"$k" \
+  -out "$2" -binary HKDF

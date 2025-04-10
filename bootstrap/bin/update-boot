@@ -85,7 +85,7 @@ for varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
       curl-imgreg "$VARIANT/boot.empty-pw.sig" -o/efi/tryboot.sig -f
     else
       mkdir -p /run/cryptsetup-keys.d
-      rpi-otp-disk-encryption-key /run/cryptsetup-keys.d/data.key
+      rpi-otp-derive-key phxc-disk-encryption-key /run/cryptsetup-keys.d/data.key
       cryptsetup luksOpen --test-passphrase --key-file /run/cryptsetup-keys.d/data.key "/dev/disk/by-partuuid/${DATA_UUID}" &>/dev/null || \
         cryptsetup luksAddKey --key-file /var/lib/phxc/disk-encryption.recovery.key \
           "/dev/disk/by-partuuid/${DATA_UUID}" /run/cryptsetup-keys.d/data.key
