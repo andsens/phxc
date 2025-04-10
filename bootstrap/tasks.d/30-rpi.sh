@@ -4,8 +4,8 @@ if [[ $VARIANT = rpi* ]]; then
   PACKAGES+=(
     flashrom # For updating the bootloader
     xxd # For parsing properties set in /sys
+    rpi-eeprom # For accessing the OTP private key
   )
-  PACKAGES_TMP+=(rpi-eeprom)
   curl -Lso/etc/apt/trusted.gpg.d/raspberrypi.asc http://archive.raspberrypi.com/debian/raspberrypi.gpg.key
   cat <<EOF >/etc/apt/sources.list.d/raspberrypi.sources
 Types: deb
