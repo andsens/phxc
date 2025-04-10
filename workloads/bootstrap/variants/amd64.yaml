@@ -41,8 +41,7 @@ spec:
             - name: context
               mountPath: /workspace/context
             - name: bundle
-              mountPath: /workspace/phxc.tar.gz
-              subPath: phxc.tar.gz
+              mountPath: /workspace/bundle
             - name: cluster-config
               mountPath: /workspace/cluster.json
               readOnly: true

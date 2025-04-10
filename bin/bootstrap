@@ -73,7 +73,7 @@ do declare -p "$p$varname";done;done;}
     docker run --rm -ti \
       --platform "$DOCKER_PLATFORM" \
       -v "$PKGROOT/workloads/bootstrap/Dockerfile:/workspace/context/Dockerfile:ro" \
-      -v "$bundle:/workspace/phxc.tar.gz:ro" \
+      -v "$bundle:/workspace/bundle/phxc.tar.gz:ro" \
       -v "$artifacts:/workspace/artifacts:rw" \
       "${bootstrap_docker_opts[@]}" \
       gcr.io/kaniko-project/executor:latest \
