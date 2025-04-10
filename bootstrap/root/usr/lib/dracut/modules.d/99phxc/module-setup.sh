@@ -69,8 +69,10 @@ install() {
     mkdir "$initdir/etc/dropbear"
     chmod go-rwx -R "$initdir/root/.ssh"
     chown root:root "$initdir/root/.ssh/authorized_keys"
-    # Mask systemd-ask-password-console.path so that only users authenticated via SSH can enter a password
-    $SYSTEMCTL -q --root "$initdir" mask systemd-ask-password-console.path
+    if ! $DEBUG; then
+      # Mask systemd-ask-password-console.path so that only users authenticated via SSH can enter a password
+      $SYSTEMCTL -q --root "$initdir" mask systemd-ask-password-console.path
+    fi
   fi
 
   ### Install systemd units ###
