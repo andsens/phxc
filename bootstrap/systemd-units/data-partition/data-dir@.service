@@ -1,9 +1,0 @@
-[Unit]
-Description=Create data directory for bind mounts
-DefaultDependencies=no
-RequiresMountsFor=/var/lib/phxc
-
-[Service]
-Type=oneshot
-RemainAfterExit=yes
-ExecStart=mkdir -p /var/lib/phxc/%i

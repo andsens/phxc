@@ -1,7 +1,6 @@
 [Unit]
 Description=Install packages needed to run the kubernetes control-plane
-Requires=var-lib-phxc.mount
-After=var-lib-phxc.mount install-node-packages.service network-online.target
+After=install-node-packages.service network-online.target
 
 [Service]
 Type=oneshot

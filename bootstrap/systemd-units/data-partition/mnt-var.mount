@@ -1,0 +1,9 @@
+[Unit]
+Description=Temporary mount of the data volume for populating it with the template contents
+DefaultDependencies=no
+
+[Mount]
+What=/dev/mapper/data
+Where=/mnt/var
+Type=ext4
+Options=rw,relatime

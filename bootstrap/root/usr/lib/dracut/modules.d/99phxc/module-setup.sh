@@ -94,7 +94,6 @@ install() {
 
   ### Root setup ###
   inst sha256sum
-  mkdir -p /mnt/overlay-upper
   mkdir -p "$initdir/overlay/image" "$initdir/overlay/rw"
 
   # Skip root checking

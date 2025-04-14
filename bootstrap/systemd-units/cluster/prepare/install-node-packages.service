@@ -1,7 +1,6 @@
 [Unit]
 Description=Install packages needed to run the kubernetes node
-Requires=var-lib-phxc.mount
-After=var-lib-phxc.mount install-smallstep.service network-online.target
+After=install-smallstep.service network-online.target
 Before=pre-k3s.target
 
 [Install]

@@ -1,0 +1,16 @@
+[Unit]
+Description=Populate /var using the template at /usr/local/lib/phxc/var-template
+DefaultDependencies=no
+Requires=mnt-var.mount
+After=mnt-var.mount
+Before=var.mount
+
+[Install]
+WantedBy=sysinit.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecCondition=bash -c '[[ ! -e /mnt/var/lib ]] || return 1'
+ExecStart=cp -a /usr/local/lib/phxc/var-template/. /mnt/var
+ExecStop=umount /mnt/var

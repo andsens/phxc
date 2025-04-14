@@ -1,7 +1,6 @@
 [Unit]
 Description=Install step-cli
-Requires=var-lib-phxc.mount
-After=var-lib-phxc.mount network-online.target
+After=network-online.target
 
 [Service]
 Type=oneshot

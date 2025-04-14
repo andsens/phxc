@@ -1,9 +1,9 @@
 [Unit]
-Description=Create a swapfile at /var/lib/phxc/swap
+Description=Create a swapfile at /var/swap
 DefaultDependencies=no
-RequiresMountsFor=/var/lib/phxc
-Before=var-lib-phxc-swap.swap
-ConditionPathExists=!/var/lib/phxc/swap
+RequiresMountsFor=/var
+Before=var-swap.swap
+ConditionPathExists=!/var/swap
 
 [Install]
 WantedBy=sysinit.target
@@ -11,4 +11,4 @@ WantedBy=sysinit.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=mkswap -U clear --size 2G --file /var/lib/phxc/swap
+ExecStart=mkswap -U clear --size 2G --file /var/swap

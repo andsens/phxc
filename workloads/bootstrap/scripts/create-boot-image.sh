@@ -99,6 +99,13 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
   rm -f /workspace/root/initrd.img \
         /workspace/root/initrd.img.old
 
+  ################################
+  ### Move /var out of the way ###
+  ################################
+
+  mv /workspace/root/var /workspace/root/usr/local/lib/phxc/var-template
+  mkdir /workspace/root/var
+
   ###############################
   ### Sign the RPi bootloader ###
   ###############################

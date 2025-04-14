@@ -1,7 +1,7 @@
 [Unit]
 Description=Generate SSH host keys
-Requires=data-dir@ssh.service
-After=data-dir@ssh.service
+Requires=copy-var-template.service
+After=copy-var-template.service
 Before=ssh.service
 
 [Install]

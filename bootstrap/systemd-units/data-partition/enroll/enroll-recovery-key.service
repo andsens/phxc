@@ -1,7 +1,5 @@
 [Unit]
 Description=Enrolls a disk encryption recovery key
-Requires=var-lib-phxc.mount
-After=var-lib-phxc.mount
 ConditionPathExists=!/var/lib/phxc/disk-encryption.recovery.key
 
 [Install]
