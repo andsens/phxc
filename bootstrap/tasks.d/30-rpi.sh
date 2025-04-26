@@ -48,7 +48,6 @@ rpi() {
   fi
 }
 
-
 rpi_cleanup() {
   if [[ $VARIANT = rpi* ]]; then
     rm /etc/apt/sources.list.d/bookworm.sources /etc/apt/preferences.d/priorities

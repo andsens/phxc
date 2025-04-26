@@ -1,0 +1,3 @@
+program_pubkey=1
+recovery_reboot=1
+program_jtag_lock=1

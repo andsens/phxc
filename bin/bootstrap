@@ -3,6 +3,7 @@
 set -Eeo pipefail; shopt -s inherit_errexit
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
 export DOCKER_CLI_HINTS=false
+DISK_UTILS_IMG=${DISK_UTILS_IMG:-ghcr.io/andsens/phxc-disk-utils:sha-4863c94}
 
 main() {
   source "$PKGROOT/.upkg/records.sh/records.sh"
@@ -106,7 +107,7 @@ do declare -p "$p$varname";done;done;}
     -e "DEBUG=$DEBUG" \
     -e "LOGLEVEL=$LOGLEVEL" \
     --entrypoint /scripts/create-boot-image.sh \
-    "ghcr.io/andsens/phxc-disk-utils:sha-32d6e01" --chown $UID
+    "$DISK_UTILS_IMG" --chown $UID
 
   rm -rf "$PKGROOT/images/$VARIANT.old"
   [[ ! -e "$PKGROOT/images/$VARIANT" ]] || mv "$PKGROOT/images/$VARIANT" "$PKGROOT/images/$VARIANT.old"

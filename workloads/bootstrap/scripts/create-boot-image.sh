@@ -41,9 +41,7 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
   if [[ -e $secureboot_key ]]; then
     info "Checking secureboot key"
     openssl rsa -in $secureboot_key -noout -check || fatal "Secureboot key must be a 2048 bit RSA key"
-    local sbkeyinfo=
-    sbkeyinfo=$(openssl rsa -in $secureboot_key -noout -text)
-    [[ $sbkeyinfo =~ Private-Key:\ \(([0-9]+)\ bit, ]] || fatal "Unable to determine secureboot keysize"
+    [[ $(openssl rsa -in $secureboot_key -noout -text) =~ Private-Key:\ \(([0-9]+)\ bit, ]] || fatal "Unable to determine secureboot keysize"
     [[ ${BASH_REMATCH[1]} = 2048 ]] || fatal "Secureboot key must be a 2048 bit RSA key (got %d bit)" "${BASH_REMATCH[1]}"
     openssl rsa -in $secureboot_key -pubout >$secureboot_pub
   fi
@@ -105,68 +103,6 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
 
   mv /workspace/root/var /workspace/root/usr/local/lib/phxc/var-template
   mkdir /workspace/root/var
-
-  ###############################
-  ### Sign the RPi bootloader ###
-  ###############################
-
-  if [[ $VARIANT = rpi* ]]; then
-    info "Creating Raspberry Pi bootloader variants"
-
-    local sign_dir
-    sign_dir=$(mktemp -d)
-    mkdir "$sign_dir/orig"
-    # Creates bootcode.bin, bootconf.sig, bootconf.txt, cacert.der, pubkey.bin
-    (cd "$sign_dir/orig"; rpi-eeprom-config --extract /workspace/root/usr/local/lib/phxc/pieeprom.orig.bin)
-
-    cp /workspace/boot/bootconf.txt "$sign_dir/bootconf.txt"
-    rpi-eeprom-digest -i "$sign_dir/bootconf.txt" \
-                      -o "$sign_dir/bootconf.txt.sig"
-
-    verbose "Creating bootloader with custom bootconf.txt"
-    rpi-eeprom-config --config "$sign_dir/bootconf.txt" \
-                      --digest "$sign_dir/bootconf.txt.sig" \
-                      --out /workspace/root/usr/local/lib/phxc/pieeprom.bootconf.bin \
-                      /workspace/root/usr/local/lib/phxc/pieeprom.orig.bin
-
-    if [[ -e $secureboot_key ]]; then
-      printf "SIGNED_BOOT=1\n" >>"$sign_dir/bootconf.txt"
-      rpi-eeprom-digest -k "$secureboot_key" \
-                        -i "$sign_dir/bootconf.txt" \
-                        -o "$sign_dir/bootconf.txt.signed.sig"
-
-      verbose "Creating signed recovery.bin"
-      rpi-sign-bootcode --chip 2712 \
-                        --private-keynum 16 \
-                        --private-version 0 \
-                        --private-key "$secureboot_key" \
-                        --input /workspace/root/usr/local/lib/phxc/recovery.orig.bin \
-                        --output /workspace/root/usr/local/lib/phxc/recovery.signed.bin
-
-      verbose "Creating signed pieeprom.bin"
-      rpi-eeprom-config --config "$sign_dir/bootconf.txt" \
-                        --digest "$sign_dir/bootconf.txt.sig" \
-                        --pubkey $secureboot_pub \
-                        --out /workspace/root/usr/local/lib/phxc/pieeprom.unsigned-bootcode.bin \
-                        /workspace/root/usr/local/lib/phxc/pieeprom.orig.bin
-
-      rpi-sign-bootcode --chip 2712 \
-                        --private-keynum 16 \
-                        --private-version 0 \
-                        --private-key "$secureboot_key" \
-                        --input "$sign_dir/orig/bootcode.bin" \
-                        --output "$sign_dir/bootcode.signed.bin"
-
-      verbose "Creating signed pieeprom.bin with counter-signed bootcode.bin"
-      rpi-eeprom-config --config "$sign_dir/bootconf.txt" \
-                        --digest "$sign_dir/bootconf.txt.signed.sig" \
-                        --bootcode "$sign_dir/bootcode.signed.bin" \
-                        --pubkey $secureboot_pub \
-                        --out /workspace/boot/pieeprom.signed-bootcode.bin \
-                        /workspace/root/usr/local/lib/phxc/pieeprom.orig.bin
-    fi
-    rm -rf "$sign_dir"
-  fi
 
   #######################
   ### Create root.img ###
