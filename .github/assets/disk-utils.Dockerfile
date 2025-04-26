@@ -39,7 +39,7 @@ Pin: release a=bookworm
 Pin-Priority: 650
 EOF
 apt-get -y update
-apt-get -y install --no-install-recommends rpi-eeprom
+apt-get -y install --no-install-recommends rpi-eeprom rpiboot
 rm -rf /var/cache/apt/lists/*
 EOR
 
@@ -55,4 +55,5 @@ apt-get -y update
 apt-get -y install --no-install-recommends \
   squashfs-tools cpio zstd dosfstools mtools fdisk curl systemd-ukify gettext \
   sbsigntool openssl xxd python3 python3-pycryptodome binutils
+rm -rf /var/cache/apt/lists/*
 EOR
