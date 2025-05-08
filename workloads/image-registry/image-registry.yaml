@@ -21,10 +21,25 @@ spec:
     - cluster
   - toPorts:
     - ports:
+      - port: "8020"
+    fromEndpoints:
+    - matchLabels:
+        app.kubernetes.io/name: image-registry
+        app.kubernetes.io/component: image-registry
+  - toPorts:
+    - ports:
       - port: "8021"
     fromEndpoints:
     - matchLabels:
         app.kubernetes.io/name: bootstrap
+  egress:
+  - toPorts:
+    - ports:
+      - port: "8020"
+    toEndpoints:
+    - matchLabels:
+        app.kubernetes.io/name: image-registry
+        app.kubernetes.io/component: image-registry
 ---
 apiVersion: v1
 kind: Service
@@ -46,6 +61,21 @@ spec:
     port: 8021
     targetPort: dav
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: image-registry-headless
+  labels:
+    app.kubernetes.io/name: image-registry
+    app.kubernetes.io/component: image-registry
+spec:
+  type: ClusterIP
+  clusterIP: None
+  sessionAffinity: ClientIP
+  selector:
+    app.kubernetes.io/name: image-registry
+    app.kubernetes.io/component: image-registry
+---
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
@@ -62,15 +92,13 @@ spec:
   secretName: image-registry-tls
 ---
 apiVersion: apps/v1
-kind: Deployment
+kind: DaemonSet
 metadata:
   name: image-registry
   labels:
     app.kubernetes.io/name: image-registry
     app.kubernetes.io/component: image-registry
 spec:
-  strategy:
-    type: Recreate
   selector:
     matchLabels:
       app.kubernetes.io/name: image-registry
@@ -86,13 +114,14 @@ spec:
       initContainers:
       - name: chown-images
         image: busybox:1.37.0
-        args: [chown, 101:101, /var/www]
+        args: [chown, 101:101, /var/lib/phxc/images]
         volumeMounts:
         - name: images
-          mountPath: /var/www
+          mountPath: /var/lib/phxc/images
       containers:
       - name: image-registry
         image: nginx:1.27.3
+        args: [/scripts/reload-nginx.sh, nginx, -c, /etc/nginx/nginx-conf/nginx.conf]
         securityContext:
           readOnlyRootFilesystem: true
         ports:
@@ -101,19 +130,40 @@ spec:
         - name: dav
           containerPort: 8021
         volumeMounts:
+        - name: scripts
+          mountPath: /scripts
         - name: config
-          mountPath: /etc/nginx/nginx.conf
-          subPath: nginx.conf
+          mountPath: /etc/nginx/nginx-conf
         - name: image-registry-tls
           mountPath: /etc/nginx/tls
         - name: images
-          mountPath: /var/www
+          mountPath: /var/lib/phxc/images
         - name: nginx-cache
           mountPath: /var/cache/nginx
+      - name: image-sync
+        image: ghcr.io/andsens/phxc-utils
+        command: [/scripts/sync-images.sh]
+        args: [amd64, arm64, rpi5]
+        env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        securityContext:
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - name: scripts
+          mountPath: /scripts
+        - name: images
+          mountPath: /var/lib/phxc/images
       volumes:
       - name: config
         configMap:
           name: image-registry-config
+      - name: scripts
+        configMap:
+          name: scripts
+          defaultMode: 0755
       - name: images
         hostPath:
           path: /var/lib/phxc/images
