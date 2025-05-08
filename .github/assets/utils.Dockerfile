@@ -3,7 +3,7 @@ FROM alpine:${ALPINE_VERSION}
 RUN apk add --no-cache bash
 SHELL ["/bin/bash", "-Eeo", "pipefail", "-c"]
 
-RUN apk add jq py3-virtualenv gettext-envsubst curl
+RUN apk add jq py3-virtualenv gettext-envsubst curl bind-tools
 
 COPY --chmod=0755 setup-upkg.sh ./
 COPY kubectl.upkg.json step-cli.upkg.json ./
