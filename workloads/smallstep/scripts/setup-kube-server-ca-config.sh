@@ -74,7 +74,7 @@ create_kube_server_issuer_provisioner() {
     kubectl apply -f <(printf -- "apiVersion: certmanager.step.sm/v1beta1
 kind: StepClusterIssuer
 metadata:
-  name: kube-server-issuer
+  name: kube-server
   namespace: %s
 spec:
   url: https://kube-server-ca.smallstep.svc.cluster.local:9000

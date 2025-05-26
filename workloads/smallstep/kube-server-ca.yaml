@@ -58,7 +58,7 @@ rules:
   verbs: [create]
 - apiGroups: [certmanager.step.sm]
   resources: [stepclusterissuers]
-  resourceNames: [kube-server-issuer]
+  resourceNames: [kube-server]
   verbs: [get, patch]
 ---
 apiVersion: rbac.authorization.k8s.io/v1

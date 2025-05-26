@@ -88,7 +88,7 @@ spec:
   issuerRef:
     group: certmanager.step.sm
     kind: StepClusterIssuer
-    name: kube-server-issuer
+    name: kube-server
   secretName: image-registry-tls
 ---
 apiVersion: apps/v1
