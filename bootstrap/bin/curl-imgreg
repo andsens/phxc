@@ -5,7 +5,7 @@ set -Eeo pipefail; shopt -s inherit_errexit
 main() {
   [[ $# -ge 1 ]] || usage
   local e; for e; do [[ $e != --help ]] || usage; done
-  local path=$1
+  local path=${1#'/'}
   shift
   curl --cacert /var/lib/rancher/k3s/agent/server-ca.crt \
     -L --no-progress-meter --connect-timeout 5 \

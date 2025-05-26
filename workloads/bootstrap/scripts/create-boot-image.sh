@@ -33,6 +33,8 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' create-boot-image.sh`
   eval "$(docopt "$@")"
 
+  __upload=${__upload%'/'}
+
   declare -A artifacts
   declare -A sha256sums
   local secureboot_key=/workspace/secureboot/tls.key \
