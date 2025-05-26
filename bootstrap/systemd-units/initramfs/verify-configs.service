@@ -15,9 +15,9 @@ RemainAfterExit=yes
 Environment=PATH=/sysroot/usr/local/bin:/sysroot/usr/local/sbin:/sysroot/usr/bin:/sysroot/usr/sbin
 ExecStart=/sysroot/usr/bin/bash
 StandardInputText=PKGROOT=/sysroot/usr/local/lib/upkg/.upkg/phxc; LOGPROGRAM=verify-configs; source "$PKGROOT/.upkg/records.sh/records.sh"; \
-                  for config_path in /efi/phxc/*.json; do \
-                    schema=$PKGROOT/lib/schemas/$(basename "$config_path"); \
-                    [[ -e $config_path.sig ]] || { info "%%s.sig not found, skipping %%s" "$config_path" "$config_path"; continue; }; \
+                  for cfgname in cluster node; do \
+                    schema=$PKGROOT/lib/schemas/$cfgname.json; config_path=/efi/phxc/$cfgname.json; \
+                    [[ -e $config_path ]] || { info "%%s not found, skipping" "$config_path"; continue; }; \
                     ssh-keygen -q -Y verify -f <(sed 's/^/admin /g' </sysroot/home/admin/.ssh/authorized_keys) -I admin -n file -s "$config_path.sig" <"$config_path" || \
                       fatal "Failed to verify signature of %%s using the admin authorized_keys" "$config_path"; \
                     [[ ! -e $schema ]] || validation_errors=$(jsonschema-cli -i "$config_path" "$schema" 2>&1) || \
