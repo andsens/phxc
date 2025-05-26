@@ -35,7 +35,7 @@ main() {
       printf "Failed retrieving WAN IP\n" >&2
     fi
     [[ $1 = '--watch' ]] || break
-    sleep 60 & SLEEP_PID=$1
+    sleep 60 & SLEEP_PID=$!
     wait || break
   done
 }
