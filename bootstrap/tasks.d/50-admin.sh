@@ -12,7 +12,7 @@ admin() {
   mkdir /home/admin/.ssh
 
   if [[ -e /workspace/cluster.json ]]; then
-    jq -r '.admin["ssh-keys"][]' /workspace/cluster.json >/home/admin/.ssh/authorized_keys
+    jq -r '.admin.sshKeys[]' /workspace/cluster.json >/home/admin/.ssh/authorized_keys
     if pwhash=$(jq -re .admin.pwhash /workspace/cluster.json); then
       usermod -p "$pwhash" admin
       ! $DEBUG || usermod -p "$pwhash" root

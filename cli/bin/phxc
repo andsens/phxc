@@ -269,7 +269,7 @@ embed_configs() {
   [[ -z $node ]] || cp "$node" "$config_tmp/node.json"
   [[ -z $rpi_otp ]] || cp "$rpi_otp" "$config_tmp/rpi-otp.json"
   local admin_ssh_key config_path
-  admin_ssh_key=$(jq -r '.admin["ssh-keys"][0]' "$config_tmp/cluster.json")
+  admin_ssh_key=$(jq -r '.admin.sshKeys[0]' "$config_tmp/cluster.json")
   for config_path in "$config_tmp"/*; do
     ssh-keygen -Y sign -f <(printf "%s" "$admin_ssh_key") -n file "$config_path"
   done
@@ -285,13 +285,13 @@ embed_configs() {
 
 recovery_keys() {
   local keys
-  keys=$(jq -n '{"recovery-keys": {}}')
+  keys=$(jq -n '{"recoveryKeys": {}}')
   for secret in $(kubectl --context phxc -n phxc get secret -oname); do
     [[ $secret != secret/diskenc-recovery-* ]] || \
       keys=$(jq \
         --arg hostname "${secret#'secret/diskenc-recovery-'}" \
         --arg key "$(kubectl --context phxc -n phxc get "$secret" -ojsonpath='{.data.disk-encryption\.recovery\.key}' | base64 -d)" \
-        '.["recovery-keys"][$hostname]=$key' <<<"$keys")
+        '.recoveryKeys[$hostname]=$key' <<<"$keys")
   done
   printf "%s\n" "$keys"
 }

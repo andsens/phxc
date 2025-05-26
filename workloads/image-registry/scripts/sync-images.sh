@@ -22,10 +22,10 @@ sync() {
     rm -rf "/var/lib/phxc/images/$variant.tmp"
     keep_locked "/var/lib/phxc/images/$variant.tmp" & lock_pid=$!
     local latest='' sync_from=''
-    latest=$(jq -r '.["build-date"] // empty' "/var/lib/phxc/images/$variant/meta.json" 2>/dev/null || true)
+    latest=$(jq -r '.buildDate // empty' "/var/lib/phxc/images/$variant/meta.json" 2>/dev/null || true)
     for registry in "${registries[@]}"; do
       [[ $registry != "$POD_IP" ]] || continue
-      if epoch=$(date -uD "%Y-%m-%dT%H:%M:%S" -d "$(curl_imgreg "$registry" "$variant/meta.json" | jq -re '.["build-date"]')" +%s); then
+      if epoch=$(date -uD "%Y-%m-%dT%H:%M:%S+00:00" -d "$(curl_imgreg "$registry" "$variant/meta.json" | jq -re .buildDate)" +%s); then
         if [[ -z $latest || $epoch -gt $latest ]]; then
           latest=$epoch
           sync_from=$registry
