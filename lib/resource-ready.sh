@@ -58,11 +58,23 @@ pod_ready() {
   fi
 }
 
-namespace_ready() {
-  local ns=$1 phase
-  phase=$(kubectl get namespace "$ns" -o jsonpath='{.status.phase}')
-  verbose "The namespace '%s' is in the '%s' phase" "$ns" "$phase"
-  [[ $phase = 'Active' ]] || return 1
+resource_exists() {
+  local resource_type=$1 resource_name=$2
+  kubectl get "$resource_type" "$resource_name"
+}
+
+resource_phase_is() {
+  local namespace resource_type resource_name required_phase phase
+  if [[ $1 = namespace ]]; then
+    resource_type=$1 resource_name=$2 required_phase=$3
+    phase=$(kubectl get "$resource_type" "$resource_name" -o jsonpath='{.status.phase}')
+    verbose "The %s '%s' is in the '%s' phase" "$resource_type" "$resource_name" "$phase"
+  else
+    namespace=$1 resource_type=$2 resource_name=$3 required_phase=$4
+    phase=$(kubectl -n "$namespace" get "$resource_type" "$resource_name" -o jsonpath='{.status.phase}')
+    verbose "The %s '%s' in '%s' is in the '%s' phase" "$resource_type" "$resource_name" "$namespace" "$phase"
+  fi
+  [[ $phase = "$required_phase" ]] || return 1
 }
 
 endpoint_ready() {
