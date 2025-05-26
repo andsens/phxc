@@ -22,8 +22,9 @@ case $VARIANT in
     amd64-microcode intel-microcode # Microcode updates that will be embedded in the UKI
   )
   ;;
-  rpi*)
-  # See rpi_kernel further down
+  rpi5) PACKAGES+=(
+    linux-image-rpi-2712
+  )
   ;;
   *) printf "Unknown variant: %s\n" "$VARIANT" >&2; return 1 ;;
 esac
@@ -40,7 +41,6 @@ boot() {
   if [[ $VARIANT = rpi* ]]; then
     rm /etc/systemd/system.conf.d/efi-arch.conf \
        /etc/systemd/system/init-efi-bootmenu.service
-    rpi_kernel
   fi
   # Enable serial console
   systemctl enable serial-getty@ttyS0
@@ -48,7 +48,6 @@ boot() {
   if [[ $VARIANT = rpi5 ]]; then
     cp "$PKGROOT/bootstrap/assets/config-rpi5-bootimg.txt" /boot
     cp "$PKGROOT/bootstrap/assets/config-rpi5-esp.txt" /boot
-    cp "$PKGROOT/bootstrap/assets/bootconf.txt" /boot
   else
     # Copy efi stub to /boot so create-boot-image can use it for the UKI, but uninstall it from the image
     cp -r /usr/lib/systemd/boot/efi /boot/systemd-boot-efi
@@ -66,53 +65,4 @@ boot() {
 
 boot_cleanup() {
   rm -rf /usr/lib/dracut # Remove the leftovers we copied into the image
-}
-
-rpi_kernel() {
-  local kver kerneltmp rpi_suffix firmware_dir
-  kerneltmp=$(mktemp -d)
-  wget -qO>(tar -xzC "$kerneltmp" --strip-components=1) \
-    "https://github.com/raspberrypi/firmware/archive/stable.tar.gz"
-  case "$VARIANT" in
-    rpi2|rpi3) rpi_suffix=7 ;;
-    rpi4) rpi_suffix=8 ;;
-    rpi5) rpi_suffix=_2712 ;;
-  esac
-  uname_path="$kerneltmp/extra/uname_string${rpi_suffix}"
-  kver=$(grep -o '^Linux version [^ ]\+' "$uname_path" | cut -d' ' -f3)
-  mkdir /usr/lib/modules
-  cp -a "$kerneltmp/modules/$kver" "/usr/lib/modules/$kver"
-  cp "$kerneltmp/boot/kernel${rpi_suffix}.img" "/boot/vmlinuz-$kver"
-  ln -s "boot/vmlinuz-$kver" /vmlinuz
-  ln -s "boot/vmlinuz-$kver" /vmlinuz.old
-
-  mkdir /boot/firmware
-  cp -a "$kerneltmp/boot/overlays" /boot/firmware/overlays
-  case "$VARIANT" in
-    rpi2)
-      cp "$kerneltmp/boot/start_x.elf" \
-          "$kerneltmp/boot"/bcm*-rpi-2* \
-          /boot/firmware
-      ;;
-    rpi3)
-      cp "$kerneltmp/boot/start_x.elf" \
-          "$kerneltmp/boot"/bcm2710-rpi-3* \
-          /boot/firmware
-      ;;
-    rpi4)
-      cp "$kerneltmp/boot/start4x.elf" \
-          "$kerneltmp/boot"/bcm2711* \
-          /boot/firmware
-      firmware_dir=/usr/lib/firmware/raspberrypi/bootloader-2711/stable
-      cp $firmware_dir/recovery.bin /usr/local/lib/phxc/recovery.orig.bin
-      cp "$(LC_ALL=C compgen -G "$firmware_dir/pieeprom-*.bin" | head -n1)" /usr/local/lib/phxc/pieeprom.orig.bin
-      ;;
-    rpi5)
-      cp "$kerneltmp/boot"/bcm2712* /boot/firmware
-      firmware_dir=/usr/lib/firmware/raspberrypi/bootloader-2712/stable
-      cp $firmware_dir/recovery.bin /usr/local/lib/phxc/recovery.orig.bin
-      cp "$(LC_ALL=C compgen -G "$firmware_dir/pieeprom-*.bin" | head -n1)" /usr/local/lib/phxc/pieeprom.orig.bin
-      ;;
-  esac
-  rm -rf "$kerneltmp"
 }

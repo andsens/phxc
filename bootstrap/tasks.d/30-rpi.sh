@@ -41,7 +41,17 @@ fi
 
 rpi() {
   if [[ $VARIANT = rpi* ]]; then
-    :
+    local fwtmp
+    fwtmp=$(mktemp -d)
+    wget -qO>(tar -xzC "$fwtmp" --strip-components=1) \
+      "https://github.com/raspberrypi/firmware/archive/stable.tar.gz"
+    mkdir /boot/firmware
+    cp -a "$fwtmp/boot/overlays" /boot/firmware/overlays
+    case "$VARIANT" in
+      rpi4) cp "$fwtmp/boot/start4x.elf" "$fwtmp/boot"/bcm2711* /boot/firmware ;;
+      rpi5) cp "$fwtmp/boot"/bcm2712* /boot/firmware ;;
+    esac
+    rm -rf "$fwtmp"
   else
     rm -rf /etc/systemd/system/rpi-eeprom-update.service.d \
            /etc/default/rpi-eeprom-update
