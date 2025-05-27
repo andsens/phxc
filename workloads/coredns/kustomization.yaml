@@ -5,7 +5,7 @@ images:
 - name: ghcr.io/andsens/phxc-coredns
   newTag: sha-6f1e1cf
 - name: ghcr.io/andsens/phxc-utils
-  newTag: sha-6f1e1cf
+  newTag: sha-3d836db
 resources:
 - ../../lib/cluster-settings
 - coredns.yaml

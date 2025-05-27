@@ -3,7 +3,7 @@ kind: Kustomization
 namespace: smallstep
 images:
 - name: ghcr.io/andsens/phxc-utils
-  newTag: sha-6f1e1cf
+  newTag: sha-3d836db
 resources:
 - ../../lib/cluster-settings
 - namespace.yaml
