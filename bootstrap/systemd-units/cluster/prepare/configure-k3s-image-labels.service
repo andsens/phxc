@@ -1,0 +1,25 @@
+[Unit]
+Description=Set k8s node labels about the bootstrapped image
+Before=pre-k3s.target
+
+[Install]
+WantedBy=k3s.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=bash -eo pipefail
+StandardInputText=jq -n \
+  --argjson labels "$(get-config -q node labels || printf '[]')" \
+  --arg sha256 "$(cat /run/initramfs/root.img.sha256)" \
+  --arg variant ${VARIANT} \
+  --arg debug ${DEBUG} \
+  --arg cmdline "$(cat /proc/cmdline)" \
+  '{"node-label": (.labels + [ \
+    "cluster.local/rootimg-sha256=" + $sha256[0:8], \
+    "cluster.local/debug=" + $debug, \
+    "cluster.local/variant=" + $variant, \
+    "cluster.local/empty-pw=" + ($cmdline | test("\\\\bphxc.empty-pw\\\\b") | tostring) \
+  ])}' \
+  >/etc/rancher/k3s/config.yaml.d/image-labels.yaml
+StandardError=journal
