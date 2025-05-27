@@ -8,7 +8,7 @@ main() {
   trap 'kill $SLEEP_PID; exit 0' INT TERM
   while true; do
     sync "$@"
-    sleep 3600 & $SLEEP_PID
+    sleep 3600 & SLEEP_PID=$!
     wait
   done
 }
