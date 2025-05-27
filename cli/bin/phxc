@@ -329,13 +329,13 @@ bootstrap() {
 }
 
 update_nodes() {
-  local nodes=("$@") node hostname current_rootimg_sha256 new_rootimg_sha256 failed_nodes=() unschedulable
+  local nodes=("$@") node hostname current_sha256 new_sha256 failed_nodes=() unschedulable
   if ! kubectl get node -ojson | jq -e '[.items[] | select(.spec.unschedulable)] | length == 0' >/dev/null; then
     fatal "Unable to update any nodes. Some nodes are currently unschedulable"
   fi
   for node in "${nodes[@]}"; do
     hostname=$(kubectl --context phxc get node "$node" -ojsonpath='{.metadata.labels.kubernetes\.io/hostname}')
-    current_rootimg_sha256=$(LC_ALL=C ssh "admin@$node" cat /run/initramfs/root.img.sha256)
+    current_sha256=$(LC_ALL=C ssh "admin@$node" cat /run/initramfs/root.img.sha256)
     info "Updating %s" "$node"
     LC_ALL=C ssh "admin@$hostname" -- sudo systemctl start --no-block update-boot
     # shellcheck disable=SC2064
@@ -351,12 +351,12 @@ update_nodes() {
     until unschedulable=$(kubectl get node "$node" -ojsonpath='{.spec.unschedulable}' 2>/dev/null) && [[ $unschedulable != 'true' ]]; do
       sleep 5
     done
-    new_rootimg_sha256=$(LC_ALL=C ssh "admin@$node" cat /run/initramfs/root.img.sha256)
-    if [[ $current_rootimg_sha256 = "$new_rootimg_sha256" ]]; then
-      info "%s failed to update to the new image (still on %s)" "$node" "${current_rootimg_sha256:0:8}"
+    new_sha256=$(LC_ALL=C ssh "admin@$node" cat /run/initramfs/root.img.sha256)
+    if [[ $current_sha256 = "$new_sha256" ]]; then
+      info "%s failed to update to the new image (still on %s)" "$node" "${current_sha256:0:8}"
       failed_nodes+=("$node")
     else
-      info "%s successfully updated to the new image (updated from %s to %s)" "$node" "${current_rootimg_sha256:0:8}" "${new_rootimg_sha256:0:8}"
+      info "%s successfully updated to the new image (updated from %s to %s)" "$node" "${current_sha256:0:8}" "${new_sha256:0:8}"
     fi
   done
   if [[ ${#failed_nodes[@]} -gt 0 ]]; then

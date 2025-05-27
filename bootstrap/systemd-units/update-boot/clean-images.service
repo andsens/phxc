@@ -11,7 +11,7 @@ WantedBy=multi-user.target
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=bash -eo pipefail
-StandardInputText=current_rootimg_sha256=$(cat /run/initramfs/root.img.sha256); \
+StandardInputText=current_sha256=$(cat /run/initramfs/root.img.sha256); \
                   for rootimg in /efi/phxc/root.*.img; do \
-                    [[ $rootimg = "/efi/phxc/root.${current_rootimg_sha256}.img" ]] || rm "$rootimg"; \
+                    [[ $rootimg = "/efi/phxc/root.${current_sha256}.img" ]] || rm "$rootimg"; \
                   done

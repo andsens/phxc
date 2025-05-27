@@ -22,10 +22,14 @@ sync() {
     rm -rf "/var/lib/phxc/images/$variant.tmp"
     keep_locked "/var/lib/phxc/images/$variant.tmp" & lock_pid=$!
     local latest='' sync_from=''
-    latest=$(jq -r '.buildDate // empty' "/var/lib/phxc/images/$variant/meta.json" 2>/dev/null || true)
+    latest=$(stat -c%Y /var/lib/phxc/images/amd64/root.img 2>/dev/null || true)
     for registry in "${registries[@]}"; do
       [[ $registry != "$POD_IP" ]] || continue
-      if epoch=$(date -uD "%Y-%m-%dT%H:%M:%S+00:00" -d "$(curl_imgreg "$registry" "$variant/meta.json" | jq -re .buildDate)" +%s); then
+      if epoch=$(
+        date -uD "%a, %d %B %Y %H:%M:%S GMT" -d "$(
+          curl_imgreg "$registry" "$variant/root.img" --head -w '%{header_json}' -o/dev/null | \
+          jq -r '.["last-modified"] | first')" +%s
+        ); then
         if [[ -z $latest || $epoch -gt $latest ]]; then
           latest=$epoch
           sync_from=$registry
@@ -36,11 +40,12 @@ sync() {
       info "Found newer image for variant %s on %s, fetching now" "$variant" "$registry"
       for file in $(curl_imgreg "$registry" "$variant" | jq -r '.[] | .name'); do
         curl_imgreg "$registry" "$variant/$file" -o"/var/lib/phxc/images/$variant.tmp/$file"
+        touch -m -t "$(date +%Y%m%d%H%m.%S -d "@$latest")" "/var/lib/phxc/images/$variant.tmp/$file"
       done
       rm -rf "/var/lib/phxc/images/$variant.old"
       [[ ! -e "/var/lib/phxc/images/$variant" ]] || mv "/var/lib/phxc/images/$variant" "/var/lib/phxc/images/$variant.old"
       mv "/var/lib/phxc/images/$variant.tmp" "/var/lib/phxc/images/$variant"
-    elif [[ -f "/var/lib/phxc/images/$variant/meta.json" ]]; then
+    elif [[ -f "/var/lib/phxc/images/$variant/root.img.sha256" ]]; then
       info "Newest image for variant %s already present on this host" "$variant"
     else
       info "No image for variant %s found" "$variant"
@@ -48,6 +53,7 @@ sync() {
     rm -rf "/var/lib/phxc/images/$variant.tmp"
     kill $lock_pid
   done
+  info "Synchronization complete"
 }
 
 wait_for_unlock() {

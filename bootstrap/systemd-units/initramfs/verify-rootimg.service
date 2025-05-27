@@ -10,6 +10,6 @@ RequiredBy=overlay-image.mount
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=sha256sum -c /usr/share/phxc/root.img.sha256.checksum
+ExecStart=sha256sum -c /usr/share/phxc/root.img.sha256sum
 ExecStartPost=cp /usr/share/phxc/root.img.sha256 /run/initramfs/root.img.sha256
 StandardOutput=journal+console

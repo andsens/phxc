@@ -33,12 +33,12 @@ for varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' update-boot`
   eval "$(docopt "$@")"
 
-  local meta_json_new http_code
-  if ! meta_json_new=$(curl-imgreg "$VARIANT/meta.json" -w '%{http_code}'); then
+  local http_code new_sha256 current_sha256 pending_sha256 failed_sha256
+  if ! new_sha256=$(curl-imgreg "$VARIANT/root.img.sha256" -w '%{http_code}'); then
     info "Unable to retrieve image metadata from image-registry"
     return 1
   fi
-  http_code=$(tail -n1 <<<"$meta_json_new")
+  http_code=$(tail -n1 <<<"$new_sha256")
   if [[ $http_code = 404 ]]; then
     info "No image has been built for the variant '%s' yet" "$VARIANT"
     return 0
@@ -47,36 +47,34 @@ for varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
     info "Unable to retrieve image metadata from image-registry (HTTP response code %s)" "$http_code"
     return 1
   fi
-  meta_json_new=$(head -n-1 <<<"$meta_json_new")
-  local current_rootimg_sha256 pending_rootimg_sha256 failed_rootimg_sha256 new_rootimg_sha256
-  current_rootimg_sha256=$(cat /run/initramfs/root.img.sha256)
-  pending_rootimg_sha256=$(cat /efi/phxc/pending.sha256 2>/dev/null || true)
-  failed_rootimg_sha256=$(cat /efi/phxc/failed.sha256 2>/dev/null || true)
-  new_rootimg_sha256=$(jq -re '.sha256sums["root.img"]' <<<"$meta_json_new")
-  if [[ $new_rootimg_sha256 = "$current_rootimg_sha256" ]]; then
-    info "System is up-to-date and image is currently running (%s)" "${current_rootimg_sha256:0:8}"
+  new_sha256=$(head -n-1 <<<"$new_sha256")
+  current_sha256=$(cat /run/initramfs/root.img.sha256)
+  pending_sha256=$(cat /efi/phxc/pending.sha256 2>/dev/null || true)
+  failed_sha256=$(cat /efi/phxc/failed.sha256 2>/dev/null || true)
+  if [[ $new_sha256 = "$current_sha256" ]]; then
+    info "System is up-to-date and image is currently running (%s)" "${current_sha256:0:8}"
     return 0
-  elif [[ $new_rootimg_sha256 = "$pending_rootimg_sha256" ]]; then
+  elif [[ $new_sha256 = "$pending_sha256" ]]; then
     # shellcheck disable=SC2154
     if $__reboot; then
-      info "System is outdated (%s), a newer boot image (%s) will be tried on next boot" "${current_rootimg_sha256:0:8}" "${pending_rootimg_sha256:0:8}"
+      info "System is outdated (%s), a newer boot image (%s) will be tried on next boot" "${current_sha256:0:8}" "${pending_sha256:0:8}"
       cordoned-reboot -t
     else
-      info "System is outdated (%s), a newer boot image (%s) has been downloaded and is ready to be tried out" "${current_rootimg_sha256:0:8}" "${pending_rootimg_sha256:0:8}"
+      info "System is outdated (%s), a newer boot image (%s) has been downloaded and is ready to be tried out" "${current_sha256:0:8}" "${pending_sha256:0:8}"
     fi
     return 0
-  elif [[ $new_rootimg_sha256 = "$failed_rootimg_sha256" ]]; then
-    info "System is outdated (%s) but the newer boot image (%s) failed to boot" "${current_rootimg_sha256:0:8}" "${failed_rootimg_sha256:0:8}"
+  elif [[ $new_sha256 = "$failed_sha256" ]]; then
+    info "System is outdated (%s) but the newer boot image (%s) failed to boot" "${current_sha256:0:8}" "${failed_sha256:0:8}"
     return 0
   fi
-  info "System is outdated (%s), updating now (%s)" "${current_rootimg_sha256:0:8}" "${new_rootimg_sha256:0:8}"
+  info "System is outdated (%s), updating now (%s)" "${current_sha256:0:8}" "${new_sha256:0:8}"
   clean_update_boot_files() {
     [[ ! -e /efi/phxc/pending.sha256 ]] || rm -f "/efi/phxc/root.$(cat /efi/phxc/pending.sha256).img"
     rm -f /efi/tryboot.img /efi/EFI/Linux/uki.try.efi /efi/phxc/pending.sha256
   }
   trap "clean_update_boot_files" EXIT
-  printf "%s\n" "$new_rootimg_sha256" >/efi/phxc/pending.sha256
-  curl-imgreg "$VARIANT/root.img" -o"/efi/phxc/root.$new_rootimg_sha256.img" -f
+  printf "%s\n" "$new_sha256" >/efi/phxc/pending.sha256
+  curl-imgreg "$VARIANT/root.img" -o"/efi/phxc/root.$new_sha256.img" -f
 
   if [[ $VARIANT = rpi* ]]; then
     if ! rpi-otp-private-key -c -o 0; then
@@ -104,10 +102,10 @@ for varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   fi
   trap "" EXIT
   if $__reboot; then
-    info "The boot image has been updated (%s) and will be tried on next boot" "${new_rootimg_sha256:0:8}"
+    info "The boot image has been updated (%s) and will be tried on next boot" "${new_sha256:0:8}"
     cordoned-reboot -t
   else
-    info "The boot image has been updated (%s) but will not be tried on next boot" "${new_rootimg_sha256:0:8}"
+    info "The boot image has been updated (%s) but will not be tried on next boot" "${new_sha256:0:8}"
   fi
 }
 
