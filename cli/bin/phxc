@@ -389,7 +389,7 @@ rpi5_secureboot() {
       warning "WSL detected, but rpiboot.exe not found at %s.\n%s" "$rpiboot_winpath" \
         "Download and install rpiboot for Windows from https://github.com/raspberrypi/usbboot/raw/refs/heads/master/win32/rpiboot_setup.exe"
     fi
-    warning "Be aware that serial number filtering does not seem to work Windows, so make sure only one RaspberryPi is connected"
+    warning "Be aware that serial number filtering does not seem to work on Windows, so make sure only one RaspberryPi is connected"
 
     rpi5_sign_bootloader
 
