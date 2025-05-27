@@ -53,7 +53,7 @@ main() {
 
   info "Replacing variables in files"
   # shellcheck disable=SC2016
-  local file replacements=('${EFI_UUID}' '${DATA_UUID}' '${VARIANT}' '${EFI_ARCH}')
+  local file replacements=('${EFI_UUID}' '${DATA_UUID}' '${DEBUG}' '${VARIANT}' '${EFI_ARCH}')
   for file in "${FILES_ENVSUBST[@]}"; do
     cp "$file" /workspace/envsubst.tmp
     verbose "Replace vars in %s" "$file"

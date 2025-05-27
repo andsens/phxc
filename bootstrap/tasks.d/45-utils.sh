@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 FILES_ENVSUBST+=(
+  /etc/systemd/system.conf.d/debug.conf
   /etc/systemd/system.conf.d/disk-uuids.conf
   /etc/systemd/system.conf.d/efi-arch.conf
   /etc/systemd/system.conf.d/variant.conf

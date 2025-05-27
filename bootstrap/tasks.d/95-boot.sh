@@ -30,7 +30,7 @@ case $VARIANT in
 esac
 
 FILES_ENVSUBST+=(
-  /usr/lib/dracut/modules.d/99phxc/fstab # Contains $ROOT_SHA256, will be handled by create-boot-image
+  /usr/lib/dracut/modules.d/99phxc/fstab # Contains $ROOTIMG_SHA256, which will be handled by create-boot-image
   /etc/fstab.tmp
 )
 
