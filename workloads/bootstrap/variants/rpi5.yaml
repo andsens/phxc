@@ -43,8 +43,11 @@ spec:
               mountPath: /workspace/context
             - name: bundle
               mountPath: /workspace/bundle
-            - name: cluster-config
-              mountPath: /workspace/cluster.json
+            - name: authorized-keys
+              mountPath: /workspace/admin-credentials/authorized_keys
+              readOnly: true
+            - name: shadow
+              mountPath: /workspace/admin-credentials/shadow
               readOnly: true
           containers:
           - name: create-boot-image
@@ -71,9 +74,13 @@ spec:
             configMap:
               name: scripts
               defaultMode: 0755
-          - name: cluster-config
+          - name: authorized-keys
             hostPath:
-              path: /efi/phxc/cluster.json
+              path: /home/admin/.ssh/authorized_keys
+              type: File
+          - name: shadow
+            hostPath:
+              path: /etc/shadow
               type: File
           - name: secureboot
             secret:

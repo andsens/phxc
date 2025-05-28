@@ -11,12 +11,12 @@ admin() {
   adduser admin sudo
   mkdir /home/admin/.ssh
 
-  if [[ -e /workspace/cluster.json ]]; then
-    jq -r '.admin.sshKeys[]' /workspace/cluster.json >/home/admin/.ssh/authorized_keys
-    if pwhash=$(jq -re .admin.pwhash /workspace/cluster.json); then
-      usermod -p "$pwhash" admin
-      ! $DEBUG || usermod -p "$pwhash" root
-    fi
+  if [[ -e /workspace/admin-credentials/authorized_keys ]]; then
+    cat /workspace/admin-credentials/authorized_keys >/home/admin/.ssh/authorized_keys
+  fi
+  if pwhash=$(grep -m1 admin /workspace/admin-credentials/shadow 2>/dev/null | cut -d: -f2); then
+    usermod -p "$pwhash" admin
+    ! $DEBUG || usermod -p "$pwhash" root
   fi
   if $DEBUG; then
     usermod -U root
