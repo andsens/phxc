@@ -12,14 +12,14 @@ check_ready() {
 
   # shellcheck disable=SC2154
   if $wait; then
-    set +e; (set -e; is_ready >/dev/null 2> >(pipe_verbose)); ret=$?; set -e
+    set +e; (set -e; is_ready >/dev/null 2> >(LOGPROGRAM= pipe_verbose)); ret=$?; set -e
     until [[ $ret = 0 ]]; do
       sleep 1
-      set +e; (set -e; is_ready >/dev/null 2> >(pipe_verbose)); ret=$?; set -e
+      set +e; (set -e; is_ready >/dev/null 2> >(LOGPROGRAM= pipe_verbose)); ret=$?; set -e
     done
     return 0
   else
-    is_ready >/dev/null 2> >(pipe_verbose)
+    is_ready >/dev/null 2> >(LOGPROGRAM= pipe_verbose)
   fi
 }
 
