@@ -1,7 +1,7 @@
 [Unit]
 Description=Waits until the %i workload is ready
-Requires=install-node-packages.service
-After=install-node-packages.service
+Requires=install-node-packages.service k3s.target
+After=install-node-packages.service k3s.target
 
 [Service]
 Type=oneshot
