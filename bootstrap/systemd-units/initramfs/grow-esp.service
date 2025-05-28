@@ -1,9 +1,9 @@
 [Unit]
-Description=Grow the filesystem on the EFI System Partition by rebuilding it
+Description=Grow the filesystem on the boot partition by rebuilding it
 DefaultDependencies=No
 Requires=systemd-repart.service
 After=systemd-repart.service systemd-journal.service
-Before=efi.mount local-fs-pre.target system-systemd\x2dfsck.slice
+Before=boot.mount local-fs-pre.target system-systemd\x2dfsck.slice
 
 [Install]
 WantedBy=local-fs-pre.target
@@ -11,9 +11,9 @@ WantedBy=local-fs-pre.target
 [Service]
 RemainAfterExit=yes
 Type=oneshot
-ExecCondition=sh -ec '[ $(fat32-size /dev/disk/by-partuuid/${EFI_UUID}) -le $(( 500 * 1024 * 1024 )) ] || exit 1'
+ExecCondition=sh -ec '[ $(fat32-size /dev/disk/by-partuuid/${BOOT_UUID}) -le $(( 500 * 1024 * 1024 )) ] || exit 1'
 ExecStart=sh -e
-StandardInputText=devpath=/dev/disk/by-partuuid/${EFI_UUID}; tmppath=/run/initramfs/efi-tmp; \
+StandardInputText=devpath=/dev/disk/by-partuuid/${BOOT_UUID}; tmppath=/run/initramfs/boot-tmp; \
                   mkdir $tmppath; \
                   mcopy -sQmi $devpath ::/ $tmppath; \
                   wipefs -a $devpath; \

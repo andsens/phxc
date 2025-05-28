@@ -1,8 +1,8 @@
 [Unit]
 Description=Permanently switch to the new image
-RequiresMountsFor=/efi
+RequiresMountsFor=/boot
 After=remove-failed-boot.service
-ConditionPathExists=/efi/phxc/pending.sha256
+ConditionPathExists=/boot/phxc/pending.sha256
 
 [Install]
 WantedBy=multi-user.target
@@ -10,8 +10,8 @@ WantedBy=multi-user.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecCondition=diff -q /run/initramfs/root.img.sha256 /efi/phxc/pending.sha256
+ExecCondition=diff -q /run/initramfs/root.img.sha256 /boot/phxc/pending.sha256
 ExecStart=bash -eo pipefail
-StandardInputText=if [[ ${VARIANT} = rpi* ]]; then mv /efi/tryboot.img /efi/boot.img; mv /efi/tryboot.sig /efi/boot.sig; \
-                  else mv /efi/EFI/BOOT/BOOT.TRY.EFI /efi/EFI/BOOT/BOOT${EFI_ARCH}.EFI; fi
-ExecStartPost=rm /efi/phxc/pending.sha256
+StandardInputText=if [[ ${VARIANT} = rpi* ]]; then mv /boot/tryboot.img /boot/boot.img; mv /boot/tryboot.sig /boot/boot.sig; \
+                  else mv /boot/EFI/BOOT/BOOT.TRY.EFI /boot/EFI/BOOT/BOOT${EFI_ARCH}.EFI; fi
+ExecStartPost=rm /boot/phxc/pending.sha256

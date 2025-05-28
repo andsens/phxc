@@ -49,8 +49,8 @@ for varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   fi
   new_sha256=$(head -n-1 <<<"$new_sha256")
   current_sha256=$(cat /run/initramfs/root.img.sha256)
-  pending_sha256=$(cat /efi/phxc/pending.sha256 2>/dev/null || true)
-  failed_sha256=$(cat /efi/phxc/failed.sha256 2>/dev/null || true)
+  pending_sha256=$(cat /boot/phxc/pending.sha256 2>/dev/null || true)
+  failed_sha256=$(cat /boot/phxc/failed.sha256 2>/dev/null || true)
   if [[ $new_sha256 = "$current_sha256" ]]; then
     info "System is up-to-date and image is currently running (%s)" "${current_sha256:0:8}"
     return 0
@@ -69,35 +69,35 @@ for varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
   fi
   info "System is outdated (%s), updating now (%s)" "${current_sha256:0:8}" "${new_sha256:0:8}"
   clean_update_boot_files() {
-    [[ ! -e /efi/phxc/pending.sha256 ]] || rm -f "/efi/phxc/root.$(cat /efi/phxc/pending.sha256).img"
-    rm -f /efi/tryboot.img /efi/EFI/Linux/uki.try.efi /efi/phxc/pending.sha256
+    [[ ! -e /boot/phxc/pending.sha256 ]] || rm -f "/boot/phxc/root.$(cat /boot/phxc/pending.sha256).img"
+    rm -f /boot/tryboot.img /boot/boot/Linux/uki.try.efi /boot/phxc/pending.sha256
   }
   trap "clean_update_boot_files" EXIT
-  printf "%s\n" "$new_sha256" >/efi/phxc/pending.sha256
-  curl-imgreg "$VARIANT/root.img" -o"/efi/phxc/root.$new_sha256.img" -f
+  printf "%s\n" "$new_sha256" >/boot/phxc/pending.sha256
+  curl-imgreg "$VARIANT/root.img" -o"/boot/phxc/root.$new_sha256.img" -f
 
   if [[ $VARIANT = rpi* ]]; then
     if ! rpi-otp-private-key -c -o 0; then
       warning "RPi OTP is not initialized or not supported, using disk-encryption with a static password"
-      curl-imgreg "$VARIANT/boot.empty-pw.img" -o/efi/tryboot.img -f
-      curl-imgreg "$VARIANT/boot.empty-pw.sig" -o/efi/tryboot.sig -f
+      curl-imgreg "$VARIANT/boot.empty-pw.img" -o/boot/tryboot.img -f
+      curl-imgreg "$VARIANT/boot.empty-pw.sig" -o/boot/tryboot.sig -f
     else
       mkdir -p /run/cryptsetup-keys.d
       rpi-otp-derive-key phxc-disk-encryption-key /run/cryptsetup-keys.d/data.key
       cryptsetup luksOpen --test-passphrase --key-file /run/cryptsetup-keys.d/data.key "/dev/disk/by-partuuid/${DATA_UUID}" &>/dev/null || \
         cryptsetup luksAddKey --key-file /var/lib/phxc/disk-encryption-recovery.key \
           "/dev/disk/by-partuuid/${DATA_UUID}" /run/cryptsetup-keys.d/data.key
-      curl-imgreg "$VARIANT/boot.rpi-otp.img" -o/efi/tryboot.img -f
-      curl-imgreg "$VARIANT/boot.rpi-otp.sig" -o/efi/tryboot.sig -f
+      curl-imgreg "$VARIANT/boot.rpi-otp.img" -o/boot/tryboot.img -f
+      curl-imgreg "$VARIANT/boot.rpi-otp.sig" -o/boot/tryboot.sig -f
     fi
   else
     if ! compgen -G '/sys/kernel/security/tpm*' &>/dev/null; then
       warning "No TPM available, using disk-encryption with a static password"
-      curl-imgreg "$VARIANT/uki.empty-pw.efi" -o/efi/EFI/BOOT/BOOT.TRY.EFI -f
+      curl-imgreg "$VARIANT/uki.empty-pw.efi" -o/boot/EFI/BOOT/BOOT.TRY.EFI -f
     else
-      curl-imgreg "$VARIANT/uki.tpm2.efi" -o/efi/EFI/BOOT/BOOT.TRY.EFI -f
+      curl-imgreg "$VARIANT/uki.tpm2.efi" -o/boot/EFI/BOOT/BOOT.TRY.EFI -f
       cryptenroll-uki --device "/dev/disk/by-partuuid/${DATA_UUID}" \
-        /var/lib/phxc/disk-encryption-recovery.key /efi/EFI/BOOT/BOOT.TRY.EFI
+        /var/lib/phxc/disk-encryption-recovery.key /boot/EFI/BOOT/BOOT.TRY.EFI
     fi
   fi
   trap "" EXIT

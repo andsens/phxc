@@ -43,8 +43,8 @@ install() {
   ### EFI partition ###
   inst_multiple mkfs.vfat minfo mcopy wipefs
   inst_libdir_file gconv/gconv-modules.cache gconv/IBM850.so
-  inst "$moddir/repart.d/10-esp.conf" /etc/repart.d/10-esp.conf
-  mkdir "$initdir/efi"
+  inst "$moddir/repart.d/10-boot.conf" /etc/repart.d/10-boot.conf
+  mkdir "$initdir/boot"
 
   ### Data partition ###
   inst touch

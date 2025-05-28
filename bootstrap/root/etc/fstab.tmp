@@ -1,5 +1,5 @@
 # <device>                  <dir>             <type> <options>                            <dump> <fsck>
-PARTUUID=${EFI_UUID}        /efi              vfat   defaults,umask=0177   0      2
+PARTUUID=${BOOT_UUID}       /boot             vfat   defaults,umask=0177   0      2
 /dev/mapper/data            /var              ext4   defaults                             0      2
 /var/swap                   none              swap   sw,x-systemd.requires=mkswap.service 0      0
 /var/lib/phxc/node-password /etc/rancher/node none   bind                                 0      0

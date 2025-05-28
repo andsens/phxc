@@ -2,12 +2,12 @@
 
 PACKAGES+=(
   systemd systemd-sysv # systemd bootup
-  dosfstools # Used for mounting ESP
+  dosfstools # Used for mounting boot partition
   dracut # initramfs
 )
 PACKAGES_TMP+=(
   dracut-network dropbear # for entering the recovery key (+ connection info message)
-  mtools util-linux # wipefs, minfo, mcopy needed for ESP rebuild
+  mtools util-linux # wipefs, minfo, mcopy needed for boot partition rebuild
 )
 
 case $VARIANT in
@@ -47,7 +47,7 @@ boot() {
 
   if [[ $VARIANT = rpi5 ]]; then
     cp "$PKGROOT/bootstrap/assets/config-rpi5-bootimg.txt" /boot
-    cp "$PKGROOT/bootstrap/assets/config-rpi5-esp.txt" /boot
+    cp "$PKGROOT/bootstrap/assets/config-rpi5-boot.txt" /boot
   else
     # Copy efi stub to /boot so create-boot-image can use it for the UKI, but uninstall it from the image
     cp -r /usr/lib/systemd/boot/efi /boot/systemd-boot-efi

@@ -11,6 +11,6 @@ ExecStartPre=sh -c 'printf "To enter the data partition recovery key, log in wit
 ExecStartPre=sh -c 'printf "The machine has been assigned the following IPs:\\n%%s" "$(ip -j a | jq -r ".[] | select(.ifname!=\\"lo\\") | .addr_info[] | .local")"'
 ExecStart=dropbear -FERmsgjk -c ' \
   printf "Run \\`phxc decrypt-recovery-key\\` with the following input, then paste the output here:%%s\\n" \
-    "$(base64 -w0 /efi/phxc/disk-encryption-recovery.key.encrypted)"; \
+    "$(base64 -w0 /boot/phxc/disk-encryption-recovery.key.encrypted)"; \
   systemd-tty-ask-password-agent --query'
 StandardOutput=journal+console

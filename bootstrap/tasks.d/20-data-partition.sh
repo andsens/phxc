@@ -10,7 +10,7 @@ PACKAGES_TMP+=(
 
 FILES_ENVSUBST+=(
   /usr/lib/dracut/modules.d/99phxc/crypttab
-  /usr/lib/dracut/modules.d/99phxc/repart.d/10-esp.conf
+  /usr/lib/dracut/modules.d/99phxc/repart.d/10-boot.conf
   /usr/lib/dracut/modules.d/99phxc/repart.d/60-data.conf
 )
 

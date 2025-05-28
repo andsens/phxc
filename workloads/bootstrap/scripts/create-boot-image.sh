@@ -4,10 +4,12 @@ set -Eeo pipefail; shopt -s inherit_errexit
 PKGROOT=/usr/local/lib/upkg
 source "$PKGROOT/.upkg/records.sh/records.sh"
 
-export EFI_UUID=c427f0ed-0366-4cb2-9ce2-3c8c51c3e89e
-export DATA_UUID=6f07821d-bb94-4d0f-936e-4060cadf18d8
+export ESP_PART_TYPE_UUID=C12A7328-F81F-11D2-BA4B-00A0C93EC93B
 # Microsoft basic data partition type GUID, used for rpi boot partition
-export MSBDP_UUID=EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+export MSBDP_PART_TYPE_UUID=EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+
+export BOOT_UUID=c427f0ed-0366-4cb2-9ce2-3c8c51c3e89e
+export DATA_UUID=6f07821d-bb94-4d0f-936e-4060cadf18d8
 
 main() {
   DOC="create-boot-image - Make an archived container image bootable
@@ -54,7 +56,7 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
     image_types+=(tpm2)
   fi
   for image_type in "${image_types[@]}"; do
-    mkdir -p "/workspace/esp-staging.$image_type/phxc"
+    mkdir -p "/workspace/boot-staging.$image_type/phxc"
   done
 
   #################################
@@ -93,8 +95,10 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
     fi
   fi
 
-  # Move boot dir to workspace, it's not part of the root image
+  # Move boot contents to workspace, it's not part of the root image
   mv /workspace/root/boot /workspace/boot
+  # Leave mountpoint for boot partition
+  mkdir /workspace/root/boot
 
   local kernver
   kernver=$(readlink /workspace/root/vmlinuz)
@@ -148,7 +152,7 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
 
   local share_phxc=/workspace/initramfs/usr/share/phxc
   mkdir "$share_phxc"
-  printf '%s  /efi/phxc/root.%s.img\n' "$rootimg_sha256" "$rootimg_sha256" >"$share_phxc/root.img.sha256sum"
+  printf '%s  /boot/phxc/root.%s.img\n' "$rootimg_sha256" "$rootimg_sha256" >"$share_phxc/root.img.sha256sum"
   printf '%s\n' "$rootimg_sha256" >"$share_phxc/root.img.sha256"
 
   verbose "Compressing initramfs"
@@ -179,35 +183,35 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
     )
 
     for image_type in "${image_types[@]}"; do
-      mkdir -p "/workspace/bootimg-staging.$image_type/phxc"
+      mkdir -p "/workspace/rpi-bootimg-staging.$image_type/phxc"
       verbose "Staging RPi firmware & configuration files (%s)" "$image_type"
       case $VARIANT in
         rpi2|rpi3)
-          cp /workspace/boot/vmlinuz "/workspace/bootimg-staging.$image_type/kernel7.img"
-          cp /workspace/boot/initramfs.img "/workspace/bootimg-staging.$image_type/initramfs7"
+          cp /workspace/boot/vmlinuz "/workspace/rpi-bootimg-staging.$image_type/kernel7.img"
+          cp /workspace/boot/initramfs.img "/workspace/rpi-bootimg-staging.$image_type/initramfs7"
           ;;
         rpi4)
-          cp /workspace/boot/vmlinuz "/workspace/bootimg-staging.$image_type/kernel8.img"
-          cp /workspace/boot/initramfs.img "/workspace/bootimg-staging.$image_type/initramfs8"
+          cp /workspace/boot/vmlinuz "/workspace/rpi-bootimg-staging.$image_type/kernel8.img"
+          cp /workspace/boot/initramfs.img "/workspace/rpi-bootimg-staging.$image_type/initramfs8"
           ;;
         rpi5)
-          cp /workspace/boot/vmlinuz "/workspace/bootimg-staging.$image_type/kernel_2712.img"
-          cp /workspace/boot/initramfs.img "/workspace/bootimg-staging.$image_type/initramfs_2712"
+          cp /workspace/boot/vmlinuz "/workspace/rpi-bootimg-staging.$image_type/kernel_2712.img"
+          cp /workspace/boot/initramfs.img "/workspace/rpi-bootimg-staging.$image_type/initramfs_2712"
           ;;
         *) printf "Unknown rpi* variant: %s\n" "$VARIANT" >&2; return 1 ;;
       esac
-      cp -r /workspace/boot/firmware/* "/workspace/bootimg-staging.$image_type"
-      printf "%s " "${kernel_cmdline[@]}" >"/workspace/bootimg-staging.$image_type/cmdline.txt"
-      cp "/workspace/boot/config-${VARIANT}-bootimg.txt" "/workspace/bootimg-staging.$image_type/config.txt"
-      cp "/workspace/boot/config-${VARIANT}-bootimg.txt" "/workspace/bootimg-staging.$image_type/tryboot.txt"
-      cp "/workspace/boot/config-${VARIANT}-esp.txt" "/workspace/esp-staging.$image_type/config.txt"
-      cp "/workspace/boot/config-${VARIANT}-esp.txt" "/workspace/esp-staging.$image_type/tryboot.txt"
+      cp -r /workspace/boot/firmware/* "/workspace/rpi-bootimg-staging.$image_type"
+      printf "%s " "${kernel_cmdline[@]}" >"/workspace/rpi-bootimg-staging.$image_type/cmdline.txt"
+      cp "/workspace/boot/config-${VARIANT}-bootimg.txt" "/workspace/rpi-bootimg-staging.$image_type/config.txt"
+      cp "/workspace/boot/config-${VARIANT}-bootimg.txt" "/workspace/rpi-bootimg-staging.$image_type/tryboot.txt"
+      cp "/workspace/boot/config-${VARIANT}-boot.txt" "/workspace/boot-staging.$image_type/config.txt"
+      cp "/workspace/boot/config-${VARIANT}-boot.txt" "/workspace/boot-staging.$image_type/tryboot.txt"
     done
 
     verbose "Calculating the required boot.img size"
     local block_size_b=512
     local bootimg_fat16_table_size_b=$(( 512 * 1024 )) bootimg_files_size_b
-    bootimg_files_size_b=$(($(du -sB$block_size_b /workspace/bootimg-staging.empty-pw | cut -d$'\t' -f1) * block_size_b))
+    bootimg_files_size_b=$(($(du -sB$block_size_b /workspace/rpi-bootimg-staging.empty-pw | cut -d$'\t' -f1) * block_size_b))
     # The extra 256 * block_size_b is wiggleroom for directories, signatures, and configs
     local disk_size_b=$((
       (
@@ -219,33 +223,33 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
     ))
 
     verbose "Creating boot.rpi-otp.img for disk encryption with RPi OTP"
-    truncate -s"$disk_size_b" /workspace/esp-staging.rpi-otp/boot.img
-    mkfs.vfat -n "RPI-RAMDISK" /workspace/esp-staging.rpi-otp/boot.img
-    mcopy -sbQmi /workspace/esp-staging.rpi-otp/boot.img /workspace/bootimg-staging.rpi-otp/* ::/
-    artifacts[boot.rpi-otp.img]=/workspace/esp-staging.rpi-otp/boot.img
+    truncate -s"$disk_size_b" /workspace/boot-staging.rpi-otp/boot.img
+    mkfs.vfat -n "RPI-RAMDISK" /workspace/boot-staging.rpi-otp/boot.img
+    mcopy -sbQmi /workspace/boot-staging.rpi-otp/boot.img /workspace/rpi-bootimg-staging.rpi-otp/* ::/
+    artifacts[boot.rpi-otp.img]=/workspace/boot-staging.rpi-otp/boot.img
 
     verbose "Creating boot.img signature file"
-    printf "%s\nts: %d\n" "$(sha256 /workspace/esp-staging.rpi-otp/boot.img)" "$(date -u +%s)" \
-      >/workspace/esp-staging.rpi-otp/boot.sig
+    printf "%s\nts: %d\n" "$(sha256 /workspace/boot-staging.rpi-otp/boot.img)" "$(date -u +%s)" \
+      >/workspace/boot-staging.rpi-otp/boot.sig
     if [[ -e $secureboot_key ]]; then
       verbose "Adding boot.img signature to signature file"
       local bootimg_sig
-      bootimg_sig=$(openssl dgst -sign $secureboot_key -sha256 /workspace/esp-staging.rpi-otp/boot.img | xxd -p -c0)
-      printf "rsa2048: %s\n" "$bootimg_sig" >>/workspace/esp-staging.rpi-otp/boot.sig
+      bootimg_sig=$(openssl dgst -sign $secureboot_key -sha256 /workspace/boot-staging.rpi-otp/boot.img | xxd -p -c0)
+      printf "rsa2048: %s\n" "$bootimg_sig" >>/workspace/boot-staging.rpi-otp/boot.sig
     fi
-    artifacts[boot.rpi-otp.sig]=/workspace/esp-staging.rpi-otp/boot.sig
+    artifacts[boot.rpi-otp.sig]=/workspace/boot-staging.rpi-otp/boot.sig
 
     verbose "Creating boot.img for disk encryption with an empty password"
-    printf "phxc.empty-pw" >>/workspace/bootimg-staging.empty-pw/cmdline.txt
-    truncate -s"$disk_size_b" /workspace/esp-staging.empty-pw/boot.img
-    mkfs.vfat -n "RPI-RAMDISK" /workspace/esp-staging.empty-pw/boot.img
-    mcopy -sbQmi /workspace/esp-staging.empty-pw/boot.img /workspace/bootimg-staging.empty-pw/* ::/
-    artifacts[boot.empty-pw.img]=/workspace/esp-staging.empty-pw/boot.img
+    printf "phxc.empty-pw" >>/workspace/rpi-bootimg-staging.empty-pw/cmdline.txt
+    truncate -s"$disk_size_b" /workspace/boot-staging.empty-pw/boot.img
+    mkfs.vfat -n "RPI-RAMDISK" /workspace/boot-staging.empty-pw/boot.img
+    mcopy -sbQmi /workspace/boot-staging.empty-pw/boot.img /workspace/rpi-bootimg-staging.empty-pw/* ::/
+    artifacts[boot.empty-pw.img]=/workspace/boot-staging.empty-pw/boot.img
 
     verbose "Creating boot.empty-pw.img signature file"
-    printf "%s\nts: %d\n" "$(sha256 /workspace/esp-staging.empty-pw/boot.img)" "$(date -u +%s)" \
-      >/workspace/esp-staging.empty-pw/boot.sig
-    artifacts[boot.empty-pw.sig]=/workspace/esp-staging.empty-pw/boot.sig
+    printf "%s\nts: %d\n" "$(sha256 /workspace/boot-staging.empty-pw/boot.img)" "$(date -u +%s)" \
+      >/workspace/boot-staging.empty-pw/boot.sig
+    artifacts[boot.empty-pw.sig]=/workspace/boot-staging.empty-pw/boot.sig
   fi
 
   ############################
@@ -271,31 +275,31 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
     ln -s /workspace/boot/systemd-boot-efi /usr/lib/systemd/boot/efi
 
     verbose "Creating uki.empty-pw.efi for disk encryption with an empty password"
-    mkdir -p /workspace/esp-staging.empty-pw/EFI/BOOT
+    mkdir -p /workspace/boot-staging.empty-pw/EFI/BOOT
     /lib/systemd/ukify build \
       --uname="$kernver" \
       --linux=/workspace/boot/vmlinuz \
       --initrd=/workspace/boot/initramfs.img \
       --cmdline="$(printf "%s " "${kernel_cmdline[@]}" "phxc.empty-pw")" \
-      --output=/workspace/esp-staging.empty-pw/EFI/BOOT/BOOT${efi_arch}.EFI
-    artifacts[uki.empty-pw.efi]=/workspace/esp-staging.empty-pw/EFI/BOOT/BOOT${efi_arch}.EFI
+      --output=/workspace/boot-staging.empty-pw/EFI/BOOT/BOOT${efi_arch}.EFI
+    artifacts[uki.empty-pw.efi]=/workspace/boot-staging.empty-pw/EFI/BOOT/BOOT${efi_arch}.EFI
 
     verbose "Creating uki.efi for disk encryption with TPM2"
-    mkdir -p /workspace/esp-staging.tpm2/EFI/BOOT
+    mkdir -p /workspace/boot-staging.tpm2/EFI/BOOT
     local uki_secure_opts=()
     # Sign UKI if secureboot key & cert are present
     if [[ -e $secureboot_key && -e $secureboot_crt ]]; then
       verbose "Adding secureboot signing parameters for uki.efi creation"
       uki_secure_opts+=("--secureboot-private-key=$secureboot_key" "--secureboot-certificate=$secureboot_crt")
-      openssl x509 -in $secureboot_crt -outform der -out /workspace/esp-staging.tpm2/phxc/secureboot.der
+      openssl x509 -in $secureboot_crt -outform der -out /workspace/boot-staging.tpm2/phxc/secureboot.der
     fi
     /lib/systemd/ukify build "${uki_secure_opts[@]}" \
       --uname="$kernver" \
       --linux=/workspace/boot/vmlinuz \
       --initrd=/workspace/boot/initramfs.img \
       --cmdline="$(printf "%s " "${kernel_cmdline[@]}")" \
-      --output=/workspace/esp-staging.tpm2/EFI/BOOT/BOOT${efi_arch}.EFI
-    artifacts[uki.tpm2.efi]=/workspace/esp-staging.tpm2/EFI/BOOT/BOOT${efi_arch}.EFI
+      --output=/workspace/boot-staging.tpm2/EFI/BOOT/BOOT${efi_arch}.EFI
+    artifacts[uki.tpm2.efi]=/workspace/boot-staging.tpm2/EFI/BOOT/BOOT${efi_arch}.EFI
   fi
 
   ##################
@@ -305,53 +309,56 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
   for image_type in "${image_types[@]}"; do
     info "Building disk image from artifacts (%s)" "$image_type"
 
-    verbose "Calculating size of ESP (%s)" "$image_type"
+    verbose "Calculating size of boot partition (%s)" "$image_type"
     local block_size_b=512
-    local esp_files_size_b esp_reserved_b=$((1024 * 1024 * 4))
-    esp_files_size_b=$(( (
-        $(du -sB$block_size_b "/workspace/esp-staging.$image_type" | cut -d$'\t' -f1) +
+    local boot_files_size_b boot_reserved_b=$((1024 * 1024 * 4))
+    boot_files_size_b=$(( (
+        $(du -sB$block_size_b "/workspace/boot-staging.$image_type" | cut -d$'\t' -f1) +
         $(du -sB$block_size_b /workspace/root.img | cut -d$'\t' -f1)
       ) * block_size_b
     ))
-    local esp_fat32_table_size_b=$(( (2 * ((esp_files_size_b + esp_reserved_b) / 1024 / 1024) + 20) * 1024 ))
-    local esp_size_b=$((
+    local boot_fat32_table_size_b=$(( (2 * ((boot_files_size_b + boot_reserved_b) / 1024 / 1024) + 20) * 1024 ))
+    local boot_size_b=$((
       (
-        esp_fat32_table_size_b +
-        esp_files_size_b +
-        esp_reserved_b +
+        boot_fat32_table_size_b +
+        boot_files_size_b +
+        boot_reserved_b +
         block_size_b - 1
       ) / block_size_b * block_size_b
     ))
 
-    verbose "Building ESP (%s)" "$image_type"
-    truncate -s"$esp_size_b" "/workspace/esp.$image_type.img"
-    mkfs.vfat -n EFI-SYSTEM -F 32 "/workspace/esp.$image_type.img"
-    mcopy -sbQmi "/workspace/esp.$image_type.img" "/workspace/esp-staging.$image_type"/* ::/
-    mcopy -sbQmi "/workspace/esp.$image_type.img" /workspace/root.img "::/phxc/root.$rootimg_sha256.img"
-    ! $DEBUG || artifacts[esp.$image_type.img]="/workspace/esp.$image_type.img"
+    local boot_partition_name=EFI-SYSTEM
+    [[ $VARIANT != rpi* ]] || boot_partition_name=RPI-BOOT
+
+    verbose "Building boot partition (%s)" "$image_type"
+    truncate -s"$boot_size_b" "/workspace/boot.$image_type.img"
+    mkfs.vfat -n $boot_partition_name -F 32 "/workspace/boot.$image_type.img"
+    mcopy -sbQmi "/workspace/boot.$image_type.img" "/workspace/boot-staging.$image_type"/* ::/
+    mcopy -sbQmi "/workspace/boot.$image_type.img" /workspace/root.img "::/phxc/root.$rootimg_sha256.img"
+    ! $DEBUG || artifacts[boot.$image_type.img]="/workspace/boot.$image_type.img"
 
     verbose "Calculating size of disk image (%s)" "$image_type"
     local gpt_size_b=$((33 * 512)) partition_offset_b=$((1024 * 1024))
     local disk_size_b=$((
       (
         partition_offset_b +
-        esp_size_b +
+        boot_size_b +
         gpt_size_b +
         block_size_b - 1
       ) / block_size_b * block_size_b
     ))
 
     verbose "Building disk image (%s)" "$image_type"
-    local partition_type=U
+    local partition_type=$ESP_PART_TYPE_UUID
     # Let boot partition on rpi be a normal partition for easier mounting on windows
-    [[ $VARIANT != rpi* ]] || partition_type=$MSBDP_UUID
+    [[ $VARIANT != rpi* ]] || partition_type=$MSBDP_PART_TYPE_UUID
     truncate -s"$disk_size_b" "/workspace/disk.$image_type.img"
     sfdisk -q "/workspace/disk.$image_type.img" <<EOF
 label: gpt
-start=$(( partition_offset_b / block_size_b )) size=$(( esp_size_b / block_size_b )), type=$partition_type, bootable, uuid=$EFI_UUID
+start=$(( partition_offset_b / block_size_b )) size=$(( boot_size_b / block_size_b )), type=$partition_type, bootable, uuid=$BOOT_UUID
 EOF
-    dd if="/workspace/esp.$image_type.img" of="/workspace/disk.$image_type.img" \
-      bs=$block_size_b seek=$((partition_offset_b / block_size_b)) count=$((esp_size_b / block_size_b)) conv=notrunc
+    dd if="/workspace/boot.$image_type.img" of="/workspace/disk.$image_type.img" \
+      bs=$block_size_b seek=$((partition_offset_b / block_size_b)) count=$((boot_size_b / block_size_b)) conv=notrunc
 
     artifacts[disk.$image_type.img]=/workspace/disk.$image_type.img
   done

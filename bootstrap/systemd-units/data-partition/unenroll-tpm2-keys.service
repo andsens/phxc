@@ -12,4 +12,4 @@ WantedBy=multi-user.target
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=cryptenroll-uki --exclusive --device "/dev/disk/by-partuuid/${DATA_UUID}" \
-            /var/lib/phxc/disk-encryption.recovery.key /efi/EFI/BOOT/BOOT${EFI_ARCH}.EFI
+            /var/lib/phxc/disk-encryption.recovery.key /boot/EFI/BOOT/BOOT${EFI_ARCH}.EFI

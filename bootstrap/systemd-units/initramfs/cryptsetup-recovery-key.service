@@ -1,8 +1,8 @@
 [Unit]
 Description=Enrolls a disk encryption recovery key
-RequiresMountsFor=/efi
+RequiresMountsFor=/boot
 After=systemd-cryptsetup@data.service systemd-repart.service
-ConditionPathExists=!/efi/phxc/disk-encryption-recovery.key.encrypted
+ConditionPathExists=!/boot/phxc/disk-encryption-recovery.key.encrypted
 
 [Install]
 WantedBy=multi-user.target
@@ -13,5 +13,5 @@ RemainAfterExit=yes
 UMask=0077
 ExecStart=sh -e
 StandardInputText=key=$(systemd-cryptenroll --recovery-key /dev/disk/by-partuuid/${DATA_UUID}); \
-                  printf "%%s" "$key" | openssl pkeyutl -encrypt -inkey /usr/share/phxc/secureboot.pub -pubin -out /efi/phxc/disk-encryption-recovery.key.encrypted; \
+                  printf "%%s" "$key" | openssl pkeyutl -encrypt -inkey /usr/share/phxc/secureboot.pub -pubin -out /boot/phxc/disk-encryption-recovery.key.encrypted; \
                   printf "%%s" "$key" >/run/initramfs/disk-encryption-recovery.key
