@@ -52,6 +52,7 @@ rpi() {
       rpi5) cp "$fwtmp/boot"/bcm2712* /boot/firmware ;;
     esac
     rm -rf "$fwtmp"
+    systemctl mask rpi-eeprom-update.service
   else
     rm -rf /etc/systemd/system/rpi-eeprom-update.service.d \
            /etc/default/rpi-eeprom-update
