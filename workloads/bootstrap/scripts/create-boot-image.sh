@@ -39,14 +39,12 @@ varname in "${varnames[@]}"; do unset "$p$varname";done;eval $p'__upload=${var'\
 
   declare -A artifacts
   local secureboot_key=/workspace/secureboot/tls.key \
-        secureboot_pub=/workspace/secureboot.pub \
         secureboot_crt=/workspace/secureboot/tls.crt
   if [[ -e $secureboot_key ]]; then
     info "Checking secureboot key"
     openssl rsa -in $secureboot_key -noout -check || fatal "Secureboot key must be a 2048 bit RSA key"
     [[ $(openssl rsa -in $secureboot_key -noout -text) =~ Private-Key:\ \(([0-9]+)\ bit, ]] || fatal "Unable to determine secureboot keysize"
     [[ ${BASH_REMATCH[1]} = 2048 ]] || fatal "Secureboot key must be a 2048 bit RSA key (got %d bit)" "${BASH_REMATCH[1]}"
-    openssl rsa -in $secureboot_key -pubout >$secureboot_pub
   fi
 
   local image_types=(empty-pw) image_type
