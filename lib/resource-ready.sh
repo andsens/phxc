@@ -47,6 +47,20 @@ statefulset_ready() {
   [[ $count -gt 0 ]] || return 1
 }
 
+daemonset_ready() {
+  local ns=$1 daemonset=$2 desired ready out
+  out=$(kubectl -n "$ns" get daemonset "$daemonset" -o=jsonpath='{.status.desiredNumberScheduled} {.status.numberReady}')
+  desired=${out% *}
+  ready=${out#* }
+  if [[ $desired = "$ready" ]]; then
+    verbose "The daemonset '%s' in '%s' is ready" "$daemonset" "$ns"
+    return 0
+  else
+    verbose "The daemonset '%s' in '%s' is not ready" "$daemonset" "$ns"
+    return 1
+  fi
+}
+
 pod_ready() {
   local ns=$1 pod=$2
   if kubectl -n "$ns" get pod "$pod" -o=jsonpath='{.status.conditions}' | status_is_ready; then
