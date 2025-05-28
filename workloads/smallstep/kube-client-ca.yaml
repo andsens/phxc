@@ -126,8 +126,6 @@ spec:
         env:
         - name: CLUSTER_DOMAIN
           value: cluster.domain
-        - name: CLUSTER_ADMIN_SSH_KEYS
-          value: cluster.admin.sshKeys
         - name: NODENAME
           valueFrom:
             fieldRef:
@@ -137,6 +135,9 @@ spec:
           mountPath: /home/step/scripts
         - name: config
           mountPath: /home/step/config-ro
+        - name: authorized-keys
+          mountPath: /home/step/admin_authorized_keys
+          readOnly: true
         - name: kube-client-ca-cert
           mountPath: /home/step/kube-api-secrets/kube_apiserver_client_ca.crt
           readOnly: true
@@ -187,6 +188,10 @@ spec:
       - name: config
         configMap:
           name: ca-configs
+      - name: authorized-keys
+        hostPath:
+          path: /home/admin/.ssh/authorized_keys
+          type: File
       - name: templates
         configMap:
           name: kube-client-ca-templates

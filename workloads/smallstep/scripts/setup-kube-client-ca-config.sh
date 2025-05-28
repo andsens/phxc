@@ -22,7 +22,7 @@ main() {
       .dnsNames+=([$uqnodename, $nodename, $ipv4, $ipv6, $domain] | unique)
     ' "$STEPPATH/config-ro/kube-client-ca.json")
   local ssh_key admin_jwk
-  while IFS= read -r -d , ssh_key || [[ -n $ssh_key ]]; do
+  while IFS= read -r -d $'\n' ssh_key || [[ -n $ssh_key ]]; do
     admin_jwk=$(step crypto key format --jwk <<<"$ssh_key")
     admin_jwk=$(jq --arg kid "$(step crypto jwk thumbprint <<<"$admin_jwk")" '.kid=$kid' <<<"$admin_jwk")
     config=$(jq --argjson key "$admin_jwk" '.authority.provisioners += [{
@@ -31,7 +31,7 @@ main() {
       "key": $key,
       "options": { "x509": { "templateFile": "/home/step/templates/admin.tpl" } },
     }]' <<<"$config")
-  done <<<"${CLUSTER_ADMIN_SSH_KEYS:?}"
+  done </home/step/admin_authorized_keys
 
   printf "%s\n" "$config" >"$STEPPATH/config/ca.json"
 

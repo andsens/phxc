@@ -35,7 +35,3 @@ replacements:
     options: {delimiter: '.', index: 1}
   - select: {group: apps, kind: StatefulSet, name: kube-client-ca}
     fieldPaths: ["spec.template.spec.initContainers.[name=setup-kube-client-ca-config].env.[name=CLUSTER_DOMAIN].value"]
-- source: {fieldPath: 'data.admin.sshKeys' , kind: ConfigMap, name: cluster-settings}
-  targets:
-  - select: {group: apps, kind: StatefulSet, name: kube-client-ca}
-    fieldPaths: ["spec.template.spec.initContainers.[name=setup-kube-client-ca-config].env.[name=CLUSTER_ADMIN_SSH_KEYS].value"]
