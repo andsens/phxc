@@ -4,9 +4,6 @@ set -Eeo pipefail; shopt -s inherit_errexit
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../..")
 source "$PKGROOT/.upkg/records.sh/records.sh"
 
-VARIANT=$(systemctl show-environment | grep '^VARIANT=')
-VARIANT=${VARIANT#VARIANT=}
-
 main() {
   [[ $# -ne 1 ]] || usage
   [[ $1 == --confirm ]] || usage

@@ -2,13 +2,12 @@
 # shellcheck source-path=..
 set -Eeo pipefail; shopt -s inherit_errexit
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
+source "$PKGROOT/.upkg/records.sh/records.sh"
+source "$PKGROOT/.upkg/trap.sh/trap.sh"
 export DOCKER_CLI_HINTS=false
 DISK_UTILS_IMG=${DISK_UTILS_IMG:-ghcr.io/andsens/phxc-disk-utils:sha-4863c94}
 
 main() {
-  source "$PKGROOT/.upkg/records.sh/records.sh"
-  source "$PKGROOT/.upkg/trap.sh/trap.sh"
-
   DOC="bootstrap - Bootstrap images
 Usage:
   bootstrap [options] VARIANT

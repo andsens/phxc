@@ -2,10 +2,9 @@
 # shellcheck source-path=../..
 set -Eeo pipefail; shopt -s inherit_errexit
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../..")
+source "$PKGROOT/.upkg/records.sh/records.sh"
 
 main() {
-  source "$PKGROOT/.upkg/records.sh/records.sh"
-
   DOC="generate-cluster-settings.sh - Generate a ConfigMap from a cluster.json
 Usage:
   generate-cluster-settings.sh
