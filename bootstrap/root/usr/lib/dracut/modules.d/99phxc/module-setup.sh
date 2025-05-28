@@ -51,18 +51,24 @@ install() {
   inst "$moddir/crypttab" /etc/crypttab
   rm "$initdir/lib/dracut/hooks/cmdline/30-parse-crypt.sh" # Only thing the hook does is put in timeout configs for units it malparsed
 
-  if [[ $VARIANT != rpi* ]]; then
+  if [[ $VARIANT = rpi* ]]; then
+    inst /usr/local/sbin/rpi-otp-derive-key /usr/bin/rpi-otp-derive-key
+    inst_multiple rpi-otp-private-key od which vcmailbox awk openssl
+  else
     # tss user setup, the tpm2-tss module seems to miss this
     inst "$moddir/tpm2-sysuser.conf" /usr/lib/sysusers.d/tpm2.conf
     mkdir "$initdir/var/lib/tpm"
     chown 101:102 "$initdir/var/lib/tpm"
-  else
-    inst /usr/local/sbin/rpi-otp-derive-key /usr/bin/rpi-otp-derive-key
-    inst_multiple rpi-otp-private-key od which vcmailbox awk openssl
   fi
 
+  ### Recovery key setup ###
+  if [[ -e /usr/local/share/phxc/secureboot.pub ]]; then
+    inst systemd-cryptsetup openssl
+    inst /usr/local/share/phxc/secureboot.pub /usr/share/phxc/secureboot.pub
+  fi
+
+  # Recovery key input via SSH
   if [[ -e /home/admin/.ssh/authorized_keys ]]; then
-    # Recovery key input via SSH
     inst_multiple /etc/systemd/network/zzz-dhcp.network /usr/bin/ip /usr/bin/dropbearkey
     inst /usr/sbin/dropbear /usr/bin/dropbear
     inst /home/admin/.ssh/authorized_keys /root/.ssh/authorized_keys

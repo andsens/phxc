@@ -17,7 +17,7 @@ Usage:
   phxc setup [-k KN -u UN] KUBEAPI_HOSTNAME
   phxc bootstrap [--wait|--update] [VARIANT]...
   phxc update-nodes (all | NODE...)
-  phxc recovery-keys
+  phxc decrypt-recovery-key
   phxc embed-configs IMAGE CLUSTER [NODE]
   phxc get-kube-cert [-k KN -u UN] KUBEAPI_HOSTNAME
   phxc rpi5-sb [-r] [SERIAL]
@@ -42,8 +42,8 @@ Commands:
 # shellcheck disable=2016,2086,2317,1090,1091,2034,2154
 docopt() { local v='2.0.2'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
-%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:1145};usage=${DOC:39:278}
-digest=c27ba;options=('-k --ssh-keyname 1' '-u --username 1' ' --wait 0' ' --u'\
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:1152};usage=${DOC:39:285}
+digest=3e30b;options=('-k --ssh-keyname 1' '-u --username 1' ' --wait 0' ' --u'\
 'pdate 0' '-r --sign-recovery 0');node_0(){ value __ssh_keyname 0;};node_1(){
 value __username 1;};node_2(){ switch __wait 2;};node_3(){ switch __update 3;}
 node_4(){ switch __sign_recovery 4;};node_5(){ value KUBEAPI_HOSTNAME a;}
@@ -51,21 +51,21 @@ node_6(){ value VARIANT a true;};node_7(){ value NODE a true;};node_8(){ value \
 IMAGE a;};node_9(){ value CLUSTER a;};node_10(){ value SERIAL a;};node_11(){
 switch setup a:setup;};node_12(){ switch bootstrap a:bootstrap;};node_13(){
 switch update_nodes a:update-nodes;};node_14(){ switch all a:all;};node_15(){
-switch recovery_keys a:recovery-keys;};node_16(){ switch embed_configs \
-a:embed-configs;};node_17(){ switch get_kube_cert a:get-kube-cert;};node_18(){
-switch rpi5_sb a:rpi5-sb;};node_19(){ sequence 11 20 5;};node_20(){ optional 0 1
-};node_21(){ sequence 12 22 24;};node_22(){ optional 23;};node_23(){ choice 2 3
-};node_24(){ repeatable 25;};node_25(){ optional 6;};node_26(){ sequence 13 27;}
-node_27(){ choice 14 28;};node_28(){ repeatable 7;};node_29(){ sequence 16 8 9 \
-30;};node_30(){ optional 7;};node_31(){ sequence 17 20 5;};node_32(){ sequence \
-18 33 34;};node_33(){ optional 4;};node_34(){ optional 10;};node_35(){ choice \
-19 21 26 15 29 31 32;};cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" \
-"$1" >&2;printf "%s\n" "${DOC:39:278}" >&2;exit 1;}';local \
-varnames=(__ssh_keyname __username __wait __update __sign_recovery \
+switch decrypt_recovery_key a:decrypt-recovery-key;};node_16(){ switch \
+embed_configs a:embed-configs;};node_17(){ switch get_kube_cert a:get-kube-cert
+};node_18(){ switch rpi5_sb a:rpi5-sb;};node_19(){ sequence 11 20 5;};node_20(){
+optional 0 1;};node_21(){ sequence 12 22 24;};node_22(){ optional 23;}
+node_23(){ choice 2 3;};node_24(){ repeatable 25;};node_25(){ optional 6;}
+node_26(){ sequence 13 27;};node_27(){ choice 14 28;};node_28(){ repeatable 7;}
+node_29(){ sequence 16 8 9 30;};node_30(){ optional 7;};node_31(){ sequence 17 \
+20 5;};node_32(){ sequence 18 33 34;};node_33(){ optional 4;};node_34(){
+optional 10;};node_35(){ choice 19 21 26 15 29 31 32;};cat <<<' docopt_exit() {
+[[ -n $1 ]] && printf "%s\n" "$1" >&2;printf "%s\n" "${DOC:39:285}" >&2;exit 1
+}';local varnames=(__ssh_keyname __username __wait __update __sign_recovery \
 KUBEAPI_HOSTNAME VARIANT NODE IMAGE CLUSTER SERIAL setup bootstrap \
-update_nodes all recovery_keys embed_configs get_kube_cert rpi5_sb) varname
-for varname in "${varnames[@]}"; do unset "var_$varname";done;parse 35 "$@"
-local p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset \
+update_nodes all decrypt_recovery_key embed_configs get_kube_cert rpi5_sb) \
+varname;for varname in "${varnames[@]}"; do unset "var_$varname";done;parse 35 \
+"$@";local p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset \
 "$p$varname";done;if declare -p var_VARIANT >/dev/null 2>&1; then eval $p'VARI'\
 'ANT=("${var_VARIANT[@]}")';else eval $p'VARIANT=()';fi;if declare -p var_NODE \
 >/dev/null 2>&1; then eval $p'NODE=("${var_NODE[@]}")';else eval $p'NODE=()';fi
@@ -75,11 +75,12 @@ eval $p'__ssh_keyname=${var___ssh_keyname:-'"'"'$USER@$HOST'"'"'};'$p'__userna'\
 $p'KUBEAPI_HOSTNAME=${var_KUBEAPI_HOSTNAME:-};'$p'IMAGE=${var_IMAGE:-};'$p'CLU'\
 'STER=${var_CLUSTER:-};'$p'SERIAL=${var_SERIAL:-};'$p'setup=${var_setup:-false'\
 '};'$p'bootstrap=${var_bootstrap:-false};'$p'update_nodes=${var_update_nodes:-'\
-'false};'$p'all=${var_all:-false};'$p'recovery_keys=${var_recovery_keys:-false'\
-'};'$p'embed_configs=${var_embed_configs:-false};'$p'get_kube_cert=${var_get_k'\
-'ube_cert:-false};'$p'rpi5_sb=${var_rpi5_sb:-false};';local docopt_i=1;[[ \
-$BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for \
-varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
+'false};'$p'all=${var_all:-false};'$p'decrypt_recovery_key=${var_decrypt_recov'\
+'ery_key:-false};'$p'embed_configs=${var_embed_configs:-false};'$p'get_kube_ce'\
+'rt=${var_get_kube_cert:-false};'$p'rpi5_sb=${var_rpi5_sb:-false};';local \
+docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
+((;docopt_i>0;docopt_i--)); do for varname in "${varnames[@]}"; do declare -p \
+"$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' phxc`
   eval "$(docopt "$@")"
 
@@ -97,8 +98,8 @@ varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
     get_kube_client_cert "$KUBEAPI_HOSTNAME" "$__ssh_keyname" "$__username"
   elif $embed_configs; then
     embed_configs "$IMAGE" "$CLUSTER" "$NODE" "$RPIOTP"
-  elif $recovery_keys; then
-    recovery_keys
+  elif $decrypt_recovery_key; then
+    decrypt_recovery_key
   elif $bootstrap; then
     bootstrap "$__wait" "$__update" "${VARIANT[@]}"
   elif $update_nodes; then
@@ -277,17 +278,16 @@ embed_configs() {
     "$DISK_UTILS_IMG"
 }
 
-recovery_keys() {
-  local keys
-  keys=$(jq -n '{"recoveryKeys": {}}')
-  for secret in $(kubectl --context phxc -n phxc get secret -oname); do
-    [[ $secret != secret/diskenc-recovery-* ]] || \
-      keys=$(jq \
-        --arg hostname "${secret#'secret/diskenc-recovery-'}" \
-        --arg key "$(kubectl --context phxc -n phxc get "$secret" -ojsonpath='{.data.disk-encryption\.recovery\.key}' | base64 -d)" \
-        '.recoveryKeys[$hostname]=$key' <<<"$keys")
-  done
-  printf "%s\n" "$keys"
+decrypt_recovery_key() {
+  if [[ ! -e $SECUREBOOT_KEY ]]; then
+    fatal "The secureboot key was not found at %s, unable to decrypt any recovery key" "$SECUREBOOT_KEY"
+  fi
+  local enc_recovery_key recovery_key
+  read -rp "Encrypted recovery key: " enc_recovery_key
+  if recovery_key=$(printf "%s" "$enc_recovery_key" | base64 -d | openssl pkeyutl -decrypt -inkey "$SECUREBOOT_KEY"); then
+    printf "The recovery key is: " >&2
+    printf "%s\n" "$recovery_key"
+  fi
 }
 
 bootstrap() {

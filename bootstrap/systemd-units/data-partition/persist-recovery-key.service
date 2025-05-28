@@ -1,0 +1,12 @@
+[Unit]
+Description=Copy the disk encryption recovery key from /run/initramfs to /var/lib/phxc
+Requires=copy-var-template.service
+After=copy-var-template.service
+ConditionPathExists=/run/initramfs/disk-encryption-recovery.key
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=cp /run/initramfs/disk-encryption-recovery.key /var/lib/phxc/disk-encryption-recovery.key

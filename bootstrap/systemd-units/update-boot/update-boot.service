@@ -1,8 +1,8 @@
 [Unit]
 Description=Update the efi partition with the latest image and reboot into it
 RequiresMountsFor=/efi
-Requires=workload-ready@image-registry.service workload-ready@bootstrap.service upload-recovery-key.service
-After=workload-ready@image-registry.service workload-ready@bootstrap.service uncordon.service switch-boot.service upload-recovery-key.service
+Requires=workload-ready@image-registry.service workload-ready@bootstrap.service
+After=workload-ready@image-registry.service workload-ready@bootstrap.service uncordon.service switch-boot.service
 
 [Install]
 WantedBy=multi-user.target

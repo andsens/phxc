@@ -85,7 +85,7 @@ for varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
       mkdir -p /run/cryptsetup-keys.d
       rpi-otp-derive-key phxc-disk-encryption-key /run/cryptsetup-keys.d/data.key
       cryptsetup luksOpen --test-passphrase --key-file /run/cryptsetup-keys.d/data.key "/dev/disk/by-partuuid/${DATA_UUID}" &>/dev/null || \
-        cryptsetup luksAddKey --key-file /var/lib/phxc/disk-encryption.recovery.key \
+        cryptsetup luksAddKey --key-file /var/lib/phxc/disk-encryption-recovery.key \
           "/dev/disk/by-partuuid/${DATA_UUID}" /run/cryptsetup-keys.d/data.key
       curl-imgreg "$VARIANT/boot.rpi-otp.img" -o/efi/tryboot.img -f
       curl-imgreg "$VARIANT/boot.rpi-otp.sig" -o/efi/tryboot.sig -f
@@ -97,7 +97,7 @@ for varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
     else
       curl-imgreg "$VARIANT/uki.tpm2.efi" -o/efi/EFI/BOOT/BOOT.TRY.EFI -f
       cryptenroll-uki --device "/dev/disk/by-partuuid/${DATA_UUID}" \
-        /var/lib/phxc/disk-encryption.recovery.key /efi/EFI/BOOT/BOOT.TRY.EFI
+        /var/lib/phxc/disk-encryption-recovery.key /efi/EFI/BOOT/BOOT.TRY.EFI
     fi
   fi
   trap "" EXIT
