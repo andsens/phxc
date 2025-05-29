@@ -388,18 +388,18 @@ EOF
 
     wait_for_unlock "$__upload/$VARIANT.tmp"
     keep_locked "$__upload/$VARIANT.tmp" & lock_pid=$!
-    curl_imgreg -DELETE "$__upload/$VARIANT.tmp/" || info "404 => No previous %s.tmp/ to delete" "$VARIANT"
+    curl_imgreg -XDELETE "$__upload/$VARIANT.tmp/" || info "404 => No previous %s.tmp/ to delete" "$VARIANT"
 
     local upload_files=''
     for dest in "${!artifacts[@]}"; do
       upload_files="$upload_files,/workspace/artifacts/$dest"
     done
     curl_imgreg --upload-file "{${upload_files#,}}" "$__upload/$VARIANT.tmp/"
-    curl_imgreg -DELETE "$__upload/$VARIANT.old/" || info "404 => No previous %s.old/ to delete" "$VARIANT"
+    curl_imgreg -XDELETE "$__upload/$VARIANT.old/" || info "404 => No previous %s.old/ to delete" "$VARIANT"
     curl_imgreg -XMOVE "$__upload/$VARIANT/" --header "Destination:$__upload/$VARIANT.old/" || info "404 => No previous %s/ to move to %s.old/" "$VARIANT" "$VARIANT"
     kill $lock_pid
     curl_imgreg -XMOVE "$__upload/$VARIANT.tmp/" --header "Destination:$__upload/$VARIANT/"
-    curl_imgreg -DELETE "$__upload/$VARIANT/lock"
+    curl_imgreg -XDELETE "$__upload/$VARIANT/lock"
   fi
 }
 
