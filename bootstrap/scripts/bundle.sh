@@ -7,14 +7,14 @@ main() {
   local dest=${1:?} version_flag
   version_flag=$(jq -r '.version // empty' "$PKGROOT/upkg.json")
   [[ -z $version_flag ]] || version_flag=-V$version_flag
-  local bundle_files=(README.md)
+  local bundle_files=(README.md) recurse_paths=(bin bootstrap cli/scripts/sign-config.sh lib workloads)
   if [[ -e $PKGROOT/.git ]]; then
     local filepath
     while read -r -d $'\0' filepath; do
       [[ ! -e $PKGROOT/$filepath && ! -L $PKGROOT/$filepath ]] || bundle_files+=("$filepath")
-    done < <(cd "$PKGROOT"; git -C "$PKGROOT" ls-files -zco --exclude-standard bin bootstrap lib workloads)
+    done < <(cd "$PKGROOT"; git -C "$PKGROOT" ls-files -zco --exclude-standard "${recurse_paths[@]}")
   else
-    bundle_files+=(bin bootstrap lib workloads)
+    bundle_files+=("${recurse_paths[@]}")
   fi
   # shellcheck disable=SC2086
   (
