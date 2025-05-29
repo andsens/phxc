@@ -1,6 +1,6 @@
 [Unit]
 Description=Install packages needed to run the kubernetes control-plane
-After=install-node-packages.service network-online.target
+After=install-node-packages.service systemd-networkd-wait-online.service
 
 [Service]
 Type=oneshot

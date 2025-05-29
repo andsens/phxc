@@ -1,6 +1,6 @@
 [Unit]
 Description=Install step-cli
-After=network-online.target
+After=systemd-networkd-wait-online.service
 
 [Service]
 Type=oneshot

@@ -1,6 +1,6 @@
 [Unit]
 Description=Install packages needed to run the kubernetes node
-After=install-smallstep.service network-online.target
+After=install-smallstep.service systemd-networkd-wait-online.service
 Before=pre-k3s.target
 
 [Install]
