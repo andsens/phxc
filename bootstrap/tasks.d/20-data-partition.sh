@@ -25,7 +25,7 @@ data_partition() {
     rm /etc/systemd/system/unenroll-tpm2-keys.service
   fi
   if [[ $VARIANT != rpi4 && $VARIANT != rpi5 ]]; then
-    rm /usr/local/sbin/phxc-rpi \
+    rm /usr/local/sbin/rpi-otp-init \
        /usr/local/sbin/rpi-otp-derive-key
   fi
 
