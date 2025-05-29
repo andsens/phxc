@@ -1,5 +1,5 @@
 [Unit]
-Description=Copy admin.sshKeys from /boot/phxc/cluster.json to /home/admin/.ssh/authorized_keys
+Description=Copy admin.sshkeys from /boot/phxc/cluster.json to /home/admin/.ssh/authorized_keys
 DefaultDependencies=no
 RequiresMountsFor=/boot /sysroot
 Before=initrd.target
@@ -13,4 +13,4 @@ WantedBy=initrd.target
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=/bin/sh -e
-StandardInputText=jq -r '.admin.sshKeys[]' /boot/phxc/cluster.json >/sysroot/home/admin/.ssh/authorized_keys
+StandardInputText=jq -r '.admin.sshkeys[]' /boot/phxc/cluster.json >/sysroot/home/admin/.ssh/authorized_keys

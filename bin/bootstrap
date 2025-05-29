@@ -71,7 +71,7 @@ do declare -p "$p$varname";done;done;}
       local admin_credentials_tmp
       admin_credentials_tmp=$(mktemp -d --suffix '-phxc-admin-credentials')
       trap_append "rm -rf \"$admin_credentials_tmp\"" EXIT
-      jq -r '.admin.sshKeys[]' "$__setup_admin" >"$admin_credentials_tmp/authorized_keys"
+      jq -r '.admin.sshkeys[]' "$__setup_admin" >"$admin_credentials_tmp/authorized_keys"
       jq -r '"admin:" + .admin.pwhash' "$__setup_admin" >"$admin_credentials_tmp/shadow"
       bootstrap_docker_opts+=(-v "$admin_credentials_tmp:/workspace/admin-credentials:rw")
     fi

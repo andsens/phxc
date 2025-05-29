@@ -10,11 +10,11 @@ WantedBy=sysinit.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecCondition=get-config node fixedIPs
+ExecCondition=get-config node fixedips
 ExecStart=bash -eo pipefail
-StandardInputText=for macaddr in $(jq -r '(.fixedIPs // {}) | keys[]' /boot/phxc/node.json); do \
+StandardInputText=for macaddr in $(jq -r '(.fixedips // {}) | keys[]' /boot/phxc/node.json); do \
     jq -r --arg macaddr "$macaddr" '\
-      ([.fixedIPs[$macaddr][] | "Address=\\(.)"] | join("\\n")) as $addrs | \
+      ([.fixedips[$macaddr][] | "Address=\\(.)"] | join("\\n")) as $addrs | \
       "[Match]\\nMACAddress=\\($macaddr)\\n[Network]\\n\\($addrs)\\n"' \
       /boot/phxc/node.json> /etc/systemd/network/${macaddr//:/-}.network \
   done

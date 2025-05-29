@@ -39,7 +39,7 @@ docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
   # shellcheck disable=SC2154
   if [[ -n $__clustercfg ]]; then
     [[ -e $__clustercfg ]] || fatal "cluster.json not found at %s" "$__clustercfg"
-    readarray -d $'\n' -t authorized_keys < <(jq -r '.admin.sshKeys[]' "$__clustercfg")
+    readarray -d $'\n' -t authorized_keys < <(jq -r '.admin.sshkeys[]' "$__clustercfg")
   else
     readarray -d $'\n' -t authorized_keys < <(cat /home/admin/.ssh/authorized_keys)
   fi

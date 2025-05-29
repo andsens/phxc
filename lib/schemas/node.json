@@ -23,10 +23,7 @@
             "mode": {
               "description": "Whether to run k3s as an agent or a server. Default: server",
               "type": "string",
-              "enum": [
-                "agent",
-                "server"
-              ]
+              "enum": ["agent", "server"]
             },
             "server": {
               "description": "The hostname of a control-plane node for k3s to connect to.",
@@ -39,11 +36,7 @@
               "pattern": "^K10[0-9a-f]+::(?!server).*"
             }
           },
-          "required": [
-            "mode",
-            "server",
-            "token"
-          ],
+          "required": ["mode", "server", "token"],
           "additionalProperties": false
         }
       ]
@@ -53,7 +46,7 @@
       "type": "string",
       "format": "hostname"
     },
-    "fixedIPs": {
+    "fixedips": {
       "description": "Per MAC-address fixed IP network configuration",
       "patternProperties": {
         "([0-9a-f]{2}:){5}[0-9a-f]{2}": {
