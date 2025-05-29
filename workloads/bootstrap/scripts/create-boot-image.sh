@@ -358,7 +358,8 @@ label: gpt
 start=$(( partition_offset_b / block_size_b )) size=$(( boot_size_b / block_size_b )), type=$partition_type, bootable, uuid=$BOOT_UUID
 EOF
     dd if="/workspace/boot.$image_type.img" of="/workspace/disk.$image_type.img" \
-      bs=$block_size_b seek=$((partition_offset_b / block_size_b)) count=$((boot_size_b / block_size_b)) conv=notrunc
+      bs=$block_size_b seek=$((partition_offset_b / block_size_b)) count=$((boot_size_b / block_size_b)) conv=notrunc \
+      status=none
 
     artifacts[disk.$image_type.img]=/workspace/disk.$image_type.img
   done

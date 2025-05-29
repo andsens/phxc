@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 
-PACKAGES+=(sudo)
-! $DEBUG || PACKAGES+=(less nano bsdextrautils tree psmisc dnsutils lsof netcat-openbsd)
-PACKAGES_TMP+=(adduser)
+admin_pre_install() {
+  PACKAGES+=(sudo)
+  ! $DEBUG || PACKAGES+=(less nano bsdextrautils tree psmisc dnsutils lsof netcat-openbsd)
+  PACKAGES_TMP+=(adduser)
+}
 
 admin() {
   chmod 0440 /etc/sudoers.d/20_admin_nopass
@@ -12,7 +14,7 @@ admin() {
   mkdir /home/admin/.ssh
 
   if [[ -e /workspace/admin-credentials/authorized_keys ]]; then
-    cat /workspace/admin-credentials/authorized_keys >/home/admin/.ssh/authorized_keys
+    cp /workspace/admin-credentials/authorized_keys /home/admin/.ssh/authorized_keys
   fi
   if pwhash=$(grep -m1 admin /workspace/admin-credentials/shadow 2>/dev/null | cut -d: -f2); then
     usermod -p "$pwhash" admin

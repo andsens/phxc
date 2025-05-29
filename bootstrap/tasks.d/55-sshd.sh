@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 
-PACKAGES+=(openssh-client openssh-server)
-
-sshd() {
-  debconf-set-selections <<<"openssh-server  openssh-server/password-authentication  boolean false"
-  dpkg-reconfigure --frontend noninteractive openssh-server
+sshd_pre_install() {
+  PACKAGES+=(openssh-client openssh-server)
+  if ! $DEBUG; then
+    DEBCONF_SELECTIONS+=(
+      "openssh-server  openssh-server/permit-root-login boolean false"
+      "openssh-server  openssh-server/password-authentication  boolean false"
+    )
+  fi
 }
