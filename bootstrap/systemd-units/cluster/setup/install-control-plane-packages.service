@@ -6,8 +6,7 @@ After=install-node-packages.service systemd-networkd-wait-online.service
 Type=oneshot
 RemainAfterExit=yes
 ExecCondition=bash -ec '[ $(get-config -q node k3s.mode) = server ]'
-ExecStart=upkg add -fp control-plane /usr/local/lib/upkg/.upkg/phxc/bootstrap/assets/control-plane.upkg.json
 WorkingDirectory=/var/lib/phxc
-ExecStartPost=ln -s ../../../var/lib/phxc/.upkg/.bin/cilium /usr/local/bin/cilium
-ExecStartPost=ln -s ../../../var/lib/phxc/.upkg/.bin/cidrex /usr/local/bin/cidrex
-ExecStartPost=ln -s ../../../var/lib/phxc/.upkg/.bin/kustomize /usr/local/bin/kustomize
+ExecStart=upkg add -f /usr/local/lib/upkg/.upkg/phxc/lib/common-context/cilium.upkg.json
+ExecStart=upkg add -f /usr/local/lib/upkg/.upkg/phxc/lib/common-context/cidrex.upkg.json
+ExecStart=upkg add -f /usr/local/lib/upkg/.upkg/phxc/lib/common-context/kustomize.upkg.json

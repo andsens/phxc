@@ -1,0 +1,19 @@
+{
+  "$schema": "https://schemas.orbit.dev/upkg/upkg-v0.28.0.schema.json",
+  "name": "buildkit",
+  "bin": [".upkg/.bin"],
+  "dependencies": [
+    {
+      "name": "buildkit",
+      "os/arch": "Linux/x86_64",
+      "tar": "https://github.com/moby/buildkit/releases/download/v0.22.0/buildkit-v0.22.0.linux-amd64.tar.gz",
+      "sha256": "2a159d4f3017a6e629306cfb7bbdb6610cb0215e124c2ded2c51df183d2c373b"
+    },
+    {
+      "name": "buildkit",
+      "os/arch": "Linux/aarch64",
+      "tar": "https://github.com/moby/buildkit/releases/download/v0.22.0/buildkit-v0.22.0.linux-arm64.tar.gz",
+      "sha256": "c9b425a8f39f0c3fc58972b50d99ed4dde006e28d671a3de578085b15febb45a"
+    }
+  ]
+}

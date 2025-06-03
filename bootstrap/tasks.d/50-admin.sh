@@ -13,10 +13,10 @@ admin() {
   adduser admin sudo
   mkdir /home/admin/.ssh
 
-  if [[ -e /workspace/admin-credentials/authorized_keys ]]; then
-    cp /workspace/admin-credentials/authorized_keys /home/admin/.ssh/authorized_keys
-  fi
-  if pwhash=$(grep -m1 admin /workspace/admin-credentials/shadow 2>/dev/null | cut -d: -f2); then
+  [[ ! -e /workspace/admin/authorized_keys ]] || \
+    cp /workspace/admin/authorized_keys /home/admin/.ssh/authorized_keys
+  local pwhash
+  if pwhash=$(cat /workspace/admin/pwhash 2>/dev/null); then
     usermod -p "$pwhash" admin
     ! $DEBUG || usermod -p "$pwhash" root
   fi

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://schemas.orbit.dev/upkg/upkg-v0.28.0.schema.json",
+  "name": "nerdctl",
+  "bin": [".upkg/.bin"],
+  "dependencies": [
+    {
+      "name": "nerdctl",
+      "bin": ["nerdctl"],
+      "os/arch": "Linux/x86_64",
+      "tar": "https://github.com/containerd/nerdctl/releases/download/v2.1.2/nerdctl-2.1.2-linux-amd64.tar.gz",
+      "sha256": "1a08c35d16a0db0b4ac298adb8e4dab4293803d492cbba7aaf862a48a04c463d"
+    },
+    {
+      "name": "nerdctl",
+      "bin": ["nerdctl"],
+      "os/arch": "Linux/aarch64",
+      "tar": "https://github.com/containerd/nerdctl/releases/download/v2.1.2/nerdctl-2.1.2-linux-arm64.tar.gz",
+      "sha256": "af6b8c9028fb1adc84b64c9a63da0f369bfa5cfc9176c8b7c58a573d30bd8a74"
+    }
+  ]
+}

@@ -10,6 +10,4 @@ ExecCondition=bash -ec '[ $(get-config -q node k3s.mode) = server ]'
 Environment=KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 Restart=on-failure
 RestartSec=30s
-ExecStart=bash -eo pipefail
-StandardInputText=kustomize build --enable-alpha-plugins --enable-exec "/usr/local/lib/upkg/.upkg/phxc/workloads/%i" | \
-  kubectl apply --timeout=5m -f -
+ExecStart=workload apply %i
