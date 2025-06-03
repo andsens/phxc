@@ -47,7 +47,8 @@ Package: *
 Pin: release a=bookworm
 Pin-Priority: 650
 EOF
-    export BOOT_TYPE_UUID=$MSBDP_PART_TYPE_UUID
+    # shellcheck disable=SC2034
+    BOOT_TYPE_UUID=$MSBDP_PART_TYPE_UUID
   fi
 }
 

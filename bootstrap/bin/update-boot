@@ -3,11 +3,10 @@
 set -Eeo pipefail; shopt -s inherit_errexit
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../..")
 source "$PKGROOT/.upkg/records.sh/records.sh"
+source "$PKGROOT/lib/common-context/uuids.sh"
 
 VARIANT=$(systemctl show-environment | grep '^VARIANT=')
 VARIANT=${VARIANT#VARIANT=}
-DATA_UUID=$(systemctl show-environment | grep '^DATA_UUID=')
-DATA_UUID=${DATA_UUID#DATA_UUID=}
 
 main() {
   DOC="update-boot - Update the efi partition with a new image

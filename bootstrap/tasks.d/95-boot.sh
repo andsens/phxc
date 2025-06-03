@@ -3,7 +3,7 @@
 boot_pre_copy() {
   FILES_ENVSUBST+=(
     /usr/lib/dracut/modules.d/99phxc/fstab # Contains $ROOTIMG_SHA256, which will be handled by create-boot-image
-    /etc/fstab.tmp
+    # /etc/fstab.tmp
   )
 }
 
@@ -65,6 +65,13 @@ boot() {
   dracut --force --kver "$kernver"
   # Disable initramfs updates again, so they won't be triggered by uninstalls
   export INITRD=No
+
+  local kernver
+  kernver=$(readlink /vmlinuz)
+  kernver=${kernver#'boot/vmlinuz-'}
+  mv "/boot/initrd.img-$kernver" /boot/initramfs.img
+  mv "/boot/vmlinuz-$kernver" /boot/vmlinuz
+  rm -f /vmlinuz /vmlinuz.old /initrd.img /initrd.img.old
 }
 
 boot_cleanup() {

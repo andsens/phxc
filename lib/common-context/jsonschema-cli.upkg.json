@@ -4,14 +4,14 @@
   "bin": [".upkg/.bin/jsonschema-cli"],
   "dependencies": [
     {
-      "name": "step",
+      "name": "jsonschema-cli",
       "bin": ["jsonschema-cli"],
       "os/arch": "Linux/x86_64",
       "tar": "https://github.com/andsens/phoenix-cluster/releases/download/jsonschema-cli-v0.28.0%2B1/jsonschema-cli-0.28.0_linux_amd64.tar.gz",
       "sha256": "3b93b76ea0e2d3cf9c149e944b7689a2d9b5f92a3d5ddb18fd9ac91fbbbdb446"
     },
     {
-      "name": "step",
+      "name": "jsonschema-cli",
       "bin": ["jsonschema-cli"],
       "os/arch": "Linux/aarch64",
       "tar": "https://github.com/andsens/phoenix-cluster/releases/download/jsonschema-cli-v0.28.0%2B1/jsonschema-cli-0.28.0_linux_arm64.tar.gz",

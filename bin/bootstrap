@@ -14,110 +14,116 @@ Usage:
 
 Options:
   --setup-admin PATH  Embed admin credentials from cluster.json in root image
-  --resume  Resume failed create-boot-image run, reuse VARIANT.tmp
-  --no-sb  Do not sign the UKI with secureboot certificate if present
-  --debug  Enable debug build (installs debug tools, no artifact cleanup, etc.)
+  --images PATH  Output & temporary directory [default: <PROJECT-ROOT>/images]
+  --no-sb   Do not sign the UKI with secureboot certificate if present
+  --debug   Enable debug build (installs debug tools, no artifact cleanup, etc.)
 
 Supported variants:
-  amd64 - x86_64 image
+  amd64 - x86 64-bit image
   arm64 - ARM 64-bit image
-  rpi5 - ARM 64-bit image with modifications for Raspberry PI 5
+  rpi5  - ARM 64-bit image with modifications for Raspberry PI 5
 "
 # docopt parser below, refresh this parser with `docopt.sh bootstrap`
 # shellcheck disable=2016,2086,2317,1090,1091,2034
 docopt() { local v='2.0.2'; source \
 "$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
-%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:505};usage=${DOC:29:36}
-digest=2c6f2;options=(' --setup-admin 1' ' --resume 0' ' --no-sb 0' ' --debug '\
-'0');node_0(){ value __setup_admin 0;};node_1(){ switch __resume 1;};node_2(){
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:524};usage=${DOC:29:36}
+digest=4e89d;options=(' --setup-admin 1' ' --images 1' ' --no-sb 0' ' --debug '\
+'0');node_0(){ value __setup_admin 0;};node_1(){ value __images 1;};node_2(){
 switch __no_sb 2;};node_3(){ switch __debug 3;};node_4(){ value VARIANT a;}
 node_5(){ optional 0 1 2 3;};node_6(){ sequence 5 4;};cat <<<' docopt_exit() {
 [[ -n $1 ]] && printf "%s\n" "$1" >&2;printf "%s\n" "${DOC:29:36}" >&2;exit 1;}'
-local varnames=(__setup_admin __resume __no_sb __debug VARIANT) varname;for \
+local varnames=(__setup_admin __images __no_sb __debug VARIANT) varname;for \
 varname in "${varnames[@]}"; do unset "var_$varname";done;parse 6 "$@";local \
 p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset "$p$varname"
-done;eval $p'__setup_admin=${var___setup_admin:-};'$p'__resume=${var___resume:'\
-'-false};'$p'__no_sb=${var___no_sb:-false};'$p'__debug=${var___debug:-false};'\
-$p'VARIANT=${var_VARIANT:-};';local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && \
-docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for varname in "${varnames[@]}"; \
-do declare -p "$p$varname";done;done;}
+done;eval $p'__setup_admin=${var___setup_admin:-};'$p'__images=${var___images:'\
+'-'"'"'<PROJECT-ROOT>/images'"'"'};'$p'__no_sb=${var___no_sb:-false};'$p'__deb'\
+'ug=${var___debug:-false};'$p'VARIANT=${var_VARIANT:-};';local docopt_i=1;[[ \
+$BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for \
+varname in "${varnames[@]}"; do declare -p "$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib-v$v/docopt-lib.sh"' bootstrap`
   eval "$(docopt "$@")"
 
   # shellcheck disable=SC2154
-  local DEBUG=$__debug DOCKER_PLATFORM
+  local DEBUG=$__debug
   ! $DEBUG || LOGLEVEL=${LOGLEVEL:-verbose}
   case $VARIANT in
-    amd64) DOCKER_PLATFORM=linux/amd64 ;;
-    arm64|rpi*) DOCKER_PLATFORM=linux/arm64 ;;
+    amd64) PLATFORM=linux/amd64 ;;
+    arm64|rpi*) PLATFORM=linux/arm64 ;;
     *) fatal "Unknown variant: %s" "$VARIANT" ;;
   esac
 
+  local bundle_ctx
+  bundle_ctx=$(mktemp -d --suffix '-phxc-node-bundle-ctx')
+  trap_append "rm -rf \"$bundle_ctx\"" EXIT
+  "$PKGROOT/bootstrap/scripts/bundle.sh" "$bundle_ctx/bundle.tar.gz"
+
+  # Files that will be added through COPY operations after all tasks have run
+  # These files cannot be modified while anything is running since they are
+  # either r/o (/etc/hosts, /etc/fstab) or would kill dns resolution (/etc/resolv.conf)
+  local root_post_ctx
+  root_post_ctx=$(mktemp -d --suffix '-phxc-node-root-post-ctx')
+  cp -r "$PKGROOT/bootstrap/root.post/." "$root_post_ctx"
+  # Special handling for the BOOT_UUID placeholder in fstab
+  # shellcheck disable=SC2016
+  BOOT_UUID=$BOOT_UUID envsubst '${BOOT_UUID}' <"$PKGROOT/bootstrap/root.post/etc/fstab" >"$root_post_ctx/etc/fstab"
+
+  local main_ctx
+  main_ctx=$(mktemp -d --suffix '-phxc-node-main-ctx')
+  cp "$PKGROOT/lib/common-context/setup-upkg.sh" "$main_ctx"
+
+  local admin_ctx
+  admin_ctx=$(mktemp -d --suffix '-phxc-node-admin-ctx')
+  if [[ -n $__setup_admin ]]; then
+    trap_append "rm -rf \"$admin_ctx\"" EXIT
+    # cp /home/admin/.ssh/authorized_keys "$admin_ctx/authorized_keys"
+    jq -r '.admin.sshkeys[]' "$__setup_admin" >"$admin_ctx/authorized_keys"
+    # pwhash=$(grep -m1 admin /workspace/admin-credentials/shadow 2>/dev/null | cut -d: -f2)
+    jq -r .admin.pwhash "$__setup_admin" >"$admin_ctx/pwhash"
+  fi
+
+  local sb_ctx
+  sb_ctx=$(mktemp -d --suffix '-phxc-node-sb-ctx')
+  trap_append "rm -rf \"$sb_ctx\"" EXIT
+  # shellcheck disable=SC2154
+  if ! $__no_sb; then
+    # kubectl -n phxc get secret secureboot -ojsonpath='{.data.tls\.key}' | base64 -d
+    # kubectl -n phxc get secret secureboot -ojsonpath='{.data.tls\.crt}' | base64 -d
+    [[ ! -e $HOME/.config/phxc/secureboot.key ]] || cp --preserve=mode "$HOME/.config/phxc/secureboot.key" "$sb_ctx/tls.key"
+    [[ ! -e $HOME/.config/phxc/secureboot.crt ]] || cp --preserve=mode "$HOME/.config/phxc/secureboot.crt" "$sb_ctx/tls.crt"
+  fi
+
+  buildx build \
+    --platform "$PLATFORM" \
+    --build-arg "DEBUG=$DEBUG" \
+    --build-arg "VARIANT=$VARIANT" \
+    --build-arg "LOGLEVEL=$LOGLEVEL" \
+    --build-arg "DISK_UTILS_IMG=$DISK_UTILS_IMG" \
+    --build-arg "CHOWN=$UID" \
+    --build-context bundle="$bundle_ctx" \
+    --build-context root.post="$root_post_ctx" \
+    --build-context admin="$admin_ctx" \
+    --build-context secureboot="$sb_ctx" \
+    --file "$PKGROOT/bootstrap/node.Dockerfile" \
+    --tag "cluster.local/node:$VARIANT" \
+    "$main_ctx"
+
+  # shellcheck disable=SC2154
+  [[ $__images != '<PROJECT-ROOT>/images' ]] || __images=$PKGROOT/images
   local artifacts
-  artifacts=$PKGROOT/images/$VARIANT.tmp
-  # shellcheck disable=SC2154
-  if ! $__resume; then
-    $DEBUG || trap_append "rm -rf \"$artifacts\"" EXIT
-    rm -rf "$artifacts"
-    mkdir -p "$artifacts"
+  artifacts=$__images/$VARIANT.tmp
+  rm -rf "$artifacts"
+  mkdir -p "$artifacts"
+  $DEBUG || trap_append "rm -rf \"$artifacts\"" EXIT
 
-    local bundle
-    bundle=$(mktemp --suffix '-phxc-bundle.tar.gz')
-    trap_append "rm \"$bundle\"" EXIT
-    "$PKGROOT/bootstrap/scripts/bundle.sh" "$bundle"
+  local container_id
+  container_id=$(docker create "cluster.local/node:$VARIANT")
+  trap_append "docker rm -v \"$container_id\"" EXIT
+  docker cp "$container_id:/artifacts/." "$artifacts"
 
-    local bootstrap_docker_opts=()
-    if [[ -n $__setup_admin ]]; then
-      local admin_credentials_tmp
-      admin_credentials_tmp=$(mktemp -d --suffix '-phxc-admin-credentials')
-      trap_append "rm -rf \"$admin_credentials_tmp\"" EXIT
-      jq -r '.admin.sshkeys[]' "$__setup_admin" >"$admin_credentials_tmp/authorized_keys"
-      jq -r '"admin:" + .admin.pwhash' "$__setup_admin" >"$admin_credentials_tmp/shadow"
-      bootstrap_docker_opts+=(-v "$admin_credentials_tmp:/workspace/admin-credentials:rw")
-    fi
-
-    info "Building '%s'" "node:$VARIANT"
-    docker run --rm -ti \
-      --platform "$DOCKER_PLATFORM" \
-      -v "$PKGROOT/workloads/bootstrap/Dockerfile:/workspace/context/Dockerfile:ro" \
-      -v "$bundle:/workspace/bundle/phxc.tar.gz:ro" \
-      -v "$artifacts:/workspace/artifacts:rw" \
-      "${bootstrap_docker_opts[@]}" \
-      gcr.io/kaniko-project/executor:latest \
-      --dockerfile context/Dockerfile \
-      --build-arg "VARIANT=$VARIANT" \
-      --build-arg "DEBUG=$DEBUG" \
-      --build-arg "LOGLEVEL=$LOGLEVEL" \
-      --custom-platform="$DOCKER_PLATFORM" \
-      --destination "cluster.local/node:$VARIANT" \
-      --insecure-registry=cluster.local \
-      --tar-path "/workspace/artifacts/node.tar" \
-      --no-push
-  elif [[ ! -e $artifacts/node.tar ]]; then
-    fatal "%s does not exist, unable to run create-boot-image" "$artifacts/node.tar"
-  fi
-
-  local create_boot_docker_opts=()
-  # shellcheck disable=SC2154
-  if ! $__no_sb && [[ -e $HOME/.config/phxc/secureboot.key ]]; then
-    create_boot_docker_opts+=(-v "$HOME/.config/phxc/secureboot.key:/workspace/secureboot/tls.key")
-  fi
-  if ! $__no_sb && [[ -e $HOME/.config/phxc/secureboot.crt ]]; then
-    create_boot_docker_opts+=(-v "$HOME/.config/phxc/secureboot.crt:/workspace/secureboot/tls.crt")
-  fi
-
-  docker run --rm -ti \
-    -v "$PKGROOT/workloads/bootstrap/scripts:/scripts:ro" \
-    -v "$artifacts:/workspace/artifacts:rw" "${create_boot_docker_opts[@]}" \
-    -e "VARIANT=$VARIANT" \
-    -e "DEBUG=$DEBUG" \
-    -e "LOGLEVEL=$LOGLEVEL" \
-    --entrypoint /scripts/create-boot-image.sh \
-    "$DISK_UTILS_IMG" --chown $UID
-
-  rm -rf "$PKGROOT/images/$VARIANT.old"
-  [[ ! -e "$PKGROOT/images/$VARIANT" ]] || mv "$PKGROOT/images/$VARIANT" "$PKGROOT/images/$VARIANT.old"
-  mv "$artifacts" "$PKGROOT/images/$VARIANT"
+  rm -rf "$__images/$VARIANT.old"
+  [[ ! -e "$__images/$VARIANT" ]] || mv "$__images/$VARIANT" "$__images/$VARIANT.old"
+  mv "$artifacts" "$__images/$VARIANT"
 }
 
 main "$@"
